@@ -1,0 +1,2 @@
+all:
+	fpc  -MObjFPC -Sgi -O1 -gl -vewnhi -l -Filib/x86_64-linux/ -Fumodules/moduleconfig/ -Fumodules/ -Fumodules/pathes/ -Fuutils/ -Fumodules/log/ -Fumodules/glcontext/ -Fuheaders/ -Fumodules/inputhandler/ -Fumain/ -Fumodules/glbase/ -Fumodules/texmng/ -Fumodules/shdmng/ -Fumodules/loadscreen/ -Fumodules/font/ -Fumodules/glmng/ -Fumodules/gui/window/ -Fumodules/gui/label/ -Fumodules/gui/ -Fumodules/gui/progressbar/ -Fumodules/language/ -Fu -Fu. -Fulib/x86_64-linux/ -Fumodules/gui/button/ -Fu./modules/mainmenu/ -oorcf orcf.lpr

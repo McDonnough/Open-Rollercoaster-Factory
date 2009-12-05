@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ORCF - Feature Plan</title>
+    <style type="text/css">
+      * {
+        font-size: 14px;
+        font-family: Tahoma, Nice, sans-serif;
+      }
+      h1 {
+        font-size: 30px;
+      }
+      ul {
+        list-style-type: none;
+        margin: 0px;
+        padding: 0px;
+        border: 1px solid black;
+      }
+      .prog:before {
+        content: 'IN PROGRESS..';
+        font-family: Courier, Monospace;
+      }
+      li {
+        padding: 4px;
+        border-top: 1px solid black;
+      }
+      li:first-child {
+        border: none;
+      }
+      .prog {
+        background-color: #ffff88;
+      }
+      .todo:before {
+        content: 'TODO.........';
+        font-family: Courier, Monospace;
+      }
+      .todo {
+        background-color: #ff8888;
+      }
+      .done:before {
+        content: 'DONE.........';
+        font-family: Courier, Monospace;
+      }
+      .done {
+        background-color: #88ff88;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Core modules</h1>
+    <ul>
+      <li class="done">Path module for Unix</li>
+      <li class="done">Path module for Windows</li>
+      <li class="done">Log module using text files</li>
+      <li class="done">Configuration module using text files</li>
+      <li class="prog">Language module</li>
+    </ul>
+    <h1>I/O modules</h1>
+    <ul>
+      <li class="prog">Texture-based font module - letters for western-european languages, based on windows characters</li>
+      <li class="prog">New font texture</li>
+      <li class="todo">New icons</li>
+      <li class="prog">GLUT backend for OpenGL rendering context</li>
+      <li class="done">SDL backend for OpenGL rendering context</li>
+      <li class="done">SDL backend for input handling</li>
+      <li class="done">GLUT backend for input handling</li>
+    </ul>
+    <h1>GUI modules</h1>
+    <ul>
+      <li class="done">Buttons</li>
+      <li class="todo">Text input control</li>
+      <li class="todo">Tab bars</li>
+      <li class="todo">Panels (as containers)</li>
+      <li class="prog">Label</li>
+      <li class="todo">Dropdown lists</li>
+      <li class="done">Window</li>
+      <li class="done">Progress bar</li>
+      <li class="done">Callback handling</li>
+    </ul>
+    <h1>Graphics</h1>
+    <ul>
+      <li class="done">Texture manager</li>
+      <li class="done">Shader manager</li>
+      <li class="todo">Implement OpenGL renderer</li>
+    </ul>
+    <h1>Gameplay</h1>
+    <ul>
+      <li class="prog">Main menu with background screenshots</li>
+      <li class="prog">A screen that shows the current state of loading a park</li>
+      <li class="todo">Implement everything</li>
+    </ul>
+  </body>
+</html>

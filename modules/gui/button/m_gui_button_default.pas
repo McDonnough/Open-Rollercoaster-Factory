@@ -82,7 +82,7 @@ begin
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBegin(GL_QUADS);
-    glColor4f(1, 1, 1, Max(1 - Button.fHoverFactor - Button.fClickFactor, 0));
+    glColor4f(1, 1, 1, 1);
     RenderButton(0, 0);
     glColor4f(1, 1, 1, Max(Button.fHoverFactor - Button.fClickFactor, 0));
     RenderButton(0.5, 0);

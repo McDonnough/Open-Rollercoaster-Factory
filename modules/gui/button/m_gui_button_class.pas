@@ -20,7 +20,7 @@ type
     public
       (**
         * Render a button
-        *@param The progress bar to render
+        *@param button bar to render
         *)
       procedure Render(Button: TButton); virtual abstract;
     end;

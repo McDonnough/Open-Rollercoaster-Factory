@@ -29,11 +29,6 @@ implementation
 uses
   m_varlist, m_gui_class;
 
-procedure Hallo(Sender: TGUIComponent);
-begin
-  writeln('a');
-end;
-
 constructor TModuleLoadScreenDefault.Create;
 begin
   fModName := 'LoadScreenDefault';

@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, m_moduleconfig_ini, {$IFDEF UNIX}m_pathes_unix{$ELSE}m_pathes_windows{$ENDIF}, m_log_file,
   m_glcontext_sdl, m_inputhandler_sdl, m_texmng_default, m_shdmng_default, m_loadscreen_default, m_font_texture,
   m_glmng_default, m_gui_window_default, m_gui_label_default, m_gui_default, m_gui_progressbar_default,
-  m_language_textfile, m_gui_button_default, m_mainmenu_screenshots;
+  m_language_textfile, m_gui_button_default, m_mainmenu_screenshots, m_gui_iconifiedbutton_default;
 
 type
   TModuleManager = class
@@ -23,12 +23,13 @@ type
       fModTexMng: TModuleTextureManagerDefault;                                      // Default texture manager
       fModShdMng: TModuleShaderManagerDefault;                                       // Default Shader Manager
       fModFont: TModuleFontTexture;                                                  // Texture-based font backend
-      fModLoadScreen: TModuleLoadScreenDefault;                                      // Default loading screens
       fModGUI: TModuleGUIDefault;                                                    // Default GUI manager
       fModGUIWindow: TModuleGUIWindowDefault;                                        // Default GUI window
       fModGUILabel: TModuleGUILabelDefault;                                          // Default GUI label
       fModGUIProgressBar: TModuleGUIProgressBarDefault;                              // Default GUI progress bar
       fModGUIButton: TModuleGUIButtonDefault;                                        // Default GUI button
+      fModGUIIconifiedButton: TModuleGUIIconifiedButtonDefault;                      // Default button showing an icon
+      fModLoadScreen: TModuleLoadScreenDefault;                                      // Default loading screens
       fModMainMenu: TModuleMainMenuScreenshots;                                      // Show screenshots in main menu
     public
       property ModModuleConfig: TModuleConfigIni read fModModuleConfig;
@@ -41,12 +42,13 @@ type
       property ModTexMng: TModuleTextureManagerDefault read fModTexMng;
       property ModShdMng: TModuleShaderManagerDefault read fModShdMng;
       property ModFont: TModuleFontTexture read fModFont;
-      property ModLoadScreen: TModuleLoadScreenDefault read fModLoadScreen;
       property ModGUI: TModuleGUIDefault read fModGUI;
       property ModGUIWindow: TModuleGUIWindowDefault read fModGUIWindow;
       property ModGUILabel: TModuleGUILabelDefault read fModGUILabel;
       property ModGUIProgressBar: TModuleGUIProgressBarDefault read fModGUIProgressBar;
       property ModGUIButton: TModuleGUIButtonDefault read fModGUIButton;
+      property ModGUIIconifiedButton: TModuleGUIIconifiedButtonDefault read fModGUIIconifiedButton;
+      property ModLoadScreen: TModuleLoadScreenDefault read fModLoadScreen;
       property ModMainMenu: TModuleMainMenuScreenshots read fModMainMenu;
 
       /// Create all module instances
@@ -111,6 +113,9 @@ begin
   fModGUIButton := TModuleGUIButtonDefault.Create;
   fModGUIButton.CheckModConf;
 
+  fModGUIIconifiedButton := TModuleGUIIconifiedButtonDefault.Create;
+  fModGUIIconifiedButton.CheckModConf;
+
   fModLoadScreen := TModuleLoadScreenDefault.Create;
   fModLoadScreen.CheckModConf;
 
@@ -122,6 +127,7 @@ procedure TModuleManager.UnloadModules;
 begin
   fModMainMenu.Free;
   fModLoadScreen.Free;
+  fModGUIIconifiedButton.Free;
   fModGUIButton.Free;
   fModGUIProgressBar.Free;
   fModGUILabel.Free;

@@ -3,7 +3,7 @@ unit m_mainmenu_screenshots;
 interface
 
 uses
-  m_module, SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_button_class, m_mainmenu_class, m_texmng_class, DGLOpenGL;
+  m_module, SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_button_class, m_mainmenu_class, m_texmng_class, m_gui_iconifiedbutton_class, DGLOpenGL;
 
 type
   TModuleMainMenuScreenshots = class(TModuleMainMenuClass)
@@ -169,6 +169,14 @@ begin
     Caption := 'Quit';
     Tag := MMVAL_QUIT;
     onClick := @SetValue;
+    end;
+
+  with TIconifiedButton.Create(fWindow) do
+    begin
+    Left := 40;
+    Height := 64;
+    Width := 64;
+    Top := 268;
     end;
 end;
 

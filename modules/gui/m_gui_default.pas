@@ -22,7 +22,7 @@ type
 implementation
 
 uses
-  m_gui_window_class, m_gui_label_class, m_gui_progressbar_class, m_varlist, m_inputhandler_class, m_gui_button_class;
+  m_gui_window_class, m_gui_label_class, m_gui_progressbar_class, m_varlist, m_inputhandler_class, m_gui_button_class, m_gui_iconifiedbutton_class;
 
 procedure TModuleGUIDefault.Render;
   procedure RenderComponent(Component: TGUIComponent);
@@ -36,6 +36,7 @@ procedure TModuleGUIDefault.Render;
       CLabel: TLabel(Component).Render;
       CProgressBar: TProgressBar(Component).Render;
       CButton: TButton(Component).Render;
+      CIconifiedButton: TIconifiedButton(Component).Render;
       end;
     glPushMatrix;
     glTranslatef(Component.Left, Component.Top, 1);

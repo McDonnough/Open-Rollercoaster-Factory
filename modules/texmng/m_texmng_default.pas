@@ -137,7 +137,7 @@ begin
   if VertexTexture then
     FileName := 'vertex:' + FileName;
   for i := 0 to high(fTexRefs) do
-    if fTexRefs[i].TexName = FileName then
+    if (fTexRefs[i].TexName = FileName) and (fTexRefs[i].Tex <> GLUInt(-1)) then
       begin
       X := fTexRefs[i].X;
       Y := fTexRefs[i].Y;
@@ -204,6 +204,7 @@ begin
     begin
     BindTexture(-1);
     glDeleteTextures(1, @fTexRefs[Texture].Tex);
+    fTexRefs[Texture].Tex := -1;
     end;
 end;
 

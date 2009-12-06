@@ -38,10 +38,19 @@ function StrPos(s: String; c: Char; Ofs: Integer = 1): Integer;
   *)
 function WordCount(s: String): Integer;
 
+(** Get all files in one directory with subdirectories
+  *@param Directory to search im
+  *@param File mask
+  *@param The list to write strings to
+  *@param true = search in subdirs too
+  *@param false = append to list
+  *)
+procedure GetFilesInDirectory(Directory: string; const Mask: string; List: TStringList; WithSubDirs, ClearList: Boolean);
+
 implementation
 
 uses
-  Math;
+  Math, m_varlist;
 
 function SubString(s: String; Start, Len: Integer): String;
 var
@@ -103,6 +112,50 @@ begin
         lastCharWasWhitespace := false;
         inc(Result);
         end;
+end;
+
+procedure GetFilesInDirectory(Directory: string; const Mask: string; List: TStringList; WithSubDirs, ClearList: Boolean);
+
+  procedure ScanDir(Directory: string);
+  var
+    SR: TSearchRec;
+  begin
+    Directory := ModuleManager.ModPathes.Convert(Directory);
+    if FindFirst(Directory + Mask, faAnyFile and not faDirectory, SR) = 0 then try
+      repeat
+        List.Add(Directory + SR.Name)
+      until FindNext(SR) <> 0;
+    finally
+      FindClose(SR);
+    end;
+
+    if WithSubDirs then begin
+      if FindFirst(Directory + '*', faAnyFile, SR) = 0 then try
+        repeat
+          if ((SR.attr and faDirectory) = faDirectory) and
+            (SR.Name <> '.') and (SR.Name <> '..') then
+            ScanDir(Directory + SR.Name + '/');
+        until FindNext(SR) <> 0;
+      finally
+        FindClose(SR);
+      end;
+    end;
+  end;
+
+begin
+  Directory := ModuleManager.ModPathes.ConvertToUnix(Directory);
+  List.BeginUpdate;
+  try
+    if ClearList then
+      List.Clear;
+    if Directory = '' then
+      exit;
+    if Directory[Length(Directory)] <> '/' then
+      Directory := Directory + '/';
+    ScanDir(Directory);
+  finally
+    List.EndUpdate;
+  end;
 end;
 
 end.

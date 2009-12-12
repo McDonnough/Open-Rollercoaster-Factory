@@ -155,7 +155,6 @@ begin
     Width := 236;
     Height := 32;
     Top := 172;
-    Caption := 'Help';
     Tag := MMVAL_HELP;
     onClick := @SetValue;
     end;
@@ -177,6 +176,7 @@ begin
     Height := 64;
     Width := 64;
     Top := 268;
+    Icon := 'dialog-ok-apply.png.tga';
     end;
 end;
 

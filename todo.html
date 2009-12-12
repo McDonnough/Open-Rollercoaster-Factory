@@ -31,6 +31,13 @@
       .prog {
         background-color: #ffff88;
       }
+      .buggy {
+        background-color: #ff8800;
+      }
+      .buggy:before {
+        content: 'BUGGY........';
+        font-family: Courier, Monospace;
+      }
       .todo:before {
         content: 'TODO.........';
         font-family: Courier, Monospace;
@@ -60,7 +67,7 @@
     <h1>I/O modules</h1>
     <ul>
       <li class="prog">Texture-based font module - letters for western-european languages, based on windows characters</li>
-      <li class="prog">GLUT backend for OpenGL rendering context</li>
+      <li class="buggy">GLUT backend for OpenGL rendering context</li>
       <li class="done">SDL backend for OpenGL rendering context</li>
       <li class="done">SDL backend for input handling</li>
       <li class="done">GLUT backend for input handling</li>

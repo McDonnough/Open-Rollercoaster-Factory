@@ -11,6 +11,7 @@ type
   TModuleFontTexture = class(TModuleFontClass)
     protected
       fTexture: TTexture;
+      function ConvertText(Input: String): String;
     public
       procedure Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
       procedure CheckModConf;
@@ -23,11 +24,25 @@ implementation
 uses
   m_varlist;
 
+function TModuleFontTexture.ConvertText(Input: String): String;
+var
+  i: integer;
+begin
+  Result := '';
+  for i := 1 to length(Input) do
+    if Input[i] = #195 then
+      Result := Result + char(ord(Input[i + 1]) + 64)
+    else if Input[i - 1] <> #195 then
+      Result := Result + Input[i];
+end;
+
 procedure TModuleFontTexture.Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
 var
   i: Integer;
   PX, PY, X, Y: GLFloat;
 begin
+  Text := ConvertText(Text);
+
   X := Left;
   Y := Top;
 

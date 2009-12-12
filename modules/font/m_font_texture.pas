@@ -64,10 +64,10 @@ begin
       else
         py := Ord(Text[i]) div 16;
         px := Ord(Text[i]) - 16 * py;
-        glTexCoord2f (px / 16,       py / 16);      glVertex2f(X,        Y);
-        glTexCoord2f((px + 1) / 16,  py / 16);      glVertex2f(X + Size, Y);
-        glTexCoord2f((px + 1) / 16, (py + 1) / 16); glVertex2f(X + Size, Y + Size);
-        glTexCoord2f (px / 16,      (py + 1) / 16); glVertex2f(X,        Y + Size);
+        glTexCoord2f (px / 16,       py / 16);      glVertex2f(Round(X),        Round(Y));
+        glTexCoord2f((px + 1) / 16,  py / 16);      glVertex2f(Round(X + Size), Round(Y));
+        glTexCoord2f((px + 1) / 16, (py + 1) / 16); glVertex2f(Round(X + Size), Round(Y + Size));
+        glTexCoord2f (px / 16,      (py + 1) / 16); glVertex2f(Round(X),        Round(Y + Size));
         X := X + (12 / 16) * Size;
         end;
   glEnd;

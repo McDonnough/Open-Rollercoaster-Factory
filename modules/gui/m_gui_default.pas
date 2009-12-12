@@ -39,7 +39,7 @@ procedure TModuleGUIDefault.Render;
       CIconifiedButton: TIconifiedButton(Component).Render;
       end;
     glPushMatrix;
-    glTranslatef(Component.Left, Component.Top, 1);
+    glTranslatef(Round(Component.Left), Round(Component.Top), 1);
     for i := 0 to high(Component.Children) do
       RenderComponent(Component.Children[i]);
     glPopMatrix;

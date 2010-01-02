@@ -3,7 +3,8 @@ unit m_mainmenu_screenshots;
 interface
 
 uses
-  m_module, SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_button_class, m_mainmenu_class, m_texmng_class, m_gui_iconifiedbutton_class, DGLOpenGL;
+  m_module, SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_button_class, m_mainmenu_class, m_texmng_class, m_gui_iconifiedbutton_class,
+  m_gui_edit_class, DGLOpenGL;
 
 type
   TModuleMainMenuScreenshots = class(TModuleMainMenuClass)
@@ -178,6 +179,14 @@ begin
     Width := 64;
     Top := 268;
     Icon := 'dialog-ok-apply.png.tga';
+    end;
+
+  with TEdit.Create(fWindow) do
+    begin
+    Left := 40;
+    Top := 332;
+    Width := 200;
+    Height := 32;
     end;
 end;
 

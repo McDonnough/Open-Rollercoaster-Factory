@@ -48,6 +48,11 @@ const
   MOUSE_WHEEL_DOWN = 5;
 
   K_FIRST = 0;
+  K_SHIFT = 1;
+  K_ALT = 2;
+  K_META = 3;
+  K_CAPS = 4;
+  K_CTRL = 5;
   K_BACKSPACE = 8;
   K_TAB = 9;
   K_CLEAR = 12;

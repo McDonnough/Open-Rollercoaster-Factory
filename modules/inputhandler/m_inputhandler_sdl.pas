@@ -33,6 +33,7 @@ end;
 procedure TModuleInputHandlerSDL.UpdateData;
 var
   Event: TSDL_Event;
+  i, KMod: Integer;
 begin
   SDL_GetMouseState(fMouseX, fMouseY);
   QuitRequest := false;
@@ -54,6 +55,17 @@ begin
       SDL_KEYUP:
         fKeys[Event.Key.Keysym.Sym] := false;
       end;
+  for i := 1 to 5 do
+    fKeys[i] := false;
+  KMod := SDL_GetModState;
+  if (KMod and (KMOD_LSHIFT or KMOD_RSHIFT)) <> 0 then
+    fKeys[K_SHIFT] := true;
+  if (KMod and (KMOD_LALT or KMOD_RALT)) <> 0 then
+    fKeys[K_ALT] := true;
+  if (KMod and (KMOD_LCTRL or KMOD_RCTRL)) <> 0 then
+    fKeys[K_CTRL] := true;
+  if (KMod and (KMOD_LMETA or KMOD_RMETA)) <> 0 then
+    fKeys[K_META] := true;
 end;
 
 end.

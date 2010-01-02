@@ -91,7 +91,7 @@ begin
   glEnd;
   glDisable(GL_BLEND);
   ModuleManager.ModFont.Write(ModuleManager.ModLanguage.Translate(Button.Caption), Button.Height - 16, Button.Left + 8, Button.Top + 8, 1 - Button.fClickFactor, 1 - Button.fClickFactor, 1 - Button.fClickFactor, 1, 0);
-  ftexture.Unbind;
+  fTexture.Unbind;
 end;
 
 end.

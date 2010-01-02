@@ -14,6 +14,7 @@ type
       function ConvertText(Input: String): String;
     public
       procedure Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
+      function CalculateTextWidth(text: String; Size: Integer): Integer;
       procedure CheckModConf;
       constructor Create;
       destructor Free;
@@ -23,6 +24,11 @@ implementation
 
 uses
   m_varlist;
+
+function TModuleFontTexture.CalculateTextWidth(text: String; Size: Integer): Integer;
+begin
+  Result := Length(Text) * Size;
+end;
 
 function TModuleFontTexture.ConvertText(Input: String): String;
 var
@@ -68,7 +74,7 @@ begin
         glTexCoord2f((px + 1) / 16,  py / 16);      glVertex2f(Round(X + Size), Round(Y));
         glTexCoord2f((px + 1) / 16, (py + 1) / 16); glVertex2f(Round(X + Size), Round(Y + Size));
         glTexCoord2f (px / 16,      (py + 1) / 16); glVertex2f(Round(X),        Round(Y + Size));
-        X := X + (12 / 16) * Size;
+        X := X + Size;
         end;
   glEnd;
   fTexture.Unbind;

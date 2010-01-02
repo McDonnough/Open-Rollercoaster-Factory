@@ -23,6 +23,14 @@ type
         *@param font flags
         *)
       procedure Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte); virtual abstract;
+
+      (**
+        * Calculate the width of a text
+        *@param The text
+        *@param Font size
+        *@return width in pixels
+        *)
+      function CalculateTextWidth(text: String; Size: Integer): Integer; virtual abstract;
     end;
 
 const

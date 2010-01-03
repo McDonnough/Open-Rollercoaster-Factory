@@ -9,7 +9,7 @@ uses
   m_glcontext_sdl, m_inputhandler_sdl, m_texmng_default, m_shdmng_default, m_loadscreen_default, m_font_texture,
   m_glmng_default, m_gui_window_default, m_gui_label_default, m_gui_default, m_gui_progressbar_default,
   m_language_textfile, m_gui_button_default, m_mainmenu_screenshots, m_gui_iconifiedbutton_default,
-  m_gui_edit_default, m_ocfmng_default;
+  m_gui_edit_default, m_ocfmng_default, m_renderer_opengl;
 
 type
   TModuleManager = class
@@ -34,6 +34,7 @@ type
       fModLoadScreen: TModuleLoadScreenDefault;                                      // Default loading screens
       fModMainMenu: TModuleMainMenuScreenshots;                                      // Show screenshots in main menu
       fModOCFManager: TModuleOCFManagerDefault;                                      // Default OCF file manager
+      fModRenderer: TModuleRendererOpenGL;                                           // OpenGL rendering backed
     public
       property ModModuleConfig: TModuleConfigIni read fModModuleConfig;
       property ModPathes: {$IFDEF UNIX}TModulePathesUnix{$ELSE}TModulePathesWindows{$ENDIF} read fModPathes;
@@ -55,6 +56,7 @@ type
       property ModLoadScreen: TModuleLoadScreenDefault read fModLoadScreen;
       property ModMainMenu: TModuleMainMenuScreenshots read fModMainMenu;
       property ModOCFManager: TModuleOCFManagerDefault read fModOCFManager;
+      property ModRenderer: TModuleRendererOpenGL read fModRenderer;
 
       /// Create all module instances
       procedure LoadModules;
@@ -132,10 +134,14 @@ begin
 
   fModOCFManager := TModuleOCFManagerDefault.Create;
   fModOCFManager.CheckModConf;
+
+  fModRenderer := TModuleRendererOpenGL.Create;
+  fModRenderer.CheckModConf;
 end;
 
 procedure TModuleManager.UnloadModules;
 begin
+  fModRenderer.Free;
   fModOCFManager.Free;
   fModMainMenu.Free;
   fModLoadScreen.Free;

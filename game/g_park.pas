@@ -58,7 +58,9 @@ begin
     begin
     TParkLoader(fParkLoader).PostInit;
     fInited := true;
-    end;
+    end
+  else
+    ModuleManager.ModRenderer.RenderScene;
 end;
 
 destructor TPark.Free;

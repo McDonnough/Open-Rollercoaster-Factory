@@ -3,12 +3,12 @@ unit m_renderer_opengl;
 interface
 
 uses
-  Classes, SysUtils, m_renderer_class, DGLOpenGL;
+  Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
     public
-      procedure RenderScene;
+      procedure RenderScene(Park: TPark);
       procedure CheckModConf;
       constructor Create;
     end;
@@ -18,7 +18,7 @@ implementation
 uses
   m_varlist;
 
-procedure TModuleRendererOpenGL.RenderScene;
+procedure TModuleRendererOpenGL.RenderScene(Park: TPark);
 begin
   // Just a test
   glMatrixMode(GL_PROJECTION);

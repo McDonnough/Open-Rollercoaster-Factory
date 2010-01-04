@@ -3,7 +3,7 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, l_ocf;
+  SysUtils, Classes, l_ocf, g_terrain;
 
 type
   TPark = class
@@ -60,7 +60,7 @@ begin
     fInited := true;
     end
   else
-    ModuleManager.ModRenderer.RenderScene;
+    ModuleManager.ModRenderer.RenderScene(Self);
 end;
 
 destructor TPark.Free;

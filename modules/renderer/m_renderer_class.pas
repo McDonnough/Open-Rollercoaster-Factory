@@ -3,7 +3,7 @@ unit m_renderer_class;
 interface
 
 uses
-  Classes, SysUtils, m_module;
+  Classes, SysUtils, m_module, g_park;
 
 type
   TModuleRendererClass = class(TBasicModule)
@@ -11,7 +11,7 @@ type
       (**
         * Renders the whole scene
         *)
-      procedure RenderScene; virtual abstract;
+      procedure RenderScene(Park: TPark); virtual abstract;
     end;
 
 implementation

@@ -50,11 +50,15 @@ begin
 end;
 
 procedure TModuleGLMngDefault.SetUp3DMatrix;
+var
+  X, Y: Integer;
 begin
   if fMatrixMode = mm3D then
     exit;
+  ModuleManager.ModGLContext.GetResolution(X, Y);
   fMatrixMode := mm3D;
   glLoadIdentity;
+  gluPerspective(45, X / Y, 0.1, 10000);
 end;
 
 procedure TModuleGLMngDefault.SetUpIdentityMatrix;

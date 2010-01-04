@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, m_pathes_class;
 
 type
-  (** Path module for unix-like systems *)
+  (** Path module for microsoft windows systems *)
 
   TModulePathesWindows = class(TModulePathesClass)
     public

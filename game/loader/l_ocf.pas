@@ -234,7 +234,7 @@ begin
     FullPath := ModuleManager.ModPathes.DataPath + FileName
   else
     begin
-    ModuleManager.ModLog.AddWarning('File ' + FileName + ' not found', 'l_ocf.pas', 236);
+    ModuleManager.ModLog.AddWarning('File ' + FileName + ' not found', 'l_ocf.pas', 237);
     exit;
     end;
   with TFileStream.Create(FullPath, fmOpenRead) do
@@ -252,7 +252,7 @@ begin
         Read(tString[1], 3);
         if tString <> 'REF' then
           begin
-          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 254);
+          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 255);
           exit;
           end;
         Read(tWord, 2);
@@ -268,7 +268,7 @@ begin
         Read(tString[1], 3);
         if tString <> 'SEC' then
           begin
-          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 254);
+          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 271);
           exit;
           end;
         Read(tWord, 2);

@@ -43,6 +43,7 @@ begin
     end;
   ModuleManager.ModLoadScreen.Text := 'Preparing data';
   ModuleManager.ModLoadScreen.Progress := 100;
+  ChangeRenderState(rsGame);
 end;
 
 constructor TParkLoader.Create(Parent: TPark);

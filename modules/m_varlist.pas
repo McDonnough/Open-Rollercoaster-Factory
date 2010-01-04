@@ -12,51 +12,74 @@ uses
   m_gui_edit_default, m_ocfmng_default, m_renderer_opengl;
 
 type
+  // Type definitions (Modules)
+  TModuleConfig                 = TModuleConfigIni;
+  TModulePathes                 = {$IFDEF UNIX}TModulePathesUnix{$ELSE}TModulePathesWindows{$ENDIF};
+  TModuleLog                    = TModuleLogFile;
+  TModuleLanguage               = TModuleLanguageTextFile;
+  TModuleGLContext              = TModuleGLContextSDL;
+  TModuleInputHandler           = TModuleInputHandlerSDL;
+  TModuleGLMng                  = TModuleGLMngDefault;
+  TModuleTextureManager         = TModuleTextureManagerDefault;
+  TModuleShaderManager          = TModuleShaderManagerDefault;
+  TModuleFont                   = TModuleFontTexture;
+  TModuleGUI                    = TModuleGUIDefault;
+  TModuleGUIWindow              = TModuleGUIWindowDefault;
+  TModuleGUILabel               = TModuleGUILabelDefault;
+  TModuleGUIProgressBar         = TModuleGUIProgressBarDefault;
+  TModuleGUIButton              = TModuleGUIButtonDefault;
+  TModuleGUIIconifiedButton     = TModuleGUIIconifiedButtonDefault;
+  TModuleGUIEdit                = TModuleGUIEditDefault;
+  TModuleLoadScreen             = TModuleLoadScreenDefault;
+  TModuleMainMenu               = TModuleMainMenuScreenshots;
+  TModuleOCFManager             = TModuleOCFManagerDefault;
+  TModuleRenderer               = TModuleRendererOpenGL;
+
   TModuleManager = class
     protected
-      fModModuleConfig: TModuleConfigIni;                                            // Ini backend for module configuration
-      fModPathes: {$IFDEF UNIX}TModulePathesUnix{$ELSE}TModulePathesWindows{$ENDIF}; // Use operating system specific modules
-      fModLog: TModuleLogFile;                                                       // Log messages go into a simple file
-      fModLanguage: TModuleLanguageTextfile;                                         // Text file backend for language output
-      fModGLContext: TModuleGLContextSDL;                                            // SDL backend for GL context creation
-      fModGLMng: TModuleGLMngDefault;                                                // Default GL manager
-      fModInputHandler: TModuleInputHandlerSDL;                                      // SDL based event handling
-      fModTexMng: TModuleTextureManagerDefault;                                      // Default texture manager
-      fModShdMng: TModuleShaderManagerDefault;                                       // Default Shader Manager
-      fModFont: TModuleFontTexture;                                                  // Texture-based font backend
-      fModGUI: TModuleGUIDefault;                                                    // Default GUI manager
-      fModGUIWindow: TModuleGUIWindowDefault;                                        // Default GUI window
-      fModGUILabel: TModuleGUILabelDefault;                                          // Default GUI label
-      fModGUIProgressBar: TModuleGUIProgressBarDefault;                              // Default GUI progress bar
-      fModGUIButton: TModuleGUIButtonDefault;                                        // Default GUI button
-      fModGUIIconifiedButton: TModuleGUIIconifiedButtonDefault;                      // Default button showing an icon
-      fModGUIEdit: TModuleGUIEditDefault;                                            // Default input component
-      fModLoadScreen: TModuleLoadScreenDefault;                                      // Default loading screens
-      fModMainMenu: TModuleMainMenuScreenshots;                                      // Show screenshots in main menu
-      fModOCFManager: TModuleOCFManagerDefault;                                      // Default OCF file manager
-      fModRenderer: TModuleRendererOpenGL;                                           // OpenGL rendering backed
+      fModModuleConfig: TModuleConfig;
+      fModPathes: TModulePathes;
+      fModLog: TModuleLog;
+      fModLanguage: TModuleLanguage;
+      fModGLContext: TModuleGLContext;
+      fModGLMng: TModuleGLMng;
+      fModInputHandler: TModuleInputHandler;
+      fModTexMng: TModuleTextureManager;
+      fModShdMng: TModuleShaderManager;
+      fModFont: TModuleFont;
+      fModGUI: TModuleGUI;
+      fModGUIWindow: TModuleGUIWindow;
+      fModGUILabel: TModuleGUILabel;
+      fModGUIProgressBar: TModuleGUIProgressBar;
+      fModGUIButton: TModuleGUIButton;
+      fModGUIIconifiedButton: TModuleGUIIconifiedButton;
+      fModGUIEdit: TModuleGUIEdit;
+      fModLoadScreen: TModuleLoadScreen;
+      fModMainMenu: TModuleMainMenu;
+      fModOCFManager: TModuleOCFManager;
+      fModRenderer: TModuleRenderer;
     public
-      property ModModuleConfig: TModuleConfigIni read fModModuleConfig;
-      property ModPathes: {$IFDEF UNIX}TModulePathesUnix{$ELSE}TModulePathesWindows{$ENDIF} read fModPathes;
-      property ModLog: TModuleLogFile read fModLog;
-      property ModLanguage: TModuleLanguageTextFile read fModLanguage;
-      property ModGLContext: TModuleGLContextSDL read fModGLContext;
-      property ModGLMng: TModuleGLMngDefault read fModGLMng;
-      property ModInputHandler: TModuleInputHandlerSDL read fModInputHandler;
-      property ModTexMng: TModuleTextureManagerDefault read fModTexMng;
-      property ModShdMng: TModuleShaderManagerDefault read fModShdMng;
-      property ModFont: TModuleFontTexture read fModFont;
-      property ModGUI: TModuleGUIDefault read fModGUI;
-      property ModGUIWindow: TModuleGUIWindowDefault read fModGUIWindow;
-      property ModGUILabel: TModuleGUILabelDefault read fModGUILabel;
-      property ModGUIProgressBar: TModuleGUIProgressBarDefault read fModGUIProgressBar;
-      property ModGUIButton: TModuleGUIButtonDefault read fModGUIButton;
-      property ModGUIIconifiedButton: TModuleGUIIconifiedButtonDefault read fModGUIIconifiedButton;
-      property ModGUIEdit: TModuleGUIEditDefault read fModGUIEdit;
-      property ModLoadScreen: TModuleLoadScreenDefault read fModLoadScreen;
-      property ModMainMenu: TModuleMainMenuScreenshots read fModMainMenu;
-      property ModOCFManager: TModuleOCFManagerDefault read fModOCFManager;
-      property ModRenderer: TModuleRendererOpenGL read fModRenderer;
+      property ModModuleConfig: TModuleConfig read fModModuleConfig;
+      property ModPathes: TModulePathes read fModPathes;
+      property ModLog: TModuleLog read fModLog;
+      property ModLanguage: TModuleLanguage read fModLanguage;
+      property ModGLContext: TModuleGLContext read fModGLContext;
+      property ModGLMng: TModuleGLMng read fModGLMng;
+      property ModInputHandler: TModuleInputHandler read fModInputHandler;
+      property ModTexMng: TModuleTextureManager read fModTexMng;
+      property ModShdMng: TModuleShaderManager read fModShdMng;
+      property ModFont: TModuleFont read fModFont;
+      property ModGUI: TModuleGUI read fModGUI;
+      property ModGUIWindow: TModuleGUIWindow read fModGUIWindow;
+      property ModGUILabel: TModuleGUILabel read fModGUILabel;
+      property ModGUIProgressBar: TModuleGUIProgressBar read fModGUIProgressBar;
+      property ModGUIButton: TModuleGUIButton read fModGUIButton;
+      property ModGUIIconifiedButton: TModuleGUIIconifiedButton read fModGUIIconifiedButton;
+      property ModGUIEdit: TModuleGUIEdit read fModGUIEdit;
+      property ModLoadScreen: TModuleLoadScreen read fModLoadScreen;
+      property ModMainMenu: TModuleMainMenu read fModMainMenu;
+      property ModOCFManager: TModuleOCFManager read fModOCFManager;
+      property ModRenderer: TModuleRenderer read fModRenderer;
 
       /// Create all module instances
       procedure LoadModules;
@@ -72,70 +95,70 @@ implementation
 
 procedure TModuleManager.LoadModules;
 begin
-  fModPathes := {$IFDEF UNIX}TModulePathesUnix{$ELSE}TModulePathesWindows{$ENDIF}.Create;
+  fModPathes := TModulePathes.Create;
   fModPathes.InitPathes;
   fModPathes.CheckModConf;
 
-  fModModuleConfig := TModuleConfigIni.Create;
+  fModModuleConfig := TModuleConfig.Create;
   fModModuleConfig.CheckModConf;
 
-  fModLog := TModuleLogFile.Create;
+  fModLog := TModuleLog.Create;
   fModLog.CheckModConf;
 
-  fModLanguage := TModuleLanguageTextfile.Create;
+  fModLanguage := TModuleLanguage.Create;
   fModLanguage.CheckModConf;
 
-  fModGLContext := TModuleGLContextSDL.Create;
+  fModGLContext := TModuleGLContext.Create;
   fModGLContext.CheckModConf;
   fModGLContext.ChangeWindowTitle('Open RollerCoaster Factory');
   fModGLContext.InitGL;
 
-  fModGLMng := TModuleGLMngDefault.Create;
+  fModGLMng := TModuleGLMng.Create;
   fModGLMng.CheckModConf;
 
-  fModInputHandler := TModuleInputHandlerSDL.Create;
+  fModInputHandler := TModuleInputHandler.Create;
   fModInputHandler.CheckModConf;
 
-  fModTexMng := TModuleTextureManagerDefault.Create;
+  fModTexMng := TModuleTextureManager.Create;
   fModTexMng.CheckModConf;
 
-  fModShdMng := TModuleShaderManagerDefault.Create;
+  fModShdMng := TModuleShaderManager.Create;
   fModShdMng.CheckModConf;
 
-  fModFont := TModuleFontTexture.Create;
+  fModFont := TModuleFont.Create;
   fModFont.CheckModConf;
 
-  fModGUI := TModuleGUIDefault.Create;
+  fModGUI := TModuleGUI.Create;
   fModGUI.CheckModConf;
 
-  fModGUIWindow := TModuleGUIWindowDefault.Create;
+  fModGUIWindow := TModuleGUIWindow.Create;
   fModGUIWindow.CheckModConf;
 
-  fModGUILabel := TModuleGUILabelDefault.Create;
+  fModGUILabel := TModuleGUILabel.Create;
   fModGUILabel.CheckModConf;
 
-  fModGUIProgressBar := TModuleGUIProgressBarDefault.Create;
+  fModGUIProgressBar := TModuleGUIProgressBar.Create;
   fModGUIProgressBar.CheckModConf;
 
-  fModGUIButton := TModuleGUIButtonDefault.Create;
+  fModGUIButton := TModuleGUIButton.Create;
   fModGUIButton.CheckModConf;
 
-  fModGUIIconifiedButton := TModuleGUIIconifiedButtonDefault.Create;
+  fModGUIIconifiedButton := TModuleGUIIconifiedButton.Create;
   fModGUIIconifiedButton.CheckModConf;
 
-  fModGUIEdit := TModuleGUIEditDefault.Create;
+  fModGUIEdit := TModuleGUIEdit.Create;
   fModGUIEdit.CheckModConf;
 
-  fModLoadScreen := TModuleLoadScreenDefault.Create;
+  fModLoadScreen := TModuleLoadScreen.Create;
   fModLoadScreen.CheckModConf;
 
-  fModMainMenu := TModuleMainMenuScreenshots.Create;
+  fModMainMenu := TModuleMainMenu.Create;
   fModMainMenu.CheckModConf;
 
-  fModOCFManager := TModuleOCFManagerDefault.Create;
+  fModOCFManager := TModuleOCFManager.Create;
   fModOCFManager.CheckModConf;
 
-  fModRenderer := TModuleRendererOpenGL.Create;
+  fModRenderer := TModuleRenderer.Create;
   fModRenderer.CheckModConf;
 end;
 

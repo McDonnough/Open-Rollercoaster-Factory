@@ -56,13 +56,13 @@ operator / (A: TVector3D; B: Single): TVector3D;
 operator / (A: TVector4D; B: Single): TVector4D;
 
 
-function Length(A: TVector2D): Single;
-function Length(A: TVector3D): Single;
-function Length(A: TVector4D): Single;
+function VecLength(A: TVector2D): Single;
+function VecLength(A: TVector3D): Single;
+function VecLength(A: TVector4D): Single;
 
-function LengthNoRoot(A: TVector2D): Single;
-function LengthNoRoot(A: TVector3D): Single;
-function LengthNoRoot(A: TVector4D): Single;
+function VecLengthNoRoot(A: TVector2D): Single;
+function VecLengthNoRoot(A: TVector3D): Single;
+function VecLengthNoRoot(A: TVector4D): Single;
 
 function Normal(VectorA, VectorB: TVector3D): TVector3D;
 function DotProduct(VectorA, VectorB: TVector3D): Single;
@@ -279,19 +279,19 @@ begin
 end;
 
 
-function Length(A: TVector2D): Single;
+function VecLength(A: TVector2D): Single;
 begin
-  Result := SQRT(LengthNoRoot(A));
+  Result := SQRT(VecLengthNoRoot(A));
 end;
 
-function Length(A: TVector3D): Single;
+function VecLength(A: TVector3D): Single;
 begin
-  Result := SQRT(LengthNoRoot(A));
+  Result := SQRT(VecLengthNoRoot(A));
 end;
 
-function Length(A: TVector4D): Single;
+function VecLength(A: TVector4D): Single;
 begin
-  Result := SQRT(LengthNoRoot(A));
+  Result := SQRT(VecLengthNoRoot(A));
 end;
 
 
@@ -314,31 +314,31 @@ end;
 
 function Normalize(A: TVector2D): TVector2D;
 begin
-  Result := A / Length(A);
+  Result := A / VecLength(A);
 end;
 
 function Normalize(A: TVector3D): TVector3D;
 begin
-  Result := A / Length(A);
+  Result := A / VecLength(A);
 end;
 
 function Normalize(A: TVector4D): TVector4D;
 begin
-  Result := A / Length(A);
+  Result := A / VecLength(A);
 end;
 
 
-function LengthNoRoot(A: TVector2D): Single;
+function VecLengthNoRoot(A: TVector2D): Single;
 begin
   Result := A.X * A.X + A.Y * A.Y;
 end;
 
-function LengthNoRoot(A: TVector3D): Single;
+function VecLengthNoRoot(A: TVector3D): Single;
 begin
   Result := A.X * A.X + A.Y * A.Y + A.Z * A.Z;
 end;
 
-function LengthNoRoot(A: TVector4D): Single;
+function VecLengthNoRoot(A: TVector4D): Single;
 begin
   Result := A.X * A.X + A.Y * A.Y + A.Z * A.Z + A.W * A.W;
 end;

@@ -34,7 +34,7 @@ function StrPos(s: String; c: Char; Ofs: Integer = 1): Integer;
 
 (** Count the words in a string
   *@param String to process
-  *return The number of words
+  *@return The number of words
   *)
 function WordCount(s: String): Integer;
 

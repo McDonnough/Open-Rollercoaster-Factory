@@ -23,6 +23,7 @@ type
       procedure Append(S: TOCFDataStream);
       procedure Prepend(S: TOCFDataStream);
       procedure CopyFromByteArray(A: PByte; Len: Integer);
+      procedure AppendByteArray(A: PByte; Len: Integer);
       destructor Free;
       end;
 
@@ -148,6 +149,19 @@ begin
     end;
 end;
 
+procedure TOCFDataStream.AppendByteArray(A: PByte; Len: Integer);
+var
+  i, Start: Integer;
+begin
+  Start := DataLength;
+  DataLength := DataLength + Len;
+  for i := 0 to Len - 1 do
+    begin
+    fData[Start + i] := A^;
+    Inc(A);
+    end;
+end;
+
 destructor TOCFDataStream.Free;
 begin
   DataLength :=  0;
@@ -234,7 +248,7 @@ begin
     FullPath := ModuleManager.ModPathes.DataPath + FileName
   else
     begin
-    ModuleManager.ModLog.AddWarning('File ' + FileName + ' not found', 'l_ocf.pas', 237);
+    ModuleManager.ModLog.AddWarning('File ' + FileName + ' not found', 'l_ocf.pas', 251);
     exit;
     end;
   with TFileStream.Create(FullPath, fmOpenRead) do
@@ -242,7 +256,7 @@ begin
     setLength(tString, 4);
     Read(tString[1], 4);
     if tString <> 'ORCF' then
-      ModuleManager.ModLog.AddWarning('File ' + FileName + ' does not seem to be valid', 'l_ocf.pas', 244)
+      ModuleManager.ModLog.AddWarning('File ' + FileName + ' does not seem to be valid', 'l_ocf.pas', 259)
     else
       begin
       Read(tWord, 2);
@@ -252,7 +266,7 @@ begin
         Read(tString[1], 3);
         if tString <> 'REF' then
           begin
-          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 255);
+          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 269);
           exit;
           end;
         Read(tWord, 2);
@@ -268,7 +282,7 @@ begin
         Read(tString[1], 3);
         if tString <> 'SEC' then
           begin
-          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 271);
+          ModuleManager.ModLog.AddWarning('File ' + FileName + ' contains errors', 'l_ocf.pas', 285);
           exit;
           end;
         Read(tWord, 2);

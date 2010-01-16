@@ -31,8 +31,8 @@ type
     protected
       fData: TOCFDataStream;
     public
-      property Data: TOCFDataStream read fData;
       SectionType: String;
+      property Data: TOCFDataStream read fData;
       constructor Create;
       destructor Free;
     end;
@@ -44,9 +44,9 @@ type
       fSections: AOCFSection;
       fReferences: TStringList;
     public
+      FileName: String;
       property Sections: AOCFSection read fSections;
       property References: TStringList read fReferences write fReferences;
-      FileName: String;
       constructor Create;
       destructor Free;
       procedure SaveToFile;

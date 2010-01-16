@@ -38,7 +38,7 @@ begin
   glutInit(@argc, @argv);
   glutInitDisplayMode(GLUT_DOUBLE or GLUT_RGB or GLUT_DEPTH);
   glutInitWindowSize(800, 600);
-  glutCreateWindow('');
+  glutCreateWindow('ORCF');
   SetResolution(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')));
 end;
 

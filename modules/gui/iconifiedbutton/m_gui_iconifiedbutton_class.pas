@@ -11,9 +11,9 @@ type
       fIcon: String;
       procedure SetIcon(Icon: String);
     public
-      property Icon: String read fIcon write SetIcon;
       fHoverFactor, fClickFactor: GLFloat;
       Caption: String;
+      property Icon: String read fIcon write SetIcon;
       constructor Create(mParent: TGUIComponent);
       procedure Render;
     end;

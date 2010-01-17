@@ -131,8 +131,8 @@ begin
     end;
 
   ModuleManager.ModGUI.Render;
-  ModuleManager.ModGLContext.SwapBuffers;
   sleep(10);
+  ModuleManager.ModGLContext.SwapBuffers;
 
   if ModuleManager.ModInputHandler.QuitRequest then
     ModuleManager.ModGLContext.EndMainLoop;

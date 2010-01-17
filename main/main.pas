@@ -10,12 +10,24 @@ uses
 type
   TRenderState = (rsMainMenu, rsNewPark, rsLoadPark, rsGame, rsHelp, rsSettings);
 
+  TFPSDisplay = class
+    protected
+      fLabel: TLabel;
+      fWindow: TWindow;
+      fMS, fFPS: Single;
+      fTime: UInt64;
+      fMSHistory: Array[0..3] of Single;
+    public
+      property MS: Single read fMS;
+      property FPS: Single read fFPS;
+      procedure SetTime;
+      procedure Calculate;
+      constructor Create;
+    end;
+
 var
   RenderState: TRenderState;
-  FPS: Single = 100;
-  MS: Single = 10;
-  GUILabel: TLabel = nil;
-  GUIWindow: TWindow;
+  FPSDisplay: TFPSDisplay;
 
 procedure MainLoop; cdecl;
 procedure ChangeRenderState(New: TRenderState);
@@ -25,22 +37,50 @@ implementation
 uses
   m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math;
 
+procedure TFPSDisplay.SetTime;
+begin
+  fTime := ModuleManager.ModGUITimer.GetTime;
+end;
+
+procedure TFPSDisplay.Calculate;
+begin
+  fMS := 0.3 * (0.1 * (ModuleManager.ModGUITimer.GetTime - fTime))
+       + 0.2 * fMSHistory[0]
+       + 0.2 * fMSHistory[1]
+       + 0.2 * fMSHistory[2]
+       + 0.1 * fMSHistory[3];
+  fMSHistory[3] := fMSHistory[2];
+  fMSHistory[2] := fMSHistory[1];
+  fMSHistory[1] := fMSHistory[0];
+  fMSHistory[0] := fMS;
+  fFPS := 1000 / fMS;
+  fLabel.Caption := 'FPS: ' + IntToStr(Round(fFPS));
+end;
+
+constructor TFPSDisplay.Create;
+begin
+  fMSHistory[0] := 10;
+  fMSHistory[1] := 10;
+  fMSHistory[2] := 10;
+  fMSHistory[3] := 10;
+  fWindow := TWindow.Create(nil);
+  fWindow.Left := -32;
+  fWindow.Top := -32;
+  fWindow.Width := 200;
+  fWindow.Height := 72;
+  fLabel := TLabel.Create(fWindow);
+  fLabel.Top := 40;
+  fLabel.Left := 40;
+  fLabel.Width := 64;
+  fLabel.Height := 16;
+  fLabel.Size := 16;
+end;
+
+
 procedure ChangeRenderState(New: TRenderState);
 begin
-  if GUILabel = nil then
-    begin
-    GUIWindow := TWindow.Create(nil);
-    GUIWindow.Left := -32;
-    GUIWindow.Top := -32;
-    GUIWindow.Width := 200;
-    GUIWindow.Height := 72;
-    GUILabel := TLabel.Create(GUIWindow);
-    GUILabel.Top := 40;
-    GUILabel.Left := 40;
-    GUILabel.Width := 64;
-    GUILabel.Height := 16;
-    GUILabel.Size := 16;
-    end;
+  if FPSDisplay = nil then
+    FPSDisplay := TFPSDisplay.Create;
   RenderState := New;
   ModuleManager.ModLoadScreen.SetVisibility(false);
   if New = rsMainMenu then
@@ -66,9 +106,8 @@ var
   ResX, ResY: Integer;
   a: TTexture;
   ParkFileName: String;
-  Time: UInt64;
 begin
-  Time := ModuleManager.ModGUITimer.GetTime;
+  FPSDisplay.SetTime;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModInputHandler.UpdateData;
   ModuleManager.ModGLMng.SetUpScreen;
@@ -97,10 +136,8 @@ begin
 
   if ModuleManager.ModInputHandler.QuitRequest then
     ModuleManager.ModGLContext.EndMainLoop;
-  MS := ModuleManager.ModGUITimer.GetTimeDifference(Time) / 10;
-  FPS := 1000 / Max(MS, 10);
 
-  GUILabel.Caption := 'FPS: ' + IntToStr(Round(FPS));
+  FPSDisplay.Calculate;
 end;
 
 end.

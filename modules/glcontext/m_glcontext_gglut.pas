@@ -85,6 +85,8 @@ end;
 procedure TModuleGLContextGLUT.EndMainLoop;
 begin
   glutDestroyWindow(fWin);
+  glutDisplayFunc(nil);
+  glutIdleFunc(nil);
 end;
 
 procedure TModuleGLContextGLUT.InitGL;

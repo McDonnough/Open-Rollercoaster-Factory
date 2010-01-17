@@ -22,17 +22,17 @@ implementation
 uses
   unix;
 
-constructor TModulePathesUnix.Create;
+constructor TModulePathesMacOS.Create;
 begin
-  fModName := 'PathesUnix';
+  fModName := 'PathesMacOS';
   fModType := 'Pathes';
 end;
 
-procedure TModulePathesUnix.CheckModConf;
+procedure TModulePathesMacOS.CheckModConf;
 begin
 end;
 
-function TModulePathesUnix.InitPathes: Boolean;
+function TModulePathesMacOS.InitPathes: Boolean;
 begin
   fDelimiter := '/';
 
@@ -49,7 +49,7 @@ begin
   if (extractFilePath(paramstr(0)) = '/usr/bin/') or (extractFilePath(paramstr(0)) = '/usr/local/bin/') then
     fDataPath := extractFilePath(extractFileDir(paramStr(0))) + 'share/orcf/'
   else
-    fDataPath := extractFilePath(paramStr(0)) + '../Resources/data/';
+    fDataPath := extractFilePath(paramStr(0)) + '../Resources/';
 end;
 
 end.

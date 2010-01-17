@@ -9,7 +9,6 @@ uses
 {$IFDEF WINDOWS}{$R oent.rc}{$ENDIF}
 
 begin
-     {Just a test}
   Randomize;
   ModuleManager := TModuleManager.Create;
   ModuleManager.LoadModules;

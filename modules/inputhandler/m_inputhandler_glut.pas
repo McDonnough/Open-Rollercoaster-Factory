@@ -82,7 +82,8 @@ end;
 
 procedure MouseState(button, state, x, y: Integer); cdecl;
 begin
-  pMouseButtons[button + 1] := state = 1;
+  pMouseButtons[button + 1] := state = 0;
+  writeln(button, state);
 end;
 
 constructor TModuleInputHandlerGLUT.Create;

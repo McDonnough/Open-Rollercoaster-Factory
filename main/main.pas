@@ -32,14 +32,14 @@ begin
     GUIWindow := TWindow.Create(nil);
     GUIWindow.Left := -32;
     GUIWindow.Top := -32;
-    GUIWindow.Width := 164;
-    GUIWindow.Height := 68;
+    GUIWindow.Width := 200;
+    GUIWindow.Height := 72;
     GUILabel := TLabel.Create(GUIWindow);
     GUILabel.Top := 40;
     GUILabel.Left := 40;
     GUILabel.Width := 64;
-    GUILabel.Height := 12;
-    GUILabel.Size := 12;
+    GUILabel.Height := 16;
+    GUILabel.Size := 16;
     end;
   RenderState := New;
   ModuleManager.ModLoadScreen.SetVisibility(false);

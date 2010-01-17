@@ -74,6 +74,9 @@ begin
   ModuleManager.ModGUI.Render;
   ModuleManager.ModGLContext.SwapBuffers;
   sleep(10);
+
+  if ModuleManager.ModInputHandler.QuitRequest then
+    ModuleManager.ModGLContext.EndMainLoop;
 end;
 
 end.

@@ -9,6 +9,8 @@ uses
 
 type
   TModuleGLContextGLUT = class(TModuleGLContextClass)
+    protected
+      fWin: THandle;
     public
       constructor Create;
       destructor Free;
@@ -17,6 +19,7 @@ type
       procedure GetResolution(var ResX: Integer; var ResY: Integer);
       procedure SwapBuffers;
       procedure StartMainLoop;
+      procedure EndMainLoop;
       procedure InitGL;
       function SetResolution(ResX, ResY: Integer): Boolean;
       function IsFullscreen: Boolean;
@@ -38,7 +41,7 @@ begin
   glutInit(@argc, @argv);
   glutInitDisplayMode(GLUT_DOUBLE or GLUT_RGB or GLUT_DEPTH);
   glutInitWindowSize(800, 600);
-  glutCreateWindow('ORCF');
+  fWin := glutCreateWindow('ORCF');
   SetResolution(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')));
 end;
 
@@ -77,6 +80,11 @@ begin
   glutDisplayFunc(@MainLoop);
   glutIdleFunc(@MainLoop);
   glutMainLoop;
+end;
+
+procedure TModuleGLContextGLUT.EndMainLoop;
+begin
+  glutDestroyWindow(fWin);
 end;
 
 procedure TModuleGLContextGLUT.InitGL;

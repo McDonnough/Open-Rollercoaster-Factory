@@ -22,6 +22,7 @@ type
       procedure GetResolution(var ResX: Integer; var ResY: Integer);
       procedure SwapBuffers;
       procedure StartMainLoop;
+      procedure EndMainLoop;
       procedure InitGL;
       function SetResolution(ResX, ResY: Integer): Boolean;
       function IsFullscreen: Boolean;
@@ -120,6 +121,10 @@ procedure TModuleGLContextSDL.StartMainLoop;
 begin
   while not ModuleManager.ModInputHandler.QuitRequest do
     MainLoop;
+end;
+
+procedure TModuleGLContextSDL.EndMainLoop;
+begin
 end;
 
 procedure TModuleGLContextSDL.InitGL;

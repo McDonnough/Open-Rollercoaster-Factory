@@ -34,6 +34,11 @@ type
       procedure StartMainLoop; virtual abstract;
 
       (**
+        * Do something to stop main loop
+        *)
+      procedure EndMainLoop; virtual abstract;
+
+      (**
         * Init OpenGL
         *)
       procedure InitGL; virtual abstract;

@@ -23,7 +23,7 @@ implementation
 
 uses
   m_gui_window_class, m_gui_label_class, m_gui_progressbar_class, m_varlist, m_inputhandler_class, m_gui_button_class, m_gui_iconifiedbutton_class,
-  m_gui_edit_class;
+  m_gui_edit_class, m_gui_timer_class;
 
 procedure TModuleGUIDefault.Render;
   procedure RenderComponent(Component: TGUIComponent);
@@ -39,6 +39,7 @@ procedure TModuleGUIDefault.Render;
       CButton: TButton(Component).Render;
       CIconifiedButton: TIconifiedButton(Component).Render;
       CEdit: TEdit(Component).Render;
+      CTimer: TTimer(Component).Render;
       end;
     glPushMatrix;
     glTranslatef(Round(Component.Left), Round(Component.Top), 1);

@@ -13,7 +13,7 @@ type
   TCallbackProcedure = procedure(Sender: TGUIComponent) of object;
   TKeyCallbackProcedure = procedure(Sender: TGUIComponent; Key: Integer) of object;
 
-  TComponentType = (CNothing, CWindow, CLabel, CButton, CIconifiedButton, CTabBar, CPanel, CEdit, CProgressBar, CDropdownList);
+  TComponentType = (CNothing, CWindow, CLabel, CButton, CIconifiedButton, CTimer, CTabBar, CPanel, CEdit, CProgressBar, CDropdownList);
 
   AGUIComponent = array of TGUIComponent;
 
@@ -110,6 +110,8 @@ end;
 
 constructor TGUIComponent.Create(mParent: TGUIComponent; TypeName: TComponentType);
 begin
+  if (mParent = nil) and (TypeName <> CNothing) then
+    mParent := ModuleManager.ModGUI.BasicComponent;
   fTypeName := TypeName;
   fParent := mParent;
   if fParent <> nil then

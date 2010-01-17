@@ -36,8 +36,6 @@ end;
 
 constructor TWindow.Create(mParent: TGUIComponent);
 begin
-  if mParent = nil then
-    mParent := ModuleManager.ModGUI.BasicComponent;
   inherited Create(mParent, CWindow);
 end;
 

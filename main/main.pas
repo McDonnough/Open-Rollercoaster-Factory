@@ -5,13 +5,17 @@ unit main;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, m_gui_label_class, m_gui_window_class;
 
 type
   TRenderState = (rsMainMenu, rsNewPark, rsLoadPark, rsGame, rsHelp, rsSettings);
 
 var
   RenderState: TRenderState;
+  FPS: Single = 100;
+  MS: Single = 10;
+  GUILabel: TLabel = nil;
+  GUIWindow: TWindow;
 
 procedure MainLoop; cdecl;
 procedure ChangeRenderState(New: TRenderState);
@@ -19,10 +23,24 @@ procedure ChangeRenderState(New: TRenderState);
 implementation
 
 uses
-  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park;
+  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math;
 
 procedure ChangeRenderState(New: TRenderState);
 begin
+  if GUILabel = nil then
+    begin
+    GUIWindow := TWindow.Create(nil);
+    GUIWindow.Left := -32;
+    GUIWindow.Top := -32;
+    GUIWindow.Width := 164;
+    GUIWindow.Height := 68;
+    GUILabel := TLabel.Create(GUIWindow);
+    GUILabel.Top := 40;
+    GUILabel.Left := 40;
+    GUILabel.Width := 64;
+    GUILabel.Height := 12;
+    GUILabel.Size := 12;
+    end;
   RenderState := New;
   ModuleManager.ModLoadScreen.SetVisibility(false);
   if New = rsMainMenu then
@@ -48,7 +66,9 @@ var
   ResX, ResY: Integer;
   a: TTexture;
   ParkFileName: String;
+  Time: UInt64;
 begin
+  Time := ModuleManager.ModGUITimer.GetTime;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModInputHandler.UpdateData;
   ModuleManager.ModGLMng.SetUpScreen;
@@ -77,6 +97,10 @@ begin
 
   if ModuleManager.ModInputHandler.QuitRequest then
     ModuleManager.ModGLContext.EndMainLoop;
+  MS := ModuleManager.ModGUITimer.GetTimeDifference(Time) / 10;
+  FPS := 1000 / Max(MS, 10);
+
+  GUILabel.Caption := 'FPS: ' + IntToStr(Round(FPS));
 end;
 
 end.

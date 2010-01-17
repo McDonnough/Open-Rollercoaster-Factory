@@ -45,7 +45,7 @@ var
 begin
   X := Clamp(X, 0, fSizeX);
   Y := Clamp(Y, 0, fSizeY);
-  WZ := 256 * Round(Z);
+  WZ := Round(256 * Z);
   WX := Round(X);
   WY := Round(Y);
   fHeightMap[WX + (fSizeX + 1) * WY] := WZ;
@@ -59,34 +59,66 @@ procedure TTerrain.SetSizeX(X: Word);
     SetLength(fTextureOffsetMap, (X + 1) * (fSizeY + 1));
   end;
 var
-  CVE, i: Integer;
+  i, j: Integer;
+  CP: Integer;
 begin
   if X = fSizeX then
     exit
   else if X > fSizeX then
     begin
     AdjustMapSize;
-
+    CP := (fSizeX + 1) * (fSizeY + 1) - 1;
+    for i := fSizeY downto 0 do
+      begin
+      for j := X downto 0 do
+        if j <= fSizeX then
+          begin
+          fHeightMap[(X + 1) * i + j] := fHeightMap[CP];
+          fWaterMap[(X + 1) * i + j] := fWaterMap[CP];
+          fTextureOffsetMap[(X + 1) * i + j] := fTextureOffsetMap[CP];
+          Dec(CP);
+          end
+        else
+          begin
+          fHeightMap[(X + 1) * i + j] := 0;
+          fWaterMap[(X + 1) * i + j] := 0;
+          fTextureOffsetMap[(X + 1) * i + j] := Vector(0, 0);
+          end;
+      end;
     end
   else
     begin
-    CVE := 0;
-    for i := 0 to high(fHeightMap) do
-      if X <= FPart(i / (fSizeX + 1)) * (fSizeX + 1) then
-        begin
-        fHeightMap[CVE] := fHeightMap[i];
-        end;
+    CP := 0;
+    for i := 0 to fSizeY do
+      begin
+      for j := 0 to fSizeX do
+        if j <= X then
+          begin
+          fHeightMap[CP] := fHeightMap[(fSizeX + 1) * i + j];
+          fWaterMap[CP] := fWaterMap[(fSizeX + 1) * i + j];
+          fTextureOffsetMap[CP] := fTextureOffsetMap[(fSizeX + 1) * i + j];
+          Inc(CP);
+          end;
+      end;
     AdjustMapSize;
     end;
   fSizeX := X;
 end;
 
 procedure TTerrain.SetSizeY(Y: Word);
+var
+  i: integer;
 begin
+  SetLength(fHeightMap, (fSizeX + 1) * (Y + 1));
+  SetLength(fWaterMap, (fSizeX + 1) * (Y + 1));
+  SetLength(fTextureOffsetMap, (fSizeX + 1) * (Y + 1));
+  for i := (fSizeX + 1) * (fSizeY + 1) to (fSizeX + 1) * (Y + 1) - 1 do
+    begin
+    fHeightMap[i] := 0;
+    fWaterMap[i] := 0;
+    fTextureOffsetMap[i] := Vector(0, 0);
+    end;
   fSizeY := Y;
-  SetLength(fHeightMap, (fSizeX + 1) * (fSizeY + 1));
-  SetLength(fWaterMap, (fSizeX + 1) * (fSizeY + 1));
-  SetLength(fTextureOffsetMap, (fSizeX + 1) * (fSizeY + 1));
 end;
 
 

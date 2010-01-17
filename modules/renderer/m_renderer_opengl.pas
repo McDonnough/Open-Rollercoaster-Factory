@@ -19,21 +19,32 @@ uses
   m_varlist;
 
 procedure TModuleRendererOpenGL.RenderScene(Park: TPark);
+  procedure RenderTerrain;
+  var
+    i, j: Integer;
+  begin
+    glDisable(GL_TEXTURE_2D);
+    glBegin(GL_QUADS);
+    glColor4f(1, 1, 1, 1);
+    for i := 0 to Park.pTerrain.SizeY - 1 do
+      for j := 0 to Park.pTerrain.SizeX - 1 do
+        begin
+        glVertex3f(i, Park.pTerrain.HeightMap[i, j], j);
+        glVertex3f(i + 1, Park.pTerrain.HeightMap[i + 1, j], j);
+        glVertex3f(i + 1, Park.pTerrain.HeightMap[i + 1, j + 1], j - 1);
+        glVertex3f(i, Park.pTerrain.HeightMap[i, j + 1], j - 1);
+        end;
+    glEnd;
+    glEnable(GL_TEXTURE_2D);
+  end;
 begin
   // Just a test
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
-  glDisable(GL_TEXTURE_2D);
-  glBegin(GL_QUADS);
-    glColor4f(1, 1, 1, 1);
-    glVertex3f(0, 0, -5);
-    glVertex3f(1, 0, -5);
-    glVertex3f(1, 1, -5);
-    glVertex3f(0, 1, -5);
-  glEnd;
-  glEnable(GL_TEXTURE_2D);
+
+  RenderTerrain;
 end;
 
 procedure TModuleRendererOpenGL.CheckModConf;

@@ -11,7 +11,11 @@ type
       fFile: TOCFFile;
       fParkLoader: Pointer;
       fInited: Boolean;
+
     public
+      // Parts of the park
+      pTerrain: TTerrain;
+
       property OCFFile: TOCFFile read fFile;
 
       (**
@@ -45,11 +49,12 @@ begin
 
   fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName, false);
 
-  fFile.FileName := 'Death.ocf';
-  fFile.SaveToFile;
-
   ModuleManager.ModLoadScreen.Progress := 5;
   fParkLoader := TParkLoader.Create(Self);
+
+  pTerrain := TTerrain.Create;
+  pTerrain.SizeX := 10;
+  pTerrain.SizeY := 10;
 end;
 
 procedure TPark.Render;
@@ -66,6 +71,8 @@ end;
 destructor TPark.Free;
 begin
   TParkLoader(fParkLoader).Free;
+
+  pTerrain.Free;
 end;
 
 end.

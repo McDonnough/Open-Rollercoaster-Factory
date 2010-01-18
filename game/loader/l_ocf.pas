@@ -11,6 +11,7 @@ type
   TOCFDataStream = class
     protected
       fData: AByte;
+      fInternalDataPointer: PByte;
       function getPointer: PByte;
       function getLength: DWord;
       procedure updateLength(Len: DWord);
@@ -19,11 +20,13 @@ type
     public
       property Data: PByte read getPointer;
       property DataLength: DWord read getLength write updateLength;
+      procedure ReadBytes(Dest: PByte; Length: QWord);
       procedure Copy(S: TOCFDataStream);
       procedure Append(S: TOCFDataStream);
       procedure Prepend(S: TOCFDataStream);
       procedure CopyFromByteArray(A: PByte; Len: Integer);
       procedure AppendByteArray(A: PByte; Len: Integer);
+      constructor Create;
       destructor Free;
       end;
 
@@ -63,6 +66,19 @@ implementation
 
 uses
   m_varlist;
+
+procedure TOCFDataStream.ReadBytes(Dest: PByte; Length: QWord);
+begin
+  if fInternalDataPointer = nil then
+    fInternalDataPointer := Data;
+  while Length > 0 do
+    begin
+    Dest^ := fInternalDataPointer^;
+    Inc(Dest);
+    Inc(fInternalDataPointer);
+    Dec(Length);
+    end;
+end;
 
 function TOCFDataStream.getPointer: PByte;
 begin
@@ -160,6 +176,11 @@ begin
     fData[Start + i] := A^;
     Inc(A);
     end;
+end;
+
+constructor TOCFDataStream.Create;
+begin
+  fInternalDataPointer := nil;
 end;
 
 destructor TOCFDataStream.Free;

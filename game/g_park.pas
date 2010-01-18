@@ -51,10 +51,6 @@ begin
 
   ModuleManager.ModLoadScreen.Progress := 5;
   fParkLoader := TParkLoader.Create(Self);
-
-  pTerrain := TTerrain.Create;
-  pTerrain.SizeX := 10;
-  pTerrain.SizeY := 10;
 end;
 
 procedure TPark.Render;
@@ -70,9 +66,8 @@ end;
 
 destructor TPark.Free;
 begin
+  TParkLoader(fParkLoader).Unload;
   TParkLoader(fParkLoader).Free;
-
-  pTerrain.Free;
 end;
 
 end.

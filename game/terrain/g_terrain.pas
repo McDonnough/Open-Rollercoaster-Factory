@@ -23,6 +23,7 @@ type
       property SizeY: Word read fSizeY write SetSizeY;
       procedure WriteOCFSection(var Section: TOCFSection);
       procedure ReadFromOCFSection(Section: TOCFSection);
+      procedure LoadDefaults;
     end;
 
 implementation
@@ -129,6 +130,7 @@ begin
   Section.SectionType := 'Terrain';
   tmpw := Length(fTextureCollectionName);
   Section.Data.CopyFromByteArray(@tmpW, Sizeof(Word));
+  Section.Data.CopyFromByteArray(@fTextureCollectionName[0], tmpW);
   Section.Data.AppendByteArray(@fSizeX, 2 * Sizeof(Word));
   Section.Data.AppendByteArray(@fHeightMap[0], (fSizeX + 1) * (fSizeY + 1) * Sizeof(Word));
   Section.Data.AppendByteArray(@fWaterMap[0], (fSizeX + 1) * (fSizeY + 1) * Sizeof(Word));
@@ -136,7 +138,28 @@ begin
 end;
 
 procedure TTerrain.ReadFromOCFSection(Section: TOCFSection);
+var
+  tmpW: Word;
 begin
+  Section.Data.ReadBytes(@tmpW, SizeOf(Word));
+  SetLength(fTextureCollectionName, tmpW);
+  Section.Data.ReadBytes(@fTextureCollectionName[1], tmpW);
+  Section.Data.ReadBytes(@tmpW, SizeOf(Word));
+  SizeX := tmpW;
+  Section.Data.ReadBytes(@tmpW, SizeOf(Word));
+  SizeY := tmpW;
+  Section.Data.ReadBytes(@fHeightMap[0], (fSizeX + 1) * (fSizeY + 1) * SizeOf(Word));
+  Section.Data.ReadBytes(@fWaterMap[0], (fSizeX + 1) * (fSizeY + 1) * SizeOf(Word));
+  Section.Data.ReadBytes(@fTextureOffsetMap[0], (fSizeX + 1) * (fSizeY + 1) * SizeOf(TVector2D));
+  fLoaded := true;
+end;
+
+procedure TTerrain.LoadDefaults;
+begin
+  if fLoaded then exit;
+  SizeX := 128;
+  SizeY := 128;
+  fLoaded := true;
 end;
 
 end.

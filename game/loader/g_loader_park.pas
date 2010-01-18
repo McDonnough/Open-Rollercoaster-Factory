@@ -12,15 +12,47 @@ type
       procedure Execute; override;
     public
       procedure PostInit;
+      procedure Unload;
+      procedure InitOCFFile(F: TOCFFile);
+      procedure UpdateParkOCF;
       constructor Create(Parent: TPark);
     end;
 
 implementation
 
 uses
-  m_varlist, main;
+  m_varlist, main, g_terrain;
 
 procedure TParkLoader.PostInit;
+var
+  i: Integer;
+begin
+  // Create objects
+  fPark.pTerrain := TTerrain.Create;
+
+  // Init them
+  with fPark.OCFFile do
+    for i := 0 to high(Sections) do
+      begin
+      if Sections[i].SectionType = 'Terrain' then fPark.pTerrain.ReadFromOCFSection(Sections[i]);
+      end;
+
+  // Load defaults if not already initialized
+  fPark.pTerrain.LoadDefaults;
+end;
+
+procedure TParkLoader.Unload;
+begin
+  // Free the objects again
+  fPark.pTerrain.Free;
+end;
+
+procedure TParkLoader.InitOCFFile(F: TOCFFile);
+begin
+
+end;
+
+procedure TParkLoader.UpdateParkOCF;
 begin
 
 end;
@@ -44,6 +76,7 @@ begin
   ModuleManager.ModLoadScreen.Text := 'Preparing data';
   ModuleManager.ModLoadScreen.Progress := 100;
   ChangeRenderState(rsGame);
+  sleep(1000);
 end;
 
 constructor TParkLoader.Create(Parent: TPark);

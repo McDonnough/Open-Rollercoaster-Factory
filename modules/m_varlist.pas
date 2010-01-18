@@ -1,24 +1,29 @@
 unit m_varlist;
- 
+
 {$mode objfpc}{$H+}
- 
+
 interface
- 
+
 uses
   Classes, SysUtils, m_moduleconfig_ini, {$IFDEF UNIX}{$IFDEF DARWIN}m_pathes_macos{$ELSE}m_pathes_unix{$ENDIF}{$ELSE}m_pathes_windows{$ENDIF}, m_log_file,
-  m_glcontext_gglut, m_inputhandler_glut, m_texmng_default, m_shdmng_default, m_loadscreen_default, m_font_texture,
+  {$IFDEF DARWIN}m_glcontext_glfw, m_inputhandler_glfw, {$ELSE}m_glcontext_gglut, m_inputhandler_glut, {$ENDIF}m_texmng_default, m_shdmng_default, m_loadscreen_default, m_font_texture,
   m_glmng_default, m_gui_window_default, m_gui_timer_default, m_gui_label_default, m_gui_default, m_gui_progressbar_default,
   m_language_textfile, m_gui_button_default, m_mainmenu_screenshots, m_gui_iconifiedbutton_default,
   m_gui_edit_default, m_ocfmng_default, m_renderer_opengl, m_camera_default;
- 
+
 type
   // Type definitions (Modules)
   TModuleConfig                 = TModuleConfigIni;
   TModulePathes                 = {$IFDEF UNIX}{$IFDEF DARWIN}TModulePathesMacOS{$ELSE}TModulePathesUnix{$ENDIF}{$ELSE}TModulePathesWindows{$ENDIF};
   TModuleLog                    = TModuleLogFile;
   TModuleLanguage               = TModuleLanguageTextFile;
+  {$IFDEF DARWIN}
+  TModuleGLContext              = TModuleGLContextGLFW;
+  TModuleInputHandler           = TModuleInputHandlerGLFW;
+  {$ELSE}
   TModuleGLContext              = TModuleGLContextGLUT;
   TModuleInputHandler           = TModuleInputHandlerGLUT;
+  {$ENDIF}
   TModuleGLMng                  = TModuleGLMngDefault;
   TModuleTextureManager         = TModuleTextureManagerDefault;
   TModuleShaderManager          = TModuleShaderManagerDefault;
@@ -36,7 +41,7 @@ type
   TModuleOCFManager             = TModuleOCFManagerDefault;
   TModuleRenderer               = TModuleRendererOpenGL;
   TModuleCamera                 = TModuleCameraDefault;
- 
+
   TModuleManager = class
     protected
       fModModuleConfig: TModuleConfig;
@@ -86,94 +91,94 @@ type
       property ModOCFManager: TModuleOCFManager read fModOCFManager;
       property ModRenderer: TModuleRenderer read fModRenderer;
       property ModCamera: TModuleCamera read fModCamera;
- 
+
       /// Create all module instances
       procedure LoadModules;
- 
+
       /// Free them
       procedure UnloadModules;
     end;
- 
+
 var
   ModuleManager: TModuleManager;
- 
+
 implementation
- 
+
 procedure TModuleManager.LoadModules;
 begin
   fModPathes := TModulePathes.Create;
   fModPathes.InitPathes;
   fModPathes.CheckModConf;
- 
+
   fModModuleConfig := TModuleConfig.Create;
   fModModuleConfig.CheckModConf;
- 
+
   fModLog := TModuleLog.Create;
   fModLog.CheckModConf;
- 
+
   fModLanguage := TModuleLanguage.Create;
   fModLanguage.CheckModConf;
- 
+
   fModGLContext := TModuleGLContext.Create;
   fModGLContext.CheckModConf;
   fModGLContext.ChangeWindowTitle('Open RollerCoaster Factory');
   fModGLContext.InitGL;
- 
+
   fModGLMng := TModuleGLMng.Create;
   fModGLMng.CheckModConf;
- 
+
   fModInputHandler := TModuleInputHandler.Create;
   fModInputHandler.CheckModConf;
- 
+
   fModTexMng := TModuleTextureManager.Create;
   fModTexMng.CheckModConf;
- 
+
   fModShdMng := TModuleShaderManager.Create;
   fModShdMng.CheckModConf;
- 
+
   fModFont := TModuleFont.Create;
   fModFont.CheckModConf;
- 
+
   fModGUI := TModuleGUI.Create;
   fModGUI.CheckModConf;
- 
+
   fModGUIWindow := TModuleGUIWindow.Create;
   fModGUIWindow.CheckModConf;
- 
+
   fModGUILabel := TModuleGUILabel.Create;
   fModGUILabel.CheckModConf;
- 
+
   fModGUIProgressBar := TModuleGUIProgressBar.Create;
   fModGUIProgressBar.CheckModConf;
- 
+
   fModGUIButton := TModuleGUIButton.Create;
   fModGUIButton.CheckModConf;
- 
+
   fModGUIIconifiedButton := TModuleGUIIconifiedButton.Create;
   fModGUIIconifiedButton.CheckModConf;
- 
+
   fModGUIEdit := TModuleGUIEdit.Create;
   fModGUIEdit.CheckModConf;
- 
+
   fModGUITimer := TModuleGUITimer.Create;
   fModGUITimer.CheckModConf;
- 
+
   fModLoadScreen := TModuleLoadScreen.Create;
   fModLoadScreen.CheckModConf;
- 
+
   fModMainMenu := TModuleMainMenu.Create;
   fModMainMenu.CheckModConf;
- 
+
   fModOCFManager := TModuleOCFManager.Create;
   fModOCFManager.CheckModConf;
- 
+
   fModRenderer := TModuleRenderer.Create;
   fModRenderer.CheckModConf;
- 
+
   fModCamera := TModuleCamera.Create;
   fModCamera.CheckModConf;
 end;
- 
+
 procedure TModuleManager.UnloadModules;
 begin
   fModCamera.Free;
@@ -200,5 +205,6 @@ begin
   fModModuleConfig.Free;
   fModPathes.Free;
 end;
- 
+
 end.
+

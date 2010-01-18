@@ -130,7 +130,7 @@ begin
   Section.SectionType := 'Terrain';
   tmpw := Length(fTextureCollectionName);
   Section.Data.CopyFromByteArray(@tmpW, Sizeof(Word));
-  Section.Data.CopyFromByteArray(@fTextureCollectionName[0], tmpW);
+  Section.Data.AppendByteArray(@fTextureCollectionName[0], tmpW);
   Section.Data.AppendByteArray(@fSizeX, 2 * Sizeof(Word));
   Section.Data.AppendByteArray(@fHeightMap[0], (fSizeX + 1) * (fSizeY + 1) * Sizeof(Word));
   Section.Data.AppendByteArray(@fWaterMap[0], (fSizeX + 1) * (fSizeY + 1) * Sizeof(Word));

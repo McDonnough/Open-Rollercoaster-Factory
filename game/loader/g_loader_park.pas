@@ -21,29 +21,55 @@ type
 implementation
 
 uses
-  m_varlist, main, g_terrain;
+  m_varlist, main, g_terrain, g_camera;
 
 procedure TParkLoader.PostInit;
 var
   i: Integer;
+  CamerasCreated: Integer;
 begin
+  CamerasCreated := 0;
+
   // Create objects
   fPark.pTerrain := TTerrain.Create;
+  fPark.pMainCamera := TCamera.Create;
 
   // Init them
   with fPark.OCFFile do
     for i := 0 to high(Sections) do
       begin
-      if Sections[i].SectionType = 'Terrain' then fPark.pTerrain.ReadFromOCFSection(Sections[i]);
+      if Sections[i].SectionType = 'Terrain' then
+        fPark.pTerrain.ReadFromOCFSection(Sections[i])
+      else if Sections[i].SectionType = 'Camera' then
+        begin
+        if CamerasCreated = 0 then
+          fPark.pMainCamera.ReadFromOCFSection(Sections[i])
+        else
+          begin
+          setLength(fPark.pCameras, length(fPark.pCameras) + 1);
+          fPark.pCameras[high(fPark.pCameras)] := TCamera.Create;
+          fPark.pCameras[high(fPark.pCameras)].ReadFromOCFSection(Sections[i]);
+          end;
+        Inc(CamerasCreated);
+        end;
       end;
 
   // Load defaults if not already initialized
   fPark.pTerrain.LoadDefaults;
+  fPark.pMainCamera.LoadDefaults;
+
+  // Post-prepare some modules
+  ModuleManager.ModCamera.ActiveCamera := fPark.pMainCamera;
 end;
 
 procedure TParkLoader.Unload;
+var
+  i: Integer;
 begin
   // Free the objects again
+  for i := 0 to high(fPark.pCameras) do
+    fPark.pCameras[i].Free;
+  fPark.pMainCamera.Free;
   fPark.pTerrain.Free;
 end;
 

@@ -3,7 +3,7 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, l_ocf, g_terrain;
+  SysUtils, Classes, l_ocf, g_terrain, g_camera;
 
 type
   TPark = class
@@ -15,6 +15,8 @@ type
     public
       // Parts of the park
       pTerrain: TTerrain;
+      pMainCamera: TCamera;
+      pCameras: Array of TCamera;
 
       property OCFFile: TOCFFile read fFile;
 
@@ -61,7 +63,10 @@ begin
     fInited := true;
     end
   else
+    begin
+    ModuleManager.ModCamera.AdvanceActiveCamera;
     ModuleManager.ModRenderer.RenderScene(Self);
+    end;
 end;
 
 destructor TPark.Free;

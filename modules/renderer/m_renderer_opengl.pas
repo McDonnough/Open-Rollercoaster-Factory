@@ -19,6 +19,14 @@ uses
   m_varlist;
 
 procedure TModuleRendererOpenGL.RenderScene(Park: TPark);
+  procedure ApplyActiveCamera;
+  begin
+    glRotatef(ModuleManager.ModCamera.ActiveCamera.Rotation.Y, 0, 1, 0);
+    glRotatef(ModuleManager.ModCamera.ActiveCamera.Rotation.X, 1, 0, 0);
+    glRotatef(ModuleManager.ModCamera.ActiveCamera.Rotation.Z, 0, 0, 1);
+    glTranslatef(-ModuleManager.ModCamera.ActiveCamera.Position.X, -ModuleManager.ModCamera.ActiveCamera.Position.Y, -ModuleManager.ModCamera.ActiveCamera.Position.Z);
+  end;
+
   procedure RenderTerrain;
   var
     i, j: Integer;
@@ -29,10 +37,10 @@ procedure TModuleRendererOpenGL.RenderScene(Park: TPark);
     for i := 0 to Park.pTerrain.SizeY - 1 do
       for j := 0 to Park.pTerrain.SizeX - 1 do
         begin
-        glVertex3f(i, Park.pTerrain.HeightMap[i, j], j);
-        glVertex3f(i + 1, Park.pTerrain.HeightMap[i + 1, j], j);
-        glVertex3f(i + 1, Park.pTerrain.HeightMap[i + 1, j + 1], j - 1);
-        glVertex3f(i, Park.pTerrain.HeightMap[i, j + 1], j - 1);
+        glVertex3f(i, Park.pTerrain.HeightMap[i, j], -j);
+        glVertex3f(i + 1, Park.pTerrain.HeightMap[i + 1, j], -j);
+        glVertex3f(i + 1, Park.pTerrain.HeightMap[i + 1, j + 1], -j - 1);
+        glVertex3f(i, Park.pTerrain.HeightMap[i, j + 1], -j - 1);
         end;
     glEnd;
     glEnable(GL_TEXTURE_2D);
@@ -43,6 +51,7 @@ begin
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
+  ApplyActiveCamera;
 
   RenderTerrain;
 end;

@@ -42,7 +42,7 @@ begin
   glfwSwapInterval(0);
   if GetConfVal('Fullscreen') = '1' then
   begin
-    if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 8, 24, 8, GLFW_FULLSCREEN) <> 1 then
+    if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 0, 24, 0, GLFW_FULLSCREEN) <> 1 then
     begin
       glfwTerminate;
       Exit;
@@ -50,7 +50,7 @@ begin
   end
   else 
   begin
-    if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 8, 24, 8, GLFW_WINDOW) <> 1 then
+    if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 0, 24, 0, GLFW_WINDOW) <> 1 then
     begin
       glfwTerminate;
       Exit;
@@ -98,6 +98,7 @@ end;
 
 procedure TModuleGLContextGLFW.EndMainLoop;
 begin
+  glfwTerminate;
 end;
 
 procedure TModuleGLContextGLFW.InitGL;

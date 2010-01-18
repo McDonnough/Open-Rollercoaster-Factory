@@ -109,12 +109,12 @@ var
       if TGAFile.bpp = 3 then
         begin
         Texture.InputFormat := GL_BGR;
-        Texture.ExternalFormat := GL_COMPRESSED_RGB;
+        Texture.ExternalFormat := GL_RGB;
         end
       else
         begin
         Texture.InputFormat := GL_BGRA;
-        Texture.ExternalFormat := GL_COMPRESSED_RGBA;
+        Texture.ExternalFormat := GL_RGBA;
         end;
       Texture.Width := TGAFile.w;
       Texture.Height := TGAFile.h;

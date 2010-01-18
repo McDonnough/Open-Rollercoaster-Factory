@@ -28,7 +28,7 @@ type
 implementation
 
 uses
-  u_functions, m_varlist;
+  u_functions, m_varlist, main;
 
 procedure TModuleMainMenuScreenshots.SetTexture;
 begin
@@ -75,9 +75,9 @@ procedure TModuleMainMenuScreenshots.Render;
 var
   ResX, ResY: Integer;
 begin
-  fTime := fTime + 1;
+  fTime := fTime + Round(FPSDisplay.MS);
 
-  if fTime >= 1000 then
+  if fTime >= 10000 then
     begin
     fTime := 0;
     SetTexture;

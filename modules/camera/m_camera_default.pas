@@ -23,7 +23,7 @@ uses
 procedure TModuleCameraDefault.AdvanceActiveCamera;
 begin
   if ActiveCamera = nil then exit;
-  ActiveCamera.Position := ActiveCamera.Position + Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)), Sin(DegToRad(ActiveCamera.Rotation.X)), -Cos(DegToRad(ActiveCamera.Rotation.Y))) * fSpeed * FPSDisplay.MS;
+  ActiveCamera.Position := ActiveCamera.Position + Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)), -Sin(DegToRad(ActiveCamera.Rotation.X)), -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))) * fSpeed * FPSDisplay.MS;
   if ModuleManager.ModInputHandler.Key[K_UP] then
     begin
     if fSpeed < 0.01 then
@@ -44,7 +44,11 @@ begin
   if ModuleManager.ModInputHandler.Key[K_RIGHT] then
     ActiveCamera.Rotation.Y := ActiveCamera.Rotation.Y + FPSDisplay.MS * 0.05
   else if ModuleManager.ModInputHandler.Key[K_LEFT] then
-    ActiveCamera.Rotation.Y := ActiveCamera.Rotation.Y - FPSDisplay.MS * 0.05
+    ActiveCamera.Rotation.Y := ActiveCamera.Rotation.Y - FPSDisplay.MS * 0.05;
+  if ModuleManager.ModInputHandler.Key[K_W] then
+    ActiveCamera.Rotation.X := ActiveCamera.Rotation.X - FPSDisplay.MS * 0.05
+  else if ModuleManager.ModInputHandler.Key[K_S] then
+    ActiveCamera.Rotation.X := ActiveCamera.Rotation.X + FPSDisplay.MS * 0.05;
 end;
 
 procedure TModuleCameraDefault.CheckModConf;

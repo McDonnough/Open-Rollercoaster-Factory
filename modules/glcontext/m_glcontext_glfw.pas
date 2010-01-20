@@ -133,6 +133,7 @@ begin
       Exit;
     end;
     glfwEnable(GLFW_MOUSE_CURSOR);
+    SetConfVal('Fullscreen', '1');
   end
   else
   begin
@@ -141,6 +142,7 @@ begin
       glfwTerminate;
       Exit;
     end;
+    SetConfVal('Fullscreen', '0');
   end;      
 end;
 

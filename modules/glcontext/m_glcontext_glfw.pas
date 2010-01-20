@@ -55,7 +55,7 @@ begin
       glfwTerminate;
       Exit;
     end;
-  end;  
+  end;
 end;
 
 destructor TModuleGLContextGLFW.Free;
@@ -124,7 +124,24 @@ end;
 
 function TModuleGLContextGLFW.SetFullscreenState(Fullscreen: Boolean): Boolean;
 begin
-      
+  glfwCloseWindow;
+  if Fullscreen then
+  begin
+    if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 0, 24, 0, GLFW_FULLSCREEN) <> 1 then
+    begin
+      glfwTerminate;
+      Exit;
+    end;
+    glfwEnable(GLFW_MOUSE_CURSOR);
+  end
+  else
+  begin
+    if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 0, 24, 0, GLFW_WINDOW) <> 1 then
+    begin
+      glfwTerminate;
+      Exit;
+    end;
+  end;      
 end;
 
 end.

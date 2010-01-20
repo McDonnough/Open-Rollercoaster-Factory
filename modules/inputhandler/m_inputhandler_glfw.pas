@@ -35,9 +35,9 @@ begin
   glfwPollEvents;
   glfwGetMousePos(fMouseX, fMouseY);
   QuitRequest := false;
-  fMouseButtons[1] := glfwGetMouseButton(0) <> 0;
-  fMouseButtons[2] := glfwGetMouseButton(1) <> 0;
-  fMouseButtons[3] := glfwGetMouseButton(2) <> 0;
+  fMouseButtons[MOUSE_LEFT] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) <> 0;
+  fMouseButtons[MOUSE_MIDDLE] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_MIDDLE) <> 0;
+  fMouseButtons[MOUSE_RIGHT] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT) <> 0;
   //General characters
   fKeys[K_a] := glfwGetKey(ord('A')) <> 0;
   fKeys[K_b] := glfwGetKey(ord('B')) <> 0;
@@ -76,6 +76,14 @@ begin
   fKeys[K_7] := glfwGetKey(ord('7')) <> 0;
   fKeys[K_8] := glfwGetKey(ord('8')) <> 0;
   fKeys[K_9] := glfwGetKey(ord('9')) <> 0;
+  //Misc
+  fKeys[K_PERIOD] := glfwGetKey(ord('.')) <> 0;
+  fKeys[K_COMMA] := glfwGetKey(ord(',')) <> 0;
+  fKeys[K_MINUS] := glfwGetKey(ord('-')) <> 0;
+  fKeys[K_PLUS] := glfwGetKey(ord('+')) <> 0;
+  fKeys[K_HASH] := glfwGetKey(ord('#')) <> 0;
+  fKeys[K_CARET] := glfwGetKey(ord('^')) <> 0;
+  fKeys[K_LESS] := glfwGetKey(ord('<')) <> 0;
   //F-keys
   fKeys[K_F1] := glfwGetKey(GLFW_KEY_F1) <> 0;
   fKeys[K_F2] := glfwGetKey(GLFW_KEY_F2) <> 0;
@@ -93,17 +101,47 @@ begin
   fKeys[K_F14] := glfwGetKey(GLFW_KEY_F14) <> 0;
   fKeys[K_F15] := glfwGetKey(GLFW_KEY_F15) <> 0;
   //Misc keys
+  fKeys[K_SPACE] := glfwGetKey(GLFW_KEY_SPACE) <> 0;
+  fKeys[K_UP] := glfwGetKey(GLFW_KEY_UP) <> 0;
+  fKeys[K_DOWN] := glfwGetKey(GLFW_KEY_DOWN) <> 0;
+  fKeys[K_RIGHT] := glfwGetKey(GLFW_KEY_RIGHT) <> 0;
+  fKeys[K_LEFT] := glfwGetKey(GLFW_KEY_LEFT) <> 0;
   fKeys[K_RSHIFT] := glfwGetKey(GLFW_KEY_RSHIFT) <> 0;
   fKeys[K_LSHIFT] := glfwGetKey(GLFW_KEY_LSHIFT) <> 0;
   fKeys[K_SHIFT] := fKeys[K_LSHIFT] or fKeys[K_RSHIFT];
-  fKeys[K_RALT] := glfwGetKey(GLFW_KEY_RALT) <> 0;
-  fKeys[K_LALT] := glfwGetKey(GLFW_KEY_LALT) <> 0;
-  fKeys[K_ALT] := fKeys[K_RALT] or fKeys[K_LALT];
   fKeys[K_RCTRL] := glfwGetKey(GLFW_KEY_RCTRL) <> 0;
   fKeys[K_LCTRL] := glfwGetKey(GLFW_KEY_LCTRL) <> 0;
   fKeys[K_CTRL] := fKeys[K_RCTRL] or fKeys[K_LCTRL];
-  fKeys[K_BACKSPACE] := glfwGetKey(GLFW_KEY_BACKSPACE) <> 0;
+  fKeys[K_RALT] := glfwGetKey(GLFW_KEY_RALT) <> 0;
+  fKeys[K_LALT] := glfwGetKey(GLFW_KEY_LALT) <> 0;
+  fKeys[K_ALT] := fKeys[K_RALT] or fKeys[K_LALT];
   fKeys[K_TAB] := glfwGetKey(GLFW_KEY_TAB) <> 0;
+  fKeys[K_RETURN] := glfwGetKey(GLFW_KEY_ENTER) <> 0;
+  fKeys[K_BACKSPACE] := glfwGetKey(GLFW_KEY_BACKSPACE) <> 0;
+  fKeys[K_INSERT] := glfwGetKey(GLFW_KEY_INSERT) <> 0;
+  fKeys[K_DELETE] := glfwGetKey(GLFW_KEY_DEL) <> 0;
+  fKeys[K_PAGEUP] := glfwGetKey(GLFW_KEY_PAGEUP) <> 0;
+  fKeys[K_PAGEDOWN] := glfwGetKey(GLFW_KEY_PAGEDOWN) <> 0;
+  fKeys[K_HOME] := glfwGetKey(GLFW_KEY_HOME) <> 0;
+  fKeys[K_END] := glfwGetKey(GLFW_KEY_END) <> 0;
+  //Keypad
+  fKeys[K_KP0] := glfwGetKey(GLFW_KEY_KP_0) <> 0;
+  fKeys[K_KP1] := glfwGetKey(GLFW_KEY_KP_1) <> 0;
+  fKeys[K_KP2] := glfwGetKey(GLFW_KEY_KP_2) <> 0;
+  fKeys[K_KP3] := glfwGetKey(GLFW_KEY_KP_3) <> 0;
+  fKeys[K_KP4] := glfwGetKey(GLFW_KEY_KP_4) <> 0;
+  fKeys[K_KP5] := glfwGetKey(GLFW_KEY_KP_5) <> 0;
+  fKeys[K_KP6] := glfwGetKey(GLFW_KEY_KP_6) <> 0;
+  fKeys[K_KP7] := glfwGetKey(GLFW_KEY_KP_7) <> 0;
+  fKeys[K_KP8] := glfwGetKey(GLFW_KEY_KP_8) <> 0;
+  fKeys[K_KP9] := glfwGetKey(GLFW_KEY_KP_9) <> 0;
+  fKeys[K_KP_DIVIDE] := glfwGetKey(GLFW_KEY_KP_DIVIDE) <> 0;
+  fKeys[K_KP_MULTIPLY] := glfwGetKey(GLFW_KEY_KP_MULTIPLY) <> 0;
+  fKeys[K_KP_MINUS] := glfwGetKey(GLFW_KEY_KP_SUBTRACT) <> 0;
+  fKeys[K_KP_PLUS] := glfwGetKey(GLFW_KEY_KP_ADD) <> 0;
+  fKeys[K_KP_ENTER] := glfwGetKey(GLFW_KEY_KP_ENTER) <> 0;
+  fKeys[K_KP_EQUALS] := glfwGetKey(GLFW_KEY_KP_EQUAL) <> 0;
+  fKeys[K_KP_PERIOD] := glfwGetKey(GLFW_KEY_KP_DECIMAL) <> 0;
   if glfwGetWindowParam(GLFW_OPENED) = 0 then QuitRequest := true;
 end;
 

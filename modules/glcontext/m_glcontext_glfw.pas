@@ -76,7 +76,7 @@ end;
 
 procedure TModuleGLContextGLFW.ChangeWindowTitle(Text: String);
 begin
-  glfwSetWindowTitle(@Text);
+  glfwSetWindowTitle(PChar(Text));
 end;
 
 procedure TModuleGLContextGLFW.GetResolution(var ResX: Integer; var ResY: Integer);

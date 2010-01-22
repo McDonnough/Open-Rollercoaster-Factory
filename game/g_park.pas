@@ -65,7 +65,7 @@ begin
   else
     begin
     ModuleManager.ModCamera.AdvanceActiveCamera;
-    ModuleManager.ModRenderer.RenderScene(Self);
+    ModuleManager.ModRenderer.RenderScene;
     end;
 end;
 

@@ -11,7 +11,7 @@ type
       (**
         * Renders the whole scene
         *)
-      procedure RenderScene(Park: TPark); virtual abstract;
+      procedure RenderScene; virtual abstract;
     end;
 
 implementation

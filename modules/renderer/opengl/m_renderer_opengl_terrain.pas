@@ -86,8 +86,7 @@ begin
 
   j := 0;
   k := 0;
-  hm[0] := 2048;
-  for i := 1 to high(hm) do
+  for i := 0 to high(hm) do
     begin
     hm[i] := Round(256 * Park.pTerrain.HeightMap[j, k]);
     inc(j);

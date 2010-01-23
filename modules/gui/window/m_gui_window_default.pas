@@ -36,6 +36,7 @@ begin
 
   fBGTexture := TTexture.Create;
   fBGTexture.CreateNew(X, Y, GL_RGB);
+  fBGTexture.SetClamp(GL_CLAMP, GL_CLAMP);
 
   fTexture := TTexture.Create;
   fTexture.FromFile(GetConfVal('background'));

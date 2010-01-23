@@ -60,6 +60,7 @@ begin
   if not fInited then
     begin
     TParkLoader(fParkLoader).PostInit;
+    ModuleManager.ModRenderer.PostInit;
     fInited := true;
     end
   else
@@ -71,6 +72,7 @@ end;
 
 destructor TPark.Free;
 begin
+  ModuleManager.ModRenderer.Unload;
   TParkLoader(fParkLoader).Unload;
   TParkLoader(fParkLoader).Free;
 end;

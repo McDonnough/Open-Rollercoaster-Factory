@@ -12,16 +12,29 @@ type
       RCamera: TRCamera;
       RTerrain: TRTerrain;
     public
+      procedure PostInit;
+      procedure Unload;
       procedure RenderScene;
       procedure CheckModConf;
       constructor Create;
-      destructor Free;
     end;
 
 implementation
 
 uses
   m_varlist;
+
+procedure TModuleRendererOpenGL.PostInit;
+begin
+  RCamera := TRCamera.Create;
+  RTerrain := TRTerrain.Create;
+end;
+
+procedure TModuleRendererOpenGL.Unload;
+begin
+  RTerrain.Free;
+  RCamera.Free;
+end;
 
 procedure TModuleRendererOpenGL.RenderScene;
 begin
@@ -45,15 +58,6 @@ constructor TModuleRendererOpenGL.Create;
 begin
   fModName := 'RendererGL';
   fModType := 'Renderer';
-
-  RCamera := TRCamera.Create;
-  RTerrain := TRTerrain.Create;
-end;
-
-destructor TModuleRendererOpenGL.Free;
-begin
-  RTerrain.Free;
-  RCamera.Free;
 end;
 
 end.

@@ -3,7 +3,7 @@ unit g_terrain;
 interface
 
 uses
-  SysUtils, Classes, l_ocf, g_park_types, u_vectors;
+  SysUtils, Classes, l_ocf, g_park_types, u_vectors, m_texmng_class, dglOpenGL;
 
 type
   TTerrain = class(TParkChild)
@@ -13,6 +13,8 @@ type
       fHeightMap: Array of Word;
       fWaterMap: Array of Word;
       fTextureOffsetMap: Array of TVector2D;
+      fTextureCollection: TTexture;
+      procedure SetTextureCollectionName(S: String);
       function GetHeightMap(X, Y: Single): Single;
       procedure SetHeightMap(X, Y: Single; Z: Single);
       procedure SetSizeX(X: Word);
@@ -21,15 +23,28 @@ type
       property HeightMap[X: Single; Y: Single]: Single read GetHeightMap write SetHeightMap;
       property SizeX: Word read fSizeX write SetSizeX;
       property SizeY: Word read fSizeY write SetSizeY;
+      property TextureCollectionName: String read fTextureCollectionName write SetTextureCollectionName;
+      property Texture: TTexture read fTextureCollection;
       procedure WriteOCFSection(var Section: TOCFSection);
       procedure ReadFromOCFSection(Section: TOCFSection);
       procedure LoadDefaults;
+      constructor Create;
+      destructor Free;
     end;
 
 implementation
 
 uses
-  u_math;
+  u_math, m_varlist;
+
+procedure TTerrain.SetTextureCollectionName(S: String);
+begin
+  fTextureCollectionName := S;
+  if FileExists(ModuleManager.ModPathes.DataPath + S) then
+    fTextureCollection.FromFile(ModuleManager.ModPathes.DataPath + S, true)
+  else if FileExists(ModuleManager.ModPathes.PersonalDataPath + S) then
+    fTextureCollection.FromFile(ModuleManager.ModPathes.PersonalDataPath + S, true);
+end;
 
 function TTerrain.GetHeightMap(X, Y: Single): Single;
 begin
@@ -144,6 +159,7 @@ begin
   Section.Data.ReadBytes(@tmpW, SizeOf(Word));
   SetLength(fTextureCollectionName, tmpW);
   Section.Data.ReadBytes(@fTextureCollectionName[1], tmpW);
+  TextureCollectionName := fTextureCollectionName;
   Section.Data.ReadBytes(@tmpW, SizeOf(Word));
   SizeX := tmpW;
   Section.Data.ReadBytes(@tmpW, SizeOf(Word));
@@ -157,9 +173,21 @@ end;
 procedure TTerrain.LoadDefaults;
 begin
   if fLoaded then exit;
-  SizeX := 128;
-  SizeY := 128;
+  SizeX := 256;
+  SizeY := 256;
+  TextureCollectionName := 'terrain/defaultcollection.tga';
   fLoaded := true;
+end;
+
+constructor TTerrain.Create;
+begin
+  fTextureCollection := TTexture.Create;
+  fTextureCollection.SetClamp(GL_CLAMP, GL_CLAMP);
+end;
+
+destructor TTerrain.Free;
+begin
+  fTextureCollection.Free;
 end;
 
 end.

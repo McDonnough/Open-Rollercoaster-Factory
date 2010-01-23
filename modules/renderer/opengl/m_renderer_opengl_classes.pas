@@ -128,7 +128,7 @@ begin
   if fOfsMap.W = -1 then
     exit;
   Map(GL_WRITE_ONLY);
-  TVector2D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.Z)))^) := Vec;
+  TVector2D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.W)))^) := Vec;
 end;
 
 procedure TVBO.Bind;

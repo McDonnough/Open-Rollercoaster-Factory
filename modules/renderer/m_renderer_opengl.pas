@@ -47,6 +47,9 @@ begin
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
 
+  glDepthMask(true);
+  glEnable(GL_DEPTH_TEST);
+
   RTerrain.Render;
 end;
 

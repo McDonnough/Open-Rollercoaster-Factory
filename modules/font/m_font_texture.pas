@@ -85,7 +85,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('fonttex', ModuleManager.ModPathes.DataPath + 'fonttexture/default.tga');
+    SetConfVal('fonttex', 'fonttexture/default.tga');
     end;
 end;
 

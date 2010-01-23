@@ -119,7 +119,7 @@ var
       Texture.Width := TGAFile.w;
       Texture.Height := TGAFile.h;
     except
-      ModuleManager.ModLog.AddWarning('File ' + filename + ' not loadable', 'm_texmng_default.pas', 100);
+      ModuleManager.ModLog.AddWarning('File ' + filename + ' not loadable', 'm_texmng_default.pas', 122);
     end;
   end;
 
@@ -128,6 +128,11 @@ var
 begin
   X := -1;
   Y := -1;
+  if not FileExists(Filename) then
+    begin
+    ModuleManager.ModLog.AddWarning('Texture ' + filename + ' does not exist', 'm_texmng_default', 133);
+    exit;
+    end;
   if not FileExists(FileName) then
     exit(-2);
   if lowercase(extractFileExt(Filename)) = '.tga' then
@@ -211,19 +216,15 @@ end;
 procedure TModuleTextureManagerDefault.SetFilter(Texture: Integer; Min, Mag: GLEnum);
 begin
   BindTexture(Texture);
-  if Mag in [GL_LINEAR, GL_NEAREST] then
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, Mag);
-  if Min in [GL_LINEAR, GL_NEAREST] then
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, Min);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, Mag);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, Min);
 end;
 
 procedure TModuleTextureManagerDefault.SetClamp(Texture: Integer; X, Y: GLEnum);
 begin
   BindTexture(Texture);
-  if X in [GL_CLAMP, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER, GL_REPEAT, GL_MIRRORED_REPEAT] then
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, X);
-  if Y in [GL_CLAMP, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER, GL_REPEAT, GL_MIRRORED_REPEAT] then
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Y);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, X);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, Y);
 end;
 
 destructor TModuleTextureManagerDefault.Free;

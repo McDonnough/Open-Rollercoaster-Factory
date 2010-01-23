@@ -42,7 +42,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('background', ModuleManager.ModPathes.DataPath + 'guibuttondefault/bg.tga');
+    SetConfVal('background', 'guibuttondefault/bg.tga');
     end;
 end;
 

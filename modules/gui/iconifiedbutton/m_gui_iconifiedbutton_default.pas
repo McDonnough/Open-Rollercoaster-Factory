@@ -98,12 +98,7 @@ begin
     begin
     setLength(fIcons, length(fIcons) + 1);
     fIcons[high(fIcons)] := TTexture.Create;
-    if fileExists(ModuleManager.ModPathes.DataPath + 'guiicons/' + Icon) then
-      fIcons[high(fIcons)].FromFile(ModuleManager.ModPathes.DataPath + 'guiicons/' + Icon)
-    else if fileExists(ModuleManager.ModPathes.PersonalDataPath + 'guiicons/' + Icon) then
-      fIcons[high(fIcons)].FromFile(ModuleManager.ModPathes.PersonalDataPath + 'guiicons/' + Icon)
-    else
-      ModuleManager.ModLog.AddWarning('No icon for ' + Icon + ' found', 'm_gui_iconifiedbutton_default.pas', 103);
+    fIcons[high(fIcons)].FromFile('guiicons/' + Icon);
     setLength(fIconNames, length(fIcons));
     fIconNames[high(fIconNames)] := Icon;
     end;
@@ -134,7 +129,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('background', ModuleManager.ModPathes.DataPath + 'guiiconifiedbuttondefault/bg.tga');
+    SetConfVal('background', 'guiiconifiedbuttondefault/bg.tga');
     end;
 end;
 

@@ -78,7 +78,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('background', ModuleManager.ModPathes.DataPath + 'loadscreendefault/default.tga');
+    SetConfVal('background', 'loadscreendefault/default.tga');
     end;
 end;
 

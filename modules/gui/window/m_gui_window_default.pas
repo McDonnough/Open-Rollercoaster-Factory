@@ -41,7 +41,7 @@ begin
   fTexture := TTexture.Create;
   fTexture.FromFile(GetConfVal('background'));
 
-  fShader := TShader.Create(ModuleManager.ModPathes.DataPath + 'guiwindowdefault/blur.vs', ModuleManager.ModPathes.DataPath + 'guiwindowdefault/blur.fs');
+  fShader := TShader.Create('guiwindowdefault/blur.vs', 'guiwindowdefault/blur.fs');
   fShader.Bind;
   fShader.UniformI('BackTex', 1);
   fShader.UniformI('WinTex', 0);
@@ -60,7 +60,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('background', ModuleManager.ModPathes.DataPath + 'guiwindowdefault/bg.tga');
+    SetConfVal('background', 'guiwindowdefault/bg.tga');
     end;
 end;
 

@@ -37,7 +37,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('background', ModuleManager.ModPathes.DataPath + 'guiprogressbardefault/bg.tga');
+    SetConfVal('background', 'guiprogressbardefault/bg.tga');
     end;
 end;
 

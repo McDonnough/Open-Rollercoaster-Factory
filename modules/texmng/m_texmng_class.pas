@@ -92,7 +92,12 @@ uses
 
 procedure TTexture.FromFile(FileName: String; VertexTexture: Boolean = false);
 begin
-  fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(FileName), VertexTexture, fWidth, fHeight);
+  if FileExists(FileName) then
+    fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(FileName), VertexTexture, fWidth, fHeight)
+  else if FileExists(ModuleManager.ModPathes.PersonalDataPath + FileName) then
+    fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.PersonalDataPath + FileName), VertexTexture, fWidth, fHeight)
+  else
+    fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.DataPath + FileName), VertexTexture, fWidth, fHeight);
 end;
 
 procedure TTexture.CreateNew(X, Y: Integer; Format: GLEnum);

@@ -156,7 +156,12 @@ end;
 
 constructor TShader.Create(VSFile, FSFile: String);
 begin
-  fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile));
+  if FileExists(VSFile) then
+    fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile))
+  else if FileExists(ModuleManager.ModPathes.PersonalDataPath + VSFile) then
+    fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.PersonalDataPath + VSFile), ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.PersonalDataPath + FSFile))
+  else
+    fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.DataPath + VSFile), ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.DataPath + FSFile));
 end;
 
 destructor TShader.Free;

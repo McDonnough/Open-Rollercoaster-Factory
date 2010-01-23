@@ -27,7 +27,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('background', ModuleManager.ModPathes.DataPath + 'guieditdefault/bg.tga');
+    SetConfVal('background', 'guieditdefault/bg.tga');
     end;
 end;
 
@@ -50,6 +50,8 @@ procedure TModuleGUIEditDefault.Render(Edit: TEdit);
     glTexCoord2f(oX + 0.5 - 8 / fTexture.Width, oY + 0.5); glVertex3f(Edit.Left + Edit.Width - 8, Edit.Top + Edit.Height, 0);
   end;
 begin
+  glDisable(GL_DEPTH_TEST);
+  glClear(GL_DEPTH_BUFFER_BIT);
   if ModuleManager.ModGUI.HoverComponent = Edit then
     Edit.fHoverFactor := Edit.fHoverFactor + (1 - Edit.fHoverFactor) / 10
   else

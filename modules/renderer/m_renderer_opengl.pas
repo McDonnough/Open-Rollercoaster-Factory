@@ -50,6 +50,7 @@ begin
   glDepthMask(true);
   glEnable(GL_DEPTH_TEST);
 
+  glEnable(GL_BLEND);
   RTerrain.Render;
 end;
 

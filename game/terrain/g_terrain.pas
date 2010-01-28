@@ -16,11 +16,17 @@ type
       fTextureCollection: TTexture;
       procedure SetTextureCollectionName(S: String);
       function GetHeightMap(X, Y: Single): Single;
+      function GetTextureOffsetMap(X, Y: Single): TVector2D;
+      function GetWaterMap(X, Y: Single): Single;
       procedure SetHeightMap(X, Y: Single; Z: Single);
+      procedure SetTextureOffsetMap(X, Y: Single; Z: TVector2D);
+      procedure SetWaterMap(X, Y: Single; Z: Single);
       procedure SetSizeX(X: Word);
       procedure SetSizeY(Y: Word);
     public
       property HeightMap[X: Single; Y: Single]: Single read GetHeightMap write SetHeightMap;
+      property TextureOffsetMap[X: Single; Y: Single]: TVector2D read GetTextureOffsetMap write SetTextureOffsetMap;
+      property WaterMap[X: Single; Y: Single]: Single read GetWaterMap write SetWaterMap;
       property SizeX: Word read fSizeX write SetSizeX;
       property SizeY: Word read fSizeY write SetSizeY;
       property TextureCollectionName: String read fTextureCollectionName write SetTextureCollectionName;
@@ -55,6 +61,22 @@ begin
                 fPart(Y)) / 256;
 end;
 
+function TTerrain.GetTextureOffsetMap(X, Y: Single): TVector2D;
+begin
+  X := Clamp(Round(X), 0, fSizeX);
+  Y := Clamp(Round(Y), 0, fSizeY);
+  Result := fTextureOffsetMap[Round(X + (fSizeX + 1) * Y)];
+end;
+
+function TTerrain.GetWaterMap(X, Y: Single): Single;
+begin
+  X := Clamp(X, 0, fSizeX);
+  Y := Clamp(Y, 0, fSizeY);
+  Result := Mix(Mix(fWaterMap[Floor(X) + (fSizeX + 1) * Floor(Y)], fWaterMap[Ceil(X) + (fSizeX + 1) * Floor(Y)], FPart(X)),
+                Mix(fWaterMap[Floor(X) + (fSizeX + 1) * Ceil(Y)], fWaterMap[Ceil(X) + (fSizeX + 1) * Ceil(Y)], FPart(X)),
+                fPart(Y)) / 256;
+end;
+
 procedure TTerrain.SetHeightMap(X, Y: Single; Z: Single);
 var
   WX, WY, WZ: Word;
@@ -65,6 +87,17 @@ begin
   WX := Round(X);
   WY := Round(Y);
   fHeightMap[WX + (fSizeX + 1) * WY] := WZ;
+end;
+
+procedure TTerrain.SetTextureOffsetMap(X, Y: Single; Z: TVector2D);
+begin
+  X := Clamp(Round(X), 0, fSizeX);
+  Y := Clamp(Round(Y), 0, fSizeY);
+  fTextureOffsetMap[Round(X + (fSizeX + 1) * Y)] := Z;
+end;
+
+procedure TTerrain.SetWaterMap(X, Y: Single; Z: Single);
+begin
 end;
 
 procedure TTerrain.SetSizeX(X: Word);

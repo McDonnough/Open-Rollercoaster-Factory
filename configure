@@ -1,0 +1,81 @@
+#!/bin/bash
+
+Modules=("TModulePathes" "Unix" "TModuleConfig" "Ini" "TModuleLog" "File" "TModuleLanguage" "File" "TModuleGLContext" "GLUT" "TModuleInputHandler" "GLUT" "TModuleGLMng" "Default" "TModuleTextureManager" "Default" "TModuleShaderManager" "Default" "TModuleFont" "Texture" "TModuleGUI" "Default" "TModuleGUIWindow" "Default" "TModuleGUILabel" "Default" "TModuleGUIProgressBar" "Default" "TModuleGUIButton" "Default" "TModuleGUIIconifiedButton" "Default" "TModuleGUIEdit" "Default" "TModuleGUITimer" "Default" "TModuleLoadScreen" "Default" "TModuleMainMenu" "Screenshots" "TModuleOCFManager" "Default" "TModuleRenderer" "OpenGL" "TModuleCamera" "Default")
+
+LinkerOpt=""
+
+if [ `uname` == "Darwin" ]; then
+  echo "Setting special defaults for Mac OS X"
+  Modules=("TModulePathes" "MacOS" "TModuleConfig" "Ini" "TModuleLog" "File" "TModuleLanguage" "File" "TModuleGLContext" "GLFW" "TModuleInputHandler" "GLFW" "TModuleGLMng" "Default" "TModuleTextureManager" "Default" "TModuleShaderManager" "Default" "TModuleFont" "Texture" "TModuleGUI" "Default" "TModuleGUIWindow" "Default" "TModuleGUILabel" "Default" "TModuleGUIProgressBar" "Default" "TModuleGUIButton" "Default" "TModuleGUIIconifiedButton" "Default" "TModuleGUIEdit" "Default" "TModuleGUITimer" "Default" "TModuleLoadScreen" "Default" "TModuleMainMenu" "Screenshots" "TModuleOCFManager" "Default" "TModuleRenderer" "OpenGL" "TModuleCamera" "Default")
+  LinkerOpt="-Fl/usr/X11/lib/"
+fi
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    "--module")
+      num=1
+      canchange=1
+      for i in "${Modules[@]}"; do
+        if [  ${canchange} -eq 1 ]; then
+          if [ "$2" == "$i" ]; then
+            Modules[${num}]="$3"
+          fi
+          num=$((${num}+2))
+          canchange=0
+        else
+          canchange=1
+        fi
+      done
+      shift
+      shift
+      ;;
+    "--linkopt")
+      LinkerOpt="${LinkerOpt} $2"
+      shift
+      ;;
+  esac
+  shift
+done
+
+if [ `uname` == "Linux" ]; then
+  echo "Performing library checks (Linux only)"
+  if [ ${Modules[9]} == "SDL" ] || [ ${Modules[11]} == "SDL" ]; then
+    echo "Checking for SDL"
+    if [ -z "`ldconfig -p | grep libSDL-`" ]; then echo "libSDL-1.2.0 or later not found"; exit 1; fi
+  fi
+  if [ ${Modules[9]} == "GLFW" ] || [ ${Modules[11]} == "GLFW" ]; then
+    echo "Checking for GLFW"
+    if [ -z "`ldconfig -p | grep libglfw`" ]; then echo "libglfw not found"; exit 1; fi
+  fi
+  if [ ${Modules[9]} == "GLUT" ] || [ ${Modules[11]} == "GLUT" ]; then
+    echo "Checking for GLUT"
+    if [ -z "`ldconfig -p | grep libglut`" ]; then echo "libglut not found"; exit 1; fi
+  fi
+fi
+
+CurrType=""
+mode=0
+
+echo "Creating Module type definition"
+echo "type" > "./modules/typedef.inc"
+
+for i in "${Modules[@]}"; do
+  if [ ${mode} -eq 0 ]; then
+    CurrType="$i"
+    mode=1
+  else
+    echo "  ${CurrType} = ${CurrType}${i};" >> "./modules/typedef.inc"
+    mode=0
+  fi
+done
+
+incdirs=""
+
+for i in `find . -type d | grep -v .git`; do
+  incdirs="${incdirs} -Fu$i"
+done
+
+echo "all:" > Makefile
+echo "	fpc -MObjFPC -Sgi -O3 -gl -vewnhi -l $incdirs $LinkerOpt orcf.lpr" >> Makefile
+
+echo "Configure done"

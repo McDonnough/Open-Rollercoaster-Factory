@@ -296,7 +296,7 @@ begin
         References.Add(tString);
         end;
       Read(tWord, 2);
-      setLength(Sections, tWord);
+      setLength(fSections, tWord);
       for i := 0 to tWord - 1 do
         begin
         setLength(tString, 3);
@@ -309,11 +309,11 @@ begin
         Read(tWord, 2);
         setLength(tString, tWord);
         Read(tString, tWord);
-        Sections[i].SectionType := tString;
+        fSections[i].SectionType := tString;
         Read(tDWord, 4);
         setLength(tAByte, tDWord);
         Read(tAByte[0], tDWord);
-        Sections[i].Data.CopyFromByteArray(@tAByte[0], tDWord);
+        fSections[i].Data.CopyFromByteArray(@tAByte[0], tDWord);
         end;
       end;
     Free;

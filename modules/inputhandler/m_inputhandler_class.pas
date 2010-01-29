@@ -5,7 +5,7 @@ unit m_inputhandler_class;
 interface
 
 uses
-  Classes, SysUtils, m_module, SDL;
+  Classes, SysUtils, m_module;
 
 type
   TModuleInputHandlerClass = class(TBasicModule)

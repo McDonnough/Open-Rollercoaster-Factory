@@ -1,6 +1,6 @@
 #!/bin/bash
 
-Modules=("TModulePathes" "Unix" "TModuleConfig" "Ini" "TModuleLog" "File" "TModuleLanguage" "File" "TModuleGLContext" "GLUT" "TModuleInputHandler" "GLUT" "TModuleGLMng" "Default" "TModuleTextureManager" "Default" "TModuleShaderManager" "Default" "TModuleFont" "Texture" "TModuleGUI" "Default" "TModuleGUIWindow" "Default" "TModuleGUILabel" "Default" "TModuleGUIProgressBar" "Default" "TModuleGUIButton" "Default" "TModuleGUIIconifiedButton" "Default" "TModuleGUIEdit" "Default" "TModuleGUITimer" "Default" "TModuleLoadScreen" "Default" "TModuleMainMenu" "Screenshots" "TModuleOCFManager" "Default" "TModuleRenderer" "OpenGL" "TModuleCamera" "Default")
+Modules=("TModulePathes" "Unix" "TModuleConfig" "Ini" "TModuleLog" "File" "TModuleLanguage" "TextFile" "TModuleGLContext" "GLUT" "TModuleInputHandler" "GLUT" "TModuleGLMng" "Default" "TModuleTextureManager" "Default" "TModuleShaderManager" "Default" "TModuleFont" "Texture" "TModuleGUI" "Default" "TModuleGUIWindow" "Default" "TModuleGUILabel" "Default" "TModuleGUIProgressBar" "Default" "TModuleGUIButton" "Default" "TModuleGUIIconifiedButton" "Default" "TModuleGUIEdit" "Default" "TModuleGUITimer" "Default" "TModuleLoadScreen" "Default" "TModuleMainMenu" "Screenshots" "TModuleOCFManager" "Default" "TModuleRenderer" "OpenGL" "TModuleCamera" "Default")
 
 LinkerOpt=""
 
@@ -57,7 +57,34 @@ CurrType=""
 mode=0
 
 echo "Creating Module type definition"
-echo "type" > "./modules/typedef.inc"
+files="`find . -type f -name '*.pas'`"
+
+echo "uses" > "./modules/typedef.inc"
+
+for i in "${Modules[@]}"; do
+  if [ ${mode} -eq 0 ]; then
+    CurrType="$i"
+    mode=1
+  else
+    CurrType="${CurrType}${i}"
+    a=`grep ${CurrType} -i ${files} | tail -n1`
+    if [ -z "$a" ]; then
+      echo "Class ${CurrType} is not defined"
+      exit 1;
+    else
+      echo "  "`echo $a | sed "s/.pas:.*//g" | sed "s/.*m_/m_/g"`"," >> "./modules/typedef.inc"
+    fi
+    mode=0
+  fi
+done
+
+echo "  SysUtils," >> "./modules/typedef.inc";
+echo "  Classes;" >> "./modules/typedef.inc";
+
+CurrType=""
+mode=0
+
+echo "type" >> "./modules/typedef.inc"
 
 for i in "${Modules[@]}"; do
   if [ ${mode} -eq 0 ]; then

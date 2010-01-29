@@ -1,4 +1,4 @@
-unit m_glcontext_gglut;
+unit m_glcontext_glut;
 
 {$mode objfpc}{$H+}
 

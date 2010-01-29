@@ -6,7 +6,7 @@ LinkerOpt=""
 
 if [ `uname` == "Darwin" ]; then
   echo "Setting special defaults for Mac OS X"
-  Modules=("TModulePathes" "MacOS" "TModuleConfig" "Ini" "TModuleLog" "File" "TModuleLanguage" "File" "TModuleGLContext" "GLFW" "TModuleInputHandler" "GLFW" "TModuleGLMng" "Default" "TModuleTextureManager" "Default" "TModuleShaderManager" "Default" "TModuleFont" "Texture" "TModuleGUI" "Default" "TModuleGUIWindow" "Default" "TModuleGUILabel" "Default" "TModuleGUIProgressBar" "Default" "TModuleGUIButton" "Default" "TModuleGUIIconifiedButton" "Default" "TModuleGUIEdit" "Default" "TModuleGUITimer" "Default" "TModuleLoadScreen" "Default" "TModuleMainMenu" "Screenshots" "TModuleOCFManager" "Default" "TModuleRenderer" "OpenGL" "TModuleCamera" "Default")
+  Modules=("TModulePathes" "MacOS" "TModuleConfig" "Ini" "TModuleLog" "File" "TModuleLanguage" "TextFile" "TModuleGLContext" "GLFW" "TModuleInputHandler" "GLFW" "TModuleGLMng" "Default" "TModuleTextureManager" "Default" "TModuleShaderManager" "Default" "TModuleFont" "Texture" "TModuleGUI" "Default" "TModuleGUIWindow" "Default" "TModuleGUILabel" "Default" "TModuleGUIProgressBar" "Default" "TModuleGUIButton" "Default" "TModuleGUIIconifiedButton" "Default" "TModuleGUIEdit" "Default" "TModuleGUITimer" "Default" "TModuleLoadScreen" "Default" "TModuleMainMenu" "Screenshots" "TModuleOCFManager" "Default" "TModuleRenderer" "OpenGL" "TModuleCamera" "Default")
   LinkerOpt="-Fl/usr/X11/lib/"
 fi
 

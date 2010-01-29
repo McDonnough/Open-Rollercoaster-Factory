@@ -6,6 +6,13 @@ uses
   SysUtils, Classes, DGLOpenGL, u_vectors, u_math;
 
 type
+  TGLLight = class
+    public
+      Color, Position: TVector4D;
+      MaxDistance: Single;
+      procedure Bind(GLLight: GLEnum);
+    end;
+
   TVBO = class
     protected
       fVBO: GLUInt;
@@ -45,6 +52,15 @@ implementation
 
 uses
   m_varlist;
+
+procedure TGLLight.Bind(GLLight: GLEnum);
+begin
+  glLightfv(GL_LIGHT0, GL_DIFFUSE,  @Color);
+  glLightfv(GL_LIGHT0, GL_POSITION, @Position);
+  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1 / MaxDistance / MaxDistance);
+end;
+
+
 
 procedure TVBO.Map(Mode: GLEnum);
 begin

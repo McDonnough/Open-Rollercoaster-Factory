@@ -4,7 +4,7 @@ interface
 
 uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
-  m_renderer_opengl_camera, m_renderer_opengl_terrain;
+  m_renderer_opengl_camera, m_renderer_opengl_terrain, math;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
@@ -37,21 +37,37 @@ begin
 end;
 
 procedure TModuleRendererOpenGL.RenderScene;
+  procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
+  begin
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity;
+    glRotatef(RadToDeg(arctan(EyeMode / EyeFocus)), 0, 1, 0);
+    glTranslatef(EyeMode, 0, 0);
+    RCamera.ApplyRotation(Vector(1, 1, 1));
+    RCamera.ApplyTransformation(Vector(1, 1, 1));
+
+    RTerrain.Render;
+  end;
+
+var
+  DistPixel: TVector4D;
+  ResX, ResY: Integer;
 begin
   // Just a test
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
-
-  RCamera.ApplyRotation(Vector(1, 1, 1));
-  RCamera.ApplyTransformation(Vector(1, 1, 1));
 
   glDepthMask(true);
   glEnable(GL_DEPTH_TEST);
 
   glEnable(GL_BLEND);
-  RTerrain.Render;
+
+  Render();
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @DistPixel);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  Render();
 end;
 
 procedure TModuleRendererOpenGL.CheckModConf;

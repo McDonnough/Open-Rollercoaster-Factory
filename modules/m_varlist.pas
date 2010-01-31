@@ -3,8 +3,11 @@ unit m_varlist;
 {$mode objfpc}{$H+}
 
 interface
-
+    {$IFDEF WINDOWS}
+    {$I typedef_windows.inc}
+    {$ELSE}
 	{$I typedef.inc}
+	{$ENDIF}
 
   TModuleManager = class
     protected

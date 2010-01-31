@@ -6,7 +6,7 @@ uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
   SysUtils, Classes, m_varlist, main;
 
-{$IFDEF WINDOWS}{$R orcfa.rc}{$ENDIF}
+{$IFDEF WINDOWS}{$R orcf.rc}{$ENDIF}
 
 begin
   Randomize;

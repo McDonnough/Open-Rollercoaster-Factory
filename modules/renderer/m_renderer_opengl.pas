@@ -61,7 +61,7 @@ begin
   glDepthMask(true);
   glEnable(GL_DEPTH_TEST);
 
-  glDisable(GL_BLEND);
+  glEnable(GL_BLEND);
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   Render();

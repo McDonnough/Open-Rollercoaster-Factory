@@ -47,14 +47,9 @@ uses
   u_math, m_varlist;
 
 procedure TTerrain.SetTextureCollectionName(S: String);
-var
-  i, j: Integer;
 begin
   fTextureCollectionName := S;
   fTextureCollection.FromFile(S, true);
-  for i := 0 to 16 do
-    for j := 0 to 16 do
-      fTextureCollection.Pixels[i, j] := $FFFFFFFF;
 end;
 
 function TTerrain.GetHeightMap(X, Y: Single): Single;

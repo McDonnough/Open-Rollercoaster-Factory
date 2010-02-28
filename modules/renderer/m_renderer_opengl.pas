@@ -63,8 +63,8 @@ begin
 
   glEnable(GL_BLEND);
 
-  Render();
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  Render();
   glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @DistPixel);
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   Render();

@@ -12,6 +12,7 @@ type
       fShader: TShader;
     public
       procedure Render;
+      procedure PreRenderMap;
       constructor Create;
       destructor Free;
     end;
@@ -34,17 +35,14 @@ begin
   fShader.Unbind;
 end;
 
-constructor TRTerrain.Create;
+procedure TRTerrain.PreRenderMap;
 var
   i, j, k: Integer;
 begin
-  fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
-  fShader.UniformI('TerrainTexture', 0);
-
   fVBO := TVBO.Create(Round(Park.pTerrain.SizeX / Park.pTerrain.Multiplicator) * Round(Park.pTerrain.SizeY / Park.pTerrain.Multiplicator) * 4, GL_T2F_C4F_N3F_V3F, GL_QUADS);
+
   j := 0;
   k := 0;
-  Park.pTerrain.HeightMap[10, 10] := 10;
   for i := 0 to Round(Park.pTerrain.SizeX / Park.pTerrain.Multiplicator) * Round(Park.pTerrain.SizeY / Park.pTerrain.Multiplicator) - 1 do
     begin
     fVBO.TexCoords[4 * i + 3] := Vector(Park.pTerrain.Multiplicator * j / 16, Park.pTerrain.Multiplicator * k / 32);
@@ -74,6 +72,14 @@ begin
       inc(k);
       end;
     end;
+end;
+
+constructor TRTerrain.Create;
+begin
+  fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
+  fShader.UniformI('TerrainTexture', 0);
+
+  PreRenderMap;
 end;
 
 destructor TRTerrain.Free;

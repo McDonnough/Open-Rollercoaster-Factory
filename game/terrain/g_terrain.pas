@@ -49,10 +49,7 @@ uses
 procedure TTerrain.SetTextureCollectionName(S: String);
 begin
   fTextureCollectionName := S;
-  if FileExists(ModuleManager.ModPathes.DataPath + S) then
-    fTextureCollection.FromFile(ModuleManager.ModPathes.DataPath + S, true)
-  else if FileExists(ModuleManager.ModPathes.PersonalDataPath + S) then
-    fTextureCollection.FromFile(ModuleManager.ModPathes.PersonalDataPath + S, true);
+  fTextureCollection.FromFile(S, true);
 end;
 
 function TTerrain.GetHeightMap(X, Y: Single): Single;
@@ -193,7 +190,7 @@ begin
   Section.SectionType := 'Terrain';
   tmpw := Length(fTextureCollectionName);
   Section.Data.CopyFromByteArray(@tmpW, Sizeof(Word));
-  Section.Data.AppendByteArray(@fTextureCollectionName[0], tmpW);
+  Section.Data.AppendByteArray(@fTextureCollectionName[1], tmpW);
   Section.Data.AppendByteArray(@Multiplicator, Sizeof(Single));
   tmpW := SizeX;
   Section.Data.AppendByteArray(@tmpW, Sizeof(Word));

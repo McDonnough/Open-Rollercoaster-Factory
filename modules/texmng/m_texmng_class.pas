@@ -62,6 +62,22 @@ type
       procedure SetClamp(Texture: Integer; X, Y: GLEnum); virtual abstract;
 
       (**
+        * Get a pixel
+        *@param X position
+        *@param Y position
+        *@return pixel color
+        *)
+      function ReadPixel(Texture: Integer; X, Y: Integer): DWord; virtual abstract;
+
+      (**
+        * Set a pixel and update texture
+        *@param X position
+        *@param Y position
+        *@param Color
+        *)
+      procedure SetPixel(Texture: Integer; X, Y: Integer; Color: DWord); virtual abstract;
+
+      (**
         * Set texure unit
         *@param tex unit number [0..7]
         *)
@@ -72,9 +88,12 @@ type
     protected
       fID: Integer;
       fWidth, fHeight: Integer;
+      procedure setPixel(X, Y: Integer; Color: DWord);
+      function getPixel(X, Y: Integer): DWord;
     public
       property Width: Integer read fWidth;
       property Height: Integer read fHeight;
+      property Pixels[X: Integer; Y: Integer]: DWord read getPixel write setPixel;
       procedure FromFile(FileName: String; VertexTexture: Boolean = false);
       procedure CreateNew(X, Y: Integer; Format: GLEnum);
       procedure Fill(Data: Pointer; Format: GLEnum);
@@ -88,7 +107,21 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_math;
+
+procedure TTexture.setPixel(X, Y: Integer; Color: DWord);
+begin
+  X := Round(Clamp(X, 0, Width - 1));
+  Y := Round(Clamp(Y, 0, Height - 1));
+  ModuleManager.ModTexMng.SetPixel(fID, X, Y, Color);
+end;
+
+function TTexture.getPixel(X, Y: Integer): DWord;
+begin
+  X := Round(Clamp(X, 0, Width - 1));
+  Y := Round(Clamp(Y, 0, Height - 1));
+  Result := ModuleManager.ModTexMng.ReadPixel(fID, X, Y);
+end;
 
 procedure TTexture.FromFile(FileName: String; VertexTexture: Boolean = false);
 begin

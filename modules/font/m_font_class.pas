@@ -9,7 +9,10 @@ uses
 
 type
   TModuleFontClass = class(TBasicModule)
+    protected
+      fLetterSpacing: integer;
     public
+      property LetterSpacing: Integer read fLetterSpacing write fLetterSpacing;
       (**
         * Write out some text
         *@param the text

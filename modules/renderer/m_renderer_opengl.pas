@@ -50,9 +50,11 @@ procedure TModuleRendererOpenGL.RenderScene;
   end;
 
 var
-  DistPixel: TVector4D;
+  DistPixel: DWord;
+  Distance: Single;
   ResX, ResY: Integer;
 begin
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   // Just a test
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
@@ -60,14 +62,20 @@ begin
 
   glDepthMask(true);
   glEnable(GL_DEPTH_TEST);
+  glDepthMask(true);
 
   glEnable(GL_BLEND);
 
-  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   Render();
-  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @DistPixel);
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-  Render();
+  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
+  Distance := (DistPixel / High(DWord)) ** 2 * 10000;
+  glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
+  writeln(FloatToStr(Distance));
+  glColorMask(true, false, false, true);
+  Render(-0.05, Distance);
+  glColorMask(false, true, true, true);
+  Render(0.05, Distance);
+  glColorMask(true, true, true, true);
 end;
 
 procedure TModuleRendererOpenGL.CheckModConf;

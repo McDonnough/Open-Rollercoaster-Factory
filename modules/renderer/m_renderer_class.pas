@@ -10,10 +10,10 @@ type
 
   TModuleRendererClass = class(TBasicModule)
     protected
-      PostRenderEffects: Array of TRenderCallback;
+      RenderEffects: Array of TRenderCallback;
     public
-      procedure RegisterPostRenderEffect(Effect: TRenderCallback);
-      procedure ClearPostRenderEffects;
+      procedure RegisterRenderEffect(Effect: TRenderCallback);
+      procedure ClearRenderEffects;
 
       (**
         * Renders the whole scene
@@ -23,15 +23,15 @@ type
 
 implementation
 
-procedure TModuleRendererClass.RegisterPostRenderEffect(Effect: TRenderCallback);
+procedure TModuleRendererClass.RegisterRenderEffect(Effect: TRenderCallback);
 begin
-  SetLength(PostRenderEffects, length(PostRenderEffects) + 1);
-  PostRenderEffects[high(PostRenderEffects)] := Effect;
+  SetLength(RenderEffects, length(RenderEffects) + 1);
+  RenderEffects[high(RenderEffects)] := Effect;
 end;
 
-procedure TModuleRendererClass.ClearPostRenderEffects;
+procedure TModuleRendererClass.ClearRenderEffects;
 begin
-  SetLength(PostRenderEffects, 0);
+  SetLength(RenderEffects, 0);
 end;
 
 end.

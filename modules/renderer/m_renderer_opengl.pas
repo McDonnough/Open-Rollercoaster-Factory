@@ -4,19 +4,24 @@ interface
 
 uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
-  m_renderer_opengl_camera, m_renderer_opengl_terrain, math;
+  m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
+  m_shdmng_class, m_renderer_opengl_plugins, u_functions;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
     protected
       RCamera: TRCamera;
       RTerrain: TRTerrain;
+
+      RenderEffectManager: TRenderEffectManager;
     public
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
       procedure CheckModConf;
+      procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
       constructor Create;
+      destructor Free;
     end;
 
 implementation
@@ -36,23 +41,21 @@ begin
   RCamera.Free;
 end;
 
+procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
+begin
+  glClear(GL_DEPTH_BUFFER_BIT);
+  glLoadIdentity;
+  glRotatef(RadToDeg(arctan(EyeMode / EyeFocus)), 0, 1, 0);
+  glTranslatef(EyeMode, 0, 0);
+  RCamera.ApplyRotation(Vector(1, 1, 1));
+  RCamera.ApplyTransformation(Vector(1, 1, 1));
+
+  RTerrain.Render;
+end;
+
 procedure TModuleRendererOpenGL.RenderScene;
-  procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
-  begin
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity;
-    glRotatef(RadToDeg(arctan(EyeMode / EyeFocus)), 0, 1, 0);
-    glTranslatef(EyeMode, 0, 0);
-    RCamera.ApplyRotation(Vector(1, 1, 1));
-    RCamera.ApplyTransformation(Vector(1, 1, 1));
-
-    RTerrain.Render;
-  end;
-
 var
-  DistPixel: DWord;
-  Distance: Single;
-  ResX, ResY: Integer;
+  ResX, ResY, i: Integer;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   // Just a test
@@ -67,25 +70,35 @@ begin
   glEnable(GL_BLEND);
 
   Render();
-  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
-  Distance := (DistPixel / High(DWord)) ** 2 * 10000;
-  glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
-  writeln(FloatToStr(Distance));
-  glColorMask(true, false, false, true);
-  Render(-0.05, Distance);
-  glColorMask(false, true, true, true);
-  Render(0.05, Distance);
-  glColorMask(true, true, true, true);
+  for i := 0 to high(RenderEffects) do
+    RenderEffects[i]();
 end;
 
 procedure TModuleRendererOpenGL.CheckModConf;
+var
+  s: AString;
+  i: INteger;
 begin
+  if GetConfVal('used') = '' then
+    begin
+    SetConfVal('used', '1');
+    SetConfVal('effects', IntToStr(RE_2D_FOCUS));
+    end;
+  s := Explode(' ', GetConfVal('effects'));
+  for i := 0 to high(s) do
+    RenderEffectManager.LoadEffect(StrToInt(S[i]));
 end;
 
 constructor TModuleRendererOpenGL.Create;
 begin
   fModName := 'RendererGL';
   fModType := 'Renderer';
+  RenderEffectManager := TRenderEffectManager.Create;
+end;
+
+destructor TModuleRendererOpenGL.Free;
+begin
+  RenderEffectManager.Free;
 end;
 
 end.

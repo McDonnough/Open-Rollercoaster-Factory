@@ -75,6 +75,8 @@ function Explode(d: Char; s: String): AString;
 var
   i, DPos, OPos, LOcc: integer;
 begin
+  if s = '' then
+    exit;
   s := s + d;
   DPos := 0;
   repeat

@@ -228,6 +228,7 @@ begin
   SizeY := 256;
   TextureCollectionName := 'terrain/defaultcollection.tga';
   fLoaded := true;
+  HeightMap[10, 10] := 10;
 end;
 
 constructor TTerrain.Create;

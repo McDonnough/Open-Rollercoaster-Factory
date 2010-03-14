@@ -151,8 +151,10 @@ constructor TRE2DFocus.Create;
 begin
   FTexture := TTexture.Create;
   FTexture.CreateNew(ResX, ResY, GL_LUMINANCE);
+  FTexture.SetClamp(GL_CLAMP, GL_CLAMP);
   FTexture2 := TTexture.Create;
   FTexture2.CreateNew(ResX, ResY, GL_RGBA);
+  FTexture2.SetClamp(GL_CLAMP, GL_CLAMP);
   FShader := TShader.Create('rendereropengl/glsl/effects/depthfocus.vs', 'rendereropengl/glsl/effects/depthfocus.fs');
   FShader.UniformI('tex', 0);
   FShader.UniformI('dist', 1);

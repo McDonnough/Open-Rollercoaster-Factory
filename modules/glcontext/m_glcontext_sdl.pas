@@ -13,6 +13,7 @@ type
       fSurface: PSDL_Surface;
       fVInfo: PSDL_VideoInfo;
       fVFlags: DWord;
+      Second: Boolean;
       function CreateSurface(w, h, flag: Integer): Boolean;
     public
       constructor Create;
@@ -47,6 +48,8 @@ begin
   fModName := 'GLContextSDL';
   fModType := 'GLContext';
   CheckModConf;
+
+  AdditionalContextOptions := 0;
 
   // Init SDL
   if SDL_Init(SDL_INIT_VIDEO) < 0 then

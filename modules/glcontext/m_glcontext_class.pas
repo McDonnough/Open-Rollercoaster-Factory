@@ -10,6 +10,7 @@ uses
 type
   TModuleGLContextClass = class(TBasicModule)
     public
+      AdditionalContextOptions: Integer;
       (**
         * Set the text on the window
         *@param The text...

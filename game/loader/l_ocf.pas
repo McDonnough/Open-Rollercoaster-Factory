@@ -3,7 +3,7 @@ unit l_ocf;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, u_xml;
 
 type
   AByte = array of Byte;

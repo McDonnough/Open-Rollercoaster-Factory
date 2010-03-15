@@ -3,13 +3,13 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, l_ocf, g_terrain, g_camera;
+  SysUtils, Classes, l_ocf, g_terrain, g_camera, g_loader_park;
 
 type
   TPark = class
     protected
       fFile: TOCFFile;
-      fParkLoader: Pointer;
+      fParkLoader: TParkLoader;
       fInited: Boolean;
 
     public
@@ -43,7 +43,7 @@ var
 implementation
 
 uses
-  Main, m_varlist, g_loader_park;
+  Main, m_varlist;
 
 constructor TPark.Create(FileName: String);
 begin
@@ -52,29 +52,20 @@ begin
   fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName, false);
 
   ModuleManager.ModLoadScreen.Progress := 5;
-  fParkLoader := TParkLoader.Create(Self);
+  fParkLoader := TParkLoader.Create;
+  ModuleManager.ModRenderer.PostInit;
 end;
 
 procedure TPark.Render;
 begin
-  if not fInited then
-    begin
-    TParkLoader(fParkLoader).PostInit;
-    ModuleManager.ModRenderer.PostInit;
-    fInited := true;
-    end
-  else
-    begin
-    ModuleManager.ModCamera.AdvanceActiveCamera;
-    ModuleManager.ModRenderer.RenderScene;
-    end;
+  ModuleManager.ModCamera.AdvanceActiveCamera;
+  ModuleManager.ModRenderer.RenderScene;
 end;
 
 destructor TPark.Free;
 begin
   ModuleManager.ModRenderer.Unload;
-  TParkLoader(fParkLoader).Unload;
-  TParkLoader(fParkLoader).Free;
+  fParkLoader.Free;
 end;
 
 end.

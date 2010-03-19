@@ -60,14 +60,20 @@ var
 begin
   fTime := ModuleManager.ModGUITimer.GetTime;
 
-  while ModuleManager.ModGUITimer.GetTime - fTime < 25 do
-    if high(fFiles) >= 0 then
+  repeat
+    if length(fFiles) > 0 then
       begin
       LoadFile(fFiles[0]);
       for i := 1 to high(fFiles) do
         fFiles[i - 1] := fFiles[i];
       SetLength(fFiles, length(fFiles) - 1);
-      end;
+      end
+    else
+      EventManager.CallEvent('TParkLoader.LoadFiles.NoFilesLeft', nil, nil);
+  until
+    ModuleManager.ModGUITimer.GetTime - fTime > 25;
+
+  EventManager.CallEvent('TParkLoaser.LoadFiles.RenderStep', nil, nil);
 
   if Visible then
     ModuleManager.ModLoadscreen.Render;
@@ -76,7 +82,8 @@ end;
 procedure TParkLoader.InitDisplay;
 begin
   Visible := True;
-  ModuleManager.ModLoadscreen.Headline := 'Hallo';
+  ModuleManager.ModLoadscreen.Headline := 'Loading files';
+  ModuleManager.ModLoadscreen.Progress := 0;
   ModuleManager.ModLoadscreen.SetVisibility(true);
 end;
 

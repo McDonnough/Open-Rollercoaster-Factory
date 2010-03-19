@@ -102,6 +102,7 @@ function TModuleConfigIni.SetOption(ModName, KeyName, KeyValue: String): Boolean
 var
   i, j: integer;
 begin
+  Result := false;
   for i := 0 to high(fModConfs) do
     if fModConfs[i].ModName = ModName then
       begin

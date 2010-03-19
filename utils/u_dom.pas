@@ -206,7 +206,7 @@ end;
 function TDOMNamedNodeMap.Item(Index: QWord): TDOMNode;
 begin
   Result := nil;
-  if Index < high(fItems) then
+  if Index <= high(fItems) then
     Result := fItems[Index];
 end;
 
@@ -259,8 +259,8 @@ begin
   Result := nil;
   if fParentNode = nil then exit;
   id := fParentNode._GetChildID(self);
-  if id < high(fParentNode.ChildNodes) then
-    Result := fParentNode.ChildNodes[id + 1];
+  if (id < high(fParentNode.ChildNodes)) and (id > -1) then
+     Result := fParentNode.ChildNodes[id + 1];
 end;
 
 function TDOMNode.InsertBefore(newChild, refChild: TDOMNode): TDOMNode;
@@ -278,6 +278,7 @@ begin
     setLength(fChildNodes, length(fChildNodes) + 1);
     for i := high(fChildNodes) downto id + 1 do
       fChildNodes[i] := fChildNodes[i - 1];
+    fChildNodes[id] := newChild;
     end;
 end;
 

@@ -3,12 +3,12 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, l_ocf, g_terrain, g_camera, g_loader_park;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom;
 
 type
   TPark = class
     protected
-      fFile: TOCFFile;
+      fFile: TDOMDocument;
       fParkLoader: TParkLoader;
       fInited: Boolean;
       fCanRender: Boolean;
@@ -20,7 +20,7 @@ type
       pCameras: Array of TCamera;
 
       property ParkLoader: TParkLoader read fParkLoader;
-      property OCFFile: TOCFFile read fFile;
+      property OCFFile: TDOMDocument read fFile;
 
       (**
         * Call render modules, handle input
@@ -58,7 +58,7 @@ begin
 
   fInited := false;
 
-  fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName, false);
+  fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName);
 
   ModuleManager.ModLoadScreen.Progress := 5;
   fParkLoader := TParkLoader.Create;

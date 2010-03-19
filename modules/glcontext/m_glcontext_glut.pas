@@ -29,7 +29,7 @@ type
 implementation
 
 uses
-  m_varlist, main;
+  m_varlist, main, u_events;
 
 constructor TModuleGLContextGLUT.Create;
 begin
@@ -85,6 +85,10 @@ end;
 procedure TModuleGLContextGLUT.EndMainLoop;
 begin
   glutDestroyWindow(fWin);
+  ModuleManager.UnloadModules;
+  ModuleManager.Free;
+  EventManager.Free;
+  halt(0);
 end;
 
 procedure TModuleGLContextGLUT.InitGL;

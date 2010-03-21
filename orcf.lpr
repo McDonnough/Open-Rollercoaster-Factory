@@ -4,17 +4,19 @@ program orcf;
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  SysUtils, Classes, m_varlist, main;
+  SysUtils, Classes, m_varlist, main, u_events;
 
 {$IFDEF WINDOWS}{$R orcf.rc}{$ENDIF}
 
 begin
   Randomize;
+  EventManager := TEventManager.Create;
   ModuleManager := TModuleManager.Create;
   ModuleManager.LoadModules;
   ChangeRenderState(rsMainMenu);
   ModuleManager.ModGLContext.StartMainLoop;
   ModuleManager.UnloadModules;
   ModuleManager.Free;
+  EventManager.Free;
 end.
 

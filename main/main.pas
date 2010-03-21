@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, m_gui_label_class, m_gui_window_class;
 
 type
-  TRenderState = (rsMainMenu, rsNewPark, rsLoadPark, rsGame, rsHelp, rsSettings);
+  TRenderState = (rsMainMenu, rsLoadPark, rsGame, rsHelp, rsSettings);
 
   TFPSDisplay = class
     protected
@@ -88,7 +88,7 @@ begin
   else
     ModuleManager.ModMainMenu.Hide;
   case New of
-    rsNewPark:
+    rsGame:
       with ModuleManager.ModLoadScreen do
         begin
         Progress := 0;
@@ -96,8 +96,6 @@ begin
         Text := 'Initializing';
         SetVisibility(True);
         end;
-    rsGame:
-      ModuleManager.ModLoadScreen.SetVisibility(False);
     end;
 end;
 
@@ -120,15 +118,17 @@ begin
       case ModuleManager.ModMainMenu.Value of
         MMVAL_STARTGAME:
           begin
-          ChangeRenderState(rsNewPark);
+          ChangeRenderState(rsGame);
           Park := TPark.Create(ModuleManager.ModPathes.DataPath + 'parks/default/sandbox.ocf');
           end;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;
         end;
       end;
-    rsNewPark: ModuleManager.ModLoadScreen.Render;
     rsGame: Park.Render;
     end;
+
+  if Park <> nil then
+    Park.ParkLoader.Run;
 
   ModuleManager.ModGUI.Render;
   sleep(10);

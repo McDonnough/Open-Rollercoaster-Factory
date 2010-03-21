@@ -3,14 +3,15 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, l_ocf, g_terrain, g_camera;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom;
 
 type
   TPark = class
     protected
-      fFile: TOCFFile;
-      fParkLoader: Pointer;
+      fFile: TDOMDocument;
+      fParkLoader: TParkLoader;
       fInited: Boolean;
+      fCanRender: Boolean;
 
     public
       // Parts of the park
@@ -18,12 +19,18 @@ type
       pMainCamera: TCamera;
       pCameras: Array of TCamera;
 
-      property OCFFile: TOCFFile read fFile;
+      property ParkLoader: TParkLoader read fParkLoader;
+      property OCFFile: TDOMDocument read fFile;
 
       (**
         * Call render modules, handle input
         *)
       procedure Render;
+
+      (**
+        * Post-initialization
+        *)
+      procedure PostInit(Event: String; Arg, Result: Pointer);
 
       (**
         * Load a park
@@ -38,43 +45,48 @@ type
     end;
 
 var
-  Park: TPark;
+  Park: TPark = nil;
 
 implementation
 
 uses
-  Main, m_varlist, g_loader_park;
+  Main, m_varlist, u_events;
 
 constructor TPark.Create(FileName: String);
 begin
+  fCanRender := false;
+
   fInited := false;
 
-  fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName, false);
+  fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName);
 
   ModuleManager.ModLoadScreen.Progress := 5;
-  fParkLoader := TParkLoader.Create(Self);
+  fParkLoader := TParkLoader.Create;
+  fParkLoader.InitDisplay;
+  EventManager.AddCallback('TParkLoader.LoadFiles.NoFilesLeft', @PostInit);
+end;
+
+procedure TPark.PostInit(Event: String; Arg, Result: Pointer);
+begin
+  ModuleManager.ModRenderer.PostInit;
+  ModuleManager.ModLoadScreen.SetVisibility(false);
+  fParkLoader.Visible := false;
+  ModuleManager.ModCamera.ActiveCamera := TCamera.Create;
+  ModuleManager.ModCamera.ActiveCamera.LoadDefaults;
+  fCanRender := true;
 end;
 
 procedure TPark.Render;
 begin
-  if not fInited then
-    begin
-    TParkLoader(fParkLoader).PostInit;
-    ModuleManager.ModRenderer.PostInit;
-    fInited := true;
-    end
-  else
-    begin
-    ModuleManager.ModCamera.AdvanceActiveCamera;
-    ModuleManager.ModRenderer.RenderScene;
-    end;
+  if not fCanRender then exit;
+  ModuleManager.ModCamera.AdvanceActiveCamera;
+  ModuleManager.ModRenderer.RenderScene;
 end;
 
 destructor TPark.Free;
 begin
   ModuleManager.ModRenderer.Unload;
-  TParkLoader(fParkLoader).Unload;
-  TParkLoader(fParkLoader).Free;
+  fParkLoader.Free;
 end;
 
 end.

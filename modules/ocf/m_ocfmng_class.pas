@@ -3,7 +3,7 @@ unit m_ocfmng_class;
 interface
 
 uses
-  Classes, SysUtils, m_module, l_ocf;
+  Classes, SysUtils, m_module, u_dom;
 
 type
   TModuleOCFManagerClass = class(TBasicModule)
@@ -13,7 +13,7 @@ type
         *@param File name to load
         *@param Reset if you do not want the references to be automatically loaded
         *)
-      function LoadOCFFile(FileName: String; AutoLoadRef: Boolean = True): TOCFFile; virtual abstract;
+      function LoadOCFFile(FileName: String): TDOMDocument; virtual abstract;
     end;
 
 implementation

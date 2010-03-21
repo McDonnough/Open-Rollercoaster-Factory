@@ -145,10 +145,9 @@ begin
       end;
   X := Texture.Width;
   Y := Texture.Height;
-  if not VertexTexture then
-    Result := EmptyTexture(Texture.Width, Texture.Height, Texture.ExternalFormat)
-  else
-    Result := EmptyTexture(Texture.Width, Texture.Height, GL_RGBA32F_ARB);
+  if VertexTexture then
+    Texture.ExternalFormat := GL_RGBA32F_ARB;
+  Result := EmptyTexture(Texture.Width, Texture.Height, Texture.ExternalFormat);
   FillTexture(Result, @Texture.Data[0], Texture.InputFormat);
   fTexRefs[Result].TexName := Texture.TexName;
   fTexRefs[Result].Width := Texture.Width;
@@ -190,7 +189,6 @@ begin
   else
     glBindTexture(GL_TEXTURE_2D, 0);
   fCurrentTextures[fCurrentTexUnit] := Texture;
-//   writeln(fTexRefs[Texture].Tex);
 end;
 
 procedure TModuleTextureManagerDefault.FillTexture(Texture: Integer; Data: Pointer; InputFormat: GLEnum);

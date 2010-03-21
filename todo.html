@@ -42,6 +42,14 @@
         content: 'TODO.........';
         font-family: Courier, Monospace;
       }
+      .renew {
+        background-color: #ff8888;
+        color: red;
+      }
+      .renew:before {
+        content: 'TO REDO......';
+        font-family: Courier, Monospace;
+      }
       .todo {
         background-color: #ff8888;
       }
@@ -71,10 +79,12 @@
       <li class="prog">Language module</li>
       <li class="todo">Time module</li>
       <li class="done">Path module for MacOS</li>
+      <li class="done">Event manager</li>
     </ul>
     <h1>I/O modules</h1>
     <ul>
       <li class="prog">Texture-based font module - letters for western-european languages, based on windows characters</li>
+      <li class="todo">TTF Fonts, at least for SDL</li>
       <li class="buggy">GLUT backend for OpenGL rendering context</li>
       <li class="buggy">GLUT backend for input handling</li>
       <li class="done">SDL backend for OpenGL rendering context</li>
@@ -84,7 +94,6 @@
     </ul>
     <h1>GUI modules</h1>
     <ul>
-      <li class="prog">New font texture</li>
       <li class="todo">New icons</li>
       <li class="done">Buttons</li>
       <li class="done">Buttons with icon</li>
@@ -107,8 +116,9 @@
     </ul>
     <h1>Gameplay</h1>
     <ul>
-      <li class="prog">Main menu with background screenshots</li>
-      <li class="prog">A screen that shows the current state of loading a park</li>
+      <li class="renew">Main menu with background screenshots</li>
+      <li class="renew">A screen that shows the current state of loading a park</li>
+      <li class="renew">High definition terrain (blocks of 0.1x0.1 meters!)</li>
       <li class="todo">Implement everything</li>
     </ul>
   </body>

@@ -3,14 +3,15 @@ unit m_ocfmng_default;
 interface
 
 uses
-  SysUtils, Classes, m_ocfmng_class, l_ocf;
+  SysUtils, Classes, m_ocfmng_class, u_dom, u_xml;
 
 type
   TModuleOCFManagerDefault = class(TModuleOCFManagerClass)
     protected
-      fOCFFiles: array of TOCFFile;
+      fFileNames: array of String;
+      fOCFFiles: array of TDOMDocument;
     public
-      function LoadOCFFile(FileName: String; AutoLoadRef: Boolean = True): TOCFFile;
+      function LoadOCFFile(FileName: String): TDOMDocument;
       procedure CheckModConf;
       constructor Create;
       destructor Free;
@@ -18,21 +19,29 @@ type
 
 implementation
 
-function TModuleOCFManagerDefault.LoadOCFFile(FileName: String; AutoLoadRef: Boolean = True): TOCFFile;
+uses
+  m_varlist;
+
+function TModuleOCFManagerDefault.LoadOCFFile(FileName: String): TDOMDocument;
 var
   i: Integer;
+  fFileName: String;
 begin
+  fFileName := FileName;
   for i := 0 to high(fOCFFiles) do
-    if fOCFFiles[i].FileName = FileName then
+    if fFilenames[i] = FileName then
       exit(fOCFFiles[i]);
+  if not FileExists(fFileName) then
+    FileName := ModuleManager.ModPathes.DataPath + fFileName;
+  if not FileExists(fFileName) then
+    FileName := ModuleManager.ModPathes.PersonalDataPath + fFileName;
+  if not FileExists(fFileName) then
+    exit(nil);
   setLength(fOCFFiles, length(fOCFFiles) + 1);
-  fOCFFiles[high(fOCFFiles)] := TOCFFile.Create;
-  fOCFFiles[high(fOCFFiles)].FileName := FileName;
-  fOCFFiles[high(fOCFFiles)].ReadFromFile;
-  if AutoLoadRef then
-    for i := 0 to fOCFFiles[high(fOCFFiles)].References.Count - 1 do
-      LoadOCFFile(fOCFFiles[high(fOCFFiles)].References.Strings[i]);
+  fOCFFiles[high(fOCFFiles)] := LoadXMLFile(FileName);
   Result := fOCFFiles[high(fOCFFiles)];
+  setLength(fFileNames, length(fOCFFiles));
+  fFileNames[high(fFileNames)] := fFileName;
 end;
 
 constructor TModuleOCFManagerDefault.Create;

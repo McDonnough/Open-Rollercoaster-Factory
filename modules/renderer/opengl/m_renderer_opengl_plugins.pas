@@ -15,6 +15,15 @@ type
       destructor Free;
     end;
 
+  TRE3DShutter = class
+    protected
+      ResX, ResY: Integer;
+    public
+      procedure Apply;
+      constructor Create;
+      destructor Free;
+    end;
+
   TRE2DFocus = class
     protected
       ResX, ResY: Integer;
@@ -29,6 +38,7 @@ type
   TRenderEffectManager = class
     protected
       RE3DAnaglyph: TRE3DAnaglyph;
+      RE3DShutter: TRE3DShutter;
       RE2DFocus: TRE2DFocus;
     public
       constructor Create;
@@ -38,7 +48,8 @@ type
 
 const
   RE_3D_ANAGLYPH = 1;
-  RE_2D_FOCUS = 2;
+  RE_3D_SHUTTER = 2;
+  RE_2D_FOCUS = 3;
 
 implementation
 
@@ -55,9 +66,9 @@ begin
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
 
   glColorMask(true, false, false, true);
-  ModuleManager.ModRenderer.Render(-0.05, Distance);
+  ModuleManager.ModRenderer.Render(-0.2, Distance);
   glColorMask(false, true, true, true);
-  ModuleManager.ModRenderer.Render(0.05, Distance);
+  ModuleManager.ModRenderer.Render(0.2, Distance);
   glColorMask(true, true, true, true);
 end;
 
@@ -71,8 +82,7 @@ destructor TRE3DAnaglyph.Free;
 begin
 end;
 
-
-procedure TRE2DFocus.Apply;
+procedure TRE3DShutter.Apply;
 var
   DistPixel: DWord;
   Distance: Single;
@@ -81,7 +91,32 @@ begin
   Distance := (DistPixel / High(DWord)) ** 2 * 10000;
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
 
-  ModuleManager.ModRenderer.Render();
+  glDrawBuffer(GL_LEFT);
+  ModuleManager.ModRenderer.Render(-0.2, Distance);
+  glDrawBuffer(GL_RIGHT);
+  ModuleManager.ModRenderer.Render(0.2, Distance);
+  glDrawBuffer(GL_BACK);
+end;
+
+constructor TRE3DShutter.Create;
+begin
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  ModuleManager.ModGLContext.AdditionalContextOptions := ModuleManager.ModGLContext.AdditionalContextOptions or GL_STEREO;
+  ModuleManager.ModGLContext.SetResolution(ResX, ResY);
+  ModuleManager.ModRenderer.RegisterRenderEffect(@Self.Apply);
+end;
+
+destructor TRE3DShutter.Free;
+begin
+end;
+
+procedure TRE2DFocus.Apply;
+var
+  DistPixel: DWord;
+  Distance: Single;
+begin
+  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
+  Distance := (DistPixel / High(DWord)) ** 2 * 10000;
   FTexture.Bind(1);
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, ResX, ResY, 0);
   FTexture2.Bind(0);
@@ -116,8 +151,10 @@ constructor TRE2DFocus.Create;
 begin
   FTexture := TTexture.Create;
   FTexture.CreateNew(ResX, ResY, GL_LUMINANCE);
+  FTexture.SetClamp(GL_CLAMP, GL_CLAMP);
   FTexture2 := TTexture.Create;
   FTexture2.CreateNew(ResX, ResY, GL_RGBA);
+  FTexture2.SetClamp(GL_CLAMP, GL_CLAMP);
   FShader := TShader.Create('rendereropengl/glsl/effects/depthfocus.vs', 'rendereropengl/glsl/effects/depthfocus.fs');
   FShader.UniformI('tex', 0);
   FShader.UniformI('dist', 1);
@@ -137,6 +174,7 @@ end;
 constructor TRenderEffectManager.Create;
 begin
   RE3DAnaglyph := nil;
+  RE3DShutter := nil;
   RE2DFocus := nil;
 end;
 
@@ -144,6 +182,7 @@ destructor TRenderEffectManager.Free;
 begin
   ModuleManager.ModRenderer.ClearRenderEffects;
   if RE3DAnaglyph <> nil then RE3DAnaglyph.Free;
+  if RE3DShutter <> nil then RE3DShutter.Free;
   if RE2DFocus <> nil then RE2DFocus.Free;
 end;
 
@@ -151,6 +190,7 @@ procedure TRenderEffectManager.LoadEffect(ID: Integer);
 begin
   case ID of
     RE_3D_ANAGLYPH: RE3DAnaglyph := TRE3DAnaglyph.Create;
+    RE_3D_SHUTTER: RE3DShutter := TRE3DShutter.Create;
     RE_2D_FOCUS: RE2DFocus := TRE2DFocus.Create;
     end;
 end;

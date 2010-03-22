@@ -96,7 +96,7 @@ begin
   glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER, 0.0);
   glBegin(GL_QUADS);
-  glColor4f(1.0, 1.0, 1.0, 1.0);
+  glColor4f(R, G, B, A);
   X := Left;
     for i := 1 to Length(Text) do
       case Text[i] of

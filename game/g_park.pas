@@ -68,12 +68,15 @@ end;
 
 procedure TPark.PostInit(Event: String; Arg, Result: Pointer);
 begin
+  EventManager.RemoveCallback('TParkLoader.LoadFiles.NoFilesLeft', @PostInit);
   ModuleManager.ModRenderer.PostInit;
   ModuleManager.ModLoadScreen.SetVisibility(false);
   fParkLoader.Visible := false;
   ModuleManager.ModCamera.ActiveCamera := TCamera.Create;
   ModuleManager.ModCamera.ActiveCamera.LoadDefaults;
   fCanRender := true;
+  pTerrain := TTerrain.Create;
+  pTerrain.LoadDefaults;
 end;
 
 procedure TPark.Render;
@@ -87,6 +90,7 @@ destructor TPark.Free;
 begin
   ModuleManager.ModRenderer.Unload;
   fParkLoader.Free;
+  pTerrain.Free;
 end;
 
 end.

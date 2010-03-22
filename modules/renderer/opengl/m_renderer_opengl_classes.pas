@@ -155,7 +155,6 @@ end;
 
 procedure TVBO.Render;
 begin
-//   Unmap;
   Bind;
   glInterleavedArrays(fFormat, fDataSize, nil);
   glDrawArrays(fPolygonType, 0, fVertexCount);

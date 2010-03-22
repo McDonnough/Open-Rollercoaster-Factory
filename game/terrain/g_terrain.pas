@@ -17,9 +17,12 @@ type
       fTmpMap: Array of Array of Word;
       fCanAdvance, fAdvancing: Boolean;
       procedure Execute; override;
+      function GetHeightAtPosition(X, Y: Single): Single;
+      procedure SetHeightAtPosition(X, Y, Height: Single);
     public
       property SizeX: Word read fSizeX;
       property SizeY: Word read fSizeY;
+      property HeightMap[X: Single; Y: Single]: Single read GetHeightAtPosition write SetHeightAtPosition;
       procedure Resize(X, Y: Integer);
       procedure AdvanceAutomaticWater;
       procedure LoadDefaults;
@@ -46,8 +49,29 @@ begin
       fAdvancing := false;
       end;
     fDiff := ModuleManager.ModGUITimer.GetTime - fTime;
-    sleep(Max(10, fDiff));
+    sleep(Max(10, 25 - fDiff));
     end;
+end;
+
+function TTerrain.GetHeightAtPosition(X, Y: Single): Single;
+var
+  fX1, fX2, fY1, fY2: Word;
+begin
+  fX1 := Floor(Clamp(5 * X, 0, fSizeX - 1));
+  fX2 := Ceil(Clamp(5 * X, 0, fSizeX - 1));
+  fY1 := Floor(Clamp(5 * Y, 0, fSizeY - 1));
+  fY2 := Ceil(Clamp(5 * Y, 0, fSizeY - 1));
+  Result := Mix(Mix(fMap[fX1, fY1].Height, fMap[fX2, fY1].Height, fPart(5 * X)), Mix(fMap[fX1, fY2].Height, fMap[fX2, fY2].Height, fPart(5 * X)), fPart(5 * Y)) / 256;
+end;
+
+procedure TTerrain.SetHeightAtPosition(X, Y, Height: Single);
+var
+  fX, fY: Word;
+begin
+  fX := Round(Clamp(5 * X, 0, fSizeX - 1));
+  fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
+  fMap[fX, fY].Height := Round(256 * Height);
+  EventManager.CallEvent('TTerrain.Changed', @fX, nil);
 end;
 
 procedure TTerrain.Resize(X, Y: Integer);
@@ -64,7 +88,7 @@ begin
     SetLength(fMap[i], Y);
     SetLength(fTmpMap[i], Y);
     for j := 0 to high(fMap[i]) do
-      if (i > fSizeX) or (j > fSizeY) then
+      if (i >= fSizeX) or (j >= fSizeY) then
         with fMap[i, j] do
           begin
           Height := 1024;
@@ -130,6 +154,7 @@ begin
   fSizeX := 0;
   fSizeY := 0;
   Resize(4096, 4096);
+  HeightMap[0, 0] := 10;
 end;
 
 constructor TTerrain.Create;

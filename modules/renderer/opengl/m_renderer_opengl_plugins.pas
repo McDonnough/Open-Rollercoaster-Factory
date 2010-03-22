@@ -317,6 +317,7 @@ end;
 destructor TRenderEffectManager.Free;
 begin
   EventManager.RemoveCallback('TModuleRenderer.Render');
+  EventManager.RemoveCallback('TModuleRenderer.PostRender');
   if RE3DAnaglyph <> nil then RE3DAnaglyph.Free;
   if RE3DShutter <> nil then RE3DShutter.Free;
   if RE2DFocus <> nil then RE2DFocus.Free;

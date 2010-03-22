@@ -31,7 +31,7 @@ implementation
 
 uses
   m_varlist;
-  
+
 procedure TModuleFontTextureVariableWidth.GetLetterWidths;
 var
   i: Byte;
@@ -79,7 +79,7 @@ begin
   	fLetterPositions[i].lastPixel := tmpX2;
   end;
 end;
-  
+
 procedure TModuleFontTextureVariableWidth.Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
 var
    px, py, X, Y: GLFloat;
@@ -107,13 +107,13 @@ begin
       else
         py := Ord(Text[i]) div 16;
         px := Ord(Text[i]) - 16 * py;
-        glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),       py / 16);      
+        glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),       py / 16);
         glVertex2f(Round(X),        Round(Y));
         glTexCoord2f((px + 1) / 16 - (refCellWidth - fLetterPositions[Ord(Text[i])].lastPixel) / (refCellHeight * 16),  py / 16);
         glVertex2f(Round(X + fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y));
         glTexCoord2f((px + 1) / 16 - (refCellWidth - fLetterPositions[Ord(Text[i])].lastPixel) / (refCellHeight * 16), (py + 1) / 16);
         glVertex2f(Round(X + fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y + Size));
-        glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),      (py + 1) / 16); 
+        glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),      (py + 1) / 16);
         glVertex2f(Round(X),        Round(Y + Size));
         X := X + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
         end;
@@ -154,15 +154,15 @@ constructor TModuleFontTextureVariableWidth.Create;
 begin
   fModName := 'FontTextureVariableWidth';
   fModType := 'Font';
-  
+
   CheckModConf;
-  
+
   fTexture := TTexture.Create;
   fTexture.FromFile(GetConfVal('fonttex'));
   fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
-  
+
   GetLetterWidths;
-  
+
   fLetterSpacing := 3;
 end;
 

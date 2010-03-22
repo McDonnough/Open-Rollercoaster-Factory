@@ -10,7 +10,7 @@ type
     protected
       ResX, ResY: Integer;
     public
-      procedure Apply;
+      procedure Apply(Event: String; Param, Result: Pointer);
       constructor Create;
       destructor Free;
     end;
@@ -19,7 +19,7 @@ type
     protected
       ResX, ResY: Integer;
     public
-      procedure Apply;
+      procedure Apply(Event: String; Param, Result: Pointer);
       constructor Create;
       destructor Free;
     end;
@@ -30,7 +30,14 @@ type
       FTexture, FTexture2: TTexture;
       FShader: TShader;
     public
-      procedure Apply;
+      procedure Apply(Event: String; Param, Result: Pointer);
+      constructor Create;
+      destructor Free;
+    end;
+
+  TREMotionBlur = class
+    public
+      procedure Apply(Event: String; Param, Result: Pointer);
       constructor Create;
       destructor Free;
     end;
@@ -40,6 +47,7 @@ type
       RE3DAnaglyph: TRE3DAnaglyph;
       RE3DShutter: TRE3DShutter;
       RE2DFocus: TRE2DFocus;
+      REMotionBlur: TREMotionBlur;
     public
       constructor Create;
       destructor Free;
@@ -50,13 +58,14 @@ const
   RE_3D_ANAGLYPH = 1;
   RE_3D_SHUTTER = 2;
   RE_2D_FOCUS = 3;
+  RE_MOTIONBLUR = 4;
 
 implementation
 
 uses
-  m_module, m_varlist;
+  m_module, m_varlist, u_events;
 
-procedure TRE3DAnaglyph.Apply;
+procedure TRE3DAnaglyph.Apply(Event: String; Param, Result: Pointer);
 var
   DistPixel: DWord;
   Distance: Single;
@@ -75,14 +84,15 @@ end;
 constructor TRE3DAnaglyph.Create;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
-  ModuleManager.ModRenderer.RegisterRenderEffect(@Self.Apply);
+  EventManager.AddCallback('TModuleRenderer.Render', @Self.Apply);
 end;
 
 destructor TRE3DAnaglyph.Free;
 begin
+  EventManager.RemoveCallback(@Self.Apply);
 end;
 
-procedure TRE3DShutter.Apply;
+procedure TRE3DShutter.Apply(Event: String; Param, Result: Pointer);
 var
   DistPixel: DWord;
   Distance: Single;
@@ -103,14 +113,15 @@ begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModGLContext.AdditionalContextOptions := ModuleManager.ModGLContext.AdditionalContextOptions or GL_STEREO;
   ModuleManager.ModGLContext.SetResolution(ResX, ResY);
-  ModuleManager.ModRenderer.RegisterRenderEffect(@Self.Apply);
+  EventManager.AddCallback('TModuleRenderer.Render', @Self.Apply);
 end;
 
 destructor TRE3DShutter.Free;
 begin
+  EventManager.RemoveCallback(@Self.Apply);
 end;
 
-procedure TRE2DFocus.Apply;
+procedure TRE2DFocus.Apply(Event: String; Param, Result: Pointer);
 var
   DistPixel: DWord;
   Distance: Single;
@@ -160,30 +171,50 @@ begin
   FShader.UniformI('dist', 1);
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
-  ModuleManager.ModRenderer.RegisterRenderEffect(@Self.Apply);
+  EventManager.AddCallback('TModuleRenderer.PostRender', @Self.Apply);
 end;
 
 destructor TRE2DFocus.Free;
 begin
+  EventManager.RemoveCallback(@Self.Apply);
   FTexture.Free;
   FTexture2.Free;
   FShader.Free;
 end;
 
+procedure TREMotionBlur.Apply(Event: String; Param, Result: Pointer);
+begin
+  glAccum(GL_MULT, 0.6);
+  glAccum(GL_ACCUM, 0.5);
+  glAccum(GL_RETURN, 1.0);
+end;
+
+constructor TREMotionBlur.Create;
+begin
+  EventManager.AddCallback('TModuleRenderer.PostRender', @Self.Apply);
+  glClear(GL_ACCUM_BUFFER_BIT);
+end;
+
+destructor TREMotionBlur.Free;
+begin
+  EventManager.RemoveCallback(@Self.Apply);
+end;
 
 constructor TRenderEffectManager.Create;
 begin
   RE3DAnaglyph := nil;
   RE3DShutter := nil;
   RE2DFocus := nil;
+  REMotionBlur := nil;
 end;
 
 destructor TRenderEffectManager.Free;
 begin
-  ModuleManager.ModRenderer.ClearRenderEffects;
+  EventManager.RemoveCallback('TModuleRenderer.Render');
   if RE3DAnaglyph <> nil then RE3DAnaglyph.Free;
   if RE3DShutter <> nil then RE3DShutter.Free;
   if RE2DFocus <> nil then RE2DFocus.Free;
+  if REMotionBlur <> nil then REMotionBlur.Free;
 end;
 
 procedure TRenderEffectManager.LoadEffect(ID: Integer);
@@ -192,6 +223,7 @@ begin
     RE_3D_ANAGLYPH: RE3DAnaglyph := TRE3DAnaglyph.Create;
     RE_3D_SHUTTER: RE3DShutter := TRE3DShutter.Create;
     RE_2D_FOCUS: RE2DFocus := TRE2DFocus.Create;
+    RE_MOTIONBLUR: REMotionblur := TREMotionblur.Create;
     end;
 end;
 

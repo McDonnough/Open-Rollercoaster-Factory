@@ -27,7 +27,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_events;
 
 procedure TModuleRendererOpenGL.PostInit;
 begin
@@ -49,7 +49,6 @@ begin
   glTranslatef(EyeMode, 0, 0);
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
-
   RTerrain.Render;
 end;
 
@@ -70,8 +69,8 @@ begin
   glEnable(GL_BLEND);
 
   Render();
-  for i := 0 to high(RenderEffects) do
-    RenderEffects[i]();
+  EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
+  EventManager.CallEvent('TModuleRenderer.PostRender', nil, nil);
 end;
 
 procedure TModuleRendererOpenGL.CheckModConf;
@@ -84,7 +83,7 @@ begin
     SetConfVal('used', '1');
     SetConfVal('effects', IntToStr(RE_2D_FOCUS));
     end;
-  s := Explode(' ', GetConfVal('effects'));
+  s := Explode(',', GetConfVal('effects'));
   for i := 0 to high(s) do
     RenderEffectManager.LoadEffect(StrToInt(S[i]));
 end;

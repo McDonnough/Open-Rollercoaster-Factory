@@ -1,9 +1,13 @@
 #version 120
 
+uniform vec2 offset;
+
 varying float dist;
 
 void main(void) {
-  gl_TexCoord[0] = vec4(gl_Vertex.xz, 0.0, 1.0);
-  dist = length(gl_ModelViewMatrix * gl_Vertex);
-  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+  vec4 Vertex = gl_Vertex;
+  Vertex.xz += offset;
+  gl_TexCoord[0] = vec4(Vertex.xz, 0.0, 1.0);
+  dist = length(gl_ModelViewMatrix * Vertex);
+  gl_Position = gl_ModelViewProjectionMatrix * Vertex;
 }

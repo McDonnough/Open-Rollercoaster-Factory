@@ -157,6 +157,8 @@ begin
 end;
 
 function TModuleTextureManagerDefault.EmptyTexture(X, Y: Integer; Format: GLEnum): Integer;
+var
+  i: Integer;
 begin
   SetLength(fTexRefs, length(fTexRefs) + 1);
   Result := high(fTexRefs);
@@ -165,6 +167,9 @@ begin
   fTexRefs[Result].InputFormat := GL_BGRA;
   fTexRefs[Result].Width := X;
   fTexRefs[Result].Height := Y;
+  SetLength(fTexRefs[Result].Data, 4 * X * Y);
+  for i := 0 to high(fTexRefs[Result].Data) do
+    fTexRefs[Result].Data[i] := 255;
   glGenTextures(1, @fTexRefs[result].Tex);
   BindTexture(Result);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -247,17 +252,9 @@ begin
 end;
 
 procedure TModuleTextureManagerDefault.SetPixel(Texture: Integer; X, Y: Integer; Color: DWord);
-var
-  FormatLength: Integer;
 begin
-  FormatLength := 4;
-  if (fTexRefs[Texture].InputFormat = GL_RGB) or (fTexRefs[Texture].InputFormat = GL_BGR) then
-    begin
-    FormatLength := 3;
-    Color := (Color and $00FFFFFF) or (DWord(Pointer(PtrUInt(@fTexRefs[Texture].Data[FormatLength * (fTexRefs[Texture].Width * Y + X)]))^) and $FF000000);
-    end;
-  DWord(Pointer(PtrUInt(@fTexRefs[Texture].Data[FormatLength * (fTexRefs[Texture].Width * Y + X)]))^) := Color;
-  FillTexture(Texture, @fTexRefs[Texture].Data[0], fTexRefs[Texture].InputFormat);
+  DWord(Pointer(PtrUInt(@fTexRefs[Texture].Data[4 * (fTexRefs[Texture].Width * Y + X)]))^) := Color;
+  FillTexture(Texture, @fTexRefs[Texture].Data[0], GL_BGRA);
 end;
 
 destructor TModuleTextureManagerDefault.Free;

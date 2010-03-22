@@ -58,22 +58,42 @@ end;
 
 function Ceil(A: Single): Integer;
 begin
-  Result := Floor(A) + 1;
+  Result := Floor(A);
+  if FPart(A) <> 0 then
+    Inc(Result);
 end;
 
 function Ceil(A: TVector2D): TVector2D;
 begin
-  Result := Floor(A) + 1;
+  Result := Floor(A);
+  if FPart(A.X) <> 0 then
+    Result.X := Result.X + 1;
+  if FPart(A.Y) <> 0 then
+    Result.Y := Result.Y + 1;
 end;
 
 function Ceil(A: TVector3D): TVector3D;
 begin
-  Result := Floor(A) + 1;
+  Result := Floor(A);
+  if FPart(A.X) <> 0 then
+    Result.X := Result.X + 1;
+  if FPart(A.Y) <> 0 then
+    Result.Y := Result.Y + 1;
+  if FPart(A.Z) <> 0 then
+    Result.Z := Result.Z + 1;
 end;
 
 function Ceil(A: TVector4D): TVector4D;
 begin
-  Result := Floor(A) + 1;
+  Result := Floor(A);
+  if FPart(A.X) <> 0 then
+    Result.X := Result.X + 1;
+  if FPart(A.Y) <> 0 then
+    Result.Y := Result.Y + 1;
+  if FPart(A.Z) <> 0 then
+    Result.Z := Result.Z + 1;
+  if FPart(A.W) <> 0 then
+    Result.W := Result.W + 1;
 end;
 
 

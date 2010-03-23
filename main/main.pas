@@ -131,7 +131,7 @@ begin
     Park.ParkLoader.Run;
 
   ModuleManager.ModGUI.Render;
-  sleep(10);
+//   sleep(10);
   ModuleManager.ModGLContext.SwapBuffers;
 
   if ModuleManager.ModInputHandler.QuitRequest then

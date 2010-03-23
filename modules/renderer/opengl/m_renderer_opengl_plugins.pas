@@ -88,9 +88,9 @@ begin
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
 
   glColorMask(true, false, false, true);
-  ModuleManager.ModRenderer.Render(-0.2, Distance);
+  ModuleManager.ModRenderer.Render(-0.4, Distance);
   glColorMask(false, true, true, true);
-  ModuleManager.ModRenderer.Render(0.2, Distance);
+  ModuleManager.ModRenderer.Render(0.4, Distance);
   glColorMask(true, true, true, true);
 end;
 
@@ -115,9 +115,9 @@ begin
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
 
   glDrawBuffer(GL_LEFT);
-  ModuleManager.ModRenderer.Render(-0.2, Distance);
+  ModuleManager.ModRenderer.Render(-0.4, Distance);
   glDrawBuffer(GL_RIGHT);
-  ModuleManager.ModRenderer.Render(0.2, Distance);
+  ModuleManager.ModRenderer.Render(0.4, Distance);
   glDrawBuffer(GL_BACK);
 end;
 

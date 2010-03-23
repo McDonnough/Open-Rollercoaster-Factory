@@ -158,12 +158,12 @@ begin
   fSizeX := 0;
   fSizeY := 0;
   Resize(2048, 2048);
-  for i := 0 to 2048 do
+  for i := 0 to 2047 do
     begin
-    writeln(i);
-    for j := 0 to 2048 do
-      HeightMap[i / 5, j / 5] := 30 + 30 * sin(degToRad(i / 2)) * sin(degToRad(j / 2));
+    for j := 0 to 2047 do
+      fMap[i, j].Height := Round(256 * (5 + sin(degToRad(i * 4)) * sin(degToRad(j * 4)) + 4 * sin(degToRad(i)) * sin(degToRad(j))));
     end;
+  EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;
 
 constructor TTerrain.Create;

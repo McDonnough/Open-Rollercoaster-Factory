@@ -44,40 +44,40 @@ begin
   refCellWidth := round(fTexture.Width / 16);
   refCellHeight := round(fTexture.Height / 16);
   for i := 0 to 255 do
-  begin
+    begin
   	currentX := (i mod 16);
   	currentY := round((i - currentX) / 16) * refCellHeight;
   	currentX := currentX * refCellWidth;
   	searchingFirstPixel := true;
   	for j := 0 to refCellWidth - 1 do
-  	begin
-  	  for k := 0 to refCellHeight - 1 do
   	  begin
+  	  for k := 0 to refCellHeight - 1 do
+  	    begin
   	    currentAlpha := (fTexture.Pixels[currentX + j, currentY + k] AND $FF000000) SHR 24;
   	    if currentAlpha >= 1 then
-  	    begin
-  	      if searchingFirstPixel then
   	      begin
+  	      if searchingFirstPixel then
+  	        begin
   	        tmpX1 := j;
   	        tmpX2 := j;
   	        searchingFirstPixel := false;
-  	      end
+  	        end
   	      else
-  	      begin
+  	        begin
   	        tmpX2 := j;
+  	        end;
   	      end;
   	    end;
   	  end;
-  	end;
   	if searchingFirstPixel then
-  	begin
+  	  begin
   	  tmpX1 := 0;
   	  tmpX2 := refCellWidth;
-  	end;
+  	  end;
   	fLetterPositions[i].firstPixel := tmpX1;
   	fLetterPositions[i].width := tmpX2 - tmpX1;
   	fLetterPositions[i].lastPixel := tmpX2;
-  end;
+    end;
 end;
 
 procedure TModuleFontTextureVariableWidth.Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
@@ -124,9 +124,19 @@ end;
 function TModuleFontTextureVariableWidth.CalculateTextWidth(text: String; Size: Integer): Integer;
 var
   i: integer;
+  width, widthFac: single;
 begin
-  for i := 1 to Length(text) do
-    result := result + fLetterPositions[Ord(text[i])].width;
+  width := 0;
+  widthFac := Size / refCellHeight;
+  for i := 1 to Length(Text) do
+      case Text[i] of
+        #9: width := width + 4 * 0.8 * Size;
+        #0: break;
+        #32: begin width := width + Size / 3; end;
+      else
+        width := width + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
+        end;
+  result := round(width);
 end;
 
 function TModuleFontTextureVariableWidth.ConvertText(Input: String): String;

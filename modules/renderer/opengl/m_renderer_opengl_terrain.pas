@@ -23,7 +23,7 @@ type
 implementation
 
 uses
-  g_park, u_events;
+  g_park, u_events, m_varlist;
 
 procedure TRTerrain.Render;
 var
@@ -32,9 +32,16 @@ begin
   fTexture.Bind(0);
   fShader.Bind;
   fShader.UniformF('offset', 0, 0);
-  for i := 0 to high(fRawVBOs) do
-    for j := 0 to high(fRawVBOs[i]) do
-      fRawVBOs[i, j].Render;
+//   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  for i := 0 to high(fVBOs) do
+    for j := 0 to high(fVBOs[i]) do
+      begin
+      if VecLengthNoRoot(Vector(102.4 * (i + 0.5), 0, 102.4 * (j + 0.5)) - Vector(1, 0, 1) * ModuleManager.ModCamera.ActiveCamera.Position) < (2.5 * 102.4) ** 2 then
+        fVBOs[i, j].Render
+      else
+        fRawVBOs[i, j].Render;
+      end;
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   fShader.Unbind;
   fTexture.UnBind;
 end;
@@ -42,6 +49,91 @@ end;
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
   i, j, k, l, m, n, o, p: Integer;
+  procedure UpdateVertex(X, Y: Word);
+  var
+    AppropriateVBO: TVBO;
+    AppropriateRawVBO: TVBO;
+    procedure FindVBO(X, Y: Word);
+    begin
+      k := x div 512;
+      l := y div 512;
+      AppropriateVBO := fVBOs[k, l];
+      AppropriateRawVBO := fRawVBOs[k, l];
+    end;
+
+    function getVertexID(X, Y: Word; Factor: Single): Integer;
+    begin
+      X := Round((512 / Factor) * FPart(X / Factor / (512 / Factor)));
+      Y := Round((512 / Factor) * FPart(Y / Factor / (512 / Factor)));
+      Result := Round(4 * (512 / Factor * X + Y));
+    end;
+
+  begin
+    if (X >= 0) and (Y >= 0) and (X < Park.pTerrain.SizeX) and (Y < Park.pTerrain.SizeY) then
+      begin
+      FindVBO(X, Y);
+      if (X div 16 = X / 16) and (Y div 16 = Y / 16) then
+        begin
+        AppropriateRawVBO.Bind;
+        AppropriateRawVBO.Vertices[getVertexID(X, Y, 16)] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateRawVBO.UnBind;
+        end;
+      if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
+        begin
+        AppropriateVBO.Bind;
+        AppropriateVBO.Vertices[getVertexID(X, Y, 4)] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateVBO.UnBind;
+        end;
+      end;
+    if (X > 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX) and (Y < Park.pTerrain.SizeY) then
+      begin
+      FindVBO(X - 1, Y);
+      if (X div 16 = X / 16) and (Y div 16 = Y / 16) then
+        begin
+        AppropriateRawVBO.Bind;
+        AppropriateRawVBO.Vertices[getVertexID(X - 16, Y, 16) + 1] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateRawVBO.UnBind;
+        end;
+      if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
+        begin
+        AppropriateVBO.Bind;
+        AppropriateVBO.Vertices[getVertexID(X - 4, Y, 4) + 1] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateVBO.UnBind;
+        end;
+      end;
+    if (X > 0) and (Y > 0) and (X <= Park.pTerrain.SizeX) and (Y <= Park.pTerrain.SizeY) then
+      begin
+      FindVBO(X - 1, Y - 1);
+      if (X div 16 = X / 16) and (Y div 16 = Y / 16) then
+        begin
+        AppropriateRawVBO.Bind;
+        AppropriateRawVBO.Vertices[getVertexID(X - 16, Y - 16, 16) + 2] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateRawVBO.UnBind;
+        end;
+      if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
+        begin
+        AppropriateVBO.Bind;
+        AppropriateVBO.Vertices[getVertexID(X - 4, Y - 4, 4) + 2] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateVBO.UnBind;
+        end;
+      end;
+    if (X >= 0) and (Y > 0) and (X < Park.pTerrain.SizeX) and (Y <= Park.pTerrain.SizeY) then
+      begin
+      FindVBO(X, Y - 1);
+      if (X div 16 = X / 16) and (Y div 16 = Y / 16) then
+        begin
+        AppropriateRawVBO.Bind;
+        AppropriateRawVBO.Vertices[getVertexID(X, Y - 16, 16) + 3] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateRawVBO.UnBind;
+        end;
+      if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
+        begin
+        AppropriateVBO.Bind;
+        AppropriateVBO.Vertices[getVertexID(X, Y - 4, 4) + 3] := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+        AppropriateVBO.UnBind;
+        end;
+      end;
+  end;
 begin
   if Event = 'TTerrain.Resize' then
     begin
@@ -66,24 +158,24 @@ begin
         begin
         if (i >= m) or (j >= n) then
           begin
-          fVBOs[i, j] := TVBO.Create(64 * 64 * 4, GL_V3F, GL_QUADS);
-          for o := 0 to 63 do
-            for p := 0 to 63 do
+          fVBOs[i, j] := TVBO.Create(128 * 128 * 4, GL_V3F, GL_QUADS);
+          for o := 0 to 127 do
+            for p := 0 to 127 do
               begin
-              fVBOs[i, j].Vertices[4 * (64 * o + p) + 0] := Vector(0.8 * 64 * i + 0.8 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 64 * i + 0.8 * o + 0.0, 0.8 * 64 * j + 0.8 * p + 0.0], 0.8 * 64 * j + 0.8 * p + 0.0);
-              fVBOs[i, j].Vertices[4 * (64 * o + p) + 1] := Vector(0.8 * 64 * i + 0.8 * o + 0.8, Park.pTerrain.HeightMap[0.8 * 64 * i + 0.8 * o + 0.8, 0.8 * 64 * j + 0.8 * p + 0.0], 0.8 * 64 * j + 0.8 * p + 0.0);
-              fVBOs[i, j].Vertices[4 * (64 * o + p) + 2] := Vector(0.8 * 64 * i + 0.8 * o + 0.8, Park.pTerrain.HeightMap[0.8 * 64 * i + 0.8 * o + 0.8, 0.8 * 64 * j + 0.8 * p + 0.8], 0.8 * 64 * j + 0.8 * p + 0.8);
-              fVBOs[i, j].Vertices[4 * (64 * o + p) + 3] := Vector(0.8 * 64 * i + 0.8 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 64 * i + 0.8 * o + 0.0, 0.8 * 64 * j + 0.8 * p + 0.8], 0.8 * 64 * j + 0.8 * p + 0.8);
+              fVBOs[i, j].Vertices[4 * (128 * o + p) + 0] := Vector(0.8 * 128 * i + 0.8 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.0, 0.8 * 128 * j + 0.8 * p + 0.0], 0.8 * 128 * j + 0.8 * p + 0.0);
+              fVBOs[i, j].Vertices[4 * (128 * o + p) + 1] := Vector(0.8 * 128 * i + 0.8 * o + 0.8, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.8, 0.8 * 128 * j + 0.8 * p + 0.0], 0.8 * 128 * j + 0.8 * p + 0.0);
+              fVBOs[i, j].Vertices[4 * (128 * o + p) + 2] := Vector(0.8 * 128 * i + 0.8 * o + 0.8, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.8, 0.8 * 128 * j + 0.8 * p + 0.8], 0.8 * 128 * j + 0.8 * p + 0.8);
+              fVBOs[i, j].Vertices[4 * (128 * o + p) + 3] := Vector(0.8 * 128 * i + 0.8 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.0, 0.8 * 128 * j + 0.8 * p + 0.8], 0.8 * 128 * j + 0.8 * p + 0.8);
               end;
           fVBOs[i, j].UnBind;
-          fRawVBOs[i, j] := TVBO.Create(16 * 16 * 4, GL_V3F, GL_QUADS);
-          for o := 0 to 15 do
-            for p := 0 to 15 do
+          fRawVBOs[i, j] := TVBO.Create(32 * 32 * 4, GL_V3F, GL_QUADS);
+          for o := 0 to 31 do
+            for p := 0 to 31 do
               begin
-              fRawVBOs[i, j].Vertices[4 * (16 * o + p) + 0] := Vector(0.8 * 64 * i + 3.2 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 64 * i + 3.2 * o + 0.0, 0.8 * 64 * j + 3.2 * p + 0.0], 0.8 * 64 * j + 3.2 * p + 0.0);
-              fRawVBOs[i, j].Vertices[4 * (16 * o + p) + 1] := Vector(0.8 * 64 * i + 3.2 * o + 3.2, Park.pTerrain.HeightMap[0.8 * 64 * i + 3.2 * o + 3.2, 0.8 * 64 * j + 3.2 * p + 0.0], 0.8 * 64 * j + 3.2 * p + 0.0);
-              fRawVBOs[i, j].Vertices[4 * (16 * o + p) + 2] := Vector(0.8 * 64 * i + 3.2 * o + 3.2, Park.pTerrain.HeightMap[0.8 * 64 * i + 3.2 * o + 3.2, 0.8 * 64 * j + 3.2 * p + 3.2], 0.8 * 64 * j + 3.2 * p + 3.2);
-              fRawVBOs[i, j].Vertices[4 * (16 * o + p) + 3] := Vector(0.8 * 64 * i + 3.2 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 64 * i + 3.2 * o + 0.0, 0.8 * 64 * j + 3.2 * p + 3.2], 0.8 * 64 * j + 3.2 * p + 3.2);
+              fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 0] := Vector(3.2 * 32 * i + 3.2 * o + 0.0, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 0.0, 3.2 * 32 * j + 3.2 * p + 0.0], 3.2 * 32 * j + 3.2 * p + 0.0);
+              fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 1] := Vector(3.2 * 32 * i + 3.2 * o + 3.2, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 3.2, 3.2 * 32 * j + 3.2 * p + 0.0], 3.2 * 32 * j + 3.2 * p + 0.0);
+              fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 2] := Vector(3.2 * 32 * i + 3.2 * o + 3.2, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 3.2, 3.2 * 32 * j + 3.2 * p + 3.2], 3.2 * 32 * j + 3.2 * p + 3.2);
+              fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 3] := Vector(3.2 * 32 * i + 3.2 * o + 0.0, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 0.0, 3.2 * 32 * j + 3.2 * p + 3.2], 3.2 * 32 * j + 3.2 * p + 3.2);
               end;
           fRawVBOs[i, j].UnBind;
           end;
@@ -93,17 +185,8 @@ begin
   if (Data <> nil) and (Event = 'TTerrain.Changed') then
     begin
     i := Word(Data^);
-    j := Word((Data + 2)^);
-    k := i div 512;
-    l := j div 512;
-    m := i - 512 * k;
-    n := j - 512 * l;
-    if (i div 16 = i / 16) and (j div 16 = j / 16) then
-      begin
-      fRawVBOs[k, l].Bind;
-      fRawVBOs[k, l].Vertices[4 * (16 * m div 16 + n div 16) + 0] := Vector(i / 5, Park.pTerrain.HeightMap[i / 5, j / 5], j / 5);
-      fRawVBOs[k, l].Unbind;
-      end;
+    j := Word(Pointer(PtrUInt(Data) + 2)^);
+    UpdateVertex(i, j);
     end;
 end;
 

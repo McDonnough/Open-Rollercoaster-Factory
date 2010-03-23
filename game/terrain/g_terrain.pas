@@ -67,11 +67,13 @@ end;
 procedure TTerrain.SetHeightAtPosition(X, Y, Height: Single);
 var
   fX, fY: Word;
+  fFinal: DWord;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Height := Round(256 * Height);
-  EventManager.CallEvent('TTerrain.Changed', @fX, nil);
+  fFinal := fX + 65536 * fY;
+  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
 end;
 
 procedure TTerrain.Resize(X, Y: Integer);
@@ -150,11 +152,18 @@ begin
 end;
 
 procedure TTerrain.LoadDefaults;
+var
+  i, j: Integer;
 begin
   fSizeX := 0;
   fSizeY := 0;
-  Resize(4096, 4096);
-  HeightMap[0, 0] := 10;
+  Resize(2048, 2048);
+  for i := 0 to 2048 do
+    begin
+    writeln(i);
+    for j := 0 to 2048 do
+      HeightMap[i / 5, j / 5] := 30 + 30 * sin(degToRad(i / 2)) * sin(degToRad(j / 2));
+    end;
 end;
 
 constructor TTerrain.Create;

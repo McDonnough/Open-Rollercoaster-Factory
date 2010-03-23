@@ -14,5 +14,4 @@ vec2 getRightTexCoord(float fac) {
 void main(void) {
   gl_FragColor = (texture2D(TerrainTexture, getRightTexCoord(1.0 / 483)) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0))) * 0.5;
   gl_FragDepth = sqrt(dist / 10000.0);
-//   gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }

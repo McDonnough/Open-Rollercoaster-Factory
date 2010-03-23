@@ -102,7 +102,6 @@ end;
 procedure MainLoop; cdecl;
 var
   ResX, ResY: Integer;
-  a: TTexture;
   ParkFileName: String;
 begin
   FPSDisplay.SetTime;

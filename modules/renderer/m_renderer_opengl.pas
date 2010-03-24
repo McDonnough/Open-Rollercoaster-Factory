@@ -33,10 +33,12 @@ procedure TModuleRendererOpenGL.PostInit;
 begin
   RCamera := TRCamera.Create;
   RTerrain := TRTerrain.Create;
+  RenderEffectManager := TRenderEffectManager.Create;
 end;
 
 procedure TModuleRendererOpenGL.Unload;
 begin
+  RenderEffectManager.Free;
   RTerrain.Free;
   RCamera.Free;
 end;
@@ -92,12 +94,10 @@ constructor TModuleRendererOpenGL.Create;
 begin
   fModName := 'RendererGL';
   fModType := 'Renderer';
-  RenderEffectManager := TRenderEffectManager.Create;
 end;
 
 destructor TModuleRendererOpenGL.Free;
 begin
-  RenderEffectManager.Free;
 end;
 
 end.

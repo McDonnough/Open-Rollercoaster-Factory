@@ -134,7 +134,10 @@ begin
   ModuleManager.ModGLContext.SwapBuffers;
 
   if ModuleManager.ModInputHandler.QuitRequest then
+    begin
     ModuleManager.ModGLContext.EndMainLoop;
+    ChangeRenderState(rsMainMenu);
+    end;
 
   FPSDisplay.Calculate;
 end;

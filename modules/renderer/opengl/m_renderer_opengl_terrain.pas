@@ -91,13 +91,23 @@ end;
 procedure TRTerrain.Render;
 var
   i, j: integer;
+  showHighest: Boolean;
 begin
   MoveHDTerrain;
-//   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  showHighest := VecLengthNoRoot(Vector(25.6 + fFineOffsetX / 5, 0, 25.6 + fFineOffsetY / 5) - Vector(1, 0, 1) * ModuleManager.ModCamera.ActiveCamera.Position) < (102.4 ** 2);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   fTexture.Bind(0);
   fShader.Bind;
-  fShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5);
-  fShader.UniformI('HighLOD', 0);
+  if showHighest then
+    begin
+    fShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5);
+    fShader.UniformI('HighLOD', 0);
+    end
+  else
+    begin
+    fShader.UniformF('offset', -1000, -1000);
+    fShader.UniformI('HighLOD', 0);
+    end;
   for i := 0 to high(fVBOs) do
     for j := 0 to high(fVBOs[i]) do
       begin
@@ -106,10 +116,13 @@ begin
       else
         fRawVBOs[i, j].Render;
       end;
-  fShader.UniformI('HighLOD', 1);
-  fFineVBO.Bind;
-  fFineVBO.Render;
-  fFineVBO.Unbind;
+  if showHighest then
+    begin
+    fShader.UniformI('HighLOD', 1);
+    fFineVBO.Bind;
+    fFineVBO.Render;
+    fFineVBO.Unbind;
+    end;
   fShader.Unbind;
   fTexture.UnBind;
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

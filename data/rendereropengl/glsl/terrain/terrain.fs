@@ -16,8 +16,8 @@ vec2 getRightTexCoord(float fac) {
 }
 
 void main(void) {
-  if ((clamp(vertex.xz, offset, offset + 51.2) == vertex.xz) && (HighLOD == 0))
-    discard;
+//   if ((clamp(vertex.xz, offset, offset + 51.2) == vertex.xz) && (HighLOD == 0))
+//     discard;
   gl_FragColor = (texture2D(TerrainTexture, getRightTexCoord(1.0 / 483)) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0))) * 0.5;
   gl_FragDepth = sqrt(dist / 10000.0);
 }

@@ -117,7 +117,7 @@ end;
 
 procedure TVBO.setVertex(ID: Integer; Vec: TVector3D);
 begin
-  if fOfsMap.X = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit;
   Map(GL_WRITE_ONLY);
   TVector3D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.X)))^) := Vec;

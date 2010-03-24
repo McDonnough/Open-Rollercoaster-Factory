@@ -36,12 +36,23 @@ var
   i, j: Integer;
   a: TVBO;
   Motion: TVector2D;
-  tmpHeight: Single;
 
   procedure CalcMotion;
   begin
     Motion := (fMVec[0] + fMVec[1] + fMVec[2] + fMVec[3] + fMVec[4]) / 5 * 78;
   end;
+
+  function InterpolateHeightMap(X, Y: Single): Single;
+  begin
+    Result := -1;
+    if (Y - fTmpFineOffsetY = 0) or (Y - fTmpFineOffsetY = 256) then
+      Result := Mix(Park.pTerrain.HeightMap[0.8 * Floor(X / 4), Y / 5], Park.pTerrain.HeightMap[0.8 * Ceil(X / 4), Y / 5], FPart(X / 4))
+    else if (X - fTmpFineOffsetX = 0) or (X - fTmpFineOffsetX = 256) then
+      Result := Mix(Park.pTerrain.HeightMap[X / 5, 0.8 * Floor(Y / 4)], Park.pTerrain.HeightMap[X / 5, 0.8 * Ceil(Y / 4)], FPart(Y / 4))
+    else
+      Result := Park.pTerrain.HeightMap[X / 5, Y / 5];
+  end;
+
 begin
   fMVec[4] := fMVec[3];
   fMVec[3] := fMVec[2];
@@ -53,10 +64,10 @@ begin
   for i := fMovingRow to min(255, fMovingRow + 4) do
     for j := 0 to 255 do
       begin
-      fTempVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, Park.pTerrain.HeightMap[0.2 * (i + fTmpFineOffsetX), 0.2 * (j + fTmpFineOffsetY)], 0.2 * j);
-      fTempVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, Park.pTerrain.HeightMap[0.2 * (i + fTmpFineOffsetX + 1), 0.2 * (j + fTmpFineOffsetY)], 0.2 * j);
-      fTempVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, Park.pTerrain.HeightMap[0.2 * (i + fTmpFineOffsetX + 1), 0.2 * (j + fTmpFineOffsetY + 1)], 0.2 * j + 0.2);
-      fTempVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, Park.pTerrain.HeightMap[0.2 * (i + fTmpFineOffsetX), 0.2 * (j + fTmpFineOffsetY + 1)], 0.2 * j + 0.2);
+      fTempVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, InterpolateHeightMap((i + fTmpFineOffsetX), (j + fTmpFineOffsetY)), 0.2 * j);
+      fTempVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, InterpolateHeightMap((i + fTmpFineOffsetX + 1), (j + fTmpFineOffsetY)), 0.2 * j);
+      fTempVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, InterpolateHeightMap((i + fTmpFineOffsetX + 1), (j + fTmpFineOffsetY + 1)), 0.2 * j + 0.2);
+      fTempVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, InterpolateHeightMap((i + fTmpFineOffsetX), (j + fTmpFineOffsetY + 1)), 0.2 * j + 0.2);
       end;
   fTempVBO.Unbind;
   fMovingRow := fMovingRow + 5;
@@ -72,8 +83,8 @@ begin
       fFineOffsetY := fTmpFineOffsetY;
       end;
     calcMotion;
-    fTmpFineOffsetX := Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X + Motion.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256));
-    fTmpFineOffsetY := Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z + Motion.Y) * 5 - 128, 0, Park.pTerrain.SizeY - 256));
+    fTmpFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X + Motion.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
+    fTmpFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z + Motion.Y) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
     end;
 end;
 

@@ -129,7 +129,7 @@ begin
   for i := 0 to 2047 do
     begin
     for j := 0 to 2047 do
-      fMap[i, j].Height := Round(256 * (5 + sin(degToRad(i * 4)) * sin(degToRad(j * 4)) + 4 * sin(degToRad(i)) * sin(degToRad(j))));
+      fMap[i, j].Height := Round(256 * (7 + sin(degToRad(i * 4)) * sin(degToRad(j * 4)) + 4 * sin(degToRad(i)) * sin(degToRad(j))+ sin(degToRad(4 * i)) * sin(degToRad(4 * j)) + 0.25 * sin(degToRad(16 * i)) * sin(degToRad(16 * j))));
     end;
   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;

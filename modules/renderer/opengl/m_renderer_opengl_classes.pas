@@ -66,6 +66,7 @@ procedure TVBO.Map(Mode: GLEnum);
 begin
   if (fVBOPointer = nil) or (fLastMode <> Mode) then
     begin
+    Bind;
     if fVBOPointer <> nil then
       Unmap;
     fVBOPointer := glMapBuffer(GL_ARRAY_BUFFER, Mode);
@@ -84,7 +85,7 @@ end;
 
 function TVBO.getVertex(ID: Integer): TVector3D;
 begin
-  if fOfsMap.X = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit(Vector(0, 0, 0));
   Map(GL_READ_ONLY);
   Result := TVector3D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.X)))^);
@@ -92,7 +93,7 @@ end;
 
 function TVBO.getColor(ID: Integer): TVector4D;
 begin
-  if fOfsMap.Y = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit(Vector(0, 0, 0, 0));
   Map(GL_READ_ONLY);
   Result := TVector4D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.Y)))^);
@@ -100,7 +101,7 @@ end;
 
 function TVBO.getNormal(ID: Integer): TVector3D;
 begin
-  if fOfsMap.Z = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit(Vector(0, 0, 0));
   Map(GL_READ_ONLY);
   Result := TVector3D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.Z)))^);
@@ -108,7 +109,7 @@ end;
 
 function TVBO.getTexCoord(ID: Integer): TVector2D;
 begin
-  if fOfsMap.W = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit(Vector(0, 0));
   Map(GL_READ_ONLY);
   Result := TVector2D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.W)))^);
@@ -125,7 +126,7 @@ end;
 
 procedure TVBO.setColor(ID: Integer; Vec: TVector4D);
 begin
-  if fOfsMap.Y = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit;
   Map(GL_WRITE_ONLY);
   TVector4D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.Y)))^) := Vec;
@@ -133,7 +134,7 @@ end;
 
 procedure TVBO.setNormal(ID: Integer; Vec: TVector3D);
 begin
-  if fOfsMap.Z = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit;
   Map(GL_WRITE_ONLY);
   TVector3D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.Z)))^) := Vec;
@@ -141,7 +142,7 @@ end;
 
 procedure TVBO.setTexCoord(ID: Integer; Vec: TVector2D);
 begin
-  if fOfsMap.W = -1 then
+  if (fOfsMap.X = -1) or (ID >= fVertexCount) or (ID < 0) then
     exit;
   Map(GL_WRITE_ONLY);
   TVector2D(Pointer(PtrUInt(fVBOPointer) + PtrUInt(ID * fDataSize + Round(fOfsMap.W)))^) := Vec;

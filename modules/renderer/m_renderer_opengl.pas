@@ -30,10 +30,16 @@ uses
   m_varlist, u_events;
 
 procedure TModuleRendererOpenGL.PostInit;
+var
+  s: AString;
+  i: INteger;
 begin
   RCamera := TRCamera.Create;
   RTerrain := TRTerrain.Create;
   RenderEffectManager := TRenderEffectManager.Create;
+  s := Explode(',', GetConfVal('effects'));
+  for i := 0 to high(s) do
+    RenderEffectManager.LoadEffect(StrToInt(S[i]));
 end;
 
 procedure TModuleRendererOpenGL.Unload;
@@ -76,18 +82,12 @@ begin
 end;
 
 procedure TModuleRendererOpenGL.CheckModConf;
-var
-  s: AString;
-  i: INteger;
 begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
     SetConfVal('effects', IntToStr(RE_2D_FOCUS));
     end;
-  s := Explode(',', GetConfVal('effects'));
-  for i := 0 to high(s) do
-    RenderEffectManager.LoadEffect(StrToInt(S[i]));
 end;
 
 constructor TModuleRendererOpenGL.Create;

@@ -114,40 +114,8 @@ var
   fFieldsWantingWater, fWantedWater: Integer;
 begin
   try
-    for i := 0 to fSizeX - 1 do
-      for j := 0 to fSizeY - 1 do
-        begin
-        if fMap[i, j].MinWater > fMap[i, j].Water then
-          fMap[i, j].Water := fMap[i, j].Water + fMap[i, j].WaterSpeed
-        else if fMap[i, j].MaxWater < fMap[i, k].Water then
-          fMap[i, j].Water := fMap[i, j].Water - fMap[i, j].WaterSpeed;
-        fTmpMap[i, j] := fMap[i, j].Water;
-        end;
-    for i := 1 to fSizeX - 2 do
-      for j := 1 to fSizeY - 2 do
-        begin
-        fFieldsWantingWater := 0;
-        for k := -1 to 1 do
-          for l := -1 to 1 do
-            begin
-            diffMap[k, l] := 0;
-            if fMap[i, j].Water > fMap[i + k, j + l].Water then
-              begin
-              inc(fFieldsWantingWater);
-              diffMap[k, l] := fMap[i, j].Water - fMap[i + k, j + l].Water;
-              end;
-            end;
-        for k := -1 to 1 do
-          for l := -1 to 1 do
-            begin
-            fTmpMap[i + k, j + l] := fMap[i + k, j + l].Water + Round(diffMap[k, l] / fFieldsWantingWater);
-            fTmpMap[i, j] := fMap[i, j].Water - diffMap[k, l];
-            end;
-        end;
-    for i := 0 to fSizeX - 1 do
-      for j := 0 to fSizeY - 1 do
-        fMap[i, j].Water := fTmpMap[i, k];
   except
+    writeln('Exception');
   end;
 end;
 

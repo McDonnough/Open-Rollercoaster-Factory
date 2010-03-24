@@ -36,6 +36,7 @@ var
   i, j: Integer;
   a: TVBO;
   Motion: TVector2D;
+  tmpHeight: Single;
 
   procedure CalcMotion;
   begin

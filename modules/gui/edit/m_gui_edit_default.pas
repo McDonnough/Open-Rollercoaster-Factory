@@ -32,6 +32,8 @@ begin
 end;
 
 procedure TModuleGUIEditDefault.Render(Edit: TEdit);
+var
+  i: integer;
   procedure RenderEdit(oX, oY: GLFloat);
   begin
     glTexCoord2f(oX + 0,                   oY + 0);         glVertex3f(Edit.Left,      Edit.Top, 0);
@@ -72,11 +74,20 @@ begin
     RenderEdit(0, 0.5);
   glEnd;
   fTexture.Unbind;
-  ModuleManager.ModFont.Write(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos), Edit.Height - 16, Edit.Left + 8, Edit.Top + 8, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1, 0);
+  i := 0;
+  if ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Length(Edit.Text) - Edit.MovedChars), round(Edit.Height - 16)) > Edit.Width - 16 then
+    begin
+    while ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, i), round(Edit.Height - 16)) < Edit.Width - 16 do
+      i := i + 1;
+    i := i - 1;
+    end
+  else
+    i := Length(Edit.Text) - Edit.MovedChars;
+  ModuleManager.ModFont.Write(SubString(Edit.Text, Edit.MovedChars + 1, i), Edit.Height - 16, Edit.Left + 8, Edit.Top + 8, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1, 0);
   glBegin(GL_LINES);
     glColor4f(1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, Edit.fClickFactor);
-    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos), round(Edit.Height - 16)) + 8, Edit.Top + 8);
-    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos), round(Edit.Height - 16)) + 8, Edit.Top + Edit.Height - 8);
+    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, i), round(Edit.Height - 16)) + 8, Edit.Top + 8);
+    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, i), round(Edit.Height - 16)) + 8, Edit.Top + Edit.Height - 8);
   glEnd;
   glDisable(GL_BLEND);
 end;
@@ -133,12 +144,15 @@ begin
       end;
     K_BACKSPACE:
       begin
-      if (Edit.CursorPos <> 0) and (Length(Edit.Text) <> 0) then
+      if Edit.CursorPos <> 0 then
         begin
         Edit.Text := SubString(Edit.Text, 1, Edit.CursorPos - 1) + SubString(Edit.Text, Edit.CursorPos, Length(Edit.Text) - Edit.CursorPos);
         if Edit.CursorPos = CursorPosBefore then
           Edit.CursorPos := Edit.CursorPos - 1;
         end;
+      if Edit.MovedChars = Edit.CursorPos then
+        while (ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) < round((Edit.Width - 16) / 2)) and (Edit.MovedChars <> 0) do
+          Edit.MovedChars := Edit.MovedChars - 1;
       end;
     K_LEFT:
       if Edit.CursorPos > 0 then
@@ -147,10 +161,11 @@ begin
       if Edit.CursorPos < Length(Edit.Text) then
         Edit.CursorPos := Edit.CursorPos + 1;
     end;
-    if ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos), round(Edit.Height - 16)) + 24 > Edit.Width then
-      Edit.MovedChars := Edit.MovedChars + 1
-    else if (ModuleManager.ModFont.CalculateTextWidth(Edit.Text, round(Edit.Height - 16)) > Edit.Width) and (ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos), round(Edit.Height - 16)) + ModuleManager.ModFont.CalculateTextWidth(Edit.Text[Edit.MovedChars], round(Edit.Height - 16)) + 24 <= Edit.Width) then
-      Edit.MovedChars := Edit.MovedChars - 1;
+  if Edit.CursorPos - Edit.MovedChars < 0 then
+    Edit.MovedChars := Edit.MovedChars - 1
+  else if ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) > Edit.Width - 16 then
+    while ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) > Edit.Width - 16 do
+      Edit.MovedChars := Edit.MovedChars + 1;
 end;
 
 constructor TModuleGUIEditDefault.Create;

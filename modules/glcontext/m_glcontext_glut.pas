@@ -85,6 +85,10 @@ end;
 procedure TModuleGLContextGLUT.EndMainLoop;
 begin
   glutDestroyWindow(fWin);
+  ModuleManager.UnloadModules;
+  ModuleManager.Free;
+  EventManager.Free;
+  halt(0);
 end;
 
 procedure TModuleGLContextGLUT.InitGL;

@@ -86,7 +86,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('effects', IntToStr(RE_2D_FOCUS));
+    SetConfVal('effects', IntToStr(RE_2D_FOCUS) + ',' + IntToStr(RE_BLOOM));
     end;
 end;
 

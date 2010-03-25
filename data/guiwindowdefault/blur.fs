@@ -1,3 +1,5 @@
+#version 120
+
 uniform sampler2D BackTex;
 uniform sampler2D WinTex;
 uniform vec2 Screen;

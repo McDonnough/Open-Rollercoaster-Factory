@@ -445,17 +445,19 @@ var
 begin
   for i := 0 to high(fChildNodes) do
     if ChildNodes[i].NodeType = DOM_ELEMENT_NODE then
+      begin
       if TDOMElement(ChildNodes[i]).TagName = Name then
         begin
         setLength(Result, length(Result) + 1);
         Result[high(Result)] := ChildNodes[i];
-        tmpList := TDOMElement(ChildNodes[i]).GetElementsByTagName(Name);
-        for j := 0 to high(tmpList) do
-          begin
-          setLength(Result, length(Result) + 1);
-          Result[high(Result)] := tmpList[j];
-          end;
         end;
+      tmpList := TDOMElement(ChildNodes[i]).GetElementsByTagName(Name);
+      for j := 0 to high(tmpList) do
+        begin
+        setLength(Result, length(Result) + 1);
+        Result[high(Result)] := tmpList[j];
+        end;
+      end;
 end;
 
 procedure TDOMElement.Normalize;
@@ -541,17 +543,19 @@ var
 begin
   for i := 0 to high(fChildNodes) do
     if ChildNodes[i].NodeType = DOM_ELEMENT_NODE then
+      begin
       if TDOMElement(ChildNodes[i]).TagName = TagName then
         begin
         setLength(Result, length(Result) + 1);
         Result[high(Result)] := ChildNodes[i];
-        tmpList := TDOMElement(ChildNodes[i]).GetElementsByTagName(TagName);
-        for j := 0 to high(tmpList) do
-          begin
-          setLength(Result, length(Result) + 1);
-          Result[high(Result)] := tmpList[j];
-          end;
         end;
+      tmpList := TDOMElement(ChildNodes[i]).GetElementsByTagName(TagName);
+      for j := 0 to high(tmpList) do
+        begin
+        setLength(Result, length(Result) + 1);
+        Result[high(Result)] := tmpList[j];
+        end;
+      end;
 end;
 
 destructor TDOMDocument.Free;

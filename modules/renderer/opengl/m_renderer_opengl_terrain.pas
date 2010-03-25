@@ -133,11 +133,21 @@ procedure TRTerrain.Render;
 var
   i, j: integer;
   showHighest: Boolean;
+
+  function InterpolateHeightMap(X, Y: Single): Single;
+  begin
+    Result := -1;
+    if (Y - fTmpFineOffsetY = 0) or (Y - fTmpFineOffsetY = 256) then
+      Result := Mix(Park.pTerrain.HeightMap[0.8 * Floor(X / 4), Y / 5], Park.pTerrain.HeightMap[0.8 * Ceil(X / 4), Y / 5], FPart(X / 4))
+    else if (X - fTmpFineOffsetX = 0) or (X - fTmpFineOffsetX = 256) then
+      Result := Mix(Park.pTerrain.HeightMap[X / 5, 0.8 * Floor(Y / 4)], Park.pTerrain.HeightMap[X / 5, 0.8 * Ceil(Y / 4)], FPart(Y / 4))
+    else
+      Result := Park.pTerrain.HeightMap[X / 5, Y / 5];
+  end;
 begin
   glDisable(GL_BLEND);
   MoveHDTerrain;
-  showHighest := VecLengthNoRoot(Vector(25.6 + fFineOffsetX / 5, 0, 25.6 + fFineOffsetY / 5) - Vector(1, 0, 1) * ModuleManager.ModCamera.ActiveCamera.Position) < (102.4 ** 2);
-//   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  showHighest := (VecLengthNoRoot(Vector(25.6 + fFineOffsetX / 5, 0, 25.6 + fFineOffsetY / 5) - Vector(1, 0, 1) * ModuleManager.ModCamera.ActiveCamera.Position) < (102.4 ** 2));
   fTexture.Bind(0);
   fShader.Bind;
   if showHighest then
@@ -167,7 +177,7 @@ begin
     end;
   fShader.Unbind;
   fTexture.UnBind;
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 end;
 
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
@@ -191,10 +201,21 @@ var
       Y := Round((512 / Factor) * FPart(Y / Factor / (512 / Factor)));
       Result := Round(4 * (512 / Factor * X + Y));
     end;
+
+    function InterpolateHeightMap(X, Y: Single): Single;
+    begin
+      Result := -1;
+      if (FPart(X / 512) = 0) then
+        Result := Mix(Park.pTerrain.HeightMap[X / 5, 16 * Floor(Y / 16) / 5], Park.pTerrain.HeightMap[X / 5, 16 * Ceil(Y / 16) / 5], FPart(Y / 16))
+      else if (FPart(Y / 512) = 0) then
+        Result := Mix(Park.pTerrain.HeightMap[16 * Floor(X / 16) / 5, Y / 5], Park.pTerrain.HeightMap[16 * Ceil(X / 16) / 5, Y / 5], FPart(X / 16))
+      else
+        Result := Park.pTerrain.HeightMap[X / 5, Y / 5];
+    end;
   var
     Height: TVector3D;
   begin
-    Height := Vector(X / 5, Park.pTerrain.HeightMap[X / 5, Y / 5], Y / 5);
+    Height := Vector(X / 5, InterpolateHeightMap(X, Y), Y / 5);
     if (X >= 0) and (Y >= 0) and (X < Park.pTerrain.SizeX) and (Y < Park.pTerrain.SizeY) then
       begin
       FindVBO(X, Y);

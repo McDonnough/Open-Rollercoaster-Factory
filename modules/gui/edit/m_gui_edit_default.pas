@@ -1,10 +1,10 @@
 unit m_gui_edit_default;
-
+ 
 interface
-
+ 
 uses
   SysUtils, Classes, m_gui_edit_class, m_texmng_class, DGLOpenGL, Math;
-
+ 
 type
   TModuleGUIEditDefault = class(TModuleGUIEditClass)
     protected
@@ -16,12 +16,12 @@ type
       constructor Create;
       destructor Free;
     end;
-
+ 
 implementation
-
+ 
 uses
   m_varlist, u_functions, m_inputhandler_class;
-
+ 
 procedure TModuleGUIEditDefault.CheckModConf;
 begin
   if GetConfVal('used') = '' then
@@ -30,7 +30,7 @@ begin
     SetConfVal('background', 'guieditdefault/bg.tga');
     end;
 end;
-
+ 
 procedure TModuleGUIEditDefault.Render(Edit: TEdit);
 var
   i: integer;
@@ -40,12 +40,12 @@ var
     glTexCoord2f(oX + 8 / fTexture.Width, oY + 0);         glVertex3f(Edit.Left + 8, Edit.Top, 0);
     glTexCoord2f(oX + 8 / fTexture.Width, oY + 0.5);       glVertex3f(Edit.Left + 8, Edit.Top + Edit.Height, 0);
     glTexCoord2f(oX + 0,                   oY + 0.5);       glVertex3f(Edit.Left,      Edit.Top + Edit.Height, 0);
-
+ 
     glTexCoord2f(oX + 8 / fTexture.Width,       oY + 0);   glVertex3f(Edit.Left + 8,            Edit.Top, 0);
     glTexCoord2f(oX + 0.5 - 8 / fTexture.Width, oY + 0);   glVertex3f(Edit.Left + Edit.Width - 8, Edit.Top, 0);
     glTexCoord2f(oX + 0.5 - 8 / fTexture.Width, oY + 0.5); glVertex3f(Edit.Left + Edit.Width - 8, Edit.Top + Edit.Height, 0);
     glTexCoord2f(oX + 8 / fTexture.Width,       oY + 0.5); glVertex3f(Edit.Left + 8,            Edit.Top + Edit.Height, 0);
-
+ 
     glTexCoord2f(oX + 0.5 - 8 / fTexture.Width, oY + 0);   glVertex3f(Edit.Left + Edit.Width - 8, Edit.Top, 0);
     glTexCoord2f(oX + 0.5,                       oY + 0);   glVertex3f(Edit.Left + Edit.Width,      Edit.Top, 0);
     glTexCoord2f(oX + 0.5,                       oY + 0.5); glVertex3f(Edit.Left + Edit.Width,      Edit.Top + Edit.Height, 0);
@@ -86,12 +86,12 @@ begin
   ModuleManager.ModFont.Write(SubString(Edit.Text, Edit.MovedChars + 1, i), Edit.Height - 16, Edit.Left + 8, Edit.Top + 8, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1, 0);
   glBegin(GL_LINES);
     glColor4f(1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, Edit.fClickFactor);
-    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, i), round(Edit.Height - 16)) + 8, Edit.Top + 8);
-    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, i), round(Edit.Height - 16)) + 8, Edit.Top + Edit.Height - 8);
+    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) + 8, Edit.Top + 8);
+    glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) + 8, Edit.Top + Edit.Height - 8);
   glEnd;
   glDisable(GL_BLEND);
 end;
-
+ 
 procedure TModuleGUIEditDefault.HandleKeypress(Edit: TEdit; Key: Integer);
 var
   CursorPosBefore: Integer;
@@ -146,7 +146,7 @@ begin
       begin
       if Edit.CursorPos <> 0 then
         begin
-        Edit.Text := SubString(Edit.Text, 1, Edit.CursorPos - 1) + SubString(Edit.Text, Edit.CursorPos, Length(Edit.Text) - Edit.CursorPos);
+        Edit.Text := SubString(Edit.Text, 1, Edit.CursorPos - 1) + SubString(Edit.Text, Edit.CursorPos + 1, Length(Edit.Text) - (Edit.CursorPos - 1));
         if Edit.CursorPos = CursorPosBefore then
           Edit.CursorPos := Edit.CursorPos - 1;
         end;
@@ -167,21 +167,22 @@ begin
     while ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) > Edit.Width - 16 do
       Edit.MovedChars := Edit.MovedChars + 1;
 end;
-
+ 
 constructor TModuleGUIEditDefault.Create;
 begin
   fModName := 'GUIEditDefault';
   fModType := 'GUIEdit';
-
+ 
   CheckModConf;
-
+ 
   fTexture := TTexture.Create;
   fTexture.FromFile(GetConfVal('background'));
 end;
-
+ 
 destructor TModuleGUIEditDefault.Free;
 begin
   fTexture.Free;
 end;
-
+ 
 end.
+ 

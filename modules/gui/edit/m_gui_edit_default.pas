@@ -146,13 +146,13 @@ begin
       begin
       if Edit.CursorPos <> 0 then
         begin
+        if Edit.MovedChars = Edit.CursorPos then
+        while (ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) < round((Edit.Width - 16) / 2)) and (Edit.MovedChars <> 0) do
+          Edit.MovedChars := Edit.MovedChars - 1;
         Edit.Text := SubString(Edit.Text, 1, Edit.CursorPos - 1) + SubString(Edit.Text, Edit.CursorPos + 1, Length(Edit.Text) - (Edit.CursorPos - 1));
         if Edit.CursorPos = CursorPosBefore then
           Edit.CursorPos := Edit.CursorPos - 1;
         end;
-      if Edit.MovedChars = Edit.CursorPos then
-        while (ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) < round((Edit.Width - 16) / 2)) and (Edit.MovedChars <> 0) do
-          Edit.MovedChars := Edit.MovedChars - 1;
       end;
     K_LEFT:
       if Edit.CursorPos > 0 then

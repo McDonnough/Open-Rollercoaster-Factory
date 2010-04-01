@@ -34,7 +34,7 @@ type
 implementation
 
 uses
-  u_events;
+  u_events, m_varlist, g_park;
 
 procedure TParkUIWindow.AdjustSize(Event: String; Data, Result: Pointer);
 begin
@@ -115,11 +115,24 @@ end;
 destructor TParkUIWindow.Free;
 begin
   fWindow.Free;
+  fButton.Free;
 end;
 
 constructor TParkUI.Create;
+var
+  ResX, ResY: Integer;
 begin
-  fTestWindow := TParkUIWindow.Create('go-down.png.tga', 100, 100, 600, 400, 620, 520);
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  fTestWindow := TParkUIWindow.Create('go-down.png.tga', 100, 100, 600, 400, 80, ResY - 80);
+  with TIconifiedButton.Create(fTestWindow.Window) do
+    begin
+    Icon := 'process-stop.png.tga';
+    Width := 64;
+    Height := 64;
+    Left := 500;
+    Top := 300;
+    OnClick := @Park.GoToMainMenu;
+    end;
 end;
 
 destructor TParkUI.Free;

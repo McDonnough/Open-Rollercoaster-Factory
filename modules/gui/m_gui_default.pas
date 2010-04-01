@@ -43,12 +43,14 @@ var
       CIconifiedButton: TIconifiedButton(Component).Render;
       CEdit: TEdit(Component).Render;
       CTimer: TTimer(Component).Render;
+    else
+      Component.Render;
       end;
     glPushMatrix;
     glTranslatef(Round(Component.Left), Round(Component.Top), 1);
     for i := 0 to high(Component.Children) do
       begin
-//       glScissor(Round(Component.AbsX) + 8, ResY - Round(Component.AbsY - Component.Height) + 8, Round(Component.Width) - 16, Round(Component.Height) - 16);
+      glScissor(Round(Component.MinX), ResY - Round(Component.MaxY), Round(Component.MaxX - Component.MinX), Round(Component.MaxY - Component.MinY));
       RenderComponent(Component.Children[i]);
       end;
     glPopMatrix;
@@ -100,11 +102,12 @@ var
   i: integer;
   ResX, ResY: Integer;
 begin
-  fLeftOffset := 01;
-  fTopOffset := 0;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBasicComponent.Width := ResX;
   fBasicComponent.Height := ResY;
+
+  fLeftOffset := 0;
+  fTopOffset := 0;
   fHoverComponent := fBasicComponent;
   SendSignals(fBasicComponent);
 

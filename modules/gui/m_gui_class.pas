@@ -28,6 +28,10 @@ type
       fTypeName: TComponentType;
       function GetAbsX: GLFloat;
       function GetAbsY: GLFloat;
+      function GetMinX: GLFloat;
+      function GetMinY: GLFloat;
+      function GetMaxX: GLFloat;
+      function GetMaxY: GLFloat;
     private
       fChildID: Integer;
       function AddChild(Child: TGUIComponent): Integer;
@@ -50,6 +54,10 @@ type
       property ComponentType: TComponentType read fTypeName;
       property AbsX: GLFloat read GetAbsX;
       property AbsY: GLFloat read GetAbsY;
+      property MinX: GLFloat read GetMinX;
+      property MinY: GLFloat read GetMinY;
+      property MaxX: GLFloat read GetMaxX;
+      property MaxY: GLFloat read GetMaxY;
       procedure Render;
       constructor Create(mParent: TGUIComponent; TypeName: TComponentType);
       destructor Free;
@@ -95,6 +103,34 @@ begin
   Result := Top;
   if Parent <> nil then
     Result := Top + Parent.GetAbsY;
+end;
+
+function TGUIComponent.GetMinX: GLFloat;
+begin
+  Result := AbsX;
+  if Parent <> nil then
+    Result := Max(Result, Parent.MinX);
+end;
+
+function TGUIComponent.GetMinY: GLFloat;
+begin
+  Result := AbsY;
+  if Parent <> nil then
+    Result := Max(Result, Parent.MinY);
+end;
+
+function TGUIComponent.GetMaxX: GLFloat;
+begin
+  Result := AbsX + Width;
+  if Parent <> nil then
+    Result := Min(Result, Parent.MaxX);
+end;
+
+function TGUIComponent.GetMaxY: GLFloat;
+begin
+  Result := AbsY + Height;
+  if Parent <> nil then
+    Result := Min(Result, Parent.MaxY);
 end;
 
 function TGUIComponent.AddChild(Child: TGUIComponent): Integer;

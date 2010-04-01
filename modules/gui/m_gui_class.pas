@@ -21,8 +21,8 @@ type
     protected
       fRendered: Integer;
       fAlpha, fDestAlpha: GLFloat;
-      fPosX, fPosY, fDestX, fDestY: GLFloat;
-      fWidth, fHeight, fDestWidth, fDestHeight: GLFloat;
+      fPosX, fPosY, fDestX, fDestY, fSpeedX, fSpeedY: GLFloat;
+      fWidth, fHeight, fDestWidth, fDestHeight, fSpeedWidth, fSpeedHeight: GLFloat;
       fParent: TGUIComponent;
       fChildren: AGUIComponent;
       fTypeName: TComponentType;
@@ -77,7 +77,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, math, u_math;
 
 function TGUIComponent.AddChild(Child: TGUIComponent): Integer;
 begin
@@ -99,13 +99,28 @@ begin
 end;
 
 procedure TGUIComponent.Render;
+const
+  MAX_MOTION_SPEED = 5.0;
+  SPEED_ADD = 0.2;
 begin
   fAlpha := fAlpha + (fDestAlpha - fAlpha) / 10;
-  fPosX := fPosX + (fDestX - fPosX) / (1 * fRendered);
-  fPosY := fPosY + (fDestY - fPosY) / (1 * fRendered);
-  fWidth := fWidth + (fDestWidth - fWidth) / (1 * fRendered);
-  fHeight := fHeight + (fDestHeight - fHeight) / (1 * fRendered);
-  fRendered := 10;
+  fPosX := fPosX + fSpeedX;
+  fPosY := fPosY + fSpeedY;
+  fWidth := fWidth + fSpeedWidth;
+  fHeight := fHeight + fSpeedHeight;
+  if fRendered * abs(fPosX - fDestX) < 1 then
+    fPosX := fDestX;
+  if fRendered * abs(fPosY - fDestY) < 1 then
+    fPosY := fDestY;
+  if fRendered * abs(fWidth - fDestWidth) < 1 then
+    fWidth := fDestWidth;
+  if fRendered * abs(fHeight - fDestHeight) < 1 then
+    fHeight := fDestHeight;
+  fSpeedX := clamp(sign(fDestX - fPosX) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosX - fDestX))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
+  fSpeedY := clamp(sign(fDestY - fPosY) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosY - fDestY))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
+  fSpeedWidth := clamp(sign(fDestWidth - fWidth) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fWidth - fDestWidth))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
+  fSpeedHeight := clamp(sign(fDestHeight - fHeight) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fHeight - fDestHeight))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
+  fRendered := 1;
 end;
 
 constructor TGUIComponent.Create(mParent: TGUIComponent; TypeName: TComponentType);
@@ -123,11 +138,15 @@ begin
   fPosY := 0;
   fDestX := 0;
   fDestY := 0;
+  fSpeedX := 0;
+  fSpeedY := 0;
   fWidth := 0;
   fHeight := 0;
   fDestWidth := 0;
   fDestHeight := 0;
-  fRendered := 1;
+  fSpeedWidth := 0;
+  fSpeedHeight := 0;
+  fRendered := 0;
 
   OnClick := nil;
   OnHover := nil;

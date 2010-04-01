@@ -66,7 +66,7 @@ begin
   fWindow := TWindow.Create(nil);
   fWindow.Left := -32;
   fWindow.Top := -32;
-  fWindow.Width := 200;
+  fWindow.Width := 128;
   fWindow.Height := 72;
   fLabel := TLabel.Create(fWindow);
   fLabel.Top := 40;

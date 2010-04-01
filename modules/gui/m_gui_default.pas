@@ -26,6 +26,9 @@ uses
   m_gui_edit_class, m_gui_timer_class;
 
 procedure TModuleGUIDefault.Render;
+var
+  ResX, ResY: Integer;
+
   procedure RenderComponent(Component: TGUIComponent);
   var
     i: Integer;
@@ -44,11 +47,17 @@ procedure TModuleGUIDefault.Render;
     glPushMatrix;
     glTranslatef(Round(Component.Left), Round(Component.Top), 1);
     for i := 0 to high(Component.Children) do
+      begin
+//       glScissor(Round(Component.AbsX) + 8, ResY - Round(Component.AbsY - Component.Height) + 8, Round(Component.Width) - 16, Round(Component.Height) - 16);
       RenderComponent(Component.Children[i]);
+      end;
     glPopMatrix;
   end;
 
 begin
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  glEnable(GL_SCISSOR_TEST);
+  glScissor(0, 0, ResX, ResY);
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp2DMatrix;
   glMatrixMode(GL_MODELVIEW);
@@ -63,6 +72,7 @@ begin
   RenderComponent(fBasicComponent);
 
   glPopMatrix;
+  glDisable(GL_SCISSOR_TEST);
 end;
 
 procedure TModuleGUIDefault.CallSignals;

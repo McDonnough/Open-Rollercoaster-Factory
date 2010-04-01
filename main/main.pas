@@ -84,7 +84,14 @@ begin
   RenderState := New;
   ModuleManager.ModLoadScreen.SetVisibility(false);
   if New = rsMainMenu then
-    ModuleManager.ModMainMenu.Setup
+    begin
+    ModuleManager.ModMainMenu.Setup;
+    if Park <> nil then
+      begin
+      Park.Free;
+      Park := nil;
+      end;
+    end
   else
     ModuleManager.ModMainMenu.Hide;
   case New of

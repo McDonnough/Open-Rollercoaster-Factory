@@ -3,7 +3,7 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui;
 
 type
   TPark = class
@@ -12,7 +12,8 @@ type
       fParkLoader: TParkLoader;
       fInited: Boolean;
       fCanRender: Boolean;
-
+      fParkUI: TParkUI;
+      fTimeUntilInvisible: Integer;
     public
       // Parts of the park
       pTerrain: TTerrain;
@@ -23,9 +24,19 @@ type
       property OCFFile: TDOMDocument read fFile;
 
       (**
+        * Stop gameplay
+        *)
+      procedure GoToMainMenu(Sender: TGUIComponent);
+
+      (**
         * Call render modules, handle input
         *)
       procedure Render;
+
+      (**
+        * Sleep until main menu is invisible
+        *)
+      procedure StartPostInit(Event: String; Arg, Result: Pointer);
 
       (**
         * Post-initialization
@@ -54,6 +65,7 @@ uses
 
 constructor TPark.Create(FileName: String);
 begin
+  fTimeUntilInvisible := 150;
   fCanRender := false;
 
   fInited := false;
@@ -63,7 +75,23 @@ begin
   ModuleManager.ModLoadScreen.Progress := 5;
   fParkLoader := TParkLoader.Create;
   fParkLoader.InitDisplay;
-  EventManager.AddCallback('TParkLoader.LoadFiles.NoFilesLeft', @PostInit);
+  EventManager.AddCallback('TPark.Render', @StartPostInit);
+end;
+
+procedure TPark.GoToMainMenu(Sender: TGUIComponent);
+begin
+  ChangeRenderState(rsMainMenu);
+end;
+
+procedure TPark.StartPostInit(Event: String; Arg, Result: Pointer);
+begin
+  if fTimeUntilInvisible = 0 then
+    begin
+    EventManager.RemoveCallback(@StartPostInit);
+    EventManager.AddCallback('TParkLoader.LoadFiles.NoFilesLeft', @PostInit);
+    end
+  else
+    dec(fTimeUntilInvisible);
 end;
 
 procedure TPark.PostInit(Event: String; Arg, Result: Pointer);
@@ -77,13 +105,19 @@ begin
   fCanRender := true;
   pTerrain := TTerrain.Create;
   pTerrain.LoadDefaults;
+  fParkUI := TParkUI.Create;
 end;
 
 procedure TPark.Render;
 begin
-  if not fCanRender then exit;
-  ModuleManager.ModCamera.AdvanceActiveCamera;
-  ModuleManager.ModRenderer.RenderScene;
+  if not fCanRender then
+    ModuleManager.ModLoadScreen.Render
+  else
+    begin
+    ModuleManager.ModCamera.AdvanceActiveCamera;
+    ModuleManager.ModRenderer.RenderScene;
+    end;
+  EventManager.CallEvent('TPark.Render', nil, nil);
 end;
 
 destructor TPark.Free;
@@ -91,6 +125,7 @@ begin
   ModuleManager.ModRenderer.Unload;
   fParkLoader.Free;
   pTerrain.Free;
+  fParkUI.Free;
 end;
 
 end.

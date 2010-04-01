@@ -109,15 +109,9 @@ procedure TModuleLoadScreenDefault.SetVisibility(Visible: Boolean);
 begin
   fVisible := Visible;
   if Visible then
-    begin
-    fWindow.Top := (H - 120) div 2;
-    fWindow.Alpha := 1;
-    end
+    fWindow.Top := (H - 120) div 2
   else
-    begin
     fWindow.Top := -200;
-    fWindow.Alpha := 0;
-    end;
 end;
 
 destructor TModuleLoadScreenDefault.Free;

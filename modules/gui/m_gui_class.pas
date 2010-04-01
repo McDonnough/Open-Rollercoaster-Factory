@@ -26,6 +26,8 @@ type
       fParent: TGUIComponent;
       fChildren: AGUIComponent;
       fTypeName: TComponentType;
+      function GetAbsX: GLFloat;
+      function GetAbsY: GLFloat;
     private
       fChildID: Integer;
       function AddChild(Child: TGUIComponent): Integer;
@@ -46,6 +48,8 @@ type
       property Parent: TGUIComponent read fParent;
       property Children: AGUIComponent read fChildren;
       property ComponentType: TComponentType read fTypeName;
+      property AbsX: GLFloat read GetAbsX;
+      property AbsY: GLFloat read GetAbsY;
       procedure Render;
       constructor Create(mParent: TGUIComponent; TypeName: TComponentType);
       destructor Free;
@@ -79,6 +83,20 @@ implementation
 uses
   m_varlist, math, u_math;
 
+function TGUIComponent.GetAbsX: GLFloat;
+begin
+  Result := Left;
+  if Parent <> nil then
+    Result := Left + Parent.GetAbsX;
+end;
+
+function TGUIComponent.GetAbsY: GLFloat;
+begin
+  Result := Top;
+  if Parent <> nil then
+    Result := Top + Parent.GetAbsY;
+end;
+
 function TGUIComponent.AddChild(Child: TGUIComponent): Integer;
 begin
   setLength(fChildren, length(fChildren) + 1);
@@ -100,12 +118,14 @@ end;
 
 procedure TGUIComponent.Render;
 const
-  MAX_MOTION_SPEED = 5.0;
-  SPEED_ADD = 0.2;
+  MAX_MOTION_SPEED = 10.0;
+  SPEED_ADD = 0.5;
 begin
   fAlpha := fAlpha + (fDestAlpha - fAlpha) / 10;
-  fPosX := fPosX + fSpeedX;
-  fPosY := fPosY + fSpeedY;
+{  fPosX := fPosX + fSpeedX;
+  fPosY := fPosY + fSpeedY;}
+  fPosX := fPosX + (fDestX - fPosX) / 10;
+  fPosY := fPosY + (fDestY - fPosY) / 10;
   fWidth := fWidth + fSpeedWidth;
   fHeight := fHeight + fSpeedHeight;
   if fRendered * abs(fPosX - fDestX) < 1 then
@@ -116,8 +136,8 @@ begin
     fWidth := fDestWidth;
   if fRendered * abs(fHeight - fDestHeight) < 1 then
     fHeight := fDestHeight;
-  fSpeedX := clamp(sign(fDestX - fPosX) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosX - fDestX))), max(fSpeedX - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedX + SPEED_ADD, MAX_MOTION_SPEED));
-  fSpeedY := clamp(sign(fDestY - fPosY) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosY - fDestY))), max(fSpeedY - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedY + SPEED_ADD, MAX_MOTION_SPEED));
+{  fSpeedX := clamp(sign(fDestX - fPosX) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosX - fDestX))), max(fSpeedX - SPEED_ADD, -5 * MAX_MOTION_SPEED), min(fSpeedX + SPEED_ADD, 5 * MAX_MOTION_SPEED));
+  fSpeedY := clamp(sign(fDestY - fPosY) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosY - fDestY))), max(fSpeedY - SPEED_ADD, -5 * MAX_MOTION_SPEED), min(fSpeedY + SPEED_ADD, 5 * MAX_MOTION_SPEED));}
   fSpeedWidth := clamp(sign(fDestWidth - fWidth) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fWidth - fDestWidth))), max(fSpeedWidth - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedWidth + SPEED_ADD, MAX_MOTION_SPEED));
   fSpeedHeight := clamp(sign(fDestHeight - fHeight) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fHeight - fDestHeight))), max(fSpeedHeight - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedHeight + SPEED_ADD, MAX_MOTION_SPEED));
   fRendered := 1;

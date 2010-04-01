@@ -25,4 +25,5 @@ void main(void) {
                + 0.06 * texture2D(tex, gl_TexCoord[0].xy - 0.008 * blurFactor * (((calcBlurFactor(0.8 * abs(10000.0 * pow(texture2D(dist, gl_TexCoord[0].xy - 0.008 * blurFactor).r, 2.0))) > AblurFactor) && (lastDist > focusDist)) ? 0.0 : 1.0))
                + 0.04 * texture2D(tex, gl_TexCoord[0].xy + 0.010 * blurFactor * (((calcBlurFactor(0.8 * abs(10000.0 * pow(texture2D(dist, gl_TexCoord[0].xy + 0.010 * blurFactor).r, 2.0))) > AblurFactor) && (lastDist > focusDist)) ? 0.0 : 1.0))
                + 0.04 * texture2D(tex, gl_TexCoord[0].xy - 0.010 * blurFactor * (((calcBlurFactor(0.8 * abs(10000.0 * pow(texture2D(dist, gl_TexCoord[0].xy - 0.010 * blurFactor).r, 2.0))) > AblurFactor) && (lastDist > focusDist)) ? 0.0 : 1.0));
+  gl_FragColor.a = 1.0;
 }

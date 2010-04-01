@@ -176,9 +176,11 @@ begin
   FTexture := TTexture.Create;
   FTexture.CreateNew(ResX, ResY, GL_LUMINANCE);
   FTexture.SetClamp(GL_CLAMP, GL_CLAMP);
+  FTexture.SetFilter(GL_NEAREST, GL_NEAREST);
   FTexture2 := TTexture.Create;
   FTexture2.CreateNew(ResX, ResY, GL_RGBA);
   FTexture2.SetClamp(GL_CLAMP, GL_CLAMP);
+  FTexture2.SetFilter(GL_NEAREST, GL_NEAREST);
   FShader := TShader.Create('rendereropengl/glsl/effects/depthfocus.vs', 'rendereropengl/glsl/effects/depthfocus.fs');
   FShader.UniformI('tex', 0);
   FShader.UniformI('dist', 1);
@@ -284,9 +286,11 @@ begin
   fTexture := TTexture.Create;
   fTexture.CreateNew(ResX, ResY, GL_RGB);
   fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
+  FTexture.SetFilter(GL_NEAREST, GL_NEAREST);
   fTexture2 := TTexture.Create;
   fTexture2.CreateNew(ResX, ResY, GL_RGB);
   fTexture2.SetClamp(GL_CLAMP, GL_CLAMP);
+  FTexture2.SetFilter(GL_NEAREST, GL_NEAREST);
   fShader := TShader.Create('rendereropengl/glsl/effects/bloom.vs', 'rendereropengl/glsl/effects/bloom.fs');
   fShader.UniformF('Screen', ResX, ResY);
   fShader.UniformI('Tex', 0);

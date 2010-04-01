@@ -116,10 +116,10 @@ begin
     fWidth := fDestWidth;
   if fRendered * abs(fHeight - fDestHeight) < 1 then
     fHeight := fDestHeight;
-  fSpeedX := clamp(sign(fDestX - fPosX) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosX - fDestX))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
-  fSpeedY := clamp(sign(fDestY - fPosY) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosY - fDestY))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
-  fSpeedWidth := clamp(sign(fDestWidth - fWidth) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fWidth - fDestWidth))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
-  fSpeedHeight := clamp(sign(fDestHeight - fHeight) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fHeight - fDestHeight))), -MAX_MOTION_SPEED, MAX_MOTION_SPEED);
+  fSpeedX := clamp(sign(fDestX - fPosX) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosX - fDestX))), max(fSpeedX - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedX + SPEED_ADD, MAX_MOTION_SPEED));
+  fSpeedY := clamp(sign(fDestY - fPosY) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fPosY - fDestY))), max(fSpeedY - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedY + SPEED_ADD, MAX_MOTION_SPEED));
+  fSpeedWidth := clamp(sign(fDestWidth - fWidth) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fWidth - fDestWidth))), max(fSpeedWidth - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedWidth + SPEED_ADD, MAX_MOTION_SPEED));
+  fSpeedHeight := clamp(sign(fDestHeight - fHeight) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fHeight - fDestHeight))), max(fSpeedHeight - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedHeight + SPEED_ADD, MAX_MOTION_SPEED));
   fRendered := 1;
 end;
 

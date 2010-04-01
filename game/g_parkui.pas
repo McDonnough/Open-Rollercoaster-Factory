@@ -114,6 +114,8 @@ end;
 
 destructor TParkUIWindow.Free;
 begin
+  EventManager.RemoveCallback('TPark.Render', @AdjustSize);
+  EventManager.RemoveCallback('TPark.Render', @AdjustPosition);
   fWindow.Free;
   fButton.Free;
 end;

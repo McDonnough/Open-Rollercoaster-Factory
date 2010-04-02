@@ -125,10 +125,10 @@ var
   ResX, ResY: Integer;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
-  fTestWindow := TParkUIWindow.Create('go-down.png.tga', 100, 100, 600, 400, 80, ResY - 80);
+  fTestWindow := TParkUIWindow.Create('go-down.tga', 100, 100, 600, 400, 80, ResY - 80);
   with TIconifiedButton.Create(fTestWindow.Window) do
     begin
-    Icon := 'process-stop.png.tga';
+    Icon := 'process-stop.tga';
     Width := 64;
     Height := 64;
     Left := 500;

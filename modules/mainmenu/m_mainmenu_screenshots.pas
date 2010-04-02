@@ -178,7 +178,7 @@ begin
     Height := 64;
     Width := 64;
     Top := 268;
-    Icon := 'dialog-ok-apply.png.tga';
+    Icon := 'dialog-ok-apply.tga';
     end;
 
   with TEdit.Create(fWindow) do

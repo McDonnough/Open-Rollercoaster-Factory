@@ -82,9 +82,10 @@ end;
 
 procedure TModuleFontTextureVariableWidth.Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
 var
-   px, py, X, Y: GLFloat;
-   i: integer;
-   widthFac: single;
+  px, py: Integer;
+  X, Y: GLFloat;
+  i: integer;
+  widthFac: single;
 begin
   Text := ConvertText(Text);
   X := Left;

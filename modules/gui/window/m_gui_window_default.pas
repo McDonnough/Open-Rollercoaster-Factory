@@ -66,7 +66,7 @@ end;
 
 procedure TModuleGUIWindowDefault.Render(Window: TWindow);
 const
-  B = 24; // Edge offset
+  B = 16; // Edge offset
   A = B / 256;
 
   procedure RenderWindow;

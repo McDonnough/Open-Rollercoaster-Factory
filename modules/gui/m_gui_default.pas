@@ -78,25 +78,16 @@ begin
 end;
 
 procedure TModuleGUIDefault.CallSignals;
-var
-  fLeftOffset, fTopOffset: GLFloat;
-
   procedure SendSignals(Component: TGUIComponent);
   var
     i: integer;
   begin
-    fLeftOffset := fLeftOffset + Component.Left;
-    fTopOffset := fTopOffset + Component.Top;
-
-    if (ModuleManager.ModInputHandler.MouseX >= fLeftOffset) and (ModuleManager.ModInputHandler.MouseX <= fLeftOffset + Component.Width)
-    and (ModuleManager.ModInputHandler.MouseY >= fTopOffset)  and (ModuleManager.ModInputHandler.MouseY <=  fTopOffset + Component.Height) then
+    if (ModuleManager.ModInputHandler.MouseX >= Component.MinX) and (ModuleManager.ModInputHandler.MouseX <= Component.MaxX)
+    and (ModuleManager.ModInputHandler.MouseY >= Component.MinY)  and (ModuleManager.ModInputHandler.MouseY <=  Component.MaxY) then
       fHoverComponent := Component;
 
     for i := 0 to high(Component.Children) do
       SendSignals(Component.Children[i]);
-
-    fTopOffset := fTopOffset - Component.Top;
-    fLeftOffset := fLeftOffset - Component.Left;
   end;
 var
   i: integer;
@@ -106,8 +97,6 @@ begin
   fBasicComponent.Width := ResX;
   fBasicComponent.Height := ResY;
 
-  fLeftOffset := 0;
-  fTopOffset := 0;
   fHoverComponent := fBasicComponent;
   SendSignals(fBasicComponent);
 

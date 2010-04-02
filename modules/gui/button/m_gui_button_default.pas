@@ -67,16 +67,16 @@ procedure TModuleGUIButtonDefault.Render(Button: TButton);
 begin
   if ModuleManager.ModGUI.HoverComponent = Button then
     begin
-    Button.fHoverFactor := Button.fHoverFactor + (1 - Button.fHoverFactor) / 10;
+    Button.fHoverFactor := Button.fHoverFactor + (1 - Button.fHoverFactor) / 3;
     if ModuleManager.ModGUI.Clicking then
-      Button.fClickFactor := Button.fClickFactor + (1 - Button.fClickFactor) / 10
+      Button.fClickFactor := Button.fClickFactor + (1 - Button.fClickFactor) / 3
     else
-      Button.fClickFactor := Button.fClickFactor - Button.fClickFactor / 10;
+      Button.fClickFactor := Button.fClickFactor - Button.fClickFactor / 3;
     end
   else
     begin
-    Button.fHoverFactor := Button.fHoverFactor - Button.fHoverFactor / 10;
-    Button.fClickFactor := Button.fClickFactor - Button.fClickFactor / 10;
+    Button.fHoverFactor := Button.fHoverFactor - Button.fHoverFactor / 3;
+    Button.fClickFactor := Button.fClickFactor - Button.fClickFactor / 3;
     end;
   fTexture.Bind;
   glEnable(GL_BLEND);
@@ -90,7 +90,7 @@ begin
     RenderButton(0, 0.5);
   glEnd;
   glDisable(GL_BLEND);
-  ModuleManager.ModFont.Write(ModuleManager.ModLanguage.Translate(Button.Caption), Button.Height - 16, Button.Left + 8, Button.Top + 8, 1 - Button.fClickFactor, 1 - Button.fClickFactor, 1 - Button.fClickFactor, 1, 0);
+  ModuleManager.ModFont.Write(ModuleManager.ModLanguage.Translate(Button.Caption), Button.Height - 16, Button.Left + 8, Button.Top + 8, 0, 0, 0, 1, 0);
   fTexture.Unbind;
 end;
 

@@ -66,7 +66,7 @@ end;
 
 procedure TModuleGUIWindowDefault.Render(Window: TWindow);
 const
-  B = 16; // Edge offset
+  B = 24; // Edge offset
   A = B / 256;
 
   procedure RenderWindow;
@@ -131,15 +131,11 @@ begin
 
   fShader.Bind;
   fShader.UniformF('BlurAmount', Window.Alpha, 0.0);
-  glBegin(GL_QUADS);
-    RenderWindow;
-  glEnd;
+  RenderWindow;
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, X, Y, 0);
 
   fShader.UniformF('BlurAmount', 0.0, Window.Alpha);
-  glBegin(GL_QUADS);
-    RenderWindow;
-  glEnd;
+  RenderWindow;
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, X, Y, 0);
 
   fShader.Unbind;
@@ -148,7 +144,7 @@ begin
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    RenderWindow;
+  RenderWindow;
   glDisable(GL_BLEND);
 
   fBGTexture.Unbind;

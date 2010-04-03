@@ -125,7 +125,7 @@ var
 begin
   fSizeX := 0;
   fSizeY := 0;
-  Resize(512, 512);
+  Resize(1024, 1024);
   for i := 0 to SizeX - 1 do
     begin
     for j := 0 to SizeY - 1 do

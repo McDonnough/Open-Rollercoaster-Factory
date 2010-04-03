@@ -150,6 +150,7 @@ begin
     begin
     BindShader(-1);
     glDeleteProgram(fShdRef[Shader].ID);
+    fShdRef[Shader].Name := '';
     end;
 end;
 

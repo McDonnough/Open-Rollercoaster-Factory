@@ -101,9 +101,9 @@ begin
       fTempVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, InterpolateHeightMap((i + fTmpFineOffsetX), (j + fTmpFineOffsetY + 1)), 0.2 * j + 0.2);
 
       fTempVBO.TexCoords[4 * (256 * i + j) + 0] := Vector(0, 0);
-      fTempVBO.TexCoords[4 * (256 * i + j) + 1] := Vector(0, 0);
-      fTempVBO.TexCoords[4 * (256 * i + j) + 2] := Vector(0, 0);
-      fTempVBO.TexCoords[4 * (256 * i + j) + 3] := Vector(0, 0);
+      fTempVBO.TexCoords[4 * (256 * i + j) + 1] := Vector(1, 0);
+      fTempVBO.TexCoords[4 * (256 * i + j) + 2] := Vector(1, 1);
+      fTempVBO.TexCoords[4 * (256 * i + j) + 3] := Vector(0, 1);
 
       fTempVBO.Normals[4 * (256 * i + j) + 0] := GetNormal(i + fTmpFineOffsetX, j + fTmpFineOffsetY);
       fTempVBO.Normals[4 * (256 * i + j) + 1] := GetNormal(i + fTmpFineOffsetX + 1, j + fTmpFineOffsetY);
@@ -177,7 +177,6 @@ begin
     end;
   fShader.Unbind;
   fTexture.UnBind;
-//   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 end;
 
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
@@ -366,7 +365,7 @@ begin
   fTexture := TTexture.Create;
   fTexture.FromFile('data/terrain/defaultcollection.tga');
   fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
-  fShader.UniformI('heightmap', 0);
+  fShader.UniformI('TerrainTexture', 0);
   fFineOffsetX := 0;
   fFineOffsetY := 0;
   fFineVBO := TVBO.Create(256 * 256 * 4, GL_T2F_N3F_V3F, GL_QUADS);
@@ -379,9 +378,9 @@ begin
       fFineVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j + 0.2);
 
       fFineVBO.TexCoords[4 * (256 * i + j) + 0] := Vector(0, 0);
-      fFineVBO.TexCoords[4 * (256 * i + j) + 1] := Vector(0, 0);
-      fFineVBO.TexCoords[4 * (256 * i + j) + 2] := Vector(0, 0);
-      fFineVBO.TexCoords[4 * (256 * i + j) + 3] := Vector(0, 0);
+      fFineVBO.TexCoords[4 * (256 * i + j) + 1] := Vector(1, 0);
+      fFineVBO.TexCoords[4 * (256 * i + j) + 2] := Vector(1, 1);
+      fFineVBO.TexCoords[4 * (256 * i + j) + 3] := Vector(0, 1);
 
       fFineVBO.Normals[4 * (256 * i + j) + 0] := Vector(0, 1, 0);
       fFineVBO.Normals[4 * (256 * i + j) + 1] := Vector(0, 1, 0);
@@ -399,9 +398,9 @@ begin
       fTempVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j + 0.2);
 
       fTempVBO.TexCoords[4 * (256 * i + j) + 0] := Vector(0, 0);
-      fTempVBO.TexCoords[4 * (256 * i + j) + 1] := Vector(0, 0);
-      fTempVBO.TexCoords[4 * (256 * i + j) + 2] := Vector(0, 0);
-      fTempVBO.TexCoords[4 * (256 * i + j) + 3] := Vector(0, 0);
+      fTempVBO.TexCoords[4 * (256 * i + j) + 1] := Vector(1, 0);
+      fTempVBO.TexCoords[4 * (256 * i + j) + 2] := Vector(1, 1);
+      fTempVBO.TexCoords[4 * (256 * i + j) + 3] := Vector(0, 1);
 
       fTempVBO.Normals[4 * (256 * i + j) + 0] := Vector(0, 1, 0);
       fTempVBO.Normals[4 * (256 * i + j) + 1] := Vector(0, 1, 0);

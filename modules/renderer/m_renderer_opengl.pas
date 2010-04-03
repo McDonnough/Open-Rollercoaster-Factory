@@ -70,7 +70,6 @@ begin
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);
 
-  glDepthMask(true);
   glEnable(GL_DEPTH_TEST);
   glDepthMask(true);
 

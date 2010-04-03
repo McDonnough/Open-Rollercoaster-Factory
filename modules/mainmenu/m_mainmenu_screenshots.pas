@@ -9,7 +9,7 @@ uses
 type
   TModuleMainMenuScreenshots = class(TModuleMainMenuClass)
     protected
-      fWindow: TWindow;
+      fWindow: TGUIComponent;
       fTime: Integer;
       fTexture: TTexture;
       fFiles: TStringList;
@@ -29,6 +29,82 @@ implementation
 
 uses
   u_functions, m_varlist, main;
+
+type
+  TMainMenuButton = class
+    protected
+      fCaption: String;
+      fIconButton: TIconifiedButton;
+      fButton: TButton;
+      fTop, fLeft, fTag: Integer;
+      fOnClick: TCallbackProcedure;
+      procedure SetCaption(C: String);
+      procedure SetLeft(A: Integer);
+      procedure SetTop(A: Integer);
+      procedure SetTag(A: Integer);
+      procedure SetOnClick(A: TCallbackProcedure);
+    public
+      property IconButton: TIconifiedButton read fIconButton;
+      property Button: TButton read fButton;
+      property Tag: Integer read fTag write setTag;
+      property Caption: String read fCaption write setCaption;
+      property Left: Integer read fLeft write setLeft;
+      property Top: Integer read fTop write setTop;
+      property OnClick: TCallbackProcedure read fOnClick write setOnClick;
+      constructor Create(Parent: TGUIComponent);
+      destructor Free;
+    end;
+
+procedure TMainMenuButton.SetCaption(C: String);
+begin
+  fCaption := C;
+  fButton.Caption := '    ' + C;
+  fButton.Width := ModuleManager.ModFont.CalculateTextWidth('    ' + C, 24) + 16;
+end;
+
+procedure TMainMenuButton.SetLeft(A: Integer);
+begin
+  fLeft := A;
+  fButton.Left := A + 56 - ModuleManager.ModFont.CalculateTextWidth('    ', 24);
+  fIconButton.Left := A;
+end;
+
+procedure TMainMenuButton.SetTop(A: Integer);
+begin
+  fTop := A;
+  fButton.Top := A + 12;
+  fIconButton.Top := A;
+end;
+
+procedure TMainMenuButton.SetTag(A: Integer);
+begin
+  fTag := A;
+  fButton.Tag := A;
+  fIconButton.Tag := A;
+end;
+
+procedure TMainMenuButton.SetOnClick(A: TCallbackProcedure);
+begin
+  fOnClick := A;
+  fButton.OnClick := A;
+  fIconButton.OnClick := A;
+end;
+
+constructor TMainMenuButton.Create(Parent: TGUIComponent);
+begin
+  fButton := TButton.Create(Parent);
+  fButton.Height := 40;
+  fButton.Caption := '';
+  fIconButton := TIconifiedButton.Create(Parent);
+  fIconButton.Height := 64;
+  fIconButton.Width := 64;
+end;
+
+destructor TMainMenuButton.Free;
+begin
+  fIconButton.Free;
+  fButton.Free;
+end;
 
 procedure TModuleMainMenuScreenshots.SetTexture;
 begin
@@ -56,7 +132,7 @@ begin
   fTime := 0;
 
   fValue := 0;
-  fWindow.Left := -32;
+  fWindow.Left := -16;
 
   fCurrentFile := 0;
 
@@ -110,83 +186,61 @@ begin
 
   fFiles := TStringList.Create;
 
-  fWindow := TWindow.Create(nil);
-  fWindow.Top := 100;
-  fWindow.Width := 300;
+  fWindow := TGUIComponent.Create(nil, CLabel);
   fWindow.Height := 400;
-  fWindow.Left := -300;
+  fWindow.Width := 200;
+  fWindow.Left := -200;
+  fWindow.Top := 100;
   fWindow.Render;
 
-  with TButton.Create(fWindow) do
+  with TMainMenuButton.Create(fWindow) do
     begin
-    Left := 40;
-    Width := 236;
-    Height := 32;
-    Top := 32;
-    Caption := 'Start new game';
+    Left := 24;
+    Top := 24;
+    Caption := 'New game';
+    IconButton.Icon := 'user-online.tga';
     Tag := MMVAL_STARTGAME;
-    onClick := @SetValue;
+    OnClick := @SetValue;
     end;
 
-  with TButton.Create(fWindow) do
+  with TMainMenuButton.Create(fWindow) do
     begin
-    Left := 40;
-    Width := 236;
-    Height := 32;
-    Top := 80;
+    Left := 24;
+    Top := 88;
     Caption := 'Load park';
+    IconButton.Icon := 'folder-open.tga';
     Tag := MMVAL_LOADGAME;
-    onClick := @SetValue;
+    OnClick := @SetValue;
     end;
 
-  with TButton.Create(fWindow) do
+  with TMainMenuButton.Create(fWindow) do
     begin
-    Left := 40;
-    Width := 236;
-    Height := 32;
-    Top := 128;
+    Left := 24;
+    Top := 152;
     Caption := 'Settings';
+    IconButton.Icon := 'configure.tga';
     Tag := MMVAL_SETTINGS;
-    onClick := @SetValue;
+    OnClick := @SetValue;
     end;
 
-  with TButton.Create(fWindow) do
+  with TMainMenuButton.Create(fWindow) do
     begin
-    Left := 40;
-    Width := 236;
-    Height := 32;
-    Top := 172;
+    Left := 24;
+    Top := 216;
     Caption := 'Help';
+    IconButton.Icon := 'system-help.tga';
     Tag := MMVAL_HELP;
-    onClick := @SetValue;
+    OnClick := @SetValue;
     end;
 
-  with TButton.Create(fWindow) do
+  with TMainMenuButton.Create(fWindow) do
     begin
-    Left := 40;
-    Width := 236;
-    Height := 32;
-    Top := 220;
+    Left := 24;
+    Top := 280;
     Caption := 'Quit';
+    IconButton.Icon := 'user-offline.tga';
     Tag := MMVAL_QUIT;
-    onClick := @SetValue;
-    end;
-
-  with TIconifiedButton.Create(fWindow) do
-    begin
-    Left := 40;
-    Height := 64;
-    Width := 64;
-    Top := 268;
-    Icon := 'dialog-ok-apply.tga';
-    end;
-
-  with TEdit.Create(fWindow) do
-    begin
-    Left := 40;
-    Top := 332;
-    Width := 200;
-    Height := 32;
+    OnClick := @SetValue;
     end;
 end;
 

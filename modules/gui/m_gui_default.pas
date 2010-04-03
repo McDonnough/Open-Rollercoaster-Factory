@@ -58,6 +58,8 @@ var
 
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  glDisable(GL_DEPTH_TEST);
+  glDepthMask(false);
   glEnable(GL_SCISSOR_TEST);
   glScissor(0, 0, ResX, ResY);
   glMatrixMode(GL_PROJECTION);

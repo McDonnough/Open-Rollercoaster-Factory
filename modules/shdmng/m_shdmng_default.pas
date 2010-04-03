@@ -148,8 +148,11 @@ procedure TModuleShaderManagerDefault.DeleteShader(Shader: Integer);
 begin
   if (Shader >= 0) and (Shader <= high(fShdRef)) then
     begin
+    if fShdRef[Shader].Name = '' then
+      exit;
     BindShader(-1);
     glDeleteProgram(fShdRef[Shader].ID);
+    fShdRef[Shader].Name := '';
     end;
 end;
 

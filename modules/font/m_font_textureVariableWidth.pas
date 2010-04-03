@@ -129,13 +129,13 @@ begin
   width := 0;
   widthFac := Size / refCellHeight;
   for i := 1 to Length(Text) do
-      case Text[i] of
-        #9: width := width + 4 * 0.8 * Size;
-        #0: break;
-        #32: begin width := width + Size / 3; end;
-      else
-        width := width + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
-        end;
+    case Text[i] of
+      #9: width := width + 4 * 0.8 * Size;
+      #0: break;
+      #32: begin width := width + Size / 3; end;
+    else
+      width := width + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
+      end;
   result := round(width);
 end;
 

@@ -219,9 +219,11 @@ procedure TModuleTextureManagerDefault.DeleteTexture(Texture: Integer);
 begin
   if (Texture >= 0) and (Texture <= high(fTexRefs)) then
     begin
+    if fTexRefs[Texture].Tex = GLUInt(-1) then
+      exit;
     BindTexture(-1);
     glDeleteTextures(1, @fTexRefs[Texture].Tex);
-    fTexRefs[Texture].Tex := -1;
+    fTexRefs[Texture].Tex := GLUInt(-1);
     end;
 end;
 

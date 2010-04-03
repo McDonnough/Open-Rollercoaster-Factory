@@ -13,7 +13,7 @@ float fpart(float a) {
 }
 
 vec4 processTexCoord(float texID) {
-  return vec4(fpart(texID / 4.0), floor(texID / 4.0) / 2.0, 0.0, 1.0);
+  return vec4(fpart(texID / 4.0), floor(texID / 4.0) / 4.0, 0.0, 1.0);
 }
 
 void main(void) {

@@ -59,20 +59,20 @@ procedure TMainMenuButton.SetCaption(C: String);
 begin
   fCaption := C;
   fButton.Caption := '    ' + C;
-  fButton.Width := ModuleManager.ModFont.CalculateTextWidth('    ' + C, 16) + 16;
+  fButton.Width := ModuleManager.ModFont.CalculateTextWidth('    ' + C, 24) + 16;
 end;
 
 procedure TMainMenuButton.SetLeft(A: Integer);
 begin
   fLeft := A;
-  fButton.Left := A + 56 - ModuleManager.ModFont.CalculateTextWidth('    ', 16);
+  fButton.Left := A + 56 - ModuleManager.ModFont.CalculateTextWidth('    ', 24);
   fIconButton.Left := A;
 end;
 
 procedure TMainMenuButton.SetTop(A: Integer);
 begin
   fTop := A;
-  fButton.Top := A + 16;
+  fButton.Top := A + 12;
   fIconButton.Top := A;
 end;
 
@@ -93,7 +93,7 @@ end;
 constructor TMainMenuButton.Create(Parent: TGUIComponent);
 begin
   fButton := TButton.Create(Parent);
-  fButton.Height := 32;
+  fButton.Height := 40;
   fButton.Caption := '';
   fIconButton := TIconifiedButton.Create(Parent);
   fIconButton.Height := 64;

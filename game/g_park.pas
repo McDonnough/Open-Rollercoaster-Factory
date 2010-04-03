@@ -65,7 +65,7 @@ uses
 
 constructor TPark.Create(FileName: String);
 begin
-  fTimeUntilInvisible := 150;
+  fTimeUntilInvisible := 120;
   fCanRender := false;
 
   fInited := false;
@@ -85,6 +85,8 @@ end;
 
 procedure TPark.StartPostInit(Event: String; Arg, Result: Pointer);
 begin
+  ModuleManager.ModLoadScreen.Progress := 100;
+  ModuleManager.ModLoadScreen.Text := 'Preparing terrain';
   if fTimeUntilInvisible = 0 then
     begin
     EventManager.RemoveCallback(@StartPostInit);

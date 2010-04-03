@@ -1,12 +1,17 @@
 #version 120
 
 uniform sampler2D TerrainTexture;
-uniform int HighLOD;
+uniform int LOD;
 uniform vec2 offset;
 
 varying float dist;
 varying vec4 Vertex;
 varying vec3 Normal;
+varying vec4 TexMap;
+
+float fpart(float a) {
+  return a - floor(a);
+}
 
 vec2 trunc(vec2 a) {
   return a - floor(a);
@@ -17,9 +22,14 @@ vec2 getRightTexCoord(float fac) {
 }
 
 void main(void) {
-  if ((clamp(Vertex.xz, offset, offset + 51.2) == Vertex.xz) && (HighLOD == 0))
+  if ((clamp(Vertex.xz, offset, offset + 51.2) == Vertex.xz) && (LOD < 2))
     discard;
-  gl_FragColor = (texture2D(TerrainTexture, getRightTexCoord(1.0 / 483)) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0))) * 0.5 * dot(normalize(Normal), normalize(vec3(1.0, 1.0, 0.0)));
+  mat4 texColors = mat4(
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + gl_TexCoord[1].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + gl_TexCoord[1].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + gl_TexCoord[2].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + gl_TexCoord[2].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + gl_TexCoord[3].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + gl_TexCoord[3].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + gl_TexCoord[4].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + gl_TexCoord[4].xy)));
+  gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), mix(texColors[2], texColors[3], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), fpart(Vertex.z / (3.2 / pow(4, float(LOD))))) * 0.5 * dot(normalize(Normal), normalize(vec3(1.0, 1.0, 0.0)));
   gl_FragColor.a = 1.0;
   gl_FragDepth = sqrt(dist / 10000.0);
 }

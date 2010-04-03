@@ -73,7 +73,6 @@ begin
     glColor4f(1, 1, 1, Button.fClickFactor);
     RenderButton(0, 0.5);
   glEnd;
-  glDisable(GL_BLEND);
 
   fTexture.Unbind;
 
@@ -90,6 +89,7 @@ begin
     glEnd;
     Tex.UnBind;
     end;
+  glDisable(GL_BLEND);
 end;
 
 procedure TModuleGUIIconifiedButtonDefault.SetIcon(Button: TIconifiedButton; Icon: String);

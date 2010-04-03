@@ -76,9 +76,9 @@ var
   function InterpolateHeightMap(X, Y: Single): Single;
   begin
     Result := -1;
-    if (Y - fTmpFineOffsetY = 0) or (Y - fTmpFineOffsetY = 256) then
+    if (Round(Y - fTmpFineOffsetY) <= 0) or (Round(Y - fTmpFineOffsetY) >= 256) then
       Result := Mix(Park.pTerrain.HeightMap[0.8 * Floor(X / 4), Y / 5], Park.pTerrain.HeightMap[0.8 * Ceil(X / 4), Y / 5], FPart(X / 4))
-    else if (X - fTmpFineOffsetX = 0) or (X - fTmpFineOffsetX = 256) then
+    else if (Round(X - fTmpFineOffsetX) <= 0) or (Round(X - fTmpFineOffsetX) >= 256) then
       Result := Mix(Park.pTerrain.HeightMap[X / 5, 0.8 * Floor(Y / 4)], Park.pTerrain.HeightMap[X / 5, 0.8 * Ceil(Y / 4)], FPart(Y / 4))
     else
       Result := Park.pTerrain.HeightMap[X / 5, Y / 5];
@@ -100,10 +100,10 @@ begin
       fTempVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, InterpolateHeightMap((i + fTmpFineOffsetX + 1), (j + fTmpFineOffsetY + 1)), 0.2 * j + 0.2);
       fTempVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, InterpolateHeightMap((i + fTmpFineOffsetX), (j + fTmpFineOffsetY + 1)), 0.2 * j + 0.2);
 
-      fTempVBO.Colors[4 * (256 * i + j) + 0] := Vector(0, 0, 0, 0);
-      fTempVBO.Colors[4 * (256 * i + j) + 1] := Vector(0, 0, 0, 0);
-      fTempVBO.Colors[4 * (256 * i + j) + 2] := Vector(0, 0, 0, 0);
-      fTempVBO.Colors[4 * (256 * i + j) + 3] := Vector(0, 0, 0, 0);
+      fTempVBO.Colors[4 * (256 * i + j) + 0] := Vector(5, 5, 5, 5);
+      fTempVBO.Colors[4 * (256 * i + j) + 1] := Vector(5, 5, 5, 5);
+      fTempVBO.Colors[4 * (256 * i + j) + 2] := Vector(5, 5, 5, 5);
+      fTempVBO.Colors[4 * (256 * i + j) + 3] := Vector(5, 5, 5, 5);
 
       fTempVBO.Normals[4 * (256 * i + j) + 0] := GetNormal(i + fTmpFineOffsetX, j + fTmpFineOffsetY);
       fTempVBO.Normals[4 * (256 * i + j) + 1] := GetNormal(i + fTmpFineOffsetX + 1, j + fTmpFineOffsetY);
@@ -333,10 +333,10 @@ begin
               fVBOs[i, j].Vertices[4 * (128 * o + p) + 2] := Vector(0.8 * 128 * i + 0.8 * o + 0.8, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.8, 0.8 * 128 * j + 0.8 * p + 0.8], 0.8 * 128 * j + 0.8 * p + 0.8);
               fVBOs[i, j].Vertices[4 * (128 * o + p) + 3] := Vector(0.8 * 128 * i + 0.8 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.0, 0.8 * 128 * j + 0.8 * p + 0.8], 0.8 * 128 * j + 0.8 * p + 0.8);
 
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 0] := Vector(0, 0, 0, 0);
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 1] := Vector(0, 0, 0, 0);
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 2] := Vector(0, 0, 0, 0);
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 3] := Vector(0, 0, 0, 0);
+              fVBOs[i, j].Colors[4 * (128 * o + p) + 0] := Vector(5, 5, 5, 5);
+              fVBOs[i, j].Colors[4 * (128 * o + p) + 1] := Vector(5, 5, 5, 5);
+              fVBOs[i, j].Colors[4 * (128 * o + p) + 2] := Vector(5, 5, 5, 5);
+              fVBOs[i, j].Colors[4 * (128 * o + p) + 3] := Vector(5, 5, 5, 5);
               end;
           fVBOs[i, j].UnBind;
           fRawVBOs[i, j] := TVBO.Create(32 * 32 * 4, GL_C4F_N3F_V3F, GL_QUADS);
@@ -348,10 +348,10 @@ begin
               fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 2] := Vector(3.2 * 32 * i + 3.2 * o + 3.2, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 3.2, 3.2 * 32 * j + 3.2 * p + 3.2], 3.2 * 32 * j + 3.2 * p + 3.2);
               fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 3] := Vector(3.2 * 32 * i + 3.2 * o + 0.0, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 0.0, 3.2 * 32 * j + 3.2 * p + 3.2], 3.2 * 32 * j + 3.2 * p + 3.2);
 
-              fRawVBOs[i, j].Colors[4 * (128 * o + p) + 0] := Vector(0, 0, 0, 0);
-              fRawVBOs[i, j].Colors[4 * (128 * o + p) + 1] := Vector(0, 0, 0, 0);
-              fRawVBOs[i, j].Colors[4 * (128 * o + p) + 2] := Vector(0, 0, 0, 0);
-              fRawVBOs[i, j].Colors[4 * (128 * o + p) + 3] := Vector(0, 0, 0, 0);
+              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 0] := Vector(5, 5, 5, 5);
+              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 1] := Vector(5, 5, 5, 5);
+              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 2] := Vector(5, 5, 5, 5);
+              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 3] := Vector(5, 5, 5, 5);
               end;
           fRawVBOs[i, j].UnBind;
           end;

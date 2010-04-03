@@ -6,16 +6,14 @@ uses
   SysUtils, Classes, DGLOpenGL, u_math, u_vectors, m_shdmng_class, m_texmng_class, math;
 
 type
-  TRE3DAnaglyph = class
-    protected
-      ResX, ResY: Integer;
+  TRENormal = class
     public
       procedure Apply(Event: String; Param, Result: Pointer);
       constructor Create;
       destructor Free;
     end;
 
-  TRE3DShutter = class
+  TRE3DAnaglyph = class
     protected
       ResX, ResY: Integer;
     public
@@ -55,8 +53,8 @@ type
 
   TRenderEffectManager = class
     protected
+      RENormal: TRENormal;
       RE3DAnaglyph: TRE3DAnaglyph;
-      RE3DShutter: TRE3DShutter;
       RE2DFocus: TRE2DFocus;
       REMotionBlur: TREMotionBlur;
       REBloom: TREBloom;
@@ -67,8 +65,8 @@ type
     end;
 
 const
-  RE_3D_ANAGLYPH = 1;
-  RE_3D_SHUTTER = 2;
+  RE_NORMAL = 1;
+  RE_3D_ANAGLYPH = 2;
   RE_2D_FOCUS = 3;
   RE_MOTIONBLUR = 4;
   RE_BLOOM = 5;
@@ -77,6 +75,21 @@ implementation
 
 uses
   m_module, m_varlist, u_events;
+
+procedure TRENormal.Apply(Event: String; Param, Result: Pointer);
+begin
+  ModuleManager.ModRenderer.Render();
+end;
+
+constructor TRENormal.Create;
+begin
+  EventManager.AddCallback('TModuleRenderer.Render', @Self.Apply);
+end;
+
+destructor TRENormal.Free;
+begin
+  EventManager.RemoveCallback(@Self.Apply);
+end;
 
 procedure TRE3DAnaglyph.Apply(Event: String; Param, Result: Pointer);
 var
@@ -101,35 +114,6 @@ begin
 end;
 
 destructor TRE3DAnaglyph.Free;
-begin
-  EventManager.RemoveCallback(@Self.Apply);
-end;
-
-procedure TRE3DShutter.Apply(Event: String; Param, Result: Pointer);
-var
-  DistPixel: DWord;
-  Distance: Single;
-begin
-  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
-  Distance := (DistPixel / High(DWord)) ** 2 * 10000;
-  glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
-
-  glDrawBuffer(GL_LEFT);
-  ModuleManager.ModRenderer.Render(-0.4, Distance);
-  glDrawBuffer(GL_RIGHT);
-  ModuleManager.ModRenderer.Render(0.4, Distance);
-  glDrawBuffer(GL_BACK);
-end;
-
-constructor TRE3DShutter.Create;
-begin
-  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
-  ModuleManager.ModGLContext.AdditionalContextOptions := ModuleManager.ModGLContext.AdditionalContextOptions or GL_STEREO;
-  ModuleManager.ModGLContext.SetResolution(ResX, ResY);
-  EventManager.AddCallback('TModuleRenderer.Render', @Self.Apply);
-end;
-
-destructor TRE3DShutter.Free;
 begin
   EventManager.RemoveCallback(@Self.Apply);
 end;
@@ -311,8 +295,8 @@ end;
 
 constructor TRenderEffectManager.Create;
 begin
+  RENormal := nil;
   RE3DAnaglyph := nil;
-  RE3DShutter := nil;
   RE2DFocus := nil;
   REMotionBlur := nil;
   REBloom := nil;
@@ -322,8 +306,8 @@ destructor TRenderEffectManager.Free;
 begin
   EventManager.RemoveCallback('TModuleRenderer.Render');
   EventManager.RemoveCallback('TModuleRenderer.PostRender');
+  if RENormal <> nil then RENormal.Free;
   if RE3DAnaglyph <> nil then RE3DAnaglyph.Free;
-  if RE3DShutter <> nil then RE3DShutter.Free;
   if RE2DFocus <> nil then RE2DFocus.Free;
   if REMotionBlur <> nil then REMotionBlur.Free;
   if REBloom <> nil then REBloom.Free;
@@ -332,8 +316,8 @@ end;
 procedure TRenderEffectManager.LoadEffect(ID: Integer);
 begin
   case ID of
+    RE_NORMAL: RENormal := TRENormal.Create;
     RE_3D_ANAGLYPH: RE3DAnaglyph := TRE3DAnaglyph.Create;
-    RE_3D_SHUTTER: RE3DShutter := TRE3DShutter.Create;
     RE_2D_FOCUS: RE2DFocus := TRE2DFocus.Create;
     RE_MOTIONBLUR: REMotionblur := TREMotionblur.Create;
     RE_BLOOM: REBloom := TREBloom.Create;

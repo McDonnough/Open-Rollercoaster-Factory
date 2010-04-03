@@ -75,7 +75,6 @@ begin
 
   glEnable(GL_BLEND);
 
-  Render();
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
   EventManager.CallEvent('TModuleRenderer.PostRender', nil, nil);
 end;

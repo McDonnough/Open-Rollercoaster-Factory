@@ -380,6 +380,7 @@ begin
   fTexture.FromFile('terrain/defaultcollection.tga');
   fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
   fShader.UniformI('TerrainTexture', 0);
+  fShader.UniformF('maxBumpDistance', 40);
   fFineOffsetX := 0;
   fFineOffsetY := 0;
   fFineVBO := TVBO.Create(256 * 256 * 4, GL_C4F_N3F_V3F, GL_QUADS);

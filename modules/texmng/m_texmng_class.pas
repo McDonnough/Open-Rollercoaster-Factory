@@ -153,8 +153,7 @@ end;
 
 procedure TTexture.Bind(U: Integer = -1);
 begin
-  if (U >= 0) and (U <= 7) then
-    ModuleManager.ModTexMng.ActivateTexUnit(U);
+  ModuleManager.ModTexMng.ActivateTexUnit(U);
   ModuleManager.ModTexMng.BindTexture(fID);
 end;
 

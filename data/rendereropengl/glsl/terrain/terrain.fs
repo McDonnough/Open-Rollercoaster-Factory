@@ -1,8 +1,7 @@
 #version 120
 
 uniform sampler2D TerrainTexture;
-uniform sampler2D NormalTexture;
-uniform sampler2D LayerTexture;
+uniform sampler2D HeightMap;
 uniform int LOD;
 uniform vec2 offset;
 uniform float maxBumpDistance;
@@ -40,17 +39,16 @@ void main(void) {
   if ((clamp(Vertex.xz, offset, offset + 51.2) == Vertex.xz) && (LOD < 2))
     discard;
   mat4 TexCoord = mat4(
-    processTexCoord(texture2D(LayerTexture, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),
-    processTexCoord(texture2D(LayerTexture, (5.0 * Vertex.xz + vec2(1.0, 0.0)) / TerrainSize).r * 8.0),
-    processTexCoord(texture2D(LayerTexture, (5.0 * Vertex.xz + vec2(0.0, 1.0)) / TerrainSize).r * 8.0),
-    processTexCoord(texture2D(LayerTexture, (5.0 * Vertex.xz + vec2(1.0, 1.0)) / TerrainSize).r * 8.0));
+    processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),
+    processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(1.0, 0.0)) / TerrainSize).r * 8.0),
+    processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 1.0)) / TerrainSize).r * 8.0),
+    processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(1.0, 1.0)) / TerrainSize).r * 8.0));
   mat4 texColors = mat4(
     vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + TexCoord[0].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy)),
     vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + TexCoord[1].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[1].xy)),
     vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + TexCoord[2].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[2].xy)),
     vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + TexCoord[3].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[3].xy)));
   vec3 normal = normalize(Normal);
-  normal = normalize(2.0 * texture2D(NormalTexture, 5.0 * Vertex.xz / TerrainSize).rgb - 1.0);
   if (dist < maxBumpDistance) {
     mat4 bumpColors = mat4(
       vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy + vec2(0.0, 0.5))),

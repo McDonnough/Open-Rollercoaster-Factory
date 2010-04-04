@@ -82,6 +82,11 @@ type
         *@param tex unit number [0..7]
         *)
       procedure ActivateTexUnit(U: Integer); virtual abstract;
+
+      (**
+        * Get the OpenGL Texture ID
+        *)
+      function GetRealTexID(Tex: Integer): GLUInt; virtual abstract;
     end;
 
   TTexture = class
@@ -101,6 +106,7 @@ type
       procedure Unbind;
       procedure SetFilter(Min, Max: GLEnum);
       procedure SetClamp(X, Y: GLEnum);
+      function GetRealTexID: GLUInt;
       destructor Free;
     end;
 
@@ -165,6 +171,11 @@ end;
 procedure TTexture.SetClamp(X, Y: GLEnum);
 begin
   ModuleManager.ModTexMng.SetClamp(fID, X, Y);
+end;
+
+function TTexture.GetRealTexID: GLUInt;
+begin
+  Result := ModuleManager.ModTexMng.GetRealTexID(fID);
 end;
 
 destructor TTexture.Free;

@@ -73,6 +73,8 @@ procedure TModuleGLMngDefault.SetUpScreen;
 var
   X, Y: Integer;
 begin
+  glClearColor(0.0, 0.0, 0.0, 0.0);
+  glClearDepth(1.0);
   ModuleManager.ModGLContext.GetResolution(X, Y);
   glViewport(0, 0, X, Y);
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);

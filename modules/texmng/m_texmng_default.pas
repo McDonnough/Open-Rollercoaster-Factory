@@ -43,6 +43,7 @@ type
       procedure SetClamp(Texture: Integer; X, Y: GLEnum);
       function ReadPixel(Texture: Integer; X, Y: Integer): DWord;
       procedure SetPixel(Texture: Integer; X, Y: Integer; Color: DWord);
+      function GetRealTexID(Tex: Integer): GLUInt;
       destructor Free;
     end;
 
@@ -257,6 +258,11 @@ procedure TModuleTextureManagerDefault.SetPixel(Texture: Integer; X, Y: Integer;
 begin
   DWord(Pointer(PtrUInt(@fTexRefs[Texture].Data[4 * (fTexRefs[Texture].Width * Y + X)]))^) := Color;
   FillTexture(Texture, @fTexRefs[Texture].Data[0], GL_BGRA);
+end;
+
+function TModuleTextureManagerDefault.GetRealTexID(Tex: Integer): GLUInt;
+begin
+  Result := fTexRefs[Tex].Tex;
 end;
 
 destructor TModuleTextureManagerDefault.Free;

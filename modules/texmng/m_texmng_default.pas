@@ -27,7 +27,7 @@ type
   TModuleTextureManagerDefault = class(TModuleTextureManagerClass)
     protected
       fTexRefs: ATexRef;
-      fCurrentTextures: array[0..7] of Integer;
+      fCurrentTextures: array[0..31] of Integer;
       fCurrentTexUnit: Integer;
       function GetTGAFile(Filename: String; var Texture: TTexRef): TTGAFile;
     public
@@ -83,8 +83,8 @@ begin
   fModType := 'TextureManager';
 
   glEnable(GL_TEXTURE_2D);
-  for i := 0 to 7 do
-    fCurrentTextures[fCurrentTexUnit] := -1;
+  for i := 0 to high(fCurrentTextures) do
+    fCurrentTextures[i] := -1;
   ActivateTexUnit(0);
 end;
 
@@ -180,7 +180,7 @@ end;
 
 procedure TModuleTextureManagerDefault.ActivateTexUnit(U: Integer);
 begin
-  if fCurrentTexUnit = U then
+  if (fCurrentTexUnit = U) or (U < 0) or (U > high(fCurrentTextures)) then
     exit;
   fCurrentTexUnit := U;
   glActiveTexture(GL_TEXTURE0 + U);

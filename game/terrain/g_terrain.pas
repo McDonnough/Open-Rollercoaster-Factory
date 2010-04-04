@@ -158,7 +158,7 @@ var
     fMap[(X1 + X2) div 2, fY2].Height := Round(Mix(fMap[X1, fY2].Height, fMap[fX2, fY2].Height, 0.5));
     fMap[X1, (Y1 + Y2) div 2].Height := Round(Mix(fMap[X1, Y1].Height, fMap[X1, fY2].Height, 0.5));
     fMap[fX2, (Y1 + Y2) div 2].Height := Round(Mix(fMap[fX2, Y1].Height, fMap[fX2, fY2].Height, 0.5));
-    fMap[(X1 + X2) div 2, (Y1 + Y2) div 2].Height := Round(Mix(Mix(fMap[X1, Y1].Height, fMap[fX2, Y1].Height, 0.5), Mix(fMap[X1, fY2].Height, fMap[fX2, fY2].Height, 0.5), 0.5) + (10000 * sqrt(random) - 5000) / (2 ** sdc));
+    fMap[(X1 + X2) div 2, (Y1 + Y2) div 2].Height := Round(Mix(Mix(fMap[X1, Y1].Height, fMap[fX2, Y1].Height, 0.5), Mix(fMap[X1, fY2].Height, fMap[fX2, fY2].Height, 0.5), 0.5) + ((10000 * sqrt(random) - 5000) * (fSizeX + fSizeY) / 1024) / (2 ** sdc));
     inc(sdc);
     subdivide(X1, Y1, (X1 + X2) div 2, (Y1 + Y2) div 2);
     subdivide((X1 + X2) div 2, Y1, X2, (Y1 + Y2) div 2);
@@ -170,11 +170,11 @@ begin
   sdc := 0;
   fSizeX := 0;
   fSizeY := 0;
-  Resize(512, 512);
-  fMap[0, 0].Height := 4000;
-  fMap[SizeX - 1, 0].Height := 4000;
-  fMap[0, SizeY - 1].Height := 4000;
-  fMap[SizeX - 1, SizeY - 1].Height := 4000;
+  Resize(1024, 1024);
+  fMap[0, 0].Height := 5100;
+  fMap[SizeX - 1, 0].Height := 5100;
+  fMap[0, SizeY - 1].Height := 5100;
+  fMap[SizeX - 1, SizeY - 1].Height := 5100;
   Subdivide(0, 0, SizeX, SizeY);
   for i := 1 to SizeX - 1 do
     for j := 1 to SizeY - 1 do

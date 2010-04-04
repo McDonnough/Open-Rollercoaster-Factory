@@ -3,16 +3,9 @@ unit m_renderer_opengl_classes;
 interface
 
 uses
-  SysUtils, Classes, DGLOpenGL, u_vectors, u_math;
+  SysUtils, Classes, DGLOpenGL, u_vectors, u_math, m_texmng_class;
 
 type
-  TGLLight = class
-    public
-      Color, Position: TVector4D;
-      MaxDistance: Single;
-      procedure Bind(GLLight: GLEnum);
-    end;
-
   TVBO = class
     protected
       fVBO: GLUInt;
@@ -48,19 +41,31 @@ type
       destructor Free;
     end;
 
+  TFBO = class
+    protected
+      fTextures: Array of TTexture;
+      fID, fDepthBuffer: GLUInt;
+      fSizeX, fSizeY: Integer;
+      class procedure UnbindCurrent;
+      function getTexture(I: Integer): TTexture;
+    public
+      property Textures[I: Integer]: TTexture read getTexture;
+      property Width: Integer read fSizeX;
+      property Height: Integer read fSizeY;
+      procedure Bind;
+      procedure Unbind;
+      procedure AddTexture(TexFormat, MinFilter, MagFilter: GLEnum);
+      constructor Create(SizeX, SizeY: Integer);
+      destructor Free;
+    end;
+
 implementation
 
 uses
   m_varlist;
 
-procedure TGLLight.Bind(GLLight: GLEnum);
-begin
-  glLightfv(GL_LIGHT0, GL_DIFFUSE,  @Color);
-  glLightfv(GL_LIGHT0, GL_POSITION, @Position);
-  glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 1 / MaxDistance / MaxDistance);
-end;
-
-
+var
+  fCurrentFBO: TFBO = nil;
 
 procedure TVBO.Map(Mode: GLEnum);
 begin
@@ -217,6 +222,76 @@ destructor TVBO.Free;
 begin
   Unbind;
   glDeleteBuffers(1, @fVBO);
+end;
+
+
+class procedure TFBO.UnbindCurrent;
+begin
+  if fCurrentFBO <> nil then
+    fCurrentFBO.Unbind;
+end;
+
+function TFBO.getTexture(I: Integer): TTexture;
+begin
+  Result := nil;
+  if (i >= 0) and (i <= high(fTextures)) then
+    Result := fTextures[i];
+end;
+
+procedure TFBO.Bind;
+begin
+  UnbindCurrent;
+  fCurrentFBO := self;
+  glPushAttrib(GL_VIEWPORT_BIT);
+  glViewport(0, 0, Width, Height);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fID);
+end;
+
+procedure TFBO.UnBind;
+begin
+  if fCurrentFBO <> nil then
+    begin
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    glPopAttrib;
+    end;
+  fCurrentFBO := nil;
+end;
+
+procedure TFBO.AddTexture(TexFormat, MinFilter, MagFilter: GLEnum);
+var
+  i: Integer;
+begin
+  Bind;
+  setLength(fTextures, length(fTextures) + 1);
+  i := high(fTextures);
+  fTextures[i] := TTexture.Create;
+  fTextures[i].CreateNew(fSizeX, fSizeY, TexFormat);
+  fTextures[i].SetFilter(MinFilter, MagFilter);
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, fTextures[i].GetRealTexID, 0);
+  fTextures[i].Unbind;
+end;
+
+constructor TFBO.Create(SizeX, SizeY: Integer);
+begin
+  fSizeX := SizeX;
+  fSizeY := SizeY;
+  glGenFramebuffersEXT(1, @fID);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fID);
+  glGenRenderbuffersEXT(1, @fDepthBuffer);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fDepthBuffer);
+  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, SizeX, SizeY);
+  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fDepthBuffer);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+end;
+
+destructor TFBO.Free;
+var
+  i: Integer;
+begin
+  for i := 0 to high(fTextures) do
+    fTextures[i].Free;
+  glDeleteFramebuffersEXT(1, @fID);
+  glDeleteRenderbuffersEXT(1, @fDepthBuffer);
 end;
 
 end.

@@ -19,6 +19,8 @@ type
       fMVec: Array[0..4] of TVector2D;
       fPrevPos: TVector2D;
       fNormals: Array of Array of TVector3D;
+      fNormalMap, fLayerMap: TFBO;
+      RenderStep: Single;
       procedure MoveHDTerrain;
       function GetNormal(X, Y: Single; force: Boolean = false): TVector3D;
     public
@@ -48,7 +50,7 @@ begin
     X := X / 5;
     Y := Y / 5;
     h := Park.pTerrain.HeightMap[X, Y];
-    Result := (
+    Result := Normalize(
       Normal(Vector(+0.0, Park.pTerrain.HeightMap[X + 0.0, Y - 0.2] - h, -0.2), Vector(-0.2, Park.pTerrain.HeightMap[X - 0.2, Y + 0.0] - h, +0.0))
     + Normal(Vector(+0.2, Park.pTerrain.HeightMap[X + 0.2, Y + 0.0] - h, +0.0), Vector(+0.0, Park.pTerrain.HeightMap[X + 0.0, Y - 0.2] - h, -0.2))
     + Normal(Vector(+0.0, Park.pTerrain.HeightMap[X + 0.0, Y + 0.2] - h, +0.2), Vector(+0.2, Park.pTerrain.HeightMap[X + 0.2, Y + 0.0] - h, -0.0))
@@ -106,15 +108,6 @@ begin
         Park.pTerrain.TexMap[(i + fTmpFineOffsetX + 1) / 5, (j + fTmpFineOffsetY) / 5],
         Park.pTerrain.TexMap[(i + fTmpFineOffsetX) / 5, (j + fTmpFineOffsetY + 1) / 5],
         Park.pTerrain.TexMap[(i + fTmpFineOffsetX + 1) / 5, (j + fTmpFineOffsetY + 1) / 5]);
-      fTempVBO.Colors[4 * (256 * i + j) + 0] := TexMap;
-      fTempVBO.Colors[4 * (256 * i + j) + 1] := TexMap;
-      fTempVBO.Colors[4 * (256 * i + j) + 2] := TexMap;
-      fTempVBO.Colors[4 * (256 * i + j) + 3] := TexMap;
-
-      fTempVBO.Normals[4 * (256 * i + j) + 0] := GetNormal(i + fTmpFineOffsetX, j + fTmpFineOffsetY);
-      fTempVBO.Normals[4 * (256 * i + j) + 1] := GetNormal(i + fTmpFineOffsetX + 1, j + fTmpFineOffsetY);
-      fTempVBO.Normals[4 * (256 * i + j) + 2] := GetNormal(i + fTmpFineOffsetX + 1, j + fTmpFineOffsetY + 1);
-      fTempVBO.Normals[4 * (256 * i + j) + 3] := GetNormal(i + fTmpFineOffsetX, j + fTmpFineOffsetY + 1);
       end;
   fTempVBO.Unbind;
   fMovingRow := fMovingRow + 5;
@@ -154,8 +147,12 @@ begin
   glDisable(GL_BLEND);
   MoveHDTerrain;
   showHighest := (VecLengthNoRoot(Vector(25.6 + fFineOffsetX / 5, 0, 25.6 + fFineOffsetY / 5) - Vector(1, 0, 1) * ModuleManager.ModCamera.ActiveCamera.Position) < (102.4 ** 2));
+  fNormalMap.Textures[0].Bind(1);
+  fLayerMap.Textures[0].Bind(2);
   fTexture.Bind(0);
   fShader.Bind;
+  fShader.UniformF('lightdir', sin(RenderStep), 1, cos(RenderStep));
+//   RenderStep := RenderStep + 0.01;
   if showHighest then
     begin
     fShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5);
@@ -232,16 +229,12 @@ var
         begin
         AppropriateRawVBO.Bind;
         AppropriateRawVBO.Vertices[getVertexID(X, Y, 16)] := Height;
-        AppropriateRawVBO.Normals[getVertexID(X, Y, 16)] := GetNormal(X, Y, true);
-        AppropriateRawVBO.Colors[getVertexID(X, Y, 16)] := Vector(Park.pTerrain.TexMap[(X)/5, (Y)/5], Park.pTerrain.TexMap[(X + 16)/5, (Y)/5], Park.pTerrain.TexMap[(X)/5, (Y + 16)/5], Park.pTerrain.TexMap[(X + 16)/5, (Y + 16)/5]);
         AppropriateRawVBO.UnBind;
         end;
       if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
         begin
         AppropriateVBO.Bind;
         AppropriateVBO.Vertices[getVertexID(X, Y, 4)] := Height;
-        AppropriateVBO.Normals[getVertexID(X, Y, 4)] := GetNormal(X, Y, true);
-        AppropriateVBO.Colors[getVertexID(X, Y, 4)] := Vector(Park.pTerrain.TexMap[(X)/5, (Y)/5], Park.pTerrain.TexMap[(X + 4)/5, (Y)/5], Park.pTerrain.TexMap[(X)/5, (Y + 4)/5], Park.pTerrain.TexMap[(X + 4)/5, (Y + 4)/5]);
         AppropriateVBO.UnBind;
         end;
       end;
@@ -252,16 +245,12 @@ var
         begin
         AppropriateRawVBO.Bind;
         AppropriateRawVBO.Vertices[getVertexID(X - 16, Y, 16) + 1] := Height;
-        AppropriateRawVBO.Normals[getVertexID(X - 16, Y, 16) + 1] := GetNormal(X, Y, true);
-        AppropriateRawVBO.Colors[getVertexID(X - 16, Y, 16) + 1] := Vector(Park.pTerrain.TexMap[(X - 16)/5, (Y)/5], Park.pTerrain.TexMap[(X)/5, (Y)/5], Park.pTerrain.TexMap[(X - 16)/5, (Y + 16)/5], Park.pTerrain.TexMap[(X)/5, (Y + 16)/5]);
         AppropriateRawVBO.UnBind;
         end;
       if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
         begin
         AppropriateVBO.Bind;
         AppropriateVBO.Vertices[getVertexID(X - 4, Y, 4) + 1] := Height;
-        AppropriateVBO.Normals[getVertexID(X - 4, Y, 4) + 1] := GetNormal(X, Y, true);
-        AppropriateVBO.Colors[getVertexID(X - 4, Y, 4) + 1] := Vector(Park.pTerrain.TexMap[(X - 4)/5, (Y)/5], Park.pTerrain.TexMap[(X)/5, (Y)/5], Park.pTerrain.TexMap[(X - 4)/5, (Y + 4)/5], Park.pTerrain.TexMap[(X)/5, (Y + 4)/5]);
         AppropriateVBO.UnBind;
         end;
       end;
@@ -272,16 +261,12 @@ var
         begin
         AppropriateRawVBO.Bind;
         AppropriateRawVBO.Vertices[getVertexID(X - 16, Y - 16, 16) + 2] := Height;
-        AppropriateRawVBO.Normals[getVertexID(X - 16, Y - 16, 16) + 2] := GetNormal(X, Y, true);
-        AppropriateRawVBO.Colors[getVertexID(X - 16, Y - 16, 16) + 2] := Vector(Park.pTerrain.TexMap[(X - 16)/5, (Y - 16)/5], Park.pTerrain.TexMap[(X)/5, (Y - 16)/5], Park.pTerrain.TexMap[(X - 16)/5, (Y)/5], Park.pTerrain.TexMap[(X)/5, (Y)/5]);
         AppropriateRawVBO.UnBind;
         end;
       if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
         begin
         AppropriateVBO.Bind;
         AppropriateVBO.Vertices[getVertexID(X - 4, Y - 4, 4) + 2] := Height;
-        AppropriateVBO.Normals[getVertexID(X - 4, Y - 4, 4) + 2] := GetNormal(X, Y, true);
-        AppropriateVBO.Colors[getVertexID(X - 4, Y - 4, 4) + 2] := Vector(Park.pTerrain.TexMap[(X - 4)/5, (Y - 4)/5], Park.pTerrain.TexMap[(X)/5, (Y - 4)/5], Park.pTerrain.TexMap[(X - 4)/5, (Y)/5], Park.pTerrain.TexMap[(X)/5, (Y)/5]);
         AppropriateVBO.UnBind;
         end;
       end;
@@ -292,23 +277,32 @@ var
         begin
         AppropriateRawVBO.Bind;
         AppropriateRawVBO.Vertices[getVertexID(X, Y - 16, 16) + 3] := Height;
-        AppropriateRawVBO.Normals[getVertexID(X, Y - 16, 16) + 3] := GetNormal(X, Y, true);
-        AppropriateRawVBO.Colors[getVertexID(X, Y - 16, 16) + 3] := Vector(Park.pTerrain.TexMap[(X)/5, (Y - 16)/5], Park.pTerrain.TexMap[(X + 16)/5, (Y - 16)/5], Park.pTerrain.TexMap[(X)/5, (Y)/5], Park.pTerrain.TexMap[(X + 16)/5, (Y)/5]);
         AppropriateRawVBO.UnBind;
         end;
       if (X div 4 = X / 4) and (Y div 4 = Y / 4) then
         begin
         AppropriateVBO.Bind;
         AppropriateVBO.Vertices[getVertexID(X, Y - 4, 4) + 3] := Height;
-        AppropriateVBO.Normals[getVertexID(X, Y - 4, 4) + 3] := GetNormal(X, Y, true);
-        AppropriateVBO.Colors[getVertexID(X, Y - 4, 4) + 3] := Vector(Park.pTerrain.TexMap[(X)/5, (Y - 4)/5], Park.pTerrain.TexMap[(X + 4)/5, (Y - 4)/5], Park.pTerrain.TexMap[(X)/5, (Y)/5], Park.pTerrain.TexMap[(X + 4)/5, (Y)/5]);
         AppropriateVBO.UnBind;
         end;
       end;
   end;
+var
+  Normal: TVector3D;
 begin
   if Event = 'TTerrain.Resize' then
     begin
+    fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    if (fLayerMap <> nil) and (fNormalMap <> nil) then
+      begin
+      fLayerMap.Free;
+      fNormalMap.Free;
+      end;
+    fLayerMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fLayerMap.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);
+    fNormalMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fNormalMap.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+    fNormalMap.Unbind;
     m := length(fVBOs);
     if m = 0 then
       n := 0
@@ -338,7 +332,7 @@ begin
         begin
         if (i >= m) or (j >= n) then
           begin
-          fVBOs[i, j] := TVBO.Create(128 * 128 * 4, GL_C4F_N3F_V3F, GL_QUADS);
+          fVBOs[i, j] := TVBO.Create(128 * 128 * 4, GL_V3F, GL_QUADS);
           for o := 0 to 127 do
             for p := 0 to 127 do
               begin
@@ -346,14 +340,9 @@ begin
               fVBOs[i, j].Vertices[4 * (128 * o + p) + 1] := Vector(0.8 * 128 * i + 0.8 * o + 0.8, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.8, 0.8 * 128 * j + 0.8 * p + 0.0], 0.8 * 128 * j + 0.8 * p + 0.0);
               fVBOs[i, j].Vertices[4 * (128 * o + p) + 2] := Vector(0.8 * 128 * i + 0.8 * o + 0.8, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.8, 0.8 * 128 * j + 0.8 * p + 0.8], 0.8 * 128 * j + 0.8 * p + 0.8);
               fVBOs[i, j].Vertices[4 * (128 * o + p) + 3] := Vector(0.8 * 128 * i + 0.8 * o + 0.0, Park.pTerrain.HeightMap[0.8 * 128 * i + 0.8 * o + 0.0, 0.8 * 128 * j + 0.8 * p + 0.8], 0.8 * 128 * j + 0.8 * p + 0.8);
-
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 0] := Vector(0, 0, 0, 0);
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 1] := Vector(0, 0, 0, 0);
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 2] := Vector(0, 0, 0, 0);
-              fVBOs[i, j].Colors[4 * (128 * o + p) + 3] := Vector(0, 0, 0, 0);
               end;
           fVBOs[i, j].UnBind;
-          fRawVBOs[i, j] := TVBO.Create(32 * 32 * 4, GL_C4F_N3F_V3F, GL_QUADS);
+          fRawVBOs[i, j] := TVBO.Create(32 * 32 * 4, GL_V3F, GL_QUADS);
           for o := 0 to 31 do
             for p := 0 to 31 do
               begin
@@ -361,11 +350,6 @@ begin
               fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 1] := Vector(3.2 * 32 * i + 3.2 * o + 3.2, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 3.2, 3.2 * 32 * j + 3.2 * p + 0.0], 3.2 * 32 * j + 3.2 * p + 0.0);
               fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 2] := Vector(3.2 * 32 * i + 3.2 * o + 3.2, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 3.2, 3.2 * 32 * j + 3.2 * p + 3.2], 3.2 * 32 * j + 3.2 * p + 3.2);
               fRawVBOs[i, j].Vertices[4 * (32 * o + p) + 3] := Vector(3.2 * 32 * i + 3.2 * o + 0.0, Park.pTerrain.HeightMap[3.2 * 32 * i + 3.2 * o + 0.0, 3.2 * 32 * j + 3.2 * p + 3.2], 3.2 * 32 * j + 3.2 * p + 3.2);
-
-              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 0] := Vector(0, 0, 0, 0);
-              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 1] := Vector(0, 0, 0, 0);
-              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 2] := Vector(0, 0, 0, 0);
-              fRawVBOs[i, j].Colors[4 * (32 * o + p) + 3] := Vector(0, 0, 0, 0);
               end;
           fRawVBOs[i, j].UnBind;
           end;
@@ -383,6 +367,63 @@ begin
     for i := 0 to Park.pTerrain.SizeX - 1 do
       for j := 0 to Park.pTerrain.SizeY - 1 do
         UpdateVertex(i, j);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    fNormalMap.Bind;
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix;
+    glLoadIdentity;
+    glOrtho(0, Park.pTerrain.SizeX, 0, Park.pTerrain.SizeY, 0, 255);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix;
+    glLoadIdentity;
+
+    glDisable(GL_DEPTH_TEST);
+    glBegin(GL_POINTS);
+      for i := 0 to Park.pTerrain.SizeX do
+        for j := 0 to Park.pTerrain.SizeY do
+          begin
+          Normal := GetNormal(i, j);
+          glColor3f(0.5 + 0.5 * Normal.X, 0.5 + 0.5 * Normal.Y, 0.5 + 0.5 * Normal.Z);
+          glVertex3f(i, j, -1);
+          end;
+    glEnd;
+    glEnable(GL_DEPTH_TEST);
+
+    glPopMatrix;
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix;
+    glMatrixMode(GL_MODELVIEW);
+    fNormalMap.Unbind;
+
+    fLayerMap.Bind;
+    glClear(GL_COLOR_BUFFER_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glDisable(GL_BLEND);
+    glPushMatrix;
+    glLoadIdentity;
+    glOrtho(0, Park.pTerrain.SizeX, 0, Park.pTerrain.SizeY, 0, 255);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix;
+    glLoadIdentity;
+
+    glDisable(GL_DEPTH_TEST);
+    glBegin(GL_POINTS);
+      for i := 0 to Park.pTerrain.SizeX do
+        for j := 0 to Park.pTerrain.SizeY do
+          begin
+          glColor4f(Park.pTerrain.TexMap[i / 5, j / 5] / 8, 0, 0, 1);
+          glVertex3f(i, j, -1);
+          end;
+    glEnd;
+    glEnable(GL_DEPTH_TEST);
+
+    glPopMatrix;
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix;
+    glMatrixMode(GL_MODELVIEW);
+    fLayerMap.Unbind;
     end;
 end;
 
@@ -390,14 +431,19 @@ constructor TRTerrain.Create;
 var
   i, j: Integer;
 begin
+  fLayerMap := nil;
+  fNormalMap := nil;
   fTexture := TTexture.Create;
   fTexture.FromFile('terrain/defaultcollection.tga');
   fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
   fShader.UniformI('TerrainTexture', 0);
+  fShader.UniformI('NormalTexture', 1);
+  fShader.UniformI('LayerTexture', 2);
   fShader.UniformF('maxBumpDistance', 40);
+  fShader.UniformF('lightdir', -1, 1, -1);
   fFineOffsetX := 0;
   fFineOffsetY := 0;
-  fFineVBO := TVBO.Create(256 * 256 * 4, GL_C4F_N3F_V3F, GL_QUADS);
+  fFineVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
   for i := 0 to 255 do
     for j := 0 to 255 do
       begin
@@ -405,19 +451,9 @@ begin
       fFineVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, 0, 0.2 * j);
       fFineVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, 0, 0.2 * j + 0.2);
       fFineVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j + 0.2);
-
-      fFineVBO.Colors[4 * (256 * i + j) + 0] := Vector(0, 0, 0, 0);
-      fFineVBO.Colors[4 * (256 * i + j) + 1] := Vector(0, 0, 0, 0);
-      fFineVBO.Colors[4 * (256 * i + j) + 2] := Vector(0, 0, 0, 0);
-      fFineVBO.Colors[4 * (256 * i + j) + 3] := Vector(0, 0, 0, 0);
-
-      fFineVBO.Normals[4 * (256 * i + j) + 0] := Vector(0, 1, 0);
-      fFineVBO.Normals[4 * (256 * i + j) + 1] := Vector(0, 1, 0);
-      fFineVBO.Normals[4 * (256 * i + j) + 2] := Vector(0, 1, 0);
-      fFineVBO.Normals[4 * (256 * i + j) + 3] := Vector(0, 1, 0);
       end;
   fFineVBO.Unbind;
-  fTempVBO := TVBO.Create(256 * 256 * 4, GL_C4F_N3F_V3F, GL_QUADS);
+  fTempVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
   for i := 0 to 255 do
     for j := 0 to 255 do
       begin
@@ -425,16 +461,6 @@ begin
       fTempVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, 0, 0.2 * j);
       fTempVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, 0, 0.2 * j + 0.2);
       fTempVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j + 0.2);
-
-      fTempVBO.Colors[4 * (256 * i + j) + 0] := Vector(0, 0, 0, 0);
-      fTempVBO.Colors[4 * (256 * i + j) + 1] := Vector(0, 0, 0, 0);
-      fTempVBO.Colors[4 * (256 * i + j) + 2] := Vector(0, 0, 0, 0);
-      fTempVBO.Colors[4 * (256 * i + j) + 3] := Vector(0, 0, 0, 0);
-
-      fTempVBO.Normals[4 * (256 * i + j) + 0] := Vector(0, 1, 0);
-      fTempVBO.Normals[4 * (256 * i + j) + 1] := Vector(0, 1, 0);
-      fTempVBO.Normals[4 * (256 * i + j) + 2] := Vector(0, 1, 0);
-      fTempVBO.Normals[4 * (256 * i + j) + 3] := Vector(0, 1, 0);
       end;
   fTempVBO.Unbind;
   fMovingRow := 0;
@@ -458,6 +484,10 @@ begin
       end;
   fShader.Free;
   fTexture.Free;
+  if fNormalMap <> nil then
+    fNormalMap.Free;
+  if fLayerMap <> nil then
+    fLayerMap.Free;
 end;
 
 end.

@@ -15,14 +15,14 @@ type
         *@param File where the problem occured
         *@param Line in which the problem occured
         *)
-      procedure AddError(s, sFile: String; sLine: Integer); virtual abstract;
+      procedure AddError(s: String; sFile: String = ''; sLine: Integer = 0); virtual abstract;
 
       (** Add a warning
         *@param log message
         *@param File where the problem occured
         *@param Line in which the problem occured
         *)
-      procedure AddWarning(s, sFile: String; sLine: Integer); virtual abstract;
+      procedure AddWarning(s: String; sFile: String = ''; sLine: Integer = 0); virtual abstract;
     end;
 
 implementation

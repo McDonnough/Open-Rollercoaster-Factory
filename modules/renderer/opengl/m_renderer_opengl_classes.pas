@@ -55,7 +55,7 @@ type
       procedure Bind;
       procedure Unbind;
       procedure AddTexture(TexFormat, MinFilter, MagFilter: GLEnum);
-      constructor Create(SizeX, SizeY: Integer);
+      constructor Create(SizeX, SizeY: Integer; DepthBuffer: Boolean);
       destructor Free;
     end;
 
@@ -271,15 +271,19 @@ begin
   fTextures[i].Unbind;
 end;
 
-constructor TFBO.Create(SizeX, SizeY: Integer);
+constructor TFBO.Create(SizeX, SizeY: Integer; DepthBuffer: Boolean);
 begin
   fSizeX := SizeX;
   fSizeY := SizeY;
   glGenFramebuffersEXT(1, @fID);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fID);
-  glGenRenderbuffersEXT(1, @fDepthBuffer);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fDepthBuffer);
-  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, SizeX, SizeY);
+  fDepthBuffer := 0;
+  if DepthBuffer then
+    begin
+    glGenRenderbuffersEXT(1, @fDepthBuffer);
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fDepthBuffer);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, SizeX, SizeY);
+    end;
   glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fDepthBuffer);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 end;
@@ -291,7 +295,8 @@ begin
   for i := 0 to high(fTextures) do
     fTextures[i].Free;
   glDeleteFramebuffersEXT(1, @fID);
-  glDeleteRenderbuffersEXT(1, @fDepthBuffer);
+  if fDepthBuffer <> 0 then
+    glDeleteRenderbuffersEXT(1, @fDepthBuffer);
 end;
 
 end.

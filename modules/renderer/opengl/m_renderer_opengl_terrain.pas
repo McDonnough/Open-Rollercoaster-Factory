@@ -138,6 +138,7 @@ begin
       fHeightMap.Free;
     fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY, true);
     fHeightMap.AddTexture(GL_RGBA32F, GL_NEAREST, GL_NEAREST);
+    fHeightMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
     end;
   if (Data <> nil) and (Event = 'TTerrain.Changed') then

@@ -9,7 +9,6 @@ uniform int LOD;
 
 varying float dist;
 varying vec4 Vertex;
-varying vec3 Normal;
 
 float fpart(float a) {
   return a - floor(a);
@@ -24,11 +23,6 @@ void main(void) {
   Vertex.xz *= pow(4.0, 2.0 - LOD);
   Vertex.xz += VOffset;
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));
-  Normal = (
-    cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - Vertex.y, -0.2), vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - Vertex.y, +0.0))
-  + cross(vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - Vertex.y, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - Vertex.y, -0.2))
-  + cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - Vertex.y, +0.2), vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - Vertex.y, -0.0))
-  + cross(vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - Vertex.y, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - Vertex.y, +0.2)));
   gl_TexCoord[0] = vec4(Vertex.xz * 4.0, 0.0, 1.0);
   dist = length(gl_ModelViewMatrix * Vertex);
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;

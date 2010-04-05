@@ -14,8 +14,8 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure AddError(s, sFile: String; sLine: Integer);
-      procedure AddWarning(s, sFile: String; sLine: Integer);
+      procedure AddError(s: String; sFile: String = ''; sLine: Integer = 0);
+      procedure AddWarning(s: String; sFile: String = ''; sLine: Integer = 0);
       procedure CheckModConf;
     end;
 
@@ -37,19 +37,17 @@ begin
   fSL.free;
 end;
 
-procedure TModuleLogFile.AddError(s, sFile: String; sLine: Integer);
+procedure TModuleLogFile.AddError(s: String; sFile: String = ''; sLine: Integer = 0);
 begin
-  writeln('Error (' + sFile + ', line ' + IntToStr(sLine) + '): ' + s);
-  fSL.Add('Error (' + sFile + ', line ' + IntToStr(sLine) + '): ' + s);
+  writeln('Error: ' + s);
+  fSL.Add('Error: ' + s);
   fSL.SaveToFile(GetConfVal('LogFile'));
-  fSL.free;
-  halt(1);
 end;
 
-procedure TModuleLogFile.AddWarning(s, sFile: String; sLine: Integer);
+procedure TModuleLogFile.AddWarning(s: String; sFile: String = ''; sLine: Integer = 0);
 begin
-  writeln('Warning (' + sFile + ', line ' + IntToStr(sLine) + '): ' + s);
-  fSL.Add('Warning (' + sFile + ', line ' + IntToStr(sLine) + '): ' + s);
+  writeln('Warning: ' + s);
+  fSL.Add('Warning: ' + s);
 end;
 
 procedure TModuleLogFile.CheckModConf;

@@ -3,12 +3,29 @@ unit g_terrain;
 interface
 
 uses
-  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL;
+  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf;
 
 type
   TTerrainMapPoint = record
     Height, Water, MinWater, MaxWater, WaterSpeed: Word;
     Texture: Byte;
+    end;
+
+  TTerrainMaterial = record
+    HasAutoplants: Boolean;
+    Name: String;
+    end;
+
+  TTerrainCollection = class
+    protected
+      fTexture: TTexture;
+      fAutoplantTexture: TTexture;
+    public
+      Materials: Array[0..7] of TTerrainMaterial;
+      property Texture: TTexture read fTexture;
+      property AutoplantTexture: TTexture read fAutoplantTexture;
+      constructor Create(FileName: String);
+      destructor Free;
     end;
 
   TTerrain = class(TThread)
@@ -38,6 +55,19 @@ implementation
 
 uses
   u_math, m_varlist, u_events, math;
+
+constructor TTerrainCollection.Create(FileName: String);
+begin
+  fTexture := TTexture.Create;
+  fAutoplantTexture := TTexture.Create;
+end;
+
+destructor TTerrainCollection.Free;
+begin
+  fAutoplantTexture.Free;
+  fTexture.Free;
+end;
+
 
 procedure TTerrain.Execute;
 var
@@ -92,10 +122,12 @@ end;
 procedure TTerrain.SetTextureAtPosition(X, Y: Single; Tex: Byte);
 var
   fX, fY: Word;
+  fFinal: DWord;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Texture := Tex;
+  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
 end;
 
 procedure TTerrain.Resize(X, Y: Integer);
@@ -170,21 +202,26 @@ begin
   sdc := 0;
   fSizeX := 0;
   fSizeY := 0;
-  Resize(1024, 1024);
+  Resize(2048, 2048);
   fMap[0, 0].Height := 5100;
   fMap[SizeX - 1, 0].Height := 5100;
   fMap[0, SizeY - 1].Height := 5100;
   fMap[SizeX - 1, SizeY - 1].Height := 5100;
   Subdivide(0, 0, SizeX, SizeY);
-  for i := 1 to SizeX - 1 do
+  for i := 1 to SizeX - 2 do
+    for j := 1 to SizeY - 2 do
+      fMap[i, j].Height := Round(0.3   * fMap[i + 0, j + 0].Height
+                         + 0.125 * fMap[i + 1, j + 0].Height
+                         + 0.125 * fMap[i + 0, j + 1].Height
+                         + 0.125 * fMap[i - 1, j + 0].Height
+                         + 0.125 * fMap[i + 0, j - 1].Height
+                         + 0.050 * fMap[i + 1, j + 1].Height
+                         + 0.050 * fMap[i - 1, j + 1].Height
+                         + 0.050 * fMap[i - 1, j - 1].Height
+                         + 0.050 * fMap[i + 1, j - 1].Height);
+ for i := 1 to SizeX - 1 do
     for j := 1 to SizeY - 1 do
       begin
-      if (abs((fMap[i, j].Height - fMap[i - 1, j].Height) / 0.2) > 160)
-      or (abs((fMap[i, j].Height - fMap[i - 1, j - 1].Height) / 0.282) > 160)
-      or (abs((fMap[i, j].Height - fMap[i, j - 1].Height) / 0.2) > 160) then
-        begin
-        fMap[i, j].Texture := 6;
-        end;
       if (abs((fMap[i, j].Height - fMap[i - 1, j].Height) / 0.2) > 200)
       or (abs((fMap[i, j].Height - fMap[i - 1, j - 1].Height) / 0.282) > 200)
       or (abs((fMap[i, j].Height - fMap[i, j - 1].Height) / 0.2) > 200) then

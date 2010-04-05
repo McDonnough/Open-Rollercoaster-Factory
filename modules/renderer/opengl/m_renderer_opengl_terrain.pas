@@ -29,8 +29,30 @@ uses
   g_park, u_events, m_varlist;
 
 procedure TRTerrain.Render;
+  procedure RenderBlock(X, Y: Integer);
+  begin
+    try
+      if (X >= 0) and (Y >= 0) and (Y <= Park.pTerrain.SizeX div 256 - 1) and (Y <= Park.pTerrain.SizeY div 256 - 1) then
+        begin
+        fShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
+        if VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
+          begin
+          fShader.UniformI('LOD', 1);
+          fGoodVBO.Render;
+          end
+        else
+          begin
+          fShader.UniformI('LOD', 0);
+          fRawVBO.Render;
+          end;
+        end;
+    except
+      writeln('Exception: ', X, ' ', Y);
+    end;
+  end;
 var
-  i, j: integer;
+  i, j, k: integer;
+  Blocks: Array of Array[0..2] of Integer;
 begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
@@ -39,22 +61,26 @@ begin
   fTexture.Bind(0);
   fShader.Bind;
   fShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5);
-  fShader.UniformF('lightdir', sin(RenderStep), 1, cos(RenderStep));
+//   fShader.UniformF('lightdir', sin(RenderStep), 0.5 + 0.5 * sin(RenderStep), cos(RenderStep));
+//   RenderStep := RenderStep + 0.005;
+  setLength(Blocks, Park.pTerrain.SizeX div 256 * Park.pTerrain.SizeY div 256);
   for i := 0 to Park.pTerrain.SizeX div 256 - 1 do
     for j := 0 to Park.pTerrain.SizeY div 256 - 1 do
       begin
-      fShader.UniformF('VOffset', 256 * i / 5, 256 * j / 5);
-      if VecLengthNoRoot(Vector(256 * i / 5, 0, 256 * j / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 10000 then
-        begin
-        fShader.UniformI('LOD', 1);
-        fGoodVBO.Render;
-        end
-      else
-        begin
-        fShader.UniformI('LOD', 0);
-        fRawVBO.Render;
-        end;
+      Blocks[Park.pTerrain.SizeX div 256 * i + j, 0] := Round(VecLengthNoRoot(Vector(256 * I / 5, 0, 256 * J / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)));
+      Blocks[Park.pTerrain.SizeX div 256 * i + j, 1] := i;
+      Blocks[Park.pTerrain.SizeX div 256 * i + j, 2] := j;
       end;
+  for i := 0 to high(Blocks) - 1 do
+    for j := i + 1 to high(Blocks) do
+      if Blocks[i, 0] > Blocks[j, 0] then
+        begin
+        k := Blocks[i, 0]; Blocks[i, 0] := Blocks[j, 0]; Blocks[j, 0] := k;
+        k := Blocks[i, 1]; Blocks[i, 1] := Blocks[j, 1]; Blocks[j, 1] := k;
+        k := Blocks[i, 2]; Blocks[i, 2] := Blocks[j, 2]; Blocks[j, 2] := k;
+        end;
+  for i := 0 to high(Blocks) do
+    RenderBlock(Blocks[i, 1], Blocks[i, 2]);
   fShader.UniformI('LOD', 2);
   fShader.UniformF('VOffset', fFineOffsetX / 5, fFineOffsetY / 5);
   fFineVBO.Bind;
@@ -110,7 +136,7 @@ begin
     fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     if fHeightMap <> nil then
       fHeightMap.Free;
-    fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY, true);
     fHeightMap.AddTexture(GL_RGBA32F, GL_NEAREST, GL_NEAREST);
     fHeightMap.Unbind;
     end;
@@ -142,7 +168,7 @@ begin
   fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
   fShader.UniformI('TerrainTexture', 0);
   fShader.UniformI('HeightMap', 1);
-  fShader.UniformF('maxBumpDistance', 40);
+  fShader.UniformF('maxBumpDistance', 50);
   fShader.UniformF('lightdir', -1, 1, -1);
   fFineOffsetX := 0;
   fFineOffsetY := 0;

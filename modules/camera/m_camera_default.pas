@@ -26,19 +26,19 @@ begin
   ActiveCamera.Position := ActiveCamera.Position + Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)), -Sin(DegToRad(ActiveCamera.Rotation.X)), -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))) * fSpeed * FPSDisplay.MS;
   if ModuleManager.ModInputHandler.Key[K_UP] then
     begin
-    if fSpeed < 0.005 then
-      fSpeed := fSpeed + 0.00005 * FPSDisplay.MS
+    if fSpeed < 0.015 then
+      fSpeed := fSpeed + 0.00015 * FPSDisplay.MS
     end
   else if ModuleManager.ModInputHandler.Key[K_DOWN] then
     begin
-    if fSpeed > -0.005 then
-      fSpeed := fSpeed - 0.00005 * FPSDisplay.MS
+    if fSpeed > -0.015 then
+      fSpeed := fSpeed - 0.00015 * FPSDisplay.MS
     end
   else
-    if fSpeed > 0.005 then
-      fSpeed := fSpeed - 0.005
-    else if fSpeed < -0.005 then
-      fSpeed := fSpeed + 0.005
+    if fSpeed > 0.015 then
+      fSpeed := fSpeed - 0.015
+    else if fSpeed < -0.015 then
+      fSpeed := fSpeed + 0.015
     else
       fSpeed := 0;
   if ModuleManager.ModInputHandler.Key[K_RIGHT] then
@@ -51,13 +51,13 @@ begin
     ActiveCamera.Rotation.X := ActiveCamera.Rotation.X + FPSDisplay.MS * 0.05;
   if ModuleManager.ModInputHandler.Key[K_A] then
     begin
-    ActiveCamera.Position.X := ActiveCamera.Position.X + Sin(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.005;
-    ActiveCamera.Position.Z := ActiveCamera.Position.Z - Cos(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.005;
+    ActiveCamera.Position.X := ActiveCamera.Position.X + Sin(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.015;
+    ActiveCamera.Position.Z := ActiveCamera.Position.Z - Cos(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.015;
     end;
   if ModuleManager.ModInputHandler.Key[K_D] then
     begin
-    ActiveCamera.Position.X := ActiveCamera.Position.X - Sin(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.005;
-    ActiveCamera.Position.Z := ActiveCamera.Position.Z + Cos(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.005;
+    ActiveCamera.Position.X := ActiveCamera.Position.X - Sin(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.015;
+    ActiveCamera.Position.Z := ActiveCamera.Position.Z + Cos(DegToRad(ActiveCamera.Rotation.Y - 90)) * FPSDisplay.MS * 0.015;
     end;
 end;
 

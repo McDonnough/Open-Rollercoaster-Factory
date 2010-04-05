@@ -32,7 +32,7 @@ procedure TRTerrain.Render;
   procedure RenderBlock(X, Y: Integer);
   begin
     try
-      if (X >= 0) and (Y >= 0) and (Y <= Park.pTerrain.SizeX div 256 - 1) and (Y <= Park.pTerrain.SizeY div 256 - 1) then
+      if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 256 - 1) and (Y <= Park.pTerrain.SizeY div 256 - 1) then
         begin
         fShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
         if VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
@@ -67,9 +67,9 @@ begin
   for i := 0 to Park.pTerrain.SizeX div 256 - 1 do
     for j := 0 to Park.pTerrain.SizeY div 256 - 1 do
       begin
-      Blocks[Park.pTerrain.SizeX div 256 * i + j, 0] := Round(VecLengthNoRoot(Vector(256 * I / 5, 0, 256 * J / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)));
-      Blocks[Park.pTerrain.SizeX div 256 * i + j, 1] := i;
-      Blocks[Park.pTerrain.SizeX div 256 * i + j, 2] := j;
+      Blocks[Park.pTerrain.SizeY div 256 * i + j, 0] := Round(VecLengthNoRoot(Vector(256 * I / 5, 0, 256 * J / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)));
+      Blocks[Park.pTerrain.SizeY div 256 * i + j, 1] := i;
+      Blocks[Park.pTerrain.SizeY div 256 * i + j, 2] := j;
       end;
   for i := 0 to high(Blocks) - 1 do
     for j := i + 1 to high(Blocks) do

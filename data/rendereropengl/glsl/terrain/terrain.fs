@@ -10,7 +10,6 @@ uniform vec3 lightdir;
 
 varying float dist;
 varying vec4 Vertex;
-varying vec3 Normal;
 
 float fpart(float a) {
   return a - floor(a);
@@ -28,11 +27,11 @@ vec4 processTexCoord(float texID) {
   return vec4(fpart(texID / 4.0), floor(texID / 4.0) / 4.0, 0.0, 1.0);
 }
 
-vec2 round(vec2 a) {
-  vec2 result;
-  result.x = (fpart(a.x) >= 0.5) ? ceil(a.x) : floor(a.x);
-  result.y = (fpart(a.y) >= 0.5) ? ceil(a.y) : floor(a.y);
-  return result;
+float fetchHeightAtOffset(vec2 O) {
+  return mix(
+          mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.0)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.0)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
+          mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.2)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.2)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
+          fpart(5.0 * Vertex.z)) * 256.0;
 }
 
 void main(void) {
@@ -48,7 +47,12 @@ void main(void) {
     vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + TexCoord[1].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[1].xy)),
     vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + TexCoord[2].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[2].xy)),
     vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 483) + TexCoord[3].xy) + texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[3].xy)));
-  vec3 normal = normalize(Normal);
+  float VY = fetchHeightAtOffset(vec2(0.0, 0.0));
+  vec3 normal = normalize(
+    normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2), vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0)))
+  + normalize(cross(vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2)))
+  + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, -0.0)))
+  + normalize(cross(vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2))));
   if (dist < maxBumpDistance) {
     mat4 bumpColors = mat4(
       vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy + vec2(0.0, 0.5))),
@@ -56,9 +60,9 @@ void main(void) {
       vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[2].xy + vec2(0.0, 0.5))),
       vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[3].xy + vec2(0.0, 0.5))));
     vec3 bumpNormal = normalize(2.0 * mix(mix(bumpColors[0], bumpColors[1], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), mix(bumpColors[2], bumpColors[3], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), fpart(Vertex.z / (3.2 / pow(4, float(LOD))))).rbg - 1.0);
-    float angle = acos(Normal.x);
+    float angle = acos(normal.x);
     vec3 tangent = normalize(vec3(sin(angle), sin(angle - 1.5705), 0.0));
-    vec3 bitangent = normalize(cross(Normal, tangent));
+    vec3 bitangent = normalize(cross(normal, tangent));
     normal = mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((maxBumpDistance - dist) / (maxBumpDistance / 3.0), 0.0, 1.0));
   }
   gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * 0.5 * (dot(normalize(normal), normalize(lightdir)));

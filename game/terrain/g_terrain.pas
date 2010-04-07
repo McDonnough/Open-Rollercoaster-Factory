@@ -203,16 +203,11 @@ begin
   fSizeX := 0;
   fSizeY := 0;
   Resize(2048, 2048);
-  with TTexture.Create do
-    begin
-    FromFile('terrain/map2.tga');
-    for i := 0 to Width - 1 do
-      for j := 0 to Height - 1 do
-        begin
-        fMap[i, j].Height := Pixels[i, j];
-        end;
-    Free;
-    end;
+  fMap[0, 0].Height := 5100;
+  fMap[SizeX - 1, 0].Height := 5100;
+  fMap[0, SizeY - 1].Height := 5100;
+  fMap[SizeX - 1, SizeY - 1].Height := 5100;
+  Subdivide(0, 0, SizeX, SizeY);
   for i := 1 to SizeX - 2 do
     for j := 1 to SizeY - 2 do
       fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height

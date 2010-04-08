@@ -9,16 +9,19 @@ uniform int LOD;
 
 varying float dist;
 varying vec4 Vertex;
+varying vec4 BaseVertex;
 
 float fpart(float a) {
   return a - floor(a);
 }
 
 float fetchHeightAtOffset(vec2 O) {
-  return texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.1, 0.1)) / TerrainSize).a * 256.0;
+  vec2 TexCoord = 5.0 * (Vertex.xz + O + vec2(0.1, 0.1));
+  return texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;
 }
 
 void main(void) {
+  BaseVertex = gl_Vertex;
   Vertex = gl_Vertex;
   Vertex.xz *= pow(4.0, 2.0 - LOD);
   Vertex.xz += VOffset;

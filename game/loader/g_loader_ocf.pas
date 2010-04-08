@@ -43,7 +43,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_files;
 
 type
   EOCFWrongInternalFormat = class(Exception);
@@ -85,10 +85,9 @@ end;
 
 constructor TOCFXMLSection.Create(S: String);
 begin
-  if S <> '' then
-    fDocument := DOMFromXML(S)
-  else
-    fDocument := TDOMDocument.Create;
+  if S = '' then
+    S := '<?xml version="1.0" encoding="UTF-8"?><ocf version="1.0"></ocf>';
+  fDocument := DOMFromXML(S);
 end;
 
 destructor TOCFXMLSection.Free;
@@ -146,15 +145,9 @@ var
   S: String;
   i: Integer;
 begin
-  fFName := '';
-  if FileExists(FName) then
-    fFName := FName
-  else if FileExists(ModuleManager.ModPathes.PersonalDataPath + FName) then
-    fFName := ModuleManager.ModPathes.PersonalDataPath + FName
-  else if FileExists(ModuleManager.ModPathes.DataPath + FName) then
-    fFName := ModuleManager.ModPathes.DataPath + FName;
+  fFName := GetFirstExistingFilename(FName);
   try
-    if fFName <> '' then
+    if FileExists(FFName) then
       begin
       with TFileStream.Create(fFName, fmOpenRead) do
         begin
@@ -183,7 +176,9 @@ begin
             end;
         Free;
         end;
-      end;
+      end
+    else
+      fXMLSection := TOCFXMLSection.Create('');
   except
     on EOCFWrongInternalFormat do ModuleManager.ModLog.AddError('Error loading OCF file ' + FFName + ': Wrong internal format');
     on EOCFStreamingError do ModuleManager.ModLog.AddError('Error loading OCF file ' + FFName + ': Streaming error');

@@ -54,6 +54,7 @@ var
   i, j, k: integer;
   Blocks: Array of Array[0..2] of Integer;
 begin
+//   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
@@ -88,6 +89,7 @@ begin
   fFineVBO.Unbind;
   fShader.Unbind;
   fTexture.UnBind;
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 end;
 
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);

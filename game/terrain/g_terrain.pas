@@ -3,7 +3,7 @@ unit g_terrain;
 interface
 
 uses
-  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf;
+  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf, u_dom;
 
 type
   TTerrainMapPoint = record
@@ -12,18 +12,20 @@ type
     end;
 
   TTerrainMaterial = record
-    HasAutoplants: Boolean;
+    AutoplantTexture: TTexture;
+    TexID: Byte;
     Name: String;
     end;
 
   TTerrainCollection = class
     protected
       fTexture: TTexture;
-      fAutoplantTexture: TTexture;
+      fAutoplantTextures: Array of TTexture;
+      fName: String;
     public
       Materials: Array[0..7] of TTerrainMaterial;
+      property Name: String read fName;
       property Texture: TTexture read fTexture;
-      property AutoplantTexture: TTexture read fAutoplantTexture;
       constructor Create(FileName: String);
       destructor Free;
     end;
@@ -34,6 +36,7 @@ type
       fMap: Array of Array of TTerrainMapPoint;
       fTmpMap: Array of Array of Word;
       fCanAdvance, fAdvancing: Boolean;
+      fCollection: TTerrainCollection;
       procedure Execute; override;
       function GetHeightAtPosition(X, Y: Single): Single;
       procedure SetHeightAtPosition(X, Y, Height: Single);
@@ -44,6 +47,8 @@ type
       property SizeY: Word read fSizeY;
       property HeightMap[X: Single; Y: Single]: Single read GetHeightAtPosition write SetHeightAtPosition;
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
+      property Collection: TTerrainCollection read fCollection;
+      procedure ChangeCollection(S: String);
       procedure Resize(X, Y: Integer);
       procedure AdvanceAutomaticWater;
       procedure LoadDefaults;
@@ -57,14 +62,17 @@ uses
   u_math, m_varlist, u_events, math;
 
 constructor TTerrainCollection.Create(FileName: String);
+var
+  i: Integer;
 begin
-  fTexture := TTexture.Create;
-  fAutoplantTexture := TTexture.Create;
 end;
 
 destructor TTerrainCollection.Free;
+var
+  i: Integer;
 begin
-  fAutoplantTexture.Free;
+  for i := 0 to high(fAutoplantTextures) do
+    fAutoplantTextures[i].Free;
   fTexture.Free;
 end;
 
@@ -163,10 +171,6 @@ begin
 end;
 
 procedure TTerrain.AdvanceAutomaticWater;
-var
-  i, j, k, l: Integer;
-  diffMap: Array[-1..1, -1..1] of Word;
-  fFieldsWantingWater, fWantedWater: Integer;
 begin
   try
   except
@@ -202,6 +206,7 @@ begin
   sdc := 0;
   fSizeX := 0;
   fSizeY := 0;
+  ChangeCollection('terrain/defaultcollection.ocf');
   Resize(2048, 2048);
   fMap[0, 0].Height := 5100;
   fMap[SizeX - 1, 0].Height := 5100;
@@ -232,11 +237,19 @@ begin
   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;
 
+procedure TTerrain.ChangeCollection(S: String);
+begin
+  if fCollection <> nil then
+    fCollection.Free;
+//   fCollection := TTerrainCollection.Create(S);
+end;
+
 constructor TTerrain.Create;
 begin
   inherited Create(true);
   fCanAdvance := false;
   fAdvancing := false;
+  fCollection := nil;
   Resume;
 end;
 
@@ -244,6 +257,8 @@ destructor TTerrain.Free;
 begin
   Terminate;
   sleep(100);
+  if fCollection <> nil then
+    fCollection.Free;
 end;
 
 end.

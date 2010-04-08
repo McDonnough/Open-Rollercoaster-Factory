@@ -35,7 +35,7 @@ float fetchHeightAtOffset(vec2 O) {
 }
 
 void main(void) {
-  if ((clamp(Vertex.xz, offset, offset + 51.2) == Vertex.xz) && (LOD < 2))
+  if ((clamp(Vertex.xz, offset + 0.8, offset + 50.4) == Vertex.xz) && (LOD < 2))
     discard;
   mat4 TexCoord = mat4(
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),

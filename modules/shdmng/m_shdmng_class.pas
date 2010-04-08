@@ -94,7 +94,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_files;
 
 procedure TShader.Bind;
 begin
@@ -156,12 +156,9 @@ end;
 
 constructor TShader.Create(VSFile, FSFile: String);
 begin
-  if FileExists(VSFile) then
-    fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile))
-  else if FileExists(ModuleManager.ModPathes.PersonalDataPath + VSFile) then
-    fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.PersonalDataPath + VSFile), ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.PersonalDataPath + FSFile))
-  else
-    fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.DataPath + VSFile), ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.DataPath + FSFile));
+  VSFile := GetFirstExistingFilename(VSFile);
+  FSFile := GetFirstExistingFilename(FSFile);
+  fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile))
 end;
 
 destructor TShader.Free;

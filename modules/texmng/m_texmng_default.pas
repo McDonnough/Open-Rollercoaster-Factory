@@ -18,18 +18,11 @@ type
 
   ATexRef = array of TTexRef;
 
-  TTGAFile = record
-    iType: byte;
-    w, h: word;
-    bpp: byte;
-    end;
-
   TModuleTextureManagerDefault = class(TModuleTextureManagerClass)
     protected
       fTexRefs: ATexRef;
       fCurrentTextures: array[0..31] of Integer;
       fCurrentTexUnit: Integer;
-      function GetTGAFile(Filename: String; var Texture: TTexRef): TTGAFile;
     public
       constructor Create;
       procedure CheckModConf;
@@ -50,30 +43,7 @@ type
 implementation
 
 uses
-  m_varlist;
-
-function TModuleTextureManagerDefault.GetTGAFile(Filename: String; var Texture: TTexRef): TTGAFile;
-var
-  f: file;
-  bytes: longword;
-begin
-  assign(f, filename);
-  reset(f, 1);
-
-  seek(f, 2);
-  blockread(f, result.iType, 1);
-
-  seek(f, 12);
-  blockread(f, result.w, 5);
-  result.bpp := result.bpp div 8;
-
-  Bytes := Result.W * Result.H * Result.bpp;
-  setlength(Texture.Data, Bytes);
-  seek(f, 18);
-  blockread(f, Texture.Data[0], Bytes);
-
-  close(f);
-end;
+  m_varlist, u_files, u_graphics;
 
 constructor TModuleTextureManagerDefault.Create;
 var
@@ -98,22 +68,26 @@ var
   Texture: TTexRef;
   procedure LoadTga;
   var
-    TGAFile: TTGAFile;
+    TexImage: TTexImage;
+    i: Integer;
   begin
     try
-      TGAFile := GetTGAFile(Filename, Texture);
-      if TGAFile.bpp = 3 then
+      TexImage := TexFromTGA(ByteStreamFromFile(filename));
+      if TexImage.bpp = 24 then
         begin
-        Texture.InputFormat := GL_BGR;
+        Texture.InputFormat := GL_RGB;
         Texture.ExternalFormat := GL_RGB;
         end
       else
         begin
-        Texture.InputFormat := GL_BGRA;
+        Texture.InputFormat := GL_RGBA;
         Texture.ExternalFormat := GL_RGBA;
         end;
-      Texture.Width := TGAFile.w;
-      Texture.Height := TGAFile.h;
+      Texture.Width := TexImage.width;
+      Texture.Height := TexImage.height;
+      setLength(Texture.Data, length(TexImage.Data));
+      for i := 0 to high(Texture.Data) do
+        Texture.Data[i] := TexImage.Data[i];
     except
       ModuleManager.ModLog.AddWarning('File ' + filename + ' not loadable', 'm_texmng_default.pas', 122);
     end;
@@ -149,12 +123,12 @@ begin
   if VertexTexture then
     Texture.ExternalFormat := GL_RGBA32F_ARB;
   Result := EmptyTexture(Texture.Width, Texture.Height, Texture.ExternalFormat);
-  FillTexture(Result, @Texture.Data[0], Texture.InputFormat);
   fTexRefs[Result].TexName := Texture.TexName;
   fTexRefs[Result].Width := Texture.Width;
   fTexRefs[Result].Height := Texture.Height;
   fTexRefs[Result].InputFormat := Texture.InputFormat;
   fTexRefs[Result].ExternalFormat := Texture.ExternalFormat;
+  FillTexture(Result, @Texture.Data[0], Texture.InputFormat);
 end;
 
 function TModuleTextureManagerDefault.EmptyTexture(X, Y: Integer; Format: GLEnum): Integer;

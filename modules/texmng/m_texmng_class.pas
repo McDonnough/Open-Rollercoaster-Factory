@@ -113,7 +113,7 @@ type
 implementation
 
 uses
-  m_varlist, u_math;
+  m_varlist, u_math, u_files;
 
 procedure TTexture.setPixel(X, Y: Integer; Color: DWord);
 begin
@@ -131,12 +131,8 @@ end;
 
 procedure TTexture.FromFile(FileName: String; VertexTexture: Boolean = false);
 begin
-  if FileExists(FileName) then
-    fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(FileName), VertexTexture, fWidth, fHeight)
-  else if FileExists(ModuleManager.ModPathes.PersonalDataPath + FileName) then
-    fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.PersonalDataPath + FileName), VertexTexture, fWidth, fHeight)
-  else
-    fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.DataPath + FileName), VertexTexture, fWidth, fHeight);
+  FileName := GetFirstExistingFilename(FileName);
+  fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(FileName), VertexTexture, fWidth, fHeight);
 end;
 
 procedure TTexture.CreateNew(X, Y: Integer; Format: GLEnum);

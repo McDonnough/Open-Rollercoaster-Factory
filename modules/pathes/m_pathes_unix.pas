@@ -41,7 +41,7 @@ begin
     mkdir(fConfigPath);
   fConfigPath := fConfigPath + fDelimiter;
 
-  fPersonalDataPath := getEnvironmentVariable('HOME') + fDelimiter + '/orcf-data';
+  fPersonalDataPath := getEnvironmentVariable('HOME') + fDelimiter + 'orcf-data';
   if not directoryExists(fPersonalDataPath) then
     mkdir(fPersonalDataPath);
   fPersonalDataPath := fPersonalDataPath + fDelimiter;

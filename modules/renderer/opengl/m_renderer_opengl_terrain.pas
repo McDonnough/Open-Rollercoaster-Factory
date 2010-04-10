@@ -167,7 +167,7 @@ var
 begin
   fHeightMap := nil;
   fTexture := TTexture.Create;
-  fTexture.FromFile('terrain/defaultcollection.tga');
+  fTexture.FromFile('terrain/defaultcollection.ocg');
   fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
   fShader.UniformI('TerrainTexture', 0);
   fShader.UniformI('HeightMap', 1);

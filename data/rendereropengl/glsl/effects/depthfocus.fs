@@ -6,7 +6,7 @@ uniform float focusDist;
 float lastDist = 0.0;
 
 float calcBlurFactor(float a) {
-  lastDist = clamp(pow(abs((a / focusDist) - 1.0), 2.0), 0.0, 1.0);
+  lastDist = clamp(pow(abs((a / focusDist) - 1.0), 2.0), 0.0, 2.0);
   return lastDist;
 }
 

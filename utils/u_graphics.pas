@@ -426,6 +426,7 @@ type
   var
     LaplaceMap: AAByte;
     ConvertedMap: Array of Array of Byte;
+    DiffSum: Array of Array of Integer;
     i, j, k, l: Integer;
     NeighbourCount: Integer;
     ByteCount: DWord;
@@ -472,12 +473,27 @@ type
       setLength(LaplaceMap[i], length(Map[i]));
       setLength(ConvertedMap[i], length(Map[i]));
       end;
+    SetLength(DiffSum, Length(LaplaceMap) div 8);
+    for i := 0 to high(DiffSum) do
+      setLength(DiffSum[i], Length(LaplaceMap[i]) div 8);
     for j := 0 to high(LaplaceMap[0]) do
       for i := 0 to high(LaplaceMap) do
         begin
         NeighbourCount := 0;
-        LaplaceMap[i, j] := Integer(abs(MapPixel(i - 1, j) + MapPixel(i - 1, j - 1) + MapPixel(i, j - 1) + MapPixel(i + 1, j - 1) + MapPixel(i + 1, j) + MapPixel(i + 1, j + 1) + MapPixel(i, j + 1) + MapPixel(i - 1, j + 1) - NeighbourCount * MapPixel(i, j)));
-        if (LaplaceMap[i, j] > Tolerance) or (i / 32 = i div 32) or (j div 32 = j / 32) then
+        LaplaceMap[i, j] := abs(Integer(MapPixel(i - 1, j) + MapPixel(i - 1, j - 1) + MapPixel(i, j - 1) + MapPixel(i + 1, j - 1) + MapPixel(i + 1, j) + MapPixel(i + 1, j + 1) + MapPixel(i, j + 1) + MapPixel(i - 1, j + 1) - NeighbourCount * MapPixel(i, j)));
+        end;
+    for i := 0 to high(DiffSum) do
+      for j := 0 to high(DiffSum[i]) div 8 do
+        begin
+        DiffSum[i, j] := 0;
+        for k := 0 to 7 do
+          for l := 0 to 7 do
+            DiffSum[i, j] := DiffSum[i, j] + LaplaceMap[8 * i + k, 8 * j + l];
+        end;
+    for j := 0 to high(LaplaceMap[0]) do
+      for i := 0 to high(LaplaceMap) do
+        begin
+        if (LaplaceMap[i, j] > Tolerance) or (((i / 8 = i div 8) or (j div 8 = j / 8))) then
           begin
           LaplaceMap[i, j] := 1;
           setLength(Pixels, length(Pixels) + 1);

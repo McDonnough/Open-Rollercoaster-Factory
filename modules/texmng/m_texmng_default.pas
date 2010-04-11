@@ -66,35 +66,8 @@ end;
 function TModuleTextureManagerDefault.LoadTexture(Filename: String; VertexTexture: Boolean; var X, Y: Integer): Integer;
 var
   Texture: TTexRef;
-  procedure LoadTga;
-  var
-    TexImage: TTexImage;
-    i: Integer;
-  begin
-    try
-      TexImage := TexFromTGA(ByteStreamFromFile(filename));
-      if TexImage.bpp = 24 then
-        begin
-        Texture.InputFormat := GL_RGB;
-        Texture.ExternalFormat := GL_RGB;
-        end
-      else
-        begin
-        Texture.InputFormat := GL_RGBA;
-        Texture.ExternalFormat := GL_RGBA;
-        end;
-      Texture.Width := TexImage.width;
-      Texture.Height := TexImage.height;
-      setLength(Texture.Data, length(TexImage.Data));
-      for i := 0 to high(Texture.Data) do
-        Texture.Data[i] := TexImage.Data[i];
-    except
-      ModuleManager.ModLog.AddWarning('File ' + filename + ' not loadable', 'm_texmng_default.pas', 122);
-    end;
-  end;
-
-var
-  i: integer;
+  TexImage: TTexImage;
+  i: Integer;
 begin
   X := -1;
   Y := -1;
@@ -106,9 +79,30 @@ begin
   if not FileExists(FileName) then
     exit(-2);
   if lowercase(extractFileExt(Filename)) = '.tga' then
-    LoadTga
+    TexImage := TexFromTGA(ByteStreamFromFile(filename))
+  else if lowercase(extractFileExt(Filename)) = '.ocg' then
+    TexImage := TexFromOCG(ByteStreamFromFile(filename))
   else
     exit(-1);
+  try
+    if TexImage.bpp = 24 then
+      begin
+      Texture.InputFormat := GL_RGB;
+      Texture.ExternalFormat := GL_RGB;
+      end
+    else
+      begin
+      Texture.InputFormat := GL_RGBA;
+      Texture.ExternalFormat := GL_RGBA;
+      end;
+    Texture.Width := TexImage.width;
+    Texture.Height := TexImage.height;
+    setLength(Texture.Data, length(TexImage.Data));
+    for i := 0 to high(Texture.Data) do
+      Texture.Data[i] := TexImage.Data[i];
+  except
+    ModuleManager.ModLog.AddWarning('File ' + filename + ' not loadable', 'm_texmng_default.pas', 122);
+  end;
   if VertexTexture then
     FileName := 'vertex:' + FileName;
   for i := 0 to high(fTexRefs) do

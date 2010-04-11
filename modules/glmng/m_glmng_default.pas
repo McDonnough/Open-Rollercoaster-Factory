@@ -58,7 +58,7 @@ begin
   ModuleManager.ModGLContext.GetResolution(X, Y);
   fMatrixMode := mm3D;
   glLoadIdentity;
-  gluPerspective(45, X / Y, 0.1, 10000);
+  gluPerspective(45 * (y / x / 2 + 0.5), X / Y, 0.1, 10000);
 end;
 
 procedure TModuleGLMngDefault.SetUpIdentityMatrix;

@@ -18,7 +18,7 @@ type
     protected
       fDocument: TDOMDocument;
     public
-      property Document: TDOMDocument read fDocument;
+      property Document: TDOMDocument read fDocument write fDocument;
       constructor Create(S: String);
       destructor Free;
     end;
@@ -145,7 +145,9 @@ var
   S: String;
   i: Integer;
 begin
-  fFName := GetFirstExistingFilename(FName);
+  fFName := '';
+  if FName <> '' then
+    fFName := GetFirstExistingFilename(FName);
   try
     if FileExists(FFName) then
       begin

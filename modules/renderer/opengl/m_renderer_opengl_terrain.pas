@@ -171,7 +171,7 @@ begin
   fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
   fShader.UniformI('TerrainTexture', 0);
   fShader.UniformI('HeightMap', 1);
-  fShader.UniformF('maxBumpDistance', 50);
+  fShader.UniformF('maxBumpDistance', 30);
   fShader.UniformF('lightdir', -1, 1, -1);
   fFineOffsetX := 0;
   fFineOffsetY := 0;

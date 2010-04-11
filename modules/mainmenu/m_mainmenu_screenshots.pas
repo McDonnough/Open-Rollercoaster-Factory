@@ -137,7 +137,12 @@ begin
   fCurrentFile := 0;
 
   GetFilesInDirectory(ModuleManager.ModPathes.DataPath + 'screenshots', '*.tga', fFiles, true, true);
-  GetFilesInDirectory(ModuleManager.ModPathes.PersonalDataPath + 'screenshots', '*.tga', fFiles, true, false);
+  GetFilesInDirectory(ModuleManager.ModPathes.DataPath + 'screenshots', '*.ocg', fFiles, true, false);
+  if ModuleManager.ModPathes.DataPath <> ModuleManager.ModPathes.PersonalDataPath then
+    begin
+    GetFilesInDirectory(ModuleManager.ModPathes.PersonalDataPath + 'screenshots', '*.tga', fFiles, true, false);
+    GetFilesInDirectory(ModuleManager.ModPathes.PersonalDataPath + 'screenshots', '*.ocg', fFiles, true, false);
+    end;
 
   SetTexture;
 end;

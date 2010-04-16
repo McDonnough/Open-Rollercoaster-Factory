@@ -9,8 +9,9 @@ type
   TRTerrain = class
     protected
       fFineVBO, fGoodVBO, fRawVBO: TVBO;
-      fShader: TShader;
-      fTexture: TTexture;
+      fAPVBOs: Array[0..7] of TVBO;
+      fAPPositions: Array[0..7] of Array of TVector2D;
+      fShader, fAPShader: TShader;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
       fPrevPos: TVector2D;
@@ -18,6 +19,7 @@ type
       RenderStep: Single;
     public
       procedure Render;
+      procedure UpdateCollection(Event: String; Data, Result: Pointer);
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
       constructor Create;
       destructor Free;
@@ -26,7 +28,7 @@ type
 implementation
 
 uses
-  g_park, u_events, m_varlist;
+  g_park, u_events, m_varlist, u_files, u_graphics;
 
 procedure TRTerrain.Render;
   procedure RenderBlock(X, Y: Integer);
@@ -53,13 +55,15 @@ procedure TRTerrain.Render;
 var
   i, j, k: integer;
   Blocks: Array of Array[0..2] of Integer;
+  fDeg, fRot: Single;
+  Position, fTmp: TVector2D;
 begin
 //   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
   fHeightMap.Textures[0].Bind(1);
-  fTexture.Bind(0);
+  Park.pTerrain.Collection.Texture.Bind(0);
   fShader.Bind;
   fShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5);
 //   fShader.UniformF('lightdir', sin(RenderStep), 0.5 + 0.5 * sin(RenderStep), cos(RenderStep));
@@ -88,7 +92,48 @@ begin
   fFineVBO.Render;
   fFineVBO.Unbind;
   fShader.Unbind;
-  fTexture.UnBind;
+  Park.pTerrain.Collection.Texture.UnBind;
+  glColor4f(1, 1, 1, 1);
+  glEnable(GL_BLEND);
+  glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER, 0.2);
+  fAPShader.Bind;
+  for i := 0 to high(fAPVBOs) do
+    if fAPVBOs[i] <> nil then
+      begin
+      Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
+      fAPVBOs[i].Bind;
+      for j := 0 to high(fAPPositions[i]) do
+        begin
+        if VecLengthNoRoot(fAPPositions[i, j] - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > 900 then
+          begin
+          fDeg := PI * 2 * Random;
+          fRot := PI * 2 * Random;
+          fTMP := Vector(Sin(fRot), Cos(fRot)) * 0.4;
+          Position := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) + Vector(Sin(fDeg), Cos(fDeg)) * (5 * Random + 25);
+          fAPPositions[i, j] := Position;
+          if Park.pTerrain.TexMap[Position.X, Position.Y] = i then
+            begin
+            fAPVBOs[i].Vertices[4 * j + 0] := Vector(fAPPositions[i, j].X, 0, fAPPositions[i, j].Y);
+            fAPVBOs[i].Vertices[4 * j + 1] := Vector(fAPPositions[i, j].X, 0.2, fAPPositions[i, j].Y);
+            fAPVBOs[i].Vertices[4 * j + 2] := Vector(fAPPositions[i, j].X + fTMP.X, 0.2, fAPPositions[i, j].Y + fTMP.Y);
+            fAPVBOs[i].Vertices[4 * j + 3] := Vector(fAPPositions[i, j].X + fTMP.X, 0, fAPPositions[i, j].Y + fTMP.Y);
+            end
+          else
+            begin
+            fAPVBOs[i].Vertices[4 * j + 0] := Vector(0, 0, 0);
+            fAPVBOs[i].Vertices[4 * j + 1] := Vector(0, 0, 0);
+            fAPVBOs[i].Vertices[4 * j + 2] := Vector(0, 0, 0);
+            fAPVBOs[i].Vertices[4 * j + 3] := Vector(0, 0, 0);
+            end;
+          end;
+        end;
+      fAPVBOs[i].Unbind;
+      fAPVBOs[i].Bind;
+      fAPVBOs[i].Render;
+      fAPVBOs[i].Unbind;
+      end;
+  fAPShader.Unbind;
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 end;
 
@@ -136,6 +181,7 @@ begin
   if Event = 'TTerrain.Resize' then
     begin
     fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fAPShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     if fHeightMap <> nil then
       fHeightMap.Free;
     fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY, true);
@@ -161,65 +207,102 @@ begin
     end;
 end;
 
+procedure TRTerrain.UpdateCollection(Event: String; Data, Result: Pointer);
+var
+  i, j: Integer;
+begin
+  for i := 0 to high(fAPVBOs) do
+    if fAPVBOs[i] <> nil then
+      fAPVBOs[i].Free;
+  for i := 0 to high(fAPVBOs) do
+    if Park.pTerrain.Collection.Materials[i].AutoplantProperties.Available then
+      begin
+      fAPVBOs[i] := TVBO.Create(4 * Round(50000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor), GL_T2F_V3F, GL_QUADS);
+      setLength(fAPPositions[i], Round(50000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor));
+      for j := 0 to high(fAPPositions[i]) do
+        begin
+        fAPPositions[i, j] := Vector(-100, -100);
+        fAPVBOs[i].TexCoords[4 * j + 0] := Vector(0, 1);
+        fAPVBOs[i].TexCoords[4 * j + 1] := Vector(0, 0);
+        fAPVBOs[i].TexCoords[4 * j + 2] := Vector(1, 0);
+        fAPVBOs[i].TexCoords[4 * j + 3] := Vector(1, 1);
+        end;
+      end
+    else
+      fAPVBOs[i] := nil;
+end;
+
 constructor TRTerrain.Create;
 var
   i, j: Integer;
 begin
-  fHeightMap := nil;
-  fTexture := TTexture.Create;
-  fTexture.FromFile('terrain/defaultcollection.ocg');
-  fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
-  fShader.UniformI('TerrainTexture', 0);
-  fShader.UniformI('HeightMap', 1);
-  fShader.UniformF('maxBumpDistance', 30);
-  fShader.UniformF('lightdir', -1, 1, -1);
-  fFineOffsetX := 0;
-  fFineOffsetY := 0;
-  fFineVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
-  for i := 0 to 255 do
-    for j := 0 to 255 do
-      begin
-      fFineVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, 0, 0.2 * j);
-      fFineVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, 0, 0.2 * j);
-      fFineVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, 0, 0.2 * j + 0.2);
-      fFineVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j + 0.2);
-      end;
-  fFineVBO.Unbind;
-  fGoodVBO := TVBO.Create(64 * 64 * 4, GL_V3F, GL_QUADS);
-  for i := 0 to 63 do
-    for j := 0 to 63 do
-      begin
-      fGoodVBO.Vertices[4 * (64 * i + j) + 0] := Vector(0.2 * i, 0, 0.2 * j);
-      fGoodVBO.Vertices[4 * (64 * i + j) + 1] := Vector(0.2 * i + 0.2, 0, 0.2 * j);
-      fGoodVBO.Vertices[4 * (64 * i + j) + 2] := Vector(0.2 * i + 0.2, 0, 0.2 * j + 0.2);
-      fGoodVBO.Vertices[4 * (64 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j + 0.2);
-      end;
-  fGoodVBO.Unbind;
-  fRawVBO := TVBO.Create(16 * 16 * 4, GL_V3F, GL_QUADS);
-  for i := 0 to 15 do
-    for j := 0 to 15 do
-      begin
-      fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(0.2 * i, 0, 0.2 * j);
-      fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(0.2 * i + 0.2, 0, 0.2 * j);
-      fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(0.2 * i + 0.2, 0, 0.2 * j + 0.2);
-      fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j + 0.2);
-      end;
-  fRawVBO.Unbind;
-  EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
-  EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
-  EventManager.AddCallback('TTerrain.ChangedAll', @ApplyChanges);
+  try
+    fHeightMap := nil;
+    fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
+    fShader.UniformI('TerrainTexture', 0);
+    fShader.UniformI('HeightMap', 1);
+    fShader.UniformF('maxBumpDistance', 80);
+    fShader.UniformF('lightdir', -1, 1, -1);
+    fAPShader := TShader.Create('rendereropengl/glsl/terrain/autoplant.vs', 'rendereropengl/glsl/terrain/autoplant.fs');
+    fAPShader.UniformI('Autoplant', 0);
+    fAPShader.UniformI('HeightMap', 1);
+    fAPShader.UniformF('lightdir', -1, 1, -1);
+    fFineOffsetX := 0;
+    fFineOffsetY := 0;
+    fFineVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
+    for i := 0 to 255 do
+      for j := 0 to 255 do
+        begin
+        fFineVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fFineVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fFineVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fFineVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        end;
+    fFineVBO.Unbind;
+    fGoodVBO := TVBO.Create(64 * 64 * 4, GL_V3F, GL_QUADS);
+    for i := 0 to 63 do
+      for j := 0 to 63 do
+        begin
+        fGoodVBO.Vertices[4 * (64 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fGoodVBO.Vertices[4 * (64 * i + j) + 1] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fGoodVBO.Vertices[4 * (64 * i + j) + 2] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fGoodVBO.Vertices[4 * (64 * i + j) + 3] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        end;
+    fGoodVBO.Unbind;
+    fRawVBO := TVBO.Create(16 * 16 * 4, GL_V3F, GL_QUADS);
+    for i := 0 to 15 do
+      for j := 0 to 15 do
+        begin
+        fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        end;
+    fRawVBO.Unbind;
+    for i := 0 to high(fAPVBOs) do
+      fAPVBOs[i] := nil;
+    EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
+    EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
+    EventManager.AddCallback('TTerrain.ChangedAll', @ApplyChanges);
+    EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
+  except
+    ModuleManager.ModLog.AddError('Failed to create terrain renderer in OpenGL rendering module: Internal error');
+  end;
 end;
 
 destructor TRTerrain.Free;
 var
-  i, j: Integer;
+  i: Integer;
 begin
+  for i := 0 to high(fAPVBOs) do
+    if fAPVBOs[i] <> nil then
+      fAPVBOs[i].Free;
   EventManager.RemoveCallback(@ApplyChanges);
   fFineVBO.Free;
   fGoodVBO.Free;
   fRawVBO.Free;
   fShader.Free;
-  fTexture.Free;
+  fAPShader.Free;
   if fHeightMap <> nil then
     fHeightMap.Free;
 end;

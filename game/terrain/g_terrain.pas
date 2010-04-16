@@ -11,8 +11,19 @@ type
     Texture: Byte;
     end;
 
+  TTerrainAutoplantProperties = record
+    Factor: Single;
+    Texture: TTexture;
+    Available: Boolean;
+    end;
+
+  TTerrainParticleProperties = record
+    Available: Boolean;
+    end;
+
   TTerrainMaterial = record
-    AutoplantTexture: TTexture;
+    AutoplantProperties: TTerrainAutoplantProperties;
+    ParticleProperties: TTerrainParticleProperties;
     TexID: Byte;
     Name: String;
     end;
@@ -21,6 +32,7 @@ type
     protected
       fTexture: TTexture;
       fAutoplantTextures: Array of TTexture;
+      fAutoplantResources: Array of Integer;
       fName: String;
     public
       Materials: Array[0..7] of TTerrainMaterial;
@@ -59,12 +71,105 @@ type
 implementation
 
 uses
-  u_math, m_varlist, u_events, math;
+  u_math, m_varlist, u_events, math, u_graphics;
+
+type
+  EInvalidFormat = class(Exception);
 
 constructor TTerrainCollection.Create(FileName: String);
 var
   i: Integer;
+  fOCF: TOCFFile;
+  e: TDOMElement;
+  l, m: TDOMNodeList;
+  tempTex: TTexImage;
+  TexFormat: GLEnum;
+  function LoadAutoplantTexture(ID: Integer): TTexture;
+  var
+    i: Integer;
+  begin
+    for i := 0 to high(fAutoplantTextures) do
+      if fAutoplantResources[i] = id then
+        exit(fAutoplantTextures[i]);
+    with fOCF.Resources[ID] do
+      begin
+      if Format = 'tga' then
+        temptex := TexFromTGA(fOCF.Bin[Section].Stream)
+      else if Format = 'ocg' then
+        temptex := TexFromOCG(fOCF.Bin[Section].Stream)
+      else
+        raise EInvalidFormat.Create('Invalid Format');
+      TexFormat := GL_RGB;
+      if TempTex.BPP = 32 then
+        TexFormat := GL_RGBA;
+      Result := TTexture.Create;
+      Result.CreateNew(Temptex.Width, Temptex.Height, TexFormat);
+      Result.SetClamp(GL_CLAMP, GL_CLAMP);
+      Result.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+      Result.Fill(@TempTex.Data[0], TexFormat);
+      gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
+      end;
+    setLength(fAutoplantResources, length(fAutoplantResources) + 1);
+    fAutoplantResources[high(fAutoplantResources)] := ID;
+    setLength(fAutoplantTextures, length(fAutoplantTextures) + 1);
+    fAutoplantTextures[high(fAutoplantTextures)] := Result;
+  end;
 begin
+  try
+    fTexture := TTexture.Create;
+    fOCF := TOCFFile.Create(FileName);
+    e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('texturecollection'))[0]);
+    with TDOMElement((e.GetElementsByTagName('texture'))[0]) do
+      begin
+      with fOCF.Resources[StrToInt(GetAttribute('resource:id'))] do
+        begin
+        if Format = 'tga' then
+          temptex := TexFromTGA(fOCF.Bin[Section].Stream)
+        else if Format = 'ocg' then
+          temptex := TexFromOCG(fOCF.Bin[Section].Stream)
+        else
+          raise EInvalidFormat.Create('Invalid Format');
+        TexFormat := GL_RGB;
+        if TempTex.BPP = 32 then
+          TexFormat := GL_RGBA;
+        fTexture.CreateNew(Temptex.Width, Temptex.Height, TexFormat);
+        fTexture.setClamp(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+        fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+        fTexture.Fill(@TempTex.Data[0], TexFormat);
+        gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
+        end;
+      end;
+    e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('materials'))[0]);
+    l := e.GetElementsByTagName('material');
+    for i := 0 to high(l) do
+      begin
+      Materials[i].AutoplantProperties.Available := false;
+      Materials[i].AutoplantProperties.Texture := nil;
+      Materials[i].AutoplantProperties.Factor := 0;
+      with TDOMElement(l[i]) do
+        begin
+        Materials[i].TexID := StrToInt(GetAttribute('texture'));
+        Materials[i].Name := GetAttribute('name');
+        m := GetElementsByTagName('autoplants');
+        if length(m) > 0 then
+          begin
+          e := TDOMElement(m[0]);
+          if e.getAttribute('exist') = '1' then
+            with e do
+              begin
+              Materials[i].AutoplantProperties.Available := true;
+              Materials[i].AutoplantProperties.Texture := LoadAutoplantTexture(StrToInt(GetAttribute('resource:id')));
+              Materials[i].AutoplantProperties.Factor := StrToFloat(GetAttribute('count'));
+              end;
+          end;
+        end;
+      end;
+    fOCF.Free;
+  except
+    on EInvalidFormat do ModuleManager.ModLog.AddError('Failed to create terrain collection: Invalid stream format');
+    else
+      ModuleManager.ModLog.AddError('Failed to load terrain collection: Internal error');
+  end;
 end;
 
 destructor TTerrainCollection.Free;
@@ -75,6 +180,7 @@ begin
     fAutoplantTextures[i].Free;
   fTexture.Free;
 end;
+
 
 
 procedure TTerrain.Execute;
@@ -241,7 +347,8 @@ procedure TTerrain.ChangeCollection(S: String);
 begin
   if fCollection <> nil then
     fCollection.Free;
-//   fCollection := TTerrainCollection.Create(S);
+  fCollection := TTerrainCollection.Create(S);
+  EventManager.CallEvent('TTerrain.ChangedCollection', nil, nil);
 end;
 
 constructor TTerrain.Create;

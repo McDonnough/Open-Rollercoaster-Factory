@@ -3,12 +3,12 @@ unit g_loader_ocf;
 interface
 
 uses
-  SysUtils, Classes, u_dom, u_xml;
+  SysUtils, Classes, u_dom, u_xml, u_files;
 
 type
   TOCFBinarySection = class
     public
-      Data: Array of Byte;
+      Stream: TByteStream;
       procedure Replace(P: Pointer; L: Integer);
       procedure Append(P: Pointer; L: Integer);
       procedure Prepend(P: Pointer; L: Integer);
@@ -23,17 +23,24 @@ type
       destructor Free;
     end;
 
+  TOCFResource = record
+    id, section: Integer;
+    version, format: String;
+    end;
+
   TOCFFile = class
     protected
       fXMLSection: TOCFXMLSection;
       fBinarySections: Array of TOCFBinarySection;
       fFName: String;
       function GetBinarySection(I: Integer): TOCFBinarySection;
+      function GetResource(I: Integer): TOCFResource;
     public
       Flags: QWord;
       property Filename: String read fFName;
       property XML: TOCFXMLSection read fXMLSection;
       property Bin[i: Integer]: TOCFBinarySection read GetBinarySection;
+      property Resources[i: Integer]: TOCFResource read GetResource;
       procedure AddBinarySection(A: TOCFBinarySection);
       procedure SaveTo(FName: String);
       constructor Create(FName: String);
@@ -43,7 +50,7 @@ type
 implementation
 
 uses
-  m_varlist, u_files;
+  m_varlist;
 
 type
   EOCFWrongInternalFormat = class(Exception);
@@ -53,9 +60,9 @@ procedure TOCFBinarySection.Replace(P: Pointer; L: Integer);
 var
   i: PtrUInt;
 begin
-  SetLength(Data, L);
+  SetLength(Stream.Data, L);
   for i := 0 to l - 1 do
-    Data[i] := Byte((P + I)^);
+    Stream.Data[i] := Byte((P + I)^);
 end;
 
 procedure TOCFBinarySection.Append(P: Pointer; L: Integer);
@@ -63,10 +70,10 @@ var
   i: PtrUInt;
   O: Integer;
 begin
-  O := Length(Data);
-  SetLength(Data, L + O);
+  O := Length(Stream.Data);
+  SetLength(Stream.Data, L + O);
   for i := 0 to l - 1 do
-    Data[i + o] := Byte((P + I)^);
+    Stream.Data[i + o] := Byte((P + I)^);
 end;
 
 procedure TOCFBinarySection.Prepend(P: Pointer; L: Integer);
@@ -74,12 +81,12 @@ var
   i: PtrUInt;
   O: Integer;
 begin
-  O := Length(Data);
-  SetLength(Data, L + O);
+  O := Length(Stream.Data);
+  SetLength(Stream.Data, L + O);
   for i := O downto L + 1 do
-    Data[i] := Data[i - 1];
+    Stream.Data[i] := Stream.Data[i - 1];
   for i := 0 to l - 1 do
-    Data[i] := Byte((P + I)^);
+    Stream.Data[i] := Byte((P + I)^);
 end;
 
 
@@ -120,16 +127,32 @@ begin
       tmpDW := length(fBinarySections); write(tmpDW, 4);
       for i := 0 to high(fBinarySections) do
         begin
-        tmpDW := length(fBinarySections[i].Data);
+        tmpDW := length(fBinarySections[i].Stream.Data);
         write(tmpDW, 4);
         end;
       write(S[1], length(S));
       for i := 0 to high(fBinarySections) do
-        write(fBinarySections[i].Data[0], length(fBinarySections[i].Data));
+        write(fBinarySections[i].Stream.Data[0], length(fBinarySections[i].Stream.Data));
       end;
   except
     ModuleManager.ModLog.AddError('Error saving OCF file ' + FFName + ': Internal error');
   end;
+end;
+
+function TOCFFile.GetResource(I: Integer): TOCFResource;
+var
+  a: TDOMNodeList;
+  j: Integer;
+begin
+  a := XML.Document.GetElementsByTagName('resource');
+  for j := 0 to high(a) do
+    if TDOMElement(a[j]).GetAttribute('resource:id') = IntToStr(i) then
+      begin
+      Result.id := j;
+      Result.Version := TDOMElement(a[j]).GetAttribute('resource:version');
+      Result.Format := TDOMElement(a[j]).GetAttribute('resource:format');
+      Result.Section := StrToInt(TDOMElement(a[j]).GetAttribute('resource:section'));
+      end;
 end;
 
 procedure TOCFFile.AddBinarySection(A: TOCFBinarySection);
@@ -173,8 +196,8 @@ begin
           else
             begin
             fBinarySections[i] := TOCFBinarySection.Create;
-            setLength(fBinarySections[i].Data, BinarySectionLength[i]);
-            Read(fBinarySections[i].Data[0], BinarySectionLength[i]);
+            setLength(fBinarySections[i].Stream.Data, BinarySectionLength[i]);
+            Read(fBinarySections[i].Stream.Data[0], BinarySectionLength[i]);
             end;
         Free;
         end;

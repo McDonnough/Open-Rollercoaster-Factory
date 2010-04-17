@@ -10,5 +10,4 @@ vec2 fitCoords(vec2 Coord) {
 void main(void) {
   gl_FragColor = texture2D(Tex, fitCoords(gl_FragCoord.xy));
   gl_FragColor *= gl_FragColor;
-  gl_FragColor *= gl_FragColor;
 }

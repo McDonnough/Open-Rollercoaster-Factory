@@ -10,6 +10,7 @@ type
     protected
       fFineVBO, fGoodVBO, fRawVBO: TVBO;
       fAPVBOs: Array[0..7] of TVBO;
+      fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
       fShader, fAPShader: TShader;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
@@ -118,6 +119,7 @@ begin
             fAPVBOs[i].Vertices[4 * j + 1] := Vector(fAPPositions[i, j].X, 0.2, fAPPositions[i, j].Y);
             fAPVBOs[i].Vertices[4 * j + 2] := Vector(fAPPositions[i, j].X + fTMP.X, 0.2, fAPPositions[i, j].Y + fTMP.Y);
             fAPVBOs[i].Vertices[4 * j + 3] := Vector(fAPPositions[i, j].X + fTMP.X, 0, fAPPositions[i, j].Y + fTMP.Y);
+            inc(fAPCount[i]);
             end
           else
             begin
@@ -125,13 +127,17 @@ begin
             fAPVBOs[i].Vertices[4 * j + 1] := Vector(0, 0, 0);
             fAPVBOs[i].Vertices[4 * j + 2] := Vector(0, 0, 0);
             fAPVBOs[i].Vertices[4 * j + 3] := Vector(0, 0, 0);
+            dec(fAPCount[i]);
             end;
           end;
         end;
       fAPVBOs[i].Unbind;
-      fAPVBOs[i].Bind;
-      fAPVBOs[i].Render;
-      fAPVBOs[i].Unbind;
+      if fAPCount[i] > 0 then
+        begin
+        fAPVBOs[i].Bind;
+        fAPVBOs[i].Render;
+        fAPVBOs[i].Unbind;
+        end;
       end;
   fAPShader.Unbind;
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -219,9 +225,10 @@ begin
       begin
       fAPVBOs[i] := TVBO.Create(4 * Round(50000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor), GL_T2F_V3F, GL_QUADS);
       setLength(fAPPositions[i], Round(50000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor));
+      fAPCount[i] := 0;
       for j := 0 to high(fAPPositions[i]) do
         begin
-        fAPPositions[i, j] := Vector(-100, -100);
+        fAPPositions[i, j] := Vector(-10000, -10000);
         fAPVBOs[i].TexCoords[4 * j + 0] := Vector(0, 1);
         fAPVBOs[i].TexCoords[4 * j + 1] := Vector(0, 0);
         fAPVBOs[i].TexCoords[4 * j + 2] := Vector(1, 0);

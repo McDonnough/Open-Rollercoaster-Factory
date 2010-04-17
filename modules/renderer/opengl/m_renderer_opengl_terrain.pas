@@ -305,6 +305,7 @@ begin
     if fAPVBOs[i] <> nil then
       fAPVBOs[i].Free;
   EventManager.RemoveCallback(@ApplyChanges);
+  EventManager.RemoveCallback(@UpdateCollection);
   fFineVBO.Free;
   fGoodVBO.Free;
   fRawVBO.Free;

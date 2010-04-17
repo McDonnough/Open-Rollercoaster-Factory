@@ -353,11 +353,15 @@ end;
 
 constructor TTerrain.Create;
 begin
-  inherited Create(true);
-  fCanAdvance := false;
-  fAdvancing := false;
-  fCollection := nil;
-  Resume;
+  try
+    inherited Create(true);
+    fCanAdvance := false;
+    fAdvancing := false;
+    fCollection := nil;
+    Resume;
+  except
+    ModuleManager.ModLog.AddError('Could not create terrain: Internal error');
+  end;
 end;
 
 destructor TTerrain.Free;

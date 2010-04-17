@@ -65,7 +65,7 @@ void main(void) {
     vec3 bitangent = normalize(cross(normal, tangent));
     normal = mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((maxBumpDistance - dist) / (maxBumpDistance / 2.0), 0.0, 1.0));
   }
-  gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (dot(normalize(normal), normalize(lightdir)));
+  gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (dot(normalize(normal), normalize(lightdir)) + 0.2);
   gl_FragColor.a = 1.0;
   gl_FragDepth = sqrt(dist / 10000.0);
 }

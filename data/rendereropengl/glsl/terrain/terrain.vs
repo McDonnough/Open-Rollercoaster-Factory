@@ -26,7 +26,7 @@ void main(void) {
   Vertex.xz *= pow(4.0, 2.0 - LOD);
   Vertex.xz += VOffset;
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));
-  gl_TexCoord[0] = vec4(Vertex.xz * 4.0, 0.0, 1.0);
+  gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   dist = length(gl_ModelViewMatrix * Vertex);
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;
 }

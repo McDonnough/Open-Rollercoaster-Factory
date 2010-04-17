@@ -184,7 +184,7 @@ end;
 procedure TREMotionBlur.Apply(Event: String; Param, Result: Pointer);
 begin
   glAccum(GL_MULT, 0.6);
-  glAccum(GL_ACCUM, 0.5);
+  glAccum(GL_ACCUM, 0.4);
   glAccum(GL_RETURN, 1.0);
 end;
 

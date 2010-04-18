@@ -19,8 +19,10 @@ type
       fItems: Array of TDictionaryItem;
       function getID(S: String): Integer;
       function getValue(S: String): String;
+      function getItemStrings: AString;
       procedure setValue(S, T: String);
     public
+      property ItemStrings: AString read getItemStrings;
       property Items[S: String]: String read getValue write setValue;
       property ItemID[S: String]: Integer read getID;
       procedure Assign(D: TDictionary);
@@ -86,6 +88,15 @@ begin
   i := ItemID[S];
   if i >= 0 then
     Result := fItems[i].Value;
+end;
+
+function TDictionary.getItemStrings: AString;
+var
+  i: Integer;
+begin
+  setLength(Result, length(fItems));
+  for i := 0 to high(fItems) do
+    Result[i] := fItems[i].Name;
 end;
 
 procedure TDictionary.setValue(S, T: String);

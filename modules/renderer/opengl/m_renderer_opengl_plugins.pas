@@ -3,7 +3,7 @@ unit m_renderer_opengl_plugins;
 interface
 
 uses
-  SysUtils, Classes, DGLOpenGL, u_math, u_vectors, m_shdmng_class, m_texmng_class, math;
+  SysUtils, Classes, DGLOpenGL, u_math, u_vectors, m_shdmng_class, m_texmng_class, math, m_renderer_opengl_interface;
 
 type
   TRENormal = class
@@ -96,8 +96,14 @@ var
   DistPixel: DWord;
   Distance: Single;
 begin
+  fInterface.PushOptions;
+  fInterface.Options.Items['shader:mode'] := 'transform:depth';
+  fInterface.Options.Items['terrain:autoplants'] := 'off';
+  glColorMask(false, false, false, false);
+  ModuleManager.ModRenderer.Render();
   glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
   Distance := (DistPixel / High(DWord)) ** 2 * 10000;
+  fInterface.PopOptions;
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
 
   glColorMask(true, false, false, true);

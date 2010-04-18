@@ -5,16 +5,20 @@ interface
 uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
   m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
-  m_shdmng_class, m_renderer_opengl_plugins, u_functions;
+  m_shdmng_class, m_renderer_opengl_plugins, u_functions, m_renderer_opengl_frustum,
+  m_renderer_opengl_interface;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
     protected
+      fFrustum: TFrustum;
+      fInterface: TRendererOpenGLInterface;
       RCamera: TRCamera;
       RTerrain: TRTerrain;
-
       RenderEffectManager: TRenderEffectManager;
     public
+      property Frustum: TFrustum read fFrustum;
+      property RenderInterface: TRendererOpenGLInterface read fInterface;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -51,12 +55,18 @@ end;
 
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
 begin
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  if fInterface.Options.Items['all:polygonmode'] = 'wireframe' then
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glClear(GL_DEPTH_BUFFER_BIT);
   glLoadIdentity;
   glRotatef(RadToDeg(arctan(EyeMode / EyeFocus)), 0, 1, 0);
   glTranslatef(EyeMode, 0, 0);
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
+  fFrustum.Calculate;
+
+  // Start rendering
   RTerrain.Render;
 end;
 
@@ -64,6 +74,8 @@ procedure TModuleRendererOpenGL.RenderScene;
 var
   ResX, ResY, i: Integer;
 begin
+  fInterface.Options.Items['shader:mode'] := 'normal:normal';
+  fInterface.Options.Items['all:frustumcull'] := 'on';
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   // Just a test
   glMatrixMode(GL_PROJECTION);
@@ -85,17 +97,27 @@ begin
     begin
     SetConfVal('used', '1');
     SetConfVal('effects', IntToStr(RE_NORMAL) + ',' + IntToStr(RE_2D_FOCUS) + ',' + IntToStr(RE_BLOOM) + ',' + IntToStr(RE_MOTIONBLUR));
+    SetConfVal('terrain:autoplants', 'on');
+    SetConfVal('terrain:hd', 'on');
     end;
+  fInterface.Options.Items['terrain:autoplants'] := GetConfVal('terrain:autoplants');
+  fInterface.Options.Items['terrain:hd'] := GetConfVal('terrain:hd');
 end;
 
 constructor TModuleRendererOpenGL.Create;
 begin
   fModName := 'RendererGL';
   fModType := 'Renderer';
+  fInterface := TRendererOpenGLInterface.Create;
+  fFrustum := TFrustum.Create;
+
+  SetConfVal('all:polygonmode', 'fill');
 end;
 
 destructor TModuleRendererOpenGL.Free;
 begin
+  fFrustum.Free;
+  fInterface.Free;
 end;
 
 end.

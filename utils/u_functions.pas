@@ -10,6 +10,22 @@ uses
 type
   AString = array of String;
 
+  TDictionaryItem = record
+    Name, Value: String;
+    end;
+
+  TDictionary = class
+    private
+      fItems: Array of TDictionaryItem;
+      function getID(S: String): Integer;
+      function getValue(S: String): String;
+      procedure setValue(S, T: String);
+    public
+      property Items[S: String]: String read getValue write setValue;
+      property ItemID[S: String]: Integer read getID;
+      procedure Assign(D: TDictionary);
+    end;
+
 (** Return part of a string
   *@param The string
   *@param first char to return
@@ -51,6 +67,50 @@ implementation
 
 uses
   Math, m_varlist;
+
+function TDictionary.getID(S: String): Integer;
+var
+  i: Integer;
+begin
+  Result := -1;
+  for i := 0 to high(fItems) do
+    if fItems[i].Name = S then
+      exit(i);
+end;
+
+function TDictionary.getValue(S: String): String;
+var
+  i: Integer;
+begin
+  Result := '';
+  i := ItemID[S];
+  if i >= 0 then
+    Result := fItems[i].Value;
+end;
+
+procedure TDictionary.setValue(S, T: String);
+var
+  i: Integer;
+begin
+  i := ItemID[S];
+  if i < 0 then
+    begin
+    setLength(fItems, length(fItems) + 1);
+    i := high(fItems);
+    end;
+  fItems[i].Name := S;
+  fItems[i].Value := T;
+end;
+
+procedure TDictionary.Assign(D: TDictionary);
+var
+  i: Integer;
+begin
+  for i := 0 to high(D.fItems) do
+    Items[D.fItems[i].Name] := D.fItems[i].Value;
+end;
+
+
 
 function SubString(s: String; Start, Len: Integer): String;
 var

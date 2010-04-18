@@ -20,7 +20,13 @@ vec2 trunc(vec2 a) {
 }
 
 vec2 getRightTexCoord(float fac) {
-  return clamp(trunc(gl_TexCoord[0].xy * 4.0 * fac), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0;
+  vec2 result = clamp(trunc(gl_TexCoord[0].xy * 4.0 * fac), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0;
+  vec2 iparts = gl_TexCoord[0].xy * 4.0 * fac - trunc(gl_TexCoord[0].xy * 4.0 * fac);
+  if (fpart(iparts.x / 2.0) > 0.4)
+    result.x = 0.25 - result.x;
+  if (fpart(iparts.y / 2.0) > 0.4)
+    result.y = 0.25 - result.y;
+  return result;
 }
 
 vec4 processTexCoord(float texID) {

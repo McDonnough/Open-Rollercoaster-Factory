@@ -13,13 +13,14 @@ type
       fAPVBOs: Array[0..7] of TVBO;
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
-      fShader, fShaderTransformDepth, fAPShader: TShader;
+      fShader, fShaderTransformDepth, fAPShader, fCreateTextureShader: TShader;
       fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
       fPrevPos: TVector2D;
       fHeightMap: TFBO;
       RenderStep: Single;
+      fLayerTextures: Array[0..1] of TFBO;
     public
       procedure Render;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
@@ -66,6 +67,8 @@ begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
+  fLayerTextures[0].Textures[0].Bind(2);
+  fLayerTextures[1].Textures[0].Bind(3);
   fHeightMap.Textures[0].Bind(1);
   Park.pTerrain.Collection.Texture.Bind(0);
   fBoundShader := fShader;
@@ -266,7 +269,8 @@ end;
 
 procedure TRTerrain.UpdateCollection(Event: String; Data, Result: Pointer);
 var
-  i, j: Integer;
+  i, j, k, l: Integer;
+  Pixels: Array[0..3] of DWord;
 begin
   for i := 0 to high(fAPVBOs) do
     if fAPVBOs[i] <> nil then
@@ -288,6 +292,38 @@ begin
       end
     else
       fAPVBOs[i] := nil;
+  for i := 0 to high(fLayerTextures) do
+    begin
+    fLayerTextures[i].Bind;
+    glClear(GL_COLOR_BUFFER_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glPushMatrix;
+    glLoadIdentity;
+    glOrtho(0, Park.pTerrain.SizeX, 0, Park.pTerrain.SizeY, 0, 255);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix;
+    glLoadIdentity;
+    fCreateTextureShader.Bind;
+    Park.pTerrain.Collection.Texture.Bind(0);
+
+    glDisable(GL_DEPTH_TEST);
+    glBegin(GL_QUADS);
+      glTexCoord2f(0, i / 4);
+      glVertex3f(0, 0, -1);
+      glVertex3f(512, 0, -1);
+      glVertex3f(512, 512, -1);
+      glVertex3f(0, 512, -1);
+    glEnd;
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glPopMatrix;
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix;
+    glMatrixMode(GL_MODELVIEW);
+    fLayerTextures[i].Unbind;
+    end;
 end;
 
 constructor TRTerrain.Create;
@@ -299,14 +335,23 @@ begin
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
     fShader.UniformI('TerrainTexture', 0);
     fShader.UniformI('HeightMap', 1);
+    fShader.UniformI('Layers1', 2);
+    fShader.UniformI('Layers2', 3);
     fShader.UniformF('maxBumpDistance', 80);
     fShader.UniformF('lightdir', -1, 1, -1);
     fShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/simple.fs');
     fShaderTransformDepth.UniformI('HeightMap', 1);
+    fCreateTextureShader := TShader.Create('rendereropengl/glsl/terrain/createtexture.vs', 'rendereropengl/glsl/terrain/createtexture.fs');
+    fCreateTextureShader.UniformI('texture', 0);
     fAPShader := TShader.Create('rendereropengl/glsl/terrain/autoplant.vs', 'rendereropengl/glsl/terrain/autoplant.fs');
     fAPShader.UniformI('Autoplant', 0);
     fAPShader.UniformI('HeightMap', 1);
     fAPShader.UniformF('lightdir', -1, 1, -1);
+    for i := 0 to high(fLayerTextures) do
+      begin
+      fLayerTextures[i] := TFBO.Create(512, 512, false);
+      fLayerTextures[i].AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
+      end;
     fFineOffsetX := 0;
     fFineOffsetY := 0;
     fFineVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
@@ -357,6 +402,8 @@ begin
   for i := 0 to high(fAPVBOs) do
     if fAPVBOs[i] <> nil then
       fAPVBOs[i].Free;
+  for i := 0 to high(fLayerTextures) do
+    fLayerTextures[i].Free;
   EventManager.RemoveCallback(@ApplyChanges);
   EventManager.RemoveCallback(@UpdateCollection);
   fFineVBO.Free;
@@ -365,6 +412,7 @@ begin
   fShader.Free;
   fShaderTransformDepth.Free;
   fAPShader.Free;
+  fCreateTextureShader.Free;
   if fHeightMap <> nil then
     fHeightMap.Free;
 end;

@@ -71,7 +71,7 @@ void main(void) {
     normal = mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((maxBumpDistance - dist) / (maxBumpDistance / 2.0), 0.0, 1.0));
   }
   vec4 Lighting = vec4(0.0, 0.0, 0.0, 1.0);
-  Lighting = gl_LightSource[0].diffuse * (dot(normalize(normal), normalize(gl_LightSource[0].position.xyz - Vertex.xyz)) + 0.2) + gl_LightSource[0].ambient;
+  Lighting = gl_LightSource[0].diffuse * (dot(normalize(gl_NormalMatrix * normal), normalize(gl_LightSource[0].position.xyz - Vertex.xyz)) + 0.2) + gl_LightSource[0].ambient;
   gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * Lighting;
   gl_FragColor.a = 1.0;
   gl_FragDepth = sqrt(dist / 10000.0);

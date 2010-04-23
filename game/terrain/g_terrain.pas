@@ -287,70 +287,25 @@ procedure TTerrain.LoadDefaults;
 var
   i, j: Integer;
   sdc: Integer;
-  procedure GenRandom(Detail: Integer);
-  type
-    TFKTPoint = record
-      Width, Value: Integer;
-      end;
-    AFKTPoint = array of TFKTPoint;
-
-    TSFunction = record
-      Points: AFKTPoint;
-      end;
-    AInteger = record
-      Items: Array of Integer;
-      end;
+  procedure subdivide(X1, Y1, X2, Y2: Integer);
   var
-    Xfkt, Yfkt: TSFunction;
-    XA, YA: AInteger;
-    procedure GenFunction(AvgWidth, MaxHeight, Max: Integer; var Fkt: TSFunction);
-    var
-      internalVar: Integer;
-    begin
-      internalVar := 0;
-      while internalVar < Max do
-        begin
-        SetLength(Fkt.Points, length(Fkt.Points) + 1);
-        Fkt.Points[high(Fkt.Points)].Width := Round((Random - 0.5) * (AvgWidth / 2) + AvgWidth);
-        if Fkt.Points[high(Fkt.Points)].Width + InternalVar > Max then
-          Fkt.Points[high(Fkt.Points)].Width := Max - InternalVar;
-        Fkt.Points[high(Fkt.Points)].Value := Round(Random * MaxHeight);
-        InternalVar := InternalVar + Fkt.Points[high(Fkt.Points)].Width;
-        end;
-    end;
-
-    procedure GenHeightArrays;
-      procedure FunctionToHeightArray(Fkt: TSFunction; var Arr: AInteger);
-      var
-        i, j, tPos, fPrev: Integer;
-      begin
-        tPos := 0;
-        fPrev := 0;
-        for i := 0 to high(Fkt.Points) do
-          begin
-          for j := 0 to Fkt.Points[i].Width - 1 do
-            begin
-            Arr.Items[tPos] := Round(Mix(fPrev, Fkt.Points[i].Value, cos(PI * j / Fkt.Points[i].Width / 2 - 0.5 * PI) ** 4));
-            inc(tPos);
-            end;
-          fPrev := Fkt.Points[i].Value;
-          end;
-      end;
-    begin
-      SetLength(XA.Items, SizeX);
-      SetLength(YA.Items, SizeY);
-      FunctionToHeightArray(Xfkt, XA);
-      FunctionToHeightArray(Yfkt, YA);
-    end;
-  var
-    i, j: Integer;
+    i, fX2, fY2: Integer;
   begin
-    GenFunction(256 div (2 ** Detail), 16384 div (3 ** Detail), SizeX - 1, Xfkt);
-    GenFunction(256 div (2 ** Detail), 16384 div (3 ** Detail), SizeY - 1, Yfkt);
-    GenHeightArrays;
-    for i := 0 to SizeX - 1 do
-      for j := 0 to SizeY - 1 do
-        fMap[i, j].Height := Round(fMap[i, j].Height + Sqrt((XA.Items[i] * YA.Items[j])));
+    if (X1 = X2 - 1) or (Y1 = Y2 - 1) then
+      exit;
+    fX2 := Round(Min(X2, SizeX - 1));
+    fY2 := Round(Min(Y2, SizeY - 1));
+    fMap[(X1 + X2) div 2, Y1].Height := Round(Mix(fMap[X1, Y1].Height, fMap[fX2, Y1].Height, 0.5));
+    fMap[(X1 + X2) div 2, fY2].Height := Round(Mix(fMap[X1, fY2].Height, fMap[fX2, fY2].Height, 0.5));
+    fMap[X1, (Y1 + Y2) div 2].Height := Round(Mix(fMap[X1, Y1].Height, fMap[X1, fY2].Height, 0.5));
+    fMap[fX2, (Y1 + Y2) div 2].Height := Round(Mix(fMap[fX2, Y1].Height, fMap[fX2, fY2].Height, 0.5));
+    fMap[(X1 + X2) div 2, (Y1 + Y2) div 2].Height := Round(Mix(Mix(fMap[X1, Y1].Height, fMap[fX2, Y1].Height, 0.5), Mix(fMap[X1, fY2].Height, fMap[fX2, fY2].Height, 0.5), 0.5) + ((10000 * sqrt(random) - 5000) * (fSizeX + fSizeY) / 1024) / (2 ** sdc));
+    inc(sdc);
+    subdivide(X1, Y1, (X1 + X2) div 2, (Y1 + Y2) div 2);
+    subdivide((X1 + X2) div 2, Y1, X2, (Y1 + Y2) div 2);
+    subdivide((X1 + X2) div 2, (Y1 + Y2) div 2, X2, Y2);
+    subdivide(X1, (Y1 + Y2) div 2, (X1 + X2) div 2, Y2);
+    dec(sdc);
   end;
 begin
   sdc := 0;
@@ -358,8 +313,11 @@ begin
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
   Resize(2048, 2048);
-  for i := 0 to 6 do
-    GenRandom(i);
+  fMap[0, 0].Height := 5100;
+  fMap[SizeX - 1, 0].Height := 5100;
+  fMap[0, SizeY - 1].Height := 5100;
+  fMap[SizeX - 1, SizeY - 1].Height := 5100;
+  Subdivide(0, 0, SizeX, SizeY);
   for i := 1 to SizeX - 2 do
     for j := 1 to SizeY - 2 do
       fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height

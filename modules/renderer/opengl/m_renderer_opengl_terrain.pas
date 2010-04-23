@@ -108,6 +108,7 @@ begin
   // Render autoplants
   if fInterface.Options.Items['terrain:autoplants'] <> 'off' then
     begin
+    glDisable(GL_CULL_FACE);
     glColor4f(1, 1, 1, 1);
     glEnable(GL_BLEND);
     glEnable(GL_ALPHA_TEST);
@@ -154,6 +155,7 @@ begin
           end;
         end;
     fAPShader.Unbind;
+    glEnable(GL_CULL_FACE);
     end;
 end;
 
@@ -299,7 +301,7 @@ begin
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
     fShader.UniformI('TerrainTexture', 0);
     fShader.UniformI('HeightMap', 1);
-    fShader.UniformF('maxBumpDistance', 80);
+    fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 80));
     fShader.UniformF('lightdir', -1, 1, -1);
     fShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/simple.fs');
     fShaderTransformDepth.UniformI('HeightMap', 1);
@@ -313,30 +315,30 @@ begin
     for i := 0 to 255 do
       for j := 0 to 255 do
         begin
-        fFineVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j);
-        fFineVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
-        fFineVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
-        fFineVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        fFineVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fFineVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fFineVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fFineVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fFineVBO.Unbind;
     fGoodVBO := TVBO.Create(64 * 64 * 4, GL_V3F, GL_QUADS);
     for i := 0 to 63 do
       for j := 0 to 63 do
         begin
-        fGoodVBO.Vertices[4 * (64 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j);
-        fGoodVBO.Vertices[4 * (64 * i + j) + 1] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
-        fGoodVBO.Vertices[4 * (64 * i + j) + 2] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
-        fGoodVBO.Vertices[4 * (64 * i + j) + 3] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        fGoodVBO.Vertices[4 * (64 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fGoodVBO.Vertices[4 * (64 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fGoodVBO.Vertices[4 * (64 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fGoodVBO.Vertices[4 * (64 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fGoodVBO.Unbind;
     fRawVBO := TVBO.Create(16 * 16 * 4, GL_V3F, GL_QUADS);
     for i := 0 to 15 do
       for j := 0 to 15 do
         begin
-        fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j);
-        fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
-        fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
-        fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fRawVBO.Unbind;
     for i := 0 to high(fAPVBOs) do

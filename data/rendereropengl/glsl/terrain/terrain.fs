@@ -6,7 +6,6 @@ uniform int LOD;
 uniform vec2 offset;
 uniform float maxBumpDistance;
 uniform vec2 TerrainSize;
-uniform vec3 lightdir;
 
 varying float dist;
 varying vec4 Vertex;
@@ -49,10 +48,10 @@ void main(void) {
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 1.0)) / TerrainSize).r * 8.0),
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(1.0, 1.0)) / TerrainSize).r * 8.0));
   mat4 texColors = mat4(
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy)),
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[1].xy)),
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[2].xy)),
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[3].xy)));
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[0].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[1].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[2].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[3].xy)));
   float VY = fetchHeightAtOffset(vec2(0.0, 0.0));
   vec3 normal = normalize(
     normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2), vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0)))
@@ -71,7 +70,9 @@ void main(void) {
     vec3 bitangent = normalize(cross(normal, tangent));
     normal = mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((maxBumpDistance - dist) / (maxBumpDistance / 2.0), 0.0, 1.0));
   }
-  gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (dot(normalize(normal), normalize(lightdir)) + 0.2);
+  vec4 Lighting = vec4(0.0, 0.0, 0.0, 1.0);
+  Lighting = gl_LightSource[0].diffuse * (dot(normalize(normal), normalize(gl_LightSource[0].position.xyz - Vertex.xyz)) + 0.2) + gl_LightSource[0].ambient;
+  gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * Lighting;
   gl_FragColor.a = 1.0;
   gl_FragDepth = sqrt(dist / 10000.0);
 }

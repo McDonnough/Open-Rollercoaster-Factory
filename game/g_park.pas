@@ -3,7 +3,7 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui, g_sky;
 
 type
   TPark = class
@@ -17,6 +17,7 @@ type
     public
       // Parts of the park
       pTerrain: TTerrain;
+      pSky: TSky;
       pMainCamera: TCamera;
       pCameras: Array of TCamera;
 
@@ -107,6 +108,7 @@ begin
   fCanRender := true;
   pTerrain := TTerrain.Create;
   pTerrain.LoadDefaults;
+  pSky := TSky.Create;
   fParkUI := TParkUI.Create;
 end;
 
@@ -116,6 +118,7 @@ begin
     ModuleManager.ModLoadScreen.Render
   else
     begin
+    pSky.Time := pSky.Time + FPSDisplay.MS;
     ModuleManager.ModCamera.AdvanceActiveCamera;
     ModuleManager.ModRenderer.RenderScene;
     end;
@@ -126,6 +129,7 @@ destructor TPark.Free;
 begin
   ModuleManager.ModRenderer.Unload;
   fParkLoader.Free;
+  pSky.Free;
   pTerrain.Free;
   fParkUI.Free;
 end;

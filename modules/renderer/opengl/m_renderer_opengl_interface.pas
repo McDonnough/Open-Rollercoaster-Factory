@@ -12,6 +12,8 @@ type
       fOptionStack: Array of TDictionary;
     public
       property Options: TDictionary read fOptions;
+      function Option(O: String; D: Integer): Integer;
+      function Option(O: String; D: String): String;
       procedure PushOptions;
       procedure PopOptions;
       constructor Create;
@@ -25,6 +27,27 @@ implementation
 
 uses
   m_varlist;
+
+function TRendererOpenGLInterface.Option(O: String; D: Integer): Integer;
+begin
+  Result := D;
+  if Options.Items[O] <> '' then
+    try
+      Result := StrToInt(Options.Items[O]);
+    except
+    end
+  else
+    Options.Items[O] := IntToStr(D);
+end;
+
+function TRendererOpenGLInterface.Option(O: String; D: String): String;
+begin
+  Result := D;
+  if Options.Items[O] <> '' then
+    Result := Options.Items[O]
+  else
+    Options.Items[O] := D;
+end;
 
 procedure TRendererOpenGLInterface.PushOptions;
 var

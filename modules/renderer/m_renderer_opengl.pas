@@ -6,7 +6,7 @@ uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
   m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
   m_shdmng_class, m_renderer_opengl_plugins, u_functions, m_renderer_opengl_frustum,
-  m_renderer_opengl_interface;
+  m_renderer_opengl_interface, m_renderer_opengl_lights, m_renderer_opengl_sky;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
@@ -15,6 +15,7 @@ type
       fInterface: TRendererOpenGLInterface;
       RCamera: TRCamera;
       RTerrain: TRTerrain;
+      RSky: TRSky;
       RenderEffectManager: TRenderEffectManager;
     public
       property Frustum: TFrustum read fFrustum;
@@ -40,6 +41,7 @@ var
 begin
   RCamera := TRCamera.Create;
   RTerrain := TRTerrain.Create;
+  RSky := TRSky.Create;
   RenderEffectManager := TRenderEffectManager.Create;
   s := Explode(',', GetConfVal('effects'));
   for i := 0 to high(s) do
@@ -49,6 +51,7 @@ end;
 procedure TModuleRendererOpenGL.Unload;
 begin
   RenderEffectManager.Free;
+  RSky.Free;
   RTerrain.Free;
   RCamera.Free;
 end;
@@ -56,6 +59,7 @@ end;
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
 begin
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  glEnable(GL_CULL_FACE);
   if fInterface.Options.Items['all:polygonmode'] = 'wireframe' then
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glClear(GL_DEPTH_BUFFER_BIT);
@@ -67,7 +71,9 @@ begin
   fFrustum.Calculate;
 
   // Start rendering
+  RSky.Render;
   RTerrain.Render;
+  glDisable(GL_CULL_FACE);
 end;
 
 procedure TModuleRendererOpenGL.RenderScene;

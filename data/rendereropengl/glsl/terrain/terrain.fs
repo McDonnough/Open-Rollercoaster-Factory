@@ -48,10 +48,10 @@ void main(void) {
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 1.0)) / TerrainSize).r * 8.0),
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(1.0, 1.0)) / TerrainSize).r * 8.0));
   mat4 texColors = mat4(
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[0].xy)),
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[1].xy)),
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[2].xy)),
-    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 1024.0) + TexCoord[3].xy)));
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[0].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[1].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[2].xy)),
+    vec4(texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[3].xy)));
   float VY = fetchHeightAtOffset(vec2(0.0, 0.0));
   vec3 normal = normalize(
     normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2), vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0)))

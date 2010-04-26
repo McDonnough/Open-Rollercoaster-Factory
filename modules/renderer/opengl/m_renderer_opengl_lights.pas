@@ -78,7 +78,7 @@ begin
   Color := Vector(1, 1, 1, 1);
   Position := Vector(-1000, 0, 0, 0);
   fShadowMap := TFBO.Create(2048, 2048, true);
-  fShadowMap.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);
+  fShadowMap.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
 end;
 
 procedure TSun.Bind(I: Integer);

@@ -63,6 +63,7 @@ begin
   if fInterface.Options.Items['all:polygonmode'] = 'wireframe' then
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glClear(GL_DEPTH_BUFFER_BIT);
+  glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
   glRotatef(RadToDeg(arctan(EyeMode / EyeFocus)), 0, 1, 0);
   glTranslatef(EyeMode, 0, 0);
@@ -80,10 +81,14 @@ procedure TModuleRendererOpenGL.RenderScene;
 var
   ResX, ResY, i: Integer;
 begin
+  // Preparation
+  RSky.Advance;
+
+  // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';
   fInterface.Options.Items['all:frustumcull'] := 'on';
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
-  // Just a test
+
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);

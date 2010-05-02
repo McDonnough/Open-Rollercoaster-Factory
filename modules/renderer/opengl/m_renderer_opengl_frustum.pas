@@ -18,6 +18,9 @@ type
 
 implementation
 
+uses
+  m_renderer_opengl_interface;
+
 const
   Right  = 0;
   Left   = 1;
@@ -45,6 +48,8 @@ function TFrustum.IsPointWithin(pX, pY, pZ: Single): Boolean;
 var
    i : Integer;
 begin
+  if fInterface.Options.Items['all:frustumcull'] = 'off' then
+    exit(true);
   Result := true;
   for i := 0 to 5 do
     if (Frustum[i][A]*pX + Frustum[i][B]*pY +
@@ -59,6 +64,8 @@ function TFrustum.IsSphereWithin(pX, pY, pZ, Radius: Single): Boolean;
 var
   i : Integer;
 begin
+  if fInterface.Options.Items['all:frustumcull'] = 'off' then
+    exit(true);
   Result := true;
   for i := 0 to 5 do
     if (Frustum[i][A]*pX + Frustum[i][B]*pY +
@@ -73,6 +80,8 @@ function TFrustum.IsBoxWithin(pX, pY, pZ, pB, pH, pT: Single): Boolean;
 var
   i : Integer;
 begin
+  if fInterface.Options.Items['all:frustumcull'] = 'off' then
+    exit(true);
   Result := true;
   for i := 0 to 5 do
     begin

@@ -61,8 +61,10 @@ constructor TLight.Create;
 begin
   Color := Vector(1, 1, 1, 1);
   Position := Vector(0, 0, 0, 0);
-  fShadowMap := TFBO.Create(128, 128, true);
+  fShadowMap := TFBO.Create(256, 128, true); // Parabolic map
   fShadowMap.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);
+  fShadowMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fShadowMap.Textures[0].Unbind;
   EventManager.CallEvent('TLightManager.AddLight', self, @fInternalID);
 end;
 
@@ -77,8 +79,10 @@ constructor TSun.Create;
 begin
   Color := Vector(1, 1, 1, 1);
   Position := Vector(-1000, 0, 0, 0);
-  fShadowMap := TFBO.Create(2048, 2048, true);
+  fShadowMap := TFBO.Create(2048, 2048, true); // Flat map
   fShadowMap.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
+  fShadowMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fShadowMap.Textures[0].Unbind;
 end;
 
 procedure TSun.Bind(I: Integer);

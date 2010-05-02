@@ -74,11 +74,34 @@ const
 implementation
 
 uses
-  m_module, m_varlist, u_events;
+  m_module, m_varlist, u_events, g_park;
 
 procedure TRENormal.Apply(Event: String; Param, Result: Pointer);
 begin
+  fInterface.PushOptions;
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Bind;
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity;
+  gluPerspective(0.25, 1, 0.5, 20000);
+  gluLookAt(ModuleManager.ModRenderer.RSky.Sun.Position.X, ModuleManager.ModRenderer.RSky.Sun.Position.Y, ModuleManager.ModRenderer.RSky.Sun.Position.Z,
+            ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Y, ModuleManager.ModCamera.ActiveCamera.Position.Z,
+            0, 1, 0);
+  fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
+  fInterface.Options.Items['terrain:autoplants'] := 'off';
+  fInterface.Options.Items['sky:rendering'] := 'off';
+  fInterface.Options.Items['all:applyrotation'] := 'off';
+  fInterface.Options.Items['all:applytranslation'] := 'off';
+  fInterface.Options.Items['all:frustumcull'] := 'off';
   ModuleManager.ModRenderer.Render();
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
+  fInterface.PopOptions;
+//   fInterface.Options.Items['shader:mode'] := 'normal:normal';
+  ModuleManager.ModRenderer.Render();
+//   fInterface.PopOptions;
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity;
+  glMatrixMode(GL_MODELVIEW);
 end;
 
 constructor TRENormal.Create;

@@ -8,9 +8,8 @@ uniform vec2 VOffset;
 uniform int LOD;
 
 varying float dist;
-varying float SDist;
-varying vec4 result;
-varying vec4 Vertex;
+
+vec4 Vertex;
 
 float fpart(float a) {
   return a - floor(a);
@@ -27,8 +26,6 @@ void main(void) {
   Vertex.xz += VOffset;
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
-  dist = length(gl_ModelViewMatrix * Vertex);
-  result = gl_TextureMatrix[0] * Vertex;
-  SDist = distance(gl_LightSource[0].position, Vertex);
-  gl_Position = gl_ModelViewProjectionMatrix * Vertex;
+  dist = distance(gl_LightSource[0].position, Vertex);
+  gl_Position = gl_TextureMatrix[0] * Vertex;
 }

@@ -93,6 +93,7 @@ begin
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
 
   glEnable(GL_DEPTH_TEST);
   glDepthMask(true);

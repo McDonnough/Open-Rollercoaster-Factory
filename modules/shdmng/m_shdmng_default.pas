@@ -82,7 +82,8 @@ var
   s: Integer;
   i: integer;
 begin
-  if (not FileExists(VSFile)) or (not FileExists(VSFile)) then
+  writeln('Loading Shader ' + VSFile + ', ' + FSFile);
+  if (not FileExists(VSFile)) or (not FileExists(FSFile)) then
     begin
     ModuleManager.ModLog.AddWarning('Shader files ' + VSFile + ', ' + FSFile + ' do not exist', 'm_shdmng_default', 87);
     exit(-1);

@@ -70,6 +70,7 @@ var
   TexImage: TTexImage;
   i: Integer;
 begin
+  writeln('Loading texture ' + Filename);
   X := -1;
   Y := -1;
   if not FileExists(Filename) then

@@ -32,6 +32,7 @@ void main(void) {
   Vertex.y += VY;
   dist = length(gl_ModelViewMatrix * Vertex);
   result = gl_TextureMatrix[0] * Vertex;
+  result = sqrt(abs(result)) * sign(result);
   SDist = distance(gl_LightSource[0].position, Vertex);
   gl_TexCoord[0] = gl_MultiTexCoord0;
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;

@@ -28,4 +28,5 @@ void main(void) {
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   dist = distance(gl_LightSource[0].position, Vertex);
   gl_Position = gl_TextureMatrix[0] * Vertex;
+  gl_Position = sqrt(abs(gl_Position)) * sign(gl_Position);
 }

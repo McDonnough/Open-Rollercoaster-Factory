@@ -59,7 +59,7 @@ end;
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
 begin
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//   glEnable(GL_CULL_FACE);
+  glEnable(GL_CULL_FACE);
   if fInterface.Options.Items['all:polygonmode'] = 'wireframe' then
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glClear(GL_DEPTH_BUFFER_BIT);

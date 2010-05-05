@@ -29,6 +29,7 @@ void main(void) {
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   dist = length(gl_ModelViewMatrix * Vertex);
   result = gl_TextureMatrix[0] * Vertex;
+  result = sqrt(abs(result)) * sign(result);
   SDist = distance(gl_LightSource[0].position, Vertex);
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;
 }

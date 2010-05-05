@@ -66,7 +66,7 @@ end;
 procedure TRSky.Advance;
 begin
   fSun.Position := Vector(sin(2 * PI * Park.pSky.Time / 86400), -cos(2 * PI * Park.pSky.Time / 86400), -cos(2 * PI * Park.pSky.Time / 86400), 0);
-  fSun.AmbientColor := Vector(0.05, 0.05, 0.05, 0.0) + Vector(0.2, 0.25, 0.32, 0.0) * Clamp(2 * fSun.Position.Y, 0, 1) + Vector(0.02, 0.04, 0.1, 0.0) * Clamp(-2 * fSun.Position.Y, 0, 1);
+  fSun.AmbientColor := Vector(0.05, 0.05, 0.05, 0.0) + Vector(0.2, 0.25, 0.32, 0.0) * Clamp(2 * fSun.Position.Y, 0, 1) + Vector(0.00, 0.01, 0.05, 0.0) * Clamp(-2 * fSun.Position.Y, 0, 1);
   fSun.Color := Vector(1.0, 0.95, 0.88, 1);
   fSun.Color := fSun.Color * Clamp(2.0 * fSun.Position.Y, 0, 1);
   fSun.Color.Y := fSun.Color.Y * Clamp(0.6 + 1.0 * fSun.Position.Y, 0, 1);

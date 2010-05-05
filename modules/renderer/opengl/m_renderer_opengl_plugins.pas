@@ -85,7 +85,7 @@ begin
   glLoadIdentity;
   gluPerspective(2, 1, 0.5, 20000);
   gluLookAt(ModuleManager.ModRenderer.RSky.Sun.Position.X, ModuleManager.ModRenderer.RSky.Sun.Position.Y, ModuleManager.ModRenderer.RSky.Sun.Position.Z,
-            ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Y, ModuleManager.ModCamera.ActiveCamera.Position.Z,
+            Round(ModuleManager.ModCamera.ActiveCamera.Position.X), Round(ModuleManager.ModCamera.ActiveCamera.Position.Y), Round(ModuleManager.ModCamera.ActiveCamera.Position.Z),
             0, 1, 0);
   fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
   fInterface.Options.Items['terrain:autoplants'] := 'off';

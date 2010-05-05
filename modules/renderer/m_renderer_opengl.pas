@@ -24,15 +24,20 @@ type
       procedure Unload;
       procedure RenderScene;
       procedure CheckModConf;
+      procedure RenderShadows;
+      procedure RenderParts;
       procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
       constructor Create;
       destructor Free;
+    private
+      fShadowDelay: Single;
+      OS, OC: TVector3D;
     end;
 
 implementation
 
 uses
-  m_varlist, u_events;
+  m_varlist, u_events, main;
 
 procedure TModuleRendererOpenGL.PostInit;
 var
@@ -56,6 +61,13 @@ begin
   RCamera.Free;
 end;
 
+procedure TModuleRendererOpenGL.RenderParts;
+begin
+  RSky.Render;
+  RTerrain.Render;
+  glDisable(GL_CULL_FACE);
+end;
+
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
 begin
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -72,16 +84,50 @@ begin
     RCamera.ApplyTransformation(Vector(1, 1, 1));
   fFrustum.Calculate;
 
-  // Start rendering
-  RSky.Render;
-  RTerrain.Render;
-  glDisable(GL_CULL_FACE);
+  RenderParts;
+end;
+
+procedure TModuleRendererOpenGL.RenderShadows;
+begin
+  with ModuleManager.ModRenderer.RSky.Sun.Position do
+    OS := Vector(X, Y, Z);
+  OC := ModuleManager.ModCamera.ActiveCamera.Position;
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  gluPerspective(2, 1, 0.5, 20000);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  gluLookAt(OS.X, OS.Y, OS.Z,
+            Round(OC.X), Round(OC.Y), Round(OC.Z),
+            0, 1, 0);
+  fFrustum.Calculate;
+  glLoadIdentity;
+
+  fInterface.PushOptions;
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Bind;
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity;
+  gluPerspective(2, 1, 0.5, 20000);
+  gluLookAt(OS.X, OS.Y, OS.Z,
+            Round(OC.X), Round(OC.Y), Round(OC.Z),
+            0, 1, 0);
+  fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
+//     fInterface.Options.Items['terrain:autoplants'] := 'off';
+  fInterface.Options.Items['sky:rendering'] := 'off';
+  RenderParts;
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
+  fInterface.PopOptions;
 end;
 
 procedure TModuleRendererOpenGL.RenderScene;
 var
   ResX, ResY, i: Integer;
+const
+  SHADOW_UPDATE_TIME = 100;
 begin
+  fShadowDelay := fShadowDelay + FPSDisplay.MS;
+
   // Preparation
   RSky.Advance;
 
@@ -90,17 +136,35 @@ begin
   fInterface.Options.Items['all:frustumcull'] := 'on';
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 
+  glEnable(GL_DEPTH_TEST);
+  glDepthMask(true);
+
+  glDisable(GL_BLEND);
+
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity;
+  gluPerspective(2, 1, 0.5, 20000);
+  gluLookAt(OS.X, OS.Y, OS.Z,
+            Round(OC.X), Round(OC.Y), Round(OC.Z),
+            0, 1, 0);
+
+//   if fShadowDelay >= SHADOW_UPDATE_TIME then
+    RenderShadows;
+  fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
+
+  glEnable(GL_BLEND);
+
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
-  glEnable(GL_DEPTH_TEST);
-  glDepthMask(true);
-
-  glEnable(GL_BLEND);
-
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
+
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity;
+  glMatrixMode(GL_MODELVIEW);
+
   EventManager.CallEvent('TModuleRenderer.PostRender', nil, nil);
 end;
 

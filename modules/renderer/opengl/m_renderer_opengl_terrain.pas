@@ -262,6 +262,7 @@ begin
     end;
   if (Event = 'TTerrain.ChangedAll') then
     begin
+    writeln('Copying entire terrain to VRam');
     StartUpdate;
     for i := 0 to Park.pTerrain.SizeX do
       for j := 0 to Park.pTerrain.SizeY do
@@ -304,6 +305,7 @@ var
   i, j: Integer;
 begin
   try
+    writeln('Initializing terrain renderer');
     fHeightMap := nil;
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
     fShader.UniformI('TerrainTexture', 0);

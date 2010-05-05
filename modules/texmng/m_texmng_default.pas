@@ -14,6 +14,7 @@ type
     Data: array of Byte;
     Tex: GLUInt;
     TexName: String;
+    DataNeedsUpdate: Boolean;
     end;
 
   ATexRef = array of TTexRef;
@@ -115,7 +116,7 @@ begin
   X := Texture.Width;
   Y := Texture.Height;
   if VertexTexture then
-    Texture.ExternalFormat := GL_RGBA32F_ARB;
+    Texture.ExternalFormat := GL_RGBA16F_ARB;
   Result := EmptyTexture(Texture.Width, Texture.Height, Texture.ExternalFormat);
   fTexRefs[Result].TexName := Texture.TexName;
   fTexRefs[Result].Width := Texture.Width;
@@ -144,6 +145,7 @@ begin
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexImage2D(GL_TEXTURE_2D, 0, Format, X, Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nil);
+  fTexRefs[Result].DataNeedsUpdate := true;
 end;
 
 procedure TModuleTextureManagerDefault.ActivateTexUnit(U: Integer);
@@ -182,6 +184,7 @@ begin
     end;
   if (Texture >= 0) and (Texture <= high(fTexRefs)) then
     glTexImage2D(GL_TEXTURE_2D, 0, fTexRefs[Texture].ExternalFormat, fTexRefs[Texture].Width, fTexRefs[Texture].Height, 0, InputFormat, GL_UNSIGNED_BYTE, Data);
+  fTexRefs[Texture].DataNeedsUpdate := true;
 end;
 
 procedure TModuleTextureManagerDefault.DeleteTexture(Texture: Integer);
@@ -214,6 +217,9 @@ function TModuleTextureManagerDefault.ReadPixel(Texture: Integer; X, Y: Integer)
 var
   FormatLength: Integer;
 begin
+  if fTexRefs[Texture].DataNeedsUpdate then
+    glGetTexImage(GL_TEXTURE_2D, 0, fTexRefs[Texture].InputFormat, GL_UNSIGNED_BYTE, @fTexRefs[Texture].Data[0]);
+  fTexRefs[Texture].DataNeedsUpdate := false;
   FormatLength := 4;
   if (fTexRefs[Texture].InputFormat = GL_RGB) or (fTexRefs[Texture].InputFormat = GL_BGR) then
     FormatLength := 3;

@@ -5,7 +5,7 @@ unit m_font_textureVariableWidth;
 interface
 
 uses
-  Classes, SysUtils, m_font_class, m_texmng_class, m_shdmng_class, DGLOpenGL, u_math;
+  Classes, SysUtils, m_font_class, m_texmng_class, m_shdmng_class, DGLOpenGL, u_graphics, u_math;
 
 type
   TLetterPosition = record
@@ -15,6 +15,7 @@ type
     private
       refCellWidth, refCellHeight: integer;
     protected
+      TempTex: TTexImage;
       fTexture: TTexture;
       fLetterPositions: array[0..255] of TLetterPosition;
       procedure GetLetterWidths;
@@ -30,7 +31,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_files;
 
 procedure TModuleFontTextureVariableWidth.GetLetterWidths;
 var
@@ -168,9 +169,12 @@ begin
 
   CheckModConf;
 
+  temptex := TexFromTGA(ByteStreamFromFile(GetConfVal('fonttex')));
   fTexture := TTexture.Create;
-  fTexture.FromFile(GetConfVal('fonttex'));
+  fTexture.CreateNew(TempTex.Width, TempTex.Height, GL_RGBA);
   fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
+  fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+  gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, GL_RGBA, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
 
   GetLetterWidths;
 

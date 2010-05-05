@@ -13,7 +13,7 @@ type
       fAPVBOs: Array[0..7] of TVBO;
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
-      fShader, fShaderTransformDepth, fAPShader: TShader;
+      fShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
       fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
@@ -34,21 +34,24 @@ uses
   g_park, u_events, m_varlist, u_files, u_graphics;
 
 procedure TRTerrain.Render;
+var
+  fBoundShader: TShader;
+
   procedure RenderBlock(X, Y: Integer);
   begin
     try
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 256 - 1) and (Y <= Park.pTerrain.SizeY div 256 - 1) then
         if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(25.6 + 51.2 * X, fAvgHeight[X, Y], 25.6 + 51.2 * Y, fBoundingSphereRadius[X, Y])) then
           begin
-          fShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
+          fBoundShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
           if VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
             begin
-            fShader.UniformI('LOD', 1);
+            fBoundShader.UniformI('LOD', 1);
             fGoodVBO.Render;
             end
           else
             begin
-            fShader.UniformI('LOD', 0);
+            fBoundShader.UniformI('LOD', 0);
             fRawVBO.Render;
             end;
           end;
@@ -61,16 +64,19 @@ var
   Blocks: Array of Array[0..2] of Integer;
   fDeg, fRot: Single;
   Position, fTmp: TVector2D;
-  fBoundShader: TShader;
+  X1, X2, Y1, Y2: Float;
 begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
   fHeightMap.Textures[0].Bind(1);
   Park.pTerrain.Collection.Texture.Bind(0);
   fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
-    fBoundShader := fShaderTransformDepth;
+    fBoundShader := fShaderTransformDepth
+  else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
+    fBoundShader := fShaderTransformSunShadow;
   fBoundShader.Bind;
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     fBoundShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5)
@@ -230,11 +236,12 @@ begin
     begin
     fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformDepth.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fShaderTransformSunShadow.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fAPShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     if fHeightMap <> nil then
       fHeightMap.Free;
     fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY, true);
-    fHeightMap.AddTexture(GL_RGBA32F, GL_NEAREST, GL_NEAREST);
+    fHeightMap.AddTexture(GL_RGBA16F, GL_NEAREST, GL_NEAREST);
     fHeightMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
     SetLength(fAvgHeight, Park.pTerrain.SizeX div 256);
@@ -301,13 +308,17 @@ begin
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
     fShader.UniformI('TerrainTexture', 0);
     fShader.UniformI('HeightMap', 1);
+    fShader.UniformI('SunShadowMap', 7);
     fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 80));
     fShader.UniformF('lightdir', -1, 1, -1);
     fShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/simple.fs');
     fShaderTransformDepth.UniformI('HeightMap', 1);
+    fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
+    fShaderTransformSunShadow.UniformI('HeightMap', 1);
     fAPShader := TShader.Create('rendereropengl/glsl/terrain/autoplant.vs', 'rendereropengl/glsl/terrain/autoplant.fs');
     fAPShader.UniformI('Autoplant', 0);
     fAPShader.UniformI('HeightMap', 1);
+    fAPShader.UniformI('SunShadowMap', 7);
     fAPShader.UniformF('lightdir', -1, 1, -1);
     fFineOffsetX := 0;
     fFineOffsetY := 0;
@@ -366,6 +377,7 @@ begin
   fRawVBO.Free;
   fShader.Free;
   fShaderTransformDepth.Free;
+  fShaderTransformSunShadow.Free;
   fAPShader.Free;
   if fHeightMap <> nil then
     fHeightMap.Free;

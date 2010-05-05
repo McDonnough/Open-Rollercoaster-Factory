@@ -13,11 +13,11 @@ type
     protected
       fFrustum: TFrustum;
       fInterface: TRendererOpenGLInterface;
+      RenderEffectManager: TRenderEffectManager;
+    public
       RCamera: TRCamera;
       RTerrain: TRTerrain;
       RSky: TRSky;
-      RenderEffectManager: TRenderEffectManager;
-    public
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
       procedure PostInit;
@@ -64,11 +64,12 @@ begin
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   glClear(GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
   glRotatef(RadToDeg(arctan(EyeMode / EyeFocus)), 0, 1, 0);
   glTranslatef(EyeMode, 0, 0);
-  RCamera.ApplyRotation(Vector(1, 1, 1));
-  RCamera.ApplyTransformation(Vector(1, 1, 1));
+  if fInterface.Options.Items['all:applyrotation'] <> 'off' then
+    RCamera.ApplyRotation(Vector(1, 1, 1));
+  if fInterface.Options.Items['all:applytranslation'] <> 'off' then
+    RCamera.ApplyTransformation(Vector(1, 1, 1));
   fFrustum.Calculate;
 
   // Start rendering

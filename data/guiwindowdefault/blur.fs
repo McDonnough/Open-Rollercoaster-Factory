@@ -4,6 +4,7 @@ uniform sampler2D BackTex;
 uniform sampler2D WinTex;
 uniform vec2 Screen;
 uniform vec2 BlurAmount;
+uniform int UseWinTex;
 
 vec4 BackTexel;
 
@@ -23,9 +24,13 @@ vec4 do_blur(void) {
 
 void main(void) {
   BackTexel = texture2D(BackTex, fitCoords(gl_FragCoord.xy));
-  vec4 WinTexel = texture2D(WinTex, gl_TexCoord[0].xy);
-  if (WinTexel.a == 0.0)
-    discard;
+  vec4 WinTexel = vec4(1.0, 1.0, 1.0, 1.0);
+  if (UseWinTex == 1) {
+    WinTexel = texture2D(WinTex, gl_TexCoord[0].xy);
+    if (WinTexel.r == 0.0)
+      discard;
+  }
   gl_FragColor = mix(BackTexel, do_blur(), WinTexel.r);
-  gl_FragColor.a = 1.0;
+  if (UseWinTex == 1)
+    gl_FragColor.a = 1.0;
 }

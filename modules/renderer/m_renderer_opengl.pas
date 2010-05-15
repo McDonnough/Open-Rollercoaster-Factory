@@ -68,7 +68,7 @@ procedure TModuleRendererOpenGL.RenderParts;
 begin
   RSky.Render;
   RTerrain.Render;
-  glDisable(GL_CULL_FACE);
+  fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
 end;
 
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
@@ -127,6 +127,7 @@ procedure TModuleRendererOpenGL.RenderScene;
 var
   ResX, ResY, i: Integer;
 begin
+  fInterface.Options.Items['all:renderpass'] := '0';
   fShadowDelay := fShadowDelay + FPSDisplay.MS;
 
   // Preparation
@@ -167,6 +168,8 @@ begin
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity;
   glMatrixMode(GL_MODELVIEW);
+
+  glDisable(GL_CULL_FACE);
 
   EventManager.CallEvent('TModuleRenderer.PostRender', nil, nil);
 end;

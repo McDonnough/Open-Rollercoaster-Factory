@@ -160,7 +160,7 @@ begin
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glColor4f(212 / 255, 236 / 255, 236 / 255, 0.2);
+  glColor4f(212 / 255, 236 / 255, 236 / 255, 0.2 * Window.Alpha);
   RenderWindow;
 
   glDisable(GL_BLEND);
@@ -210,7 +210,7 @@ begin
   glEnable(GL_BLEND);
 
   fShadowFBO.Textures[0].Bind(0);
-  glColor4f(1, 1, 1, 1);
+  glColor4f(1, 1, 1, Window.Alpha);
   glBegin(GL_QUADS);
     glTexCoord2f(0, 1); glVertex2f(0, 0);
     glTexCoord2f(1, 1); glVertex2f(X, 0);
@@ -219,21 +219,24 @@ begin
   glEnd;
   fShadowFBO.Textures[0].Unbind;
 
-  glColor4f(1, 1, 1, Window.Alpha);
-  glBegin(GL_QUADS);
-    glVertex2f(Window.Left + 8 + Window.OfsX1, Window.Top + 8 + Window.OfsY1);
-    glVertex2f(Window.Left + Window.Width - 8 - Window.OfsX2, Window.Top + 8 + Window.OfsY1);
-    glVertex2f(Window.Left + Window.Width - 8 - Window.OfsX2, Window.Top + Window.Height - 8 - Window.OfsY2);
-    glVertex2f(Window.Left + 8 + Window.OfsX1, Window.Top + Window.Height - 8 - Window.OfsY2);
-  glEnd;
+  if (Window.Left + Window.Width - Window.OfsX2 > Window.Left + Window.OfsX1) and (Window.Top + Window.Height - Window.OfsY2 > Window.Top + Window.OfsY1) then
+    begin
+    glColor4f(1, 1, 1, Window.Alpha);
+    glBegin(GL_QUADS);
+      glVertex2f(Round(Window.Left + 8 + Window.OfsX1), Round(Window.Top + 8 + Window.OfsY1));
+      glVertex2f(Round(Window.Left + Window.Width - 8 - Window.OfsX2), Round(Window.Top + 8 + Window.OfsY1));
+      glVertex2f(Round(Window.Left + Window.Width - 8 - Window.OfsX2), Round(Window.Top + Window.Height - 8 - Window.OfsY2));
+      glVertex2f(Round(Window.Left + 8 + Window.OfsX1), Round(Window.Top + Window.Height - 8 - Window.OfsY2));
+    glEnd;
 
-  glColor4f(0, 0, 0, 0.5 * Window.Alpha);
-  glBegin(GL_LINE_LOOP);
-    glVertex2f(Window.Left + 7 + Window.OfsX1, Window.Top + 7 + Window.OfsY1);
-    glVertex2f(Window.Left + Window.Width - 7 - Window.OfsX2, Window.Top + 7 + Window.OfsY1);
-    glVertex2f(Window.Left + Window.Width - 7 - Window.OfsX2, Window.Top + Window.Height - 7 - Window.OfsY2);
-    glVertex2f(Window.Left + 7 + Window.OfsX1, Window.Top + Window.Height - 7 - Window.OfsY2);
-  glEnd;
+    glColor4f(0, 0, 0, Window.Alpha);
+    glBegin(GL_LINE_LOOP);
+      glVertex2f(Round(Window.Left + 7 + Window.OfsX1), Round(Window.Top + 7 + Window.OfsY1));
+      glVertex2f(Round(Window.Left + Window.Width - 7 - Window.OfsX2), Round(Window.Top + 7 + Window.OfsY1));
+      glVertex2f(Round(Window.Left + Window.Width - 7 - Window.OfsX2), Round(Window.Top + Window.Height - 7 - Window.OfsY2));
+      glVertex2f(Round(Window.Left + 7 + Window.OfsX1), Round(Window.Top + Window.Height - 7 - Window.OfsY2));
+    glEnd;
+    end;
 
   glDisable(GL_BLEND);
 end;

@@ -50,8 +50,8 @@ procedure TParkUIWindow.AdjustPosition(Event: String; Data, Result: Pointer);
 begin
   if not (fShown) and (fWindow.Width < 48) and (fWindow.Height < 48) then
     begin
-    fWindow.Left := fMX;
-    fWindow.Top := fMY;
+    fWindow.Left := fMX + 8;
+    fWindow.Top := fMY + 8;
     fButton.Left := fMX - 8;
     fButton.Top := fMY - 8;
     fButton.OnClick := @Toggle;
@@ -69,8 +69,8 @@ end;
 
 procedure TParkUIWindow.Show;
 begin
-  fWindow.Left := fPX;
-  fWindow.Top := fPY;
+  fWindow.Left := fPX + 8;
+  fWindow.Top := fPY + 8;
   fButton.Left := fPX - 8;
   fButton.Top := fPY - 8;
   fShown := true;
@@ -97,8 +97,8 @@ begin
   fMY := MY;
   fShown := false;
   fWindow := TWindow.Create(nil);
-  fWindow.Left := fMX;
-  fWindow.Top := fMY;
+  fWindow.Left := fMX + 8;
+  fWindow.Top := fMY + 8;
   fWindow.Width := 32;
   fWindow.Height := 32;
   fButton := TIconifiedButton.Create(nil);

@@ -69,7 +69,6 @@ begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
-  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
   fHeightMap.Textures[0].Bind(1);
   Park.pTerrain.Collection.Texture.Bind(0);
   fBoundShader := fShader;
@@ -124,35 +123,38 @@ begin
       if fAPVBOs[i] <> nil then
         begin
         Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
-        fAPVBOs[i].Bind;
-        for j := 0 to high(fAPPositions[i]) do
+        if fInterface.Options.Items['all:renderpass'] <> '1' then
           begin
-          if VecLengthNoRoot(fAPPositions[i, j] - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > 900 then
+          fAPVBOs[i].Bind;
+          for j := 0 to high(fAPPositions[i]) do
             begin
-            fDeg := PI * 2 * Random;
-            fRot := PI * 2 * Random;
-            fTMP := Vector(Sin(fRot), Cos(fRot)) * 0.4;
-            Position := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) + Vector(Sin(fDeg), Cos(fDeg)) * (5 * Random + 25);
-            fAPPositions[i, j] := Position;
-            inc(fAPCount[i]);
-            if Park.pTerrain.TexMap[Position.X, Position.Y] = i then
+            if VecLengthNoRoot(fAPPositions[i, j] - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > 900 then
               begin
-              fAPVBOs[i].Vertices[4 * j + 0] := Vector(fAPPositions[i, j].X, 0, fAPPositions[i, j].Y);
-              fAPVBOs[i].Vertices[4 * j + 1] := Vector(fAPPositions[i, j].X, 0.2, fAPPositions[i, j].Y);
-              fAPVBOs[i].Vertices[4 * j + 2] := Vector(fAPPositions[i, j].X + fTMP.X, 0.2, fAPPositions[i, j].Y + fTMP.Y);
-              fAPVBOs[i].Vertices[4 * j + 3] := Vector(fAPPositions[i, j].X + fTMP.X, 0, fAPPositions[i, j].Y + fTMP.Y);
-              end
-            else
-              begin
-              fAPVBOs[i].Vertices[4 * j + 0] := Vector(0, 0, 0);
-              fAPVBOs[i].Vertices[4 * j + 1] := Vector(0, 0, 0);
-              fAPVBOs[i].Vertices[4 * j + 2] := Vector(0, 0, 0);
-              fAPVBOs[i].Vertices[4 * j + 3] := Vector(0, 0, 0);
-              dec(fAPCount[i]);
+              fDeg := PI * 2 * Random;
+              fRot := PI * 2 * Random;
+              fTMP := Vector(Sin(fRot), Cos(fRot)) * 0.4;
+              Position := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) + Vector(Sin(fDeg), Cos(fDeg)) * (5 * Random + 25);
+              fAPPositions[i, j] := Position;
+              inc(fAPCount[i]);
+              if Park.pTerrain.TexMap[Position.X, Position.Y] = i then
+                begin
+                fAPVBOs[i].Vertices[4 * j + 0] := Vector(fAPPositions[i, j].X, 0, fAPPositions[i, j].Y);
+                fAPVBOs[i].Vertices[4 * j + 1] := Vector(fAPPositions[i, j].X, 0.2, fAPPositions[i, j].Y);
+                fAPVBOs[i].Vertices[4 * j + 2] := Vector(fAPPositions[i, j].X + fTMP.X, 0.2, fAPPositions[i, j].Y + fTMP.Y);
+                fAPVBOs[i].Vertices[4 * j + 3] := Vector(fAPPositions[i, j].X + fTMP.X, 0, fAPPositions[i, j].Y + fTMP.Y);
+                end
+              else
+                begin
+                fAPVBOs[i].Vertices[4 * j + 0] := Vector(0, 0, 0);
+                fAPVBOs[i].Vertices[4 * j + 1] := Vector(0, 0, 0);
+                fAPVBOs[i].Vertices[4 * j + 2] := Vector(0, 0, 0);
+                fAPVBOs[i].Vertices[4 * j + 3] := Vector(0, 0, 0);
+                dec(fAPCount[i]);
+                end;
               end;
             end;
+          fAPVBOs[i].Unbind;
           end;
-        fAPVBOs[i].Unbind;
         if fAPCount[i] > 0 then
           begin
           fAPVBOs[i].Bind;

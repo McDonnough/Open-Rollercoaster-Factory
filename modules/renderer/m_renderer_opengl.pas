@@ -29,10 +29,13 @@ type
       procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
       constructor Create;
       destructor Free;
-    private
+    public
       fShadowDelay: Single;
       OS, OC: TVector3D;
     end;
+
+const
+  SHADOW_UPDATE_TIME = 100;
 
 implementation
 
@@ -65,7 +68,7 @@ procedure TModuleRendererOpenGL.RenderParts;
 begin
   RSky.Render;
   RTerrain.Render;
-  glDisable(GL_CULL_FACE);
+  fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
 end;
 
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
@@ -113,7 +116,7 @@ begin
             Round(OC.X), Round(OC.Y), Round(OC.Z),
             0, 1, 0);
   fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
-//     fInterface.Options.Items['terrain:autoplants'] := 'off';
+  fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
   RenderParts;
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
@@ -123,9 +126,8 @@ end;
 procedure TModuleRendererOpenGL.RenderScene;
 var
   ResX, ResY, i: Integer;
-const
-  SHADOW_UPDATE_TIME = 100;
 begin
+  fInterface.Options.Items['all:renderpass'] := '0';
   fShadowDelay := fShadowDelay + FPSDisplay.MS;
 
   // Preparation
@@ -148,7 +150,7 @@ begin
             Round(OC.X), Round(OC.Y), Round(OC.Z),
             0, 1, 0);
 
-//   if fShadowDelay >= SHADOW_UPDATE_TIME then
+  if fShadowDelay >= SHADOW_UPDATE_TIME then
     RenderShadows;
   fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
 
@@ -159,11 +161,15 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
+
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
 
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity;
   glMatrixMode(GL_MODELVIEW);
+
+  glDisable(GL_CULL_FACE);
 
   EventManager.CallEvent('TModuleRenderer.PostRender', nil, nil);
 end;

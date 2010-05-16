@@ -10,6 +10,7 @@ uses
 type
   TWindow = class(TGUIComponent)
     public
+      OfsX1, OfsX2, OfsY1, OfsY2: Integer;
       procedure Render;
       constructor Create(mParent: TGUIComponent);
     end;
@@ -37,6 +38,10 @@ end;
 constructor TWindow.Create(mParent: TGUIComponent);
 begin
   inherited Create(mParent, CWindow);
+  OfsX1 := 0;
+  OfsX2 := 0;
+  OfsY1 := 0;
+  OfsY2 := 0;
 end;
 
 end.

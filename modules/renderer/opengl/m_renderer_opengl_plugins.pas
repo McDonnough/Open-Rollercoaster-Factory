@@ -259,6 +259,7 @@ begin
   glEnable(GL_BLEND);
   glBlendFunc(GL_ONE, GL_ONE);
   fTexture.Bind(0);
+//   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(0);
   glBegin(GL_QUADS);
     glTexCoord2f(0, 0); glVertex2f(-1, -1);
     glTexCoord2f(0, 1); glVertex2f(-1, 1);

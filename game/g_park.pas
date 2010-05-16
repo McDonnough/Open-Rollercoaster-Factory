@@ -118,7 +118,7 @@ begin
     ModuleManager.ModLoadScreen.Render
   else
     begin
-    pSky.Time := pSky.Time + FPSDisplay.MS / 10;
+    pSky.Time := pSky.Time + FPSDisplay.MS / 20;
     ModuleManager.ModCamera.AdvanceActiveCamera;
     ModuleManager.ModRenderer.RenderScene;
     end;

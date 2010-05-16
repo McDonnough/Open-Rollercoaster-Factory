@@ -169,6 +169,7 @@ begin
 
   CheckModConf;
 
+  writeln('Loading font texture from ' + GetFirstExistingFileName(GetConfVal('fonttex')));
   temptex := TexFromTGA(ByteStreamFromFile(GetFirstExistingFileName(GetConfVal('fonttex'))));
   fTexture := TTexture.Create;
   fTexture.CreateNew(TempTex.Width, TempTex.Height, GL_RGBA);

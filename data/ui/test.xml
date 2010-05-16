@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window width="600" height="400" left="100" top="100" btnleft="720" btntop="0" icon="go-down.tga">
+  <panel leftspace="0" rightspace="0" bottomspace="0" topspace="32" />
+</window>

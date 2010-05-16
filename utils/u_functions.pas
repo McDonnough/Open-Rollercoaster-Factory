@@ -65,6 +65,13 @@ function WordCount(s: String): Integer;
   *)
 procedure GetFilesInDirectory(Directory: string; const Mask: string; List: TStringList; WithSubDirs, ClearList: Boolean);
 
+(** Convert string into a number. Use default if the string is not a number.
+  *@param String to convert
+  *@param Default value
+  *@return Number or default
+  *)
+function StrToIntWD(A: String; Default: Integer): Integer;
+
 implementation
 
 uses
@@ -228,6 +235,15 @@ begin
     ScanDir(Directory);
   finally
     List.EndUpdate;
+  end;
+end;
+
+function StrToIntWD(A: String; Default: Integer): Integer;
+begin
+  try
+    Result := StrToInt(A);
+  except
+    Result := Default;
   end;
 end;
 

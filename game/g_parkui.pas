@@ -3,7 +3,8 @@ unit g_parkui;
 interface
 
 uses
-  SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml;
+  SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml,
+  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, u_functions;
 
 type
   TParkUIWindow = class
@@ -171,7 +172,31 @@ begin
             fWindow.OfsX2 := StrToInt(GetAttribute('rightspace'));
             fWindow.OfsY1 := StrToInt(GetAttribute('topspace'));
             fWindow.OfsY2 := StrToInt(GetAttribute('bottomspace'));
-            end;
+            end
+          else if NodeName = 'label' then
+            begin
+            with TLabel.Create(fWindow) do
+              begin
+              Left := StrToIntWD(GetAttribute('left'), 16);
+              Top := StrToIntWD(GetAttribute('top'), 16);
+              Width := StrToIntWD(GetAttribute('width'), Round(fWindow.Width - Left - 16));
+              Size := Round(StrToIntWD(GetAttribute('size'), 16));
+              Height := StrToIntWD(GetAttribute('height'), Round(Height));
+              if FirstChild <> nil then
+                Caption := FirstChild.NodeValue;
+              end;
+            end
+          else if NodeName = 'iconbutton' then
+            begin
+            with TIconifiedButton.Create(fWindow) do
+              begin
+              Left := StrToIntWD(GetAttribute('left'), 16);
+              Top := StrToIntWD(GetAttribute('top'), 16);
+              Icon := GetAttribute('icon');
+              Width := StrToIntWD(GetAttribute('width'), 64);
+              Height := StrToIntWD(GetAttribute('height'), 64);
+              end;
+            end
           end;
         CurrChild := TDOMElement(CurrChild.NextSibling);
         end;

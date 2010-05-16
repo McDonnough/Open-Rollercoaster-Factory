@@ -169,7 +169,7 @@ begin
 
   CheckModConf;
 
-  temptex := TexFromTGA(ByteStreamFromFile(GetConfVal('fonttex')));
+  temptex := TexFromTGA(ByteStreamFromFile(GetFirstExistingFileName(GetConfVal('fonttex'))));
   fTexture := TTexture.Create;
   fTexture.CreateNew(TempTex.Width, TempTex.Height, GL_RGBA);
   fTexture.SetClamp(GL_CLAMP, GL_CLAMP);

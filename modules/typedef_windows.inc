@@ -1,6 +1,6 @@
 uses
   m_pathes_windows,
-  m_moduleconfig_ini,
+  m_moduleconfig_xml,
   m_log_file,
   m_language_textfile,
   m_glcontext_sdl,
@@ -8,7 +8,7 @@ uses
   m_glmng_default,
   m_texmng_default,
   m_shdmng_default,
-  m_font_texture,
+  m_font_textureVariableWidth,
   m_gui_default,
   m_gui_window_default,
   m_gui_label_default,
@@ -26,7 +26,7 @@ uses
   Classes;
 type
   TModulePathes = TModulePathesWindows;
-  TModuleConfig = TModuleConfigIni;
+  TModuleConfig = TModuleConfigXml;
   TModuleLog = TModuleLogFile;
   TModuleLanguage = TModuleLanguageTextFile;
   TModuleGLContext = TModuleGLContextSDL;
@@ -34,7 +34,7 @@ type
   TModuleGLMng = TModuleGLMngDefault;
   TModuleTextureManager = TModuleTextureManagerDefault;
   TModuleShaderManager = TModuleShaderManagerDefault;
-  TModuleFont = TModuleFontTexture;
+  TModuleFont = TModuleFontTextureVariableWidth;
   TModuleGUI = TModuleGUIDefault;
   TModuleGUIWindow = TModuleGUIWindowDefault;
   TModuleGUILabel = TModuleGUILabelDefault;

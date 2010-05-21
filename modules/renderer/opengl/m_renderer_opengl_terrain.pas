@@ -19,6 +19,7 @@ type
       fFineOffsetX, fFineOffsetY: Word;
       fPrevPos: TVector2D;
       fHeightMap: TFBO;
+      fFrameCount: Byte;
       RenderStep: Single;
     public
       procedure Render;
@@ -65,6 +66,8 @@ var
   fDeg, fRot: Single;
   Position, fTmp: TVector2D;
   X1, X2, Y1, Y2: Float;
+const
+  AUTOPLANT_UPDATE_FRAMES = 10;
 begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
@@ -119,14 +122,20 @@ begin
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.2);
     fAPShader.Bind;
+    if fInterface.Options.Items['all:renderpass'] = '0' then
+      begin
+      inc(fFrameCount);
+      if fFrameCount = AUTOPLANT_UPDATE_FRAMES then
+        fFrameCount := 0;
+      end;
     for i := 0 to high(fAPVBOs) do
       if fAPVBOs[i] <> nil then
         begin
         Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
-        if fInterface.Options.Items['all:renderpass'] = '0' then
+        if (fInterface.Options.Items['all:renderpass'] = '0') then
           begin
           fAPVBOs[i].Bind;
-          for j := 0 to high(fAPPositions[i]) do
+          for j := 0 to high(fAPPositions[i]) * fFrameCount div AUTOPLANT_UPDATE_FRAMES do
             begin
             if VecLengthNoRoot(fAPPositions[i, j] - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > 900 then
               begin
@@ -306,6 +315,7 @@ constructor TRTerrain.Create;
 var
   i, j: Integer;
 begin
+  fFrameCount := 0;
   try
     writeln('Initializing terrain renderer');
     fHeightMap := nil;

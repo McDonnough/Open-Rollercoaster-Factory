@@ -162,9 +162,21 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
+  fInterface.Options.Items['terrain:autoplants'] := 'off';
+  fInterface.Options.Items['all:transparent'] := 'off';
+  fInterface.Options.Items['shader:mode'] := 'transform:depth';
+  fInterface.Options.Items['sky:rendering'] := 'off';
+
+  Render();
+  glLoadIdentity;
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
   if fInterface.Options.Items['shadows:enabled'] = 'on' then
     ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
 
+  fInterface.Options.Items['sky:rendering'] := 'on';
+  fInterface.Options.Items['all:transparent'] := 'on';
+  fInterface.Options.Items['terrain:autoplants'] := GetConfVal('terrain:autoplants');
   fInterface.Options.Items['shader:mode'] := 'normal:normal';
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
 

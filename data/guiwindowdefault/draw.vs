@@ -10,5 +10,5 @@ void main(void) {
   gl_BackColor = gl_Color;
   gl_Position = ftransform();
   Vertex = gl_Vertex.xyz;
-  Vertex.x += LeftOffset;
+  Vertex.x -= LeftOffset;
 }

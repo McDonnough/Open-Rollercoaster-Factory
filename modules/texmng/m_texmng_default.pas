@@ -90,12 +90,12 @@ begin
     if TexImage.bpp = 24 then
       begin
       Texture.InputFormat := GL_RGB;
-      Texture.ExternalFormat := GL_RGB;
+      Texture.ExternalFormat := GL_COMPRESSED_RGB;
       end
     else
       begin
       Texture.InputFormat := GL_RGBA;
-      Texture.ExternalFormat := GL_RGBA;
+      Texture.ExternalFormat := GL_COMPRESSED_RGBA;
       end;
     Texture.Width := TexImage.width;
     Texture.Height := TexImage.height;

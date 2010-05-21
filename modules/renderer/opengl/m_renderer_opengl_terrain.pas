@@ -123,7 +123,7 @@ begin
       if fAPVBOs[i] <> nil then
         begin
         Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
-        if fInterface.Options.Items['all:renderpass'] <> '1' then
+        if fInterface.Options.Items['all:renderpass'] = '0' then
           begin
           fAPVBOs[i].Bind;
           for j := 0 to high(fAPPositions[i]) do

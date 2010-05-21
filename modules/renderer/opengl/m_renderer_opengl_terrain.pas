@@ -50,7 +50,7 @@ var
           if Check then
             glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
           else
-            if fPixelsPassed[X, Y] = 0 then
+            if fPixelsPassed[X, Y] = -1 then
               exit;
           fBoundShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
           if not (Check) and (VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000) then

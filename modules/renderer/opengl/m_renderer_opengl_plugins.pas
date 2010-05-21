@@ -100,14 +100,17 @@ begin
   fInterface.Options.Items['shader:mode'] := 'transform:depth';
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   glColorMask(false, false, false, false);
+  glLoadIdentity;
   ModuleManager.ModRenderer.Render();
   glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
   Distance := (DistPixel / High(DWord)) ** 2 * 10000;
   fInterface.PopOptions;
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
 
+  glLoadIdentity;
   glColorMask(true, false, false, true);
   ModuleManager.ModRenderer.Render(-0.4, Distance);
+  glLoadIdentity;
   glColorMask(false, true, true, true);
   ModuleManager.ModRenderer.Render(0.4, Distance);
   glColorMask(true, true, true, true);

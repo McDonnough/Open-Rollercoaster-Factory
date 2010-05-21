@@ -9,16 +9,20 @@ uses
 type
   TRTerrain = class
     protected
+      fQuery: GLUInt;
+      fUpdatePlants: Boolean;
       fFineVBO, fGoodVBO, fRawVBO: TVBO;
       fAPVBOs: Array[0..7] of TVBO;
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
       fShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
       fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
+      fPixelsPassed: Array of Array of GLInt;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
       fPrevPos: TVector2D;
       fHeightMap: TFBO;
+      fFrameCount: Byte;
       RenderStep: Single;
     public
       procedure Render;
@@ -37,14 +41,19 @@ procedure TRTerrain.Render;
 var
   fBoundShader: TShader;
 
-  procedure RenderBlock(X, Y: Integer);
+  procedure RenderBlock(X, Y: Integer; Check: Boolean);
   begin
     try
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 256 - 1) and (Y <= Park.pTerrain.SizeY div 256 - 1) then
         if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(25.6 + 51.2 * X, fAvgHeight[X, Y], 25.6 + 51.2 * Y, fBoundingSphereRadius[X, Y])) then
           begin
+          if Check then
+            glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
+          else
+            if fPixelsPassed[X, Y] = 0 then
+              exit;
           fBoundShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
-          if VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
+          if not (Check) and (VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000) then
             begin
             fBoundShader.UniformI('LOD', 1);
             fGoodVBO.Render;
@@ -53,6 +62,11 @@ var
             begin
             fBoundShader.UniformI('LOD', 0);
             fRawVBO.Render;
+            end;
+          if Check then
+            begin
+            glEndQueryARB(GL_SAMPLES_PASSED_ARB);
+            glGetQueryObjectivARB(fQuery, GL_QUERY_RESULT_ARB, @fPixelsPassed[X, Y]);
             end;
           end;
     except
@@ -65,6 +79,8 @@ var
   fDeg, fRot: Single;
   Position, fTmp: TVector2D;
   X1, X2, Y1, Y2: Float;
+const
+  AUTOPLANT_UPDATE_FRAMES = 10;
 begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
@@ -98,7 +114,7 @@ begin
         k := Blocks[i, 2]; Blocks[i, 2] := Blocks[j, 2]; Blocks[j, 2] := k;
         end;
   for i := 0 to high(Blocks) do
-    RenderBlock(Blocks[i, 1], Blocks[i, 2]);
+    RenderBlock(Blocks[i, 1], Blocks[i, 2], fBoundShader = fShaderTransformDepth);
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     begin
     fBoundShader.UniformI('LOD', 2);
@@ -110,6 +126,9 @@ begin
     end;
   Park.pTerrain.Collection.Texture.UnBind;
 
+  if fInterface.Options.Items['all:renderpass'] = '0' then
+    fUpdatePlants := true;
+
   // Render autoplants
   if fInterface.Options.Items['terrain:autoplants'] <> 'off' then
     begin
@@ -119,14 +138,21 @@ begin
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.2);
     fAPShader.Bind;
+    if fUpdatePlants then
+      begin
+      inc(fFrameCount);
+      if fFrameCount = AUTOPLANT_UPDATE_FRAMES then
+        fFrameCount := 0;
+      end;
     for i := 0 to high(fAPVBOs) do
       if fAPVBOs[i] <> nil then
         begin
         Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
-        if fInterface.Options.Items['all:renderpass'] = '0' then
+        if fUpdatePlants then
           begin
+          fUpdatePlants := false;
           fAPVBOs[i].Bind;
-          for j := 0 to high(fAPPositions[i]) do
+          for j := 0 to high(fAPPositions[i]) * fFrameCount div AUTOPLANT_UPDATE_FRAMES do
             begin
             if VecLengthNoRoot(fAPPositions[i, j] - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > 900 then
               begin
@@ -246,10 +272,12 @@ begin
     fHeightMap.AddTexture(GL_RGBA16F, GL_NEAREST, GL_NEAREST);
     fHeightMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
+    SetLength(fPixelsPassed, Park.pTerrain.SizeX div 256);
     SetLength(fAvgHeight, Park.pTerrain.SizeX div 256);
     SetLength(fBoundingSphereRadius, length(fAvgHeight));
     for i := 0 to high(fAvgHeight) do
       begin
+      SetLength(fPixelsPassed[i], Park.pTerrain.SizeY div 256);
       SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 256);
       SetLength(fBoundingSphereRadius[i], length(fAvgHeight[i]));
       end;
@@ -306,6 +334,8 @@ constructor TRTerrain.Create;
 var
   i, j: Integer;
 begin
+  glGenQueriesARB(1, @fQuery);
+  fFrameCount := 0;
   try
     writeln('Initializing terrain renderer');
     fHeightMap := nil;
@@ -385,6 +415,7 @@ begin
   fAPShader.Free;
   if fHeightMap <> nil then
     fHeightMap.Free;
+  glDeleteQueriesARB(1, @fQuery);
 end;
 
 end.

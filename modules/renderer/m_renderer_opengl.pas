@@ -151,7 +151,7 @@ begin
             Round(OC.X), Round(OC.Y), Round(OC.Z),
             0, 1, 0);
 
-  if fShadowDelay >= SHADOW_UPDATE_TIME then
+  if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
     RenderShadows;
   fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
 
@@ -162,8 +162,21 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
-  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
+  fInterface.Options.Items['terrain:autoplants'] := 'off';
+  fInterface.Options.Items['all:transparent'] := 'off';
+  fInterface.Options.Items['shader:mode'] := 'transform:depth';
+  fInterface.Options.Items['sky:rendering'] := 'off';
 
+  Render();
+  glLoadIdentity;
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+  if fInterface.Options.Items['shadows:enabled'] = 'on' then
+    ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
+
+  fInterface.Options.Items['sky:rendering'] := 'on';
+  fInterface.Options.Items['all:transparent'] := 'on';
+  fInterface.Options.Items['terrain:autoplants'] := GetConfVal('terrain:autoplants');
   fInterface.Options.Items['shader:mode'] := 'normal:normal';
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
 
@@ -184,9 +197,13 @@ begin
     SetConfVal('effects', IntToStr(RE_NORMAL) + ',' + IntToStr(RE_2D_FOCUS) + ',' + IntToStr(RE_BLOOM) + ',' + IntToStr(RE_MOTIONBLUR));
     SetConfVal('terrain:autoplants', 'on');
     SetConfVal('terrain:hd', 'on');
+    SetConfVal('shadows:enabled', 'on');
+    SetConfVal('shadows:texsize', '2048');
     end;
   fInterface.Options.Items['terrain:autoplants'] := GetConfVal('terrain:autoplants');
   fInterface.Options.Items['terrain:hd'] := GetConfVal('terrain:hd');
+  fInterface.Options.Items['shadows:enabled'] := GetConfVal('shadows:enabled');
+  fInterface.Options.Items['shadows:texsize'] := GetConfVal('shadows:texsize');
 end;
 
 constructor TModuleRendererOpenGL.Create;

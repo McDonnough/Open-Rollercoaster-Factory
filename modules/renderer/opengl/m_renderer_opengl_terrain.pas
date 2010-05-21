@@ -47,11 +47,12 @@ var
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 256 - 1) and (Y <= Park.pTerrain.SizeY div 256 - 1) then
         if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(25.6 + 51.2 * X, fAvgHeight[X, Y], 25.6 + 51.2 * Y, fBoundingSphereRadius[X, Y])) then
           begin
-          if Check then
-            glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
-          else
-            if fPixelsPassed[X, Y] = -1 then
-              exit;
+          if fInterface.Options.Items['terrain:occlusionquery'] <> 'off' then
+            if Check then
+              glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
+            else
+              if fPixelsPassed[X, Y] = 0 then
+                exit;
           fBoundShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
           if not (Check) and (VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000) then
             begin
@@ -63,11 +64,12 @@ var
             fBoundShader.UniformI('LOD', 0);
             fRawVBO.Render;
             end;
-          if Check then
-            begin
-            glEndQueryARB(GL_SAMPLES_PASSED_ARB);
-            glGetQueryObjectivARB(fQuery, GL_QUERY_RESULT_ARB, @fPixelsPassed[X, Y]);
-            end;
+          if fInterface.Options.Items['terrain:occlusionquery'] <> 'off' then
+            if Check then
+              begin
+              glEndQueryARB(GL_SAMPLES_PASSED_ARB);
+              glGetQueryObjectivARB(fQuery, GL_QUERY_RESULT_ARB, @fPixelsPassed[X, Y]);
+              end;
           end;
     except
       writeln('Exception: ', X, ' ', Y);

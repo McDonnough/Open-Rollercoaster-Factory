@@ -67,19 +67,17 @@ end;
 
 procedure TModuleRendererOpenGL.RenderParts;
 begin
-  RTerrain.Render;
   RSky.Render;
+  RTerrain.Render;
   fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
 end;
 
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
 begin
-  glColor4f(1, 1, 1, 1);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glEnable(GL_CULL_FACE);
   if fInterface.Options.Items['all:polygonmode'] = 'wireframe' then
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  glClear(GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
   glRotatef(RadToDeg(arctan(EyeMode / EyeFocus)), 0, 1, 0);
   glTranslatef(EyeMode, 0, 0);
@@ -89,20 +87,24 @@ begin
     RCamera.ApplyTransformation(Vector(1, 1, 1));
   fFrustum.Calculate;
 
-  fInterface.PushOptions;
-  fInterface.Options.Items['terrain:autoplants'] := 'off';
-  fInterface.Options.Items['all:transparent'] := 'off';
-  fInterface.Options.Items['shader:mode'] := 'transform:depth';
-  fInterface.Options.Items['sky:rendering'] := 'off';
-
-  RenderParts;
-  fInterface.PopOptions;
   glClear(GL_DEPTH_BUFFER_BIT);
+  glDisable(GL_BLEND);
+  glColor4f(1, 1, 1, 1);
+  if fInterface.Options.Items['terrain:occlusionquery'] <> 'off' then
+    begin
+    fInterface.PushOptions;
+    glPushMatrix;
+      fInterface.Options.Items['terrain:autoplants'] := 'off';
+      fInterface.Options.Items['all:transparent'] := 'off';
+      fInterface.Options.Items['shader:mode'] := 'transform:depth';
+      fInterface.Options.Items['sky:rendering'] := 'off';
 
-  if EyeMode < 0 then
-    glColorMask(true, false, false, true)
-  else if EyeMode > 0 then
-    glColorMask(false, true, true, true);
+      RenderParts;
+    glPopMatrix;
+    fInterface.PopOptions;
+    end;
+
+  glClear(GL_DEPTH_BUFFER_BIT);
   RenderParts;
 end;
 
@@ -134,7 +136,6 @@ begin
   fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
-  fInterface.Options.Items['all:transparent'] := 'off';
   RenderParts;
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
   fInterface.PopOptions;
@@ -178,10 +179,10 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
   if fInterface.Options.Items['shadows:enabled'] = 'on' then
     ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
-
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
 

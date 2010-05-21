@@ -25,8 +25,6 @@ uses
 
 procedure TRSky.Render;
 begin
-  glDisable(GL_BLEND);
-  glDisable(GL_ALPHA_TEST);
   glPushMatrix;
   glLoadIdentity;
   fSun.Bind(0);

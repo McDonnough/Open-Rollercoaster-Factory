@@ -39,7 +39,7 @@ begin
   CheckModConf;
 
   glutInit(@argc, @argv);
-  glutInitDisplayMode(GLUT_DOUBLE or GLUT_RGB or GLUT_DEPTH);
+  glutInitDisplayMode(GLUT_DOUBLE or GLUT_RGB or GLUT_STENCIL or GLUT_ACCUM or GLUT_DEPTH);
   glutInitWindowSize(800, 600);
   fWin := glutCreateWindow('ORCF');
   SetResolution(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')));

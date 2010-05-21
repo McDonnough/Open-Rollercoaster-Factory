@@ -6,7 +6,8 @@ uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
   m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
   m_shdmng_class, m_renderer_opengl_plugins, u_functions, m_renderer_opengl_frustum,
-  m_renderer_opengl_interface, m_renderer_opengl_lights, m_renderer_opengl_sky;
+  m_renderer_opengl_interface, m_renderer_opengl_lights, m_renderer_opengl_sky,
+  m_renderer_opengl_classes;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
@@ -163,6 +164,7 @@ begin
 
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
 
+  fInterface.Options.Items['shader:mode'] := 'normal:normal';
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
 
   glMatrixMode(GL_TEXTURE);
@@ -188,9 +190,12 @@ begin
 end;
 
 constructor TModuleRendererOpenGL.Create;
+var
+  ResX, ResY: Integer;
 begin
   fModName := 'RendererGL';
   fModType := 'Renderer';
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fInterface := TRendererOpenGLInterface.Create;
   fFrustum := TFrustum.Create;
 

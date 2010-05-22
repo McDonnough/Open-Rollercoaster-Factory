@@ -69,7 +69,7 @@ vec4 fetchBumpColor(int id) {
 
 void main(void) {
   gl_FragDepth = sqrt(dist / 10000.0);
-  if ((clamp(Vertex.xz, offset + 0.8, offset + 50.4) == Vertex.xz) && (LOD < 2))
+  if ((clamp(Vertex.xz, offset + 0.8, offset + 25.2) == Vertex.xz) && (LOD < 2))
     discard;
   TexCoord = mat4(
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),

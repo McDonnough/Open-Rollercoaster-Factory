@@ -25,7 +25,7 @@ void main(void) {
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   dist = length(gl_ModelViewMatrix * Vertex);
-  diff = (Vertex.y - texture2D(HeightMap, (5.0 * (Vertex.xz + vec2(0.1, 0.1))) / TerrainSize).a * 256.0);
+  diff = (Vertex.y - texture2D(HeightMap, (5.0 * (Vertex.xz + vec2(0.1, 0.1))) / TerrainSize).g * 256.0);
   result = gl_TextureMatrix[0] * Vertex;
   result = sqrt(abs(result)) * sign(result);
   SDist = distance(gl_LightSource[0].position, Vertex);

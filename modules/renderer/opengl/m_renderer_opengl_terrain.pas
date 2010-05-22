@@ -273,7 +273,7 @@ var
 
   procedure UpdateVertex(X, Y: Word);
   begin
-    glColor4f(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 128, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 128);
+    glColor4f(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glVertex3f(X, Y, -1);
   end;
 
@@ -296,21 +296,21 @@ var
     a, b, c, d: Single;
   begin
     avgh := 0;
-    for i := 0 to 127 do
-      for j := 0 to 127 do
+    for i := 0 to 128 do
+      for j := 0 to 128 do
         begin
         temp := Park.pTerrain.HeightMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
         if (i = 0) and (j = 0) then
           a := temp
-        else if (i = 127) and (j = 0) then
+        else if (i = 128) and (j = 0) then
           b := temp
-        else if (i = 0) and (j = 127) then
+        else if (i = 0) and (j = 128) then
           c := temp
-        else if (i = 127) and (j = 127) then
+        else if (i = 128) and (j = 128) then
           d := temp;
         avgh := avgh + temp;
         end;
-    avgh := avgh / 128 / 128;
+    avgh := avgh / 129 / 129;
     fAvgHeight[X, Y] := avgh;
     fBoundingSphereRadius[X, Y] := VecLength(Vector(12.8, Max(Max(a, b), Max(c, d)) - avgh, 12.8));
   end;

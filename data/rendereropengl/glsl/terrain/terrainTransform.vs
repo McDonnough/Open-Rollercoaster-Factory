@@ -11,10 +11,6 @@ varying float dist;
 
 vec4 Vertex;
 
-float fpart(float a) {
-  return a - floor(a);
-}
-
 float fetchHeightAtOffset(vec2 O) {
   vec2 TexCoord = 5.0 * (Vertex.xz + O + vec2(0.1, 0.1));
   return texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;

@@ -74,6 +74,7 @@ end;
 
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
 begin
+  fInterface.Options.Items['terrain:occlusionquery'] := 'off';
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glEnable(GL_CULL_FACE);
   if fInterface.Options.Items['all:polygonmode'] = 'wireframe' then
@@ -106,6 +107,8 @@ begin
 
   glClear(GL_DEPTH_BUFFER_BIT);
   RenderParts;
+
+  RTerrain.RenderWaterSurfaces;
 end;
 
 procedure TModuleRendererOpenGL.RenderShadows;
@@ -137,6 +140,7 @@ begin
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
   RenderParts;
+
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
   fInterface.PopOptions;
 end;

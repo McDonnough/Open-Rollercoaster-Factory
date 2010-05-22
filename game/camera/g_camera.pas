@@ -37,8 +37,8 @@ end;
 procedure TCamera.LoadDefaults;
 begin
   CamType := CAM_MOVABLE;
-  Position := Vector(0, 30, 0);
-  Rotation := Vector(0, 135, 0);
+  Position := Vector(100, 200, 100);
+  Rotation := Vector(60, 135, 0);
 end;
 
 end.

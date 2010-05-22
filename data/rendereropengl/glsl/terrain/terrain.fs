@@ -15,8 +15,8 @@ varying vec4 result;
 varying vec2 fragCoord;
 
 mat4 TexCoord;
-vec4 texColors[4];
-vec4 bumpColors[4];
+mat4 texColors;
+mat4 bumpColors;
 
 float fpart(float a) {
   return a - floor(a);

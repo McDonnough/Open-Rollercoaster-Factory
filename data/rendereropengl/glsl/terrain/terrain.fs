@@ -15,8 +15,8 @@ varying vec4 result;
 varying vec2 fragCoord;
 
 mat4 TexCoord;
-vec4 texColors[4];
-vec4 bumpColors[4];
+mat4 texColors;
+mat4 bumpColors;
 
 float fpart(float a) {
   return a - floor(a);
@@ -69,7 +69,7 @@ vec4 fetchBumpColor(int id) {
 
 void main(void) {
   gl_FragDepth = sqrt(dist / 10000.0);
-  if ((clamp(Vertex.xz, offset + 0.8, offset + 50.4) == Vertex.xz) && (LOD < 2))
+  if ((clamp(Vertex.xz, offset + 0.8, offset + 25.2) == Vertex.xz) && (LOD < 2))
     discard;
   TexCoord = mat4(
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),

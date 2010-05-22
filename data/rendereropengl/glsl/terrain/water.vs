@@ -15,7 +15,7 @@ varying vec4 Vertex;
 
 float fetchHeightAtOffset(vec2 O) {
   vec2 TexCoord = 5.0 * (Vertex.xz + O + vec2(0.1, 0.1));
-  return texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;
+  return texture2D(HeightMap, TexCoord / TerrainSize).g * 256.0;
 }
 
 void main(void) {
@@ -23,9 +23,9 @@ void main(void) {
   Vertex.xz *= pow(4.0, 2.0 - LOD);
   Vertex.xz += VOffset;
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));
+  diff = (Vertex.y - texture2D(HeightMap, (5.0 * (Vertex.xz + vec2(0.1, 0.1))) / TerrainSize).a * 256.0);
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   dist = length(gl_ModelViewMatrix * Vertex);
-  diff = (Vertex.y - texture2D(HeightMap, (5.0 * (Vertex.xz + vec2(0.1, 0.1))) / TerrainSize).g * 256.0);
   result = gl_TextureMatrix[0] * Vertex;
   result = sqrt(abs(result)) * sign(result);
   SDist = distance(gl_LightSource[0].position, Vertex);

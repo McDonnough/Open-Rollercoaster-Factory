@@ -7,7 +7,7 @@ uses
 
 type
   TTerrainMapPoint = record
-    Height, Water, MinWater, MaxWater, WaterSpeed: Word;
+    Height, Water: Word;
     Texture: Byte;
     end;
 
@@ -52,12 +52,15 @@ type
       procedure Execute; override;
       function GetHeightAtPosition(X, Y: Single): Single;
       procedure SetHeightAtPosition(X, Y, Height: Single);
+      function GetWaterAtPosition(X, Y: Single): Single;
+      procedure SetWaterAtPosition(X, Y, Height: Single);
       function GetTextureAtPosition(X, Y: Single): Byte;
       procedure SetTextureAtPosition(X, Y: Single; Tex: Byte);
     public
       property SizeX: Word read fSizeX;
       property SizeY: Word read fSizeY;
       property HeightMap[X: Single; Y: Single]: Single read GetHeightAtPosition write SetHeightAtPosition;
+      property WaterMap[X: Single; Y: Single]: Single read GetWaterAtPosition write SetWaterAtPosition;
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
       property Collection: TTerrainCollection read fCollection;
       procedure ChangeCollection(S: String);
@@ -223,6 +226,29 @@ begin
   EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
 end;
 
+function TTerrain.GetWaterAtPosition(X, Y: Single): Single;
+var
+  fX1, fX2, fY1, fY2: Word;
+begin
+  fX1 := Floor(Clamp(5 * X, 0, fSizeX - 1));
+  fX2 := Ceil(Clamp(5 * X, 0, fSizeX - 1));
+  fY1 := Floor(Clamp(5 * Y, 0, fSizeY - 1));
+  fY2 := Ceil(Clamp(5 * Y, 0, fSizeY - 1));
+  Result := Mix(Mix(fMap[fX1, fY1].Water, fMap[fX2, fY1].Water, fPart(5 * X)), Mix(fMap[fX1, fY2].Water, fMap[fX2, fY2].Water, fPart(5 * X)), fPart(5 * Y)) / 256;
+end;
+
+procedure TTerrain.SetWaterAtPosition(X, Y, Height: Single);
+var
+  fX, fY: Word;
+  fFinal: DWord;
+begin
+  fX := Round(Clamp(5 * X, 0, fSizeX - 1));
+  fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
+  fMap[fX, fY].Water := Round(256 * Height);
+  fFinal := fX + 65536 * fY;
+  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
+end;
+
 function TTerrain.GetTextureAtPosition(X, Y: Single): Byte;
 var
   fX, fY: Word;
@@ -262,9 +288,6 @@ begin
           begin
           Height := 1024;
           Water := 0;
-          MinWater := 0;
-          MaxWater := 0;
-          WaterSpeed := 256;
           Texture := 0;
           end;
     end;
@@ -307,17 +330,56 @@ var
     subdivide(X1, (Y1 + Y2) div 2, (X1 + X2) div 2, Y2);
     dec(sdc);
   end;
+
+  procedure FillWithWater(X, Y, H: Word);
+  var
+    a: Array of Array[0..1] of Word;
+    i: integer;
+    procedure Add(X, Y: Word);
+    begin
+      if (X >= 0) and (X < SizeX) and (Y >= 0) and (Y < SizeY) then
+        if fMap[X, Y].Water <> H then
+          begin
+          SetLength(a, Length(a) + 1);
+          a[high(a), 0] := X;
+          a[high(a), 1] := Y;
+          fMap[X, Y].Water := H;
+          end;
+    end;
+  begin
+    setLength(a, 1);
+    a[0, 0] := X;
+    a[0, 1] := Y;
+    i := 0;
+    while i <= high(a) do
+      begin
+      fMap[a[i, 0], a[i, 1]].Water := H;
+      if fMap[a[i, 0], a[i, 1]].Height < H then
+        begin
+        Add(a[i, 0] - 1, a[i, 1] - 1);
+        Add(a[i, 0] - 1, a[i, 1]    );
+        Add(a[i, 0] - 1, a[i, 1] + 1);
+        Add(a[i, 0]    , a[i, 1] + 1);
+        Add(a[i, 0] + 1, a[i, 1] + 1);
+        Add(a[i, 0] + 1, a[i, 1]    );
+        Add(a[i, 0] + 1, a[i, 1] - 1);
+        Add(a[i, 0]    , a[i, 1] - 1);
+        end;
+      inc(i);
+      end;
+  end;
 begin
   sdc := 0;
   fSizeX := 0;
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
   Resize(2048, 2048);
-  fMap[0, 0].Height := 5100;
-  fMap[SizeX - 1, 0].Height := 5100;
-  fMap[0, SizeY - 1].Height := 5100;
-  fMap[SizeX - 1, SizeY - 1].Height := 5100;
+  fMap[0, 0].Height := 20000;
+  fMap[SizeX - 1, 0].Height := 20000;
+  fMap[0, SizeY - 1].Height := 20000;
+  fMap[SizeX - 1, SizeY - 1].Height := 20000;
   Subdivide(0, 0, SizeX, SizeY);
+  FillWithWater(0, 0, 28000);
   for i := 1 to SizeX - 2 do
     for j := 1 to SizeY - 2 do
       fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height

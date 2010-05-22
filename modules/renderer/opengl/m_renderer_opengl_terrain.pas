@@ -16,6 +16,7 @@ type
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
       fShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
+      fWaterShader, fWaterShaderTransformDepth, fWaterShaderTransformSunShadow: TShader;
       fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
       fPixelsPassed: Array of Array of GLInt;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
@@ -26,6 +27,7 @@ type
       RenderStep: Single;
     public
       procedure Render;
+      procedure RenderWaterSurfaces;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
       constructor Create;
@@ -44,16 +46,17 @@ var
   procedure RenderBlock(X, Y: Integer; Check: Boolean);
   begin
     try
-      if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 256 - 1) and (Y <= Park.pTerrain.SizeY div 256 - 1) then
-        if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(25.6 + 51.2 * X, fAvgHeight[X, Y], 25.6 + 51.2 * Y, fBoundingSphereRadius[X, Y])) then
+      if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 128 - 1) and (Y <= Park.pTerrain.SizeY div 128 - 1) then
+        if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y, fBoundingSphereRadius[X, Y])) then
           begin
-          if Check then
-            glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
-          else
-            if fPixelsPassed[X, Y] = 0 then
-              exit;
-          fBoundShader.UniformF('VOffset', 256 * x / 5, 256 * y / 5);
-          if not (Check) and (VecLengthNoRoot(Vector(256 * x / 5, 0, 256 * y / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000) then
+          if (fInterface.Options.Items['terrain:occlusionquery'] <> 'off') and (fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow') then
+            if Check then
+              glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
+            else
+              if fPixelsPassed[X, Y] = 0 then
+                exit;
+          fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
+          if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
             begin
             fBoundShader.UniformI('LOD', 1);
             fGoodVBO.Render;
@@ -63,11 +66,12 @@ var
             fBoundShader.UniformI('LOD', 0);
             fRawVBO.Render;
             end;
-          if Check then
-            begin
-            glEndQueryARB(GL_SAMPLES_PASSED_ARB);
-            glGetQueryObjectivARB(fQuery, GL_QUERY_RESULT_ARB, @fPixelsPassed[X, Y]);
-            end;
+          if (fInterface.Options.Items['terrain:occlusionquery'] <> 'off') and (fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow') then
+            if Check then
+              begin
+              glEndQueryARB(GL_SAMPLES_PASSED_ARB);
+              glGetQueryObjectivARB(fQuery, GL_QUERY_RESULT_ARB, @fPixelsPassed[X, Y]);
+              end;
           end;
     except
       writeln('Exception: ', X, ' ', Y);
@@ -83,8 +87,8 @@ const
   AUTOPLANT_UPDATE_FRAMES = 10;
 begin
   glDisable(GL_BLEND);
-  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
-  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
+  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 64, 0, Park.pTerrain.SizeX - 128) / 4);
+  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 64, 0, Park.pTerrain.SizeY - 128) / 4);
   fHeightMap.Textures[0].Bind(1);
   Park.pTerrain.Collection.Texture.Bind(0);
   fBoundShader := fShader;
@@ -97,13 +101,13 @@ begin
     fBoundShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5)
   else
     fBoundShader.UniformF('offset', -10000, -10000);
-  setLength(Blocks, Park.pTerrain.SizeX div 256 * Park.pTerrain.SizeY div 256);
-  for i := 0 to Park.pTerrain.SizeX div 256 - 1 do
-    for j := 0 to Park.pTerrain.SizeY div 256 - 1 do
+  setLength(Blocks, Park.pTerrain.SizeX div 128 * Park.pTerrain.SizeY div 128);
+  for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+    for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
       begin
-      Blocks[Park.pTerrain.SizeY div 256 * i + j, 0] := Round(VecLengthNoRoot(Vector(256 * I / 5, 0, 256 * J / 5) + Vector(25.6, 0.0, 25.6) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)));
-      Blocks[Park.pTerrain.SizeY div 256 * i + j, 1] := i;
-      Blocks[Park.pTerrain.SizeY div 256 * i + j, 2] := j;
+      Blocks[Park.pTerrain.SizeY div 128 * i + j, 0] := Round(VecLengthNoRoot(Vector(128 * I / 5, 0, 128 * J / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)));
+      Blocks[Park.pTerrain.SizeY div 128 * i + j, 1] := i;
+      Blocks[Park.pTerrain.SizeY div 128 * i + j, 2] := j;
       end;
   for i := 0 to high(Blocks) - 1 do
     for j := i + 1 to high(Blocks) do
@@ -122,8 +126,8 @@ begin
     fFineVBO.Bind;
     fFineVBO.Render;
     fFineVBO.Unbind;
-    fBoundShader.Unbind;
     end;
+  fBoundShader.Unbind;
   Park.pTerrain.Collection.Texture.UnBind;
 
   if fInterface.Options.Items['all:renderpass'] = '0' then
@@ -193,9 +197,60 @@ begin
     end;
 end;
 
+procedure TRTerrain.RenderWaterSurfaces;
+var
+  x, y: Integer;
+  fBoundShader: TShader;
+begin
+  glDisable(GL_BLEND);
+  glDisable(GL_CULL_FACE);
+
+  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 64, 0, Park.pTerrain.SizeX - 128) / 4);
+  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 64, 0, Park.pTerrain.SizeY - 128) / 4);
+  fHeightMap.Textures[0].Bind(0);
+  fBoundShader := fWaterShader;
+  if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
+    fBoundShader := fWaterShaderTransformDepth
+  else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
+    fBoundShader := fWaterShaderTransformSunShadow;
+  fBoundShader.Bind;
+  if fInterface.Options.Items['terrain:hd'] <> 'off' then
+    fBoundShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5)
+  else
+    fBoundShader.UniformF('offset', -10000, -10000);
+
+  for x := 0 to Park.pTerrain.SizeX div 128 - 1 do
+    for y := 0 to Park.pTerrain.SizeY div 128 - 1 do
+      begin
+      fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
+      if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
+        begin
+        fBoundShader.UniformI('LOD', 1);
+        fGoodVBO.Render;
+        end
+      else
+        begin
+        fBoundShader.UniformI('LOD', 0);
+        fRawVBO.Render;
+        end;
+      end;
+
+  if fInterface.Options.Items['terrain:hd'] <> 'off' then
+    begin
+    fBoundShader.UniformI('LOD', 2);
+    fBoundShader.UniformF('VOffset', fFineOffsetX / 5, fFineOffsetY / 5);
+    fFineVBO.Bind;
+    fFineVBO.Render;
+    fFineVBO.Unbind;
+    end;
+  fBoundShader.Unbind;
+
+  glEnable(GL_CULL_FACE);
+end;
+
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
-  i, j: Integer;
+  i, j, k, l: Integer;
   procedure StartUpdate;
   begin
     glUseProgram(0);
@@ -218,7 +273,7 @@ var
 
   procedure UpdateVertex(X, Y: Word);
   begin
-    glColor4f(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, 0.0, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
+    glColor4f(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glVertex3f(X, Y, -1);
   end;
 
@@ -241,23 +296,23 @@ var
     a, b, c, d: Single;
   begin
     avgh := 0;
-    for i := 0 to 255 do
-      for j := 0 to 255 do
+    for i := 0 to 128 do
+      for j := 0 to 128 do
         begin
-        temp := Park.pTerrain.HeightMap[51.2 * X + 0.2 * i, 51.2 * Y + 0.2 * j];
+        temp := Park.pTerrain.HeightMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
         if (i = 0) and (j = 0) then
           a := temp
-        else if (i = 255) and (j = 0) then
+        else if (i = 128) and (j = 0) then
           b := temp
-        else if (i = 0) and (j = 255) then
+        else if (i = 0) and (j = 128) then
           c := temp
-        else if (i = 255) and (j = 255) then
+        else if (i = 128) and (j = 128) then
           d := temp;
         avgh := avgh + temp;
         end;
-    avgh := avgh / 256 / 256;
+    avgh := avgh / 129 / 129;
     fAvgHeight[X, Y] := avgh;
-    fBoundingSphereRadius[X, Y] := VecLength(Vector(25.6, Max(Max(a, b), Max(c, d)) - avgh, 25.6));
+    fBoundingSphereRadius[X, Y] := VecLength(Vector(12.8, Max(Max(a, b), Max(c, d)) - avgh, 12.8));
   end;
 begin
   if Event = 'TTerrain.Resize' then
@@ -265,6 +320,9 @@ begin
     fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformDepth.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformSunShadow.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fWaterShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fWaterShaderTransformDepth.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fWaterShaderTransformSunShadow.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fAPShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     if fHeightMap <> nil then
       fHeightMap.Free;
@@ -272,13 +330,13 @@ begin
     fHeightMap.AddTexture(GL_RGBA16F, GL_NEAREST, GL_NEAREST);
     fHeightMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
-    SetLength(fPixelsPassed, Park.pTerrain.SizeX div 256);
-    SetLength(fAvgHeight, Park.pTerrain.SizeX div 256);
+    SetLength(fPixelsPassed, Park.pTerrain.SizeX div 128);
+    SetLength(fAvgHeight, Park.pTerrain.SizeX div 128);
     SetLength(fBoundingSphereRadius, length(fAvgHeight));
     for i := 0 to high(fAvgHeight) do
       begin
-      SetLength(fPixelsPassed[i], Park.pTerrain.SizeY div 256);
-      SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 256);
+      SetLength(fPixelsPassed[i], Park.pTerrain.SizeY div 128);
+      SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 128);
       SetLength(fBoundingSphereRadius[i], length(fAvgHeight[i]));
       end;
     end;
@@ -289,6 +347,7 @@ begin
     StartUpdate;
     UpdateVertex(i, j);
     EndUpdate;
+    RecalcBoundingSpheres(i div 128, j div 128);
     end;
   if (Event = 'TTerrain.ChangedAll') then
     begin
@@ -299,8 +358,8 @@ begin
         UpdateVertex(i, j);
     EndUpdate;
     end;
-  for i := 0 to Park.pTerrain.SizeX div 256 - 1 do
-    for j := 0 to Park.pTerrain.SizeY div 256 - 1 do
+  for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+    for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
       RecalcBoundingSpheres(i, j);
 end;
 
@@ -344,16 +403,21 @@ begin
     fShader.UniformI('HeightMap', 1);
     fShader.UniformI('SunShadowMap', 7);
     fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 80));
-    fShader.UniformF('lightdir', -1, 1, -1);
+    fWaterShader := TShader.Create('rendereropengl/glsl/terrain/water.vs', 'rendereropengl/glsl/terrain/water.fs');
+    fWaterShader.UniformI('HeightMap', 0);
+    fWaterShader.UniformI('SunShadowMap', 7);
     fShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/simple.fs');
     fShaderTransformDepth.UniformI('HeightMap', 1);
     fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fShaderTransformSunShadow.UniformI('HeightMap', 1);
+    fWaterShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/waterTransform.vs', 'rendereropengl/glsl/simple.fs');
+    fWaterShaderTransformDepth.UniformI('HeightMap', 0);
+    fWaterShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/waterSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
+    fWaterShaderTransformSunShadow.UniformI('HeightMap', 0);
     fAPShader := TShader.Create('rendereropengl/glsl/terrain/autoplant.vs', 'rendereropengl/glsl/terrain/autoplant.fs');
     fAPShader.UniformI('Autoplant', 0);
     fAPShader.UniformI('HeightMap', 1);
     fAPShader.UniformI('SunShadowMap', 7);
-    fAPShader.UniformF('lightdir', -1, 1, -1);
     fFineOffsetX := 0;
     fFineOffsetY := 0;
     fFineVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
@@ -366,24 +430,24 @@ begin
         fFineVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fFineVBO.Unbind;
-    fGoodVBO := TVBO.Create(64 * 64 * 4, GL_V3F, GL_QUADS);
-    for i := 0 to 63 do
-      for j := 0 to 63 do
+    fGoodVBO := TVBO.Create(32 * 32 * 4, GL_V3F, GL_QUADS);
+    for i := 0 to 31 do
+      for j := 0 to 31 do
         begin
-        fGoodVBO.Vertices[4 * (64 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
-        fGoodVBO.Vertices[4 * (64 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
-        fGoodVBO.Vertices[4 * (64 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
-        fGoodVBO.Vertices[4 * (64 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        fGoodVBO.Vertices[4 * (32 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fGoodVBO.Vertices[4 * (32 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fGoodVBO.Vertices[4 * (32 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fGoodVBO.Vertices[4 * (32 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fGoodVBO.Unbind;
-    fRawVBO := TVBO.Create(16 * 16 * 4, GL_V3F, GL_QUADS);
-    for i := 0 to 15 do
-      for j := 0 to 15 do
+    fRawVBO := TVBO.Create(8 * 8 * 4, GL_V3F, GL_QUADS);
+    for i := 0 to 7 do
+      for j := 0 to 7 do
         begin
-        fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
-        fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
-        fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
-        fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        fRawVBO.Vertices[4 * (8 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fRawVBO.Vertices[4 * (8 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fRawVBO.Vertices[4 * (8 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fRawVBO.Vertices[4 * (8 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fRawVBO.Unbind;
     for i := 0 to high(fAPVBOs) do
@@ -399,7 +463,7 @@ end;
 
 destructor TRTerrain.Free;
 var
-  i: Integer;
+  i, j: Integer;
 begin
   for i := 0 to high(fAPVBOs) do
     if fAPVBOs[i] <> nil then

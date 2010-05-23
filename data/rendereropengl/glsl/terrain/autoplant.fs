@@ -25,5 +25,4 @@ void main(void) {
   vec4 Ambient = gl_LightSource[0].ambient;
   gl_FragColor.rgb *= (Diffuse + Ambient).rgb;
   gl_FragColor.a *= 1.2 * clamp(0.2 * (30 - dist), 0.0, 1.0);
-  gl_FragDepth = sqrt(dist / 10000.0);
 }

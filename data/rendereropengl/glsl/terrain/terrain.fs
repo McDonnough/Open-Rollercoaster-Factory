@@ -11,12 +11,11 @@ uniform vec2 TerrainSize;
 varying float dist;
 varying float SDist;
 varying vec4 Vertex;
-varying vec4 result;
 varying vec2 fragCoord;
 
 mat4 TexCoord;
-mat4 texColors;
-mat4 bumpColors;
+mat4 texColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+mat4 bumpColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
 
 float fpart(float a) {
   return a - floor(a);
@@ -68,7 +67,6 @@ vec4 fetchBumpColor(int id) {
 }
 
 void main(void) {
-  gl_FragDepth = sqrt(dist / 10000.0);
   if ((clamp(Vertex.xz, offset + 0.8, offset + 25.2) == Vertex.xz) && (LOD < 2))
     discard;
   TexCoord = mat4(
@@ -98,6 +96,8 @@ void main(void) {
     vec3 bitangent = normalize(cross(normal, tangent));
     normal = mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((maxBumpDistance - dist) / (maxBumpDistance / 2.0), 0.0, 1.0));
   }
+  vec4 result = gl_TextureMatrix[0] * Vertex;
+  result = sqrt(abs(result)) * sign(result);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   if (length(result.xy / result.w) < 1.0)
     SunShadow = texture2D(SunShadowMap, 0.5 + 0.5 * result.xy / result.w);

@@ -58,7 +58,7 @@ begin
   ReflectionFBO.Unbind;
 
   RefractionFBO := TFBO.Create(512, 512, true);
-  RefractionFBO.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+  RefractionFBO.AddTexture(GL_RGBA16F, GL_LINEAR, GL_LINEAR);
   RefractionFBO.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   RefractionFBO.Unbind;
 end;

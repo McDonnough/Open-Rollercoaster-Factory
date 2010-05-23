@@ -33,6 +33,7 @@ type
     public
       fShadowDelay: Single;
       OS, OC: TVector3D;
+      CR, CG, CB: Boolean;
     end;
 
 const
@@ -129,12 +130,22 @@ begin
 
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Bind;
     glPushMatrix;
+    fInterface.PushOptions;
     glTranslatef(0, RTerrain.fWaterLayerFBOs[i].Height, 0);
     glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
     glPopMatrix;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     fFrustum.Calculate;
     RenderParts;
+    glColorMask(false, false, false, true);
+    glDisable(GL_BLEND);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    fInterface.Options.Items['shader:mode'] := 'transform:depth';
+    fInterface.Options.Items['terrain:autoplants'] := 'off';
+    RenderParts;
+    fInterface.Options.Items['shader:mode'] := 'normal:normal';
+    glColorMask(CR, CG, CB, true);
+    fInterface.PopOptions;
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Unbind;
     glDisable(GL_CLIP_PLANE0);
     end;
@@ -183,6 +194,10 @@ procedure TModuleRendererOpenGL.RenderScene;
 var
   ResX, ResY, i: Integer;
 begin
+  CR := true;
+  CG := true;
+  CB := true;
+
   fInterface.Options.Items['all:renderpass'] := '0';
   fShadowDelay := fShadowDelay + FPSDisplay.MS;
 

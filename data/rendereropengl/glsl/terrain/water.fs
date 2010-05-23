@@ -44,8 +44,11 @@ void main(void) {
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * gl_LightSource[0].position - v).xyz), normalize(gl_NormalMatrix * normal)));
   vec4 Specular = gl_LightSource[0].diffuse * ShadowFactor * pow(max(dot(Reflected, Eye), 0.0), 100.0);
   float MirrorFactor = 0.2 + 0.6 * dot(normalize(gl_NormalMatrix * normal), normalize(-v.xyz));
-  gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset);
-  gl_FragColor += MirrorFactor * texture2D(RefractionMap, RealPosition + reflectionOffset);
+  vec4 RefractColor;
+  RefractColor.a = Vertex.y - texture2D(RefractionMap, RealPosition).a;
+  RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * (1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0));
+  gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
+  gl_FragColor += MirrorFactor * RefractColor;
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);
   gl_FragColor += Specular;
   gl_FragColor.a = 1.0;

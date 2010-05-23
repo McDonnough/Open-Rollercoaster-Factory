@@ -119,7 +119,7 @@ begin
   else
     begin
     fParkUI.Drag;
-    pSky.Time := pSky.Time + FPSDisplay.MS / 20;
+    pSky.Time := pSky.Time + FPSDisplay.MS / 10;
     ModuleManager.ModCamera.AdvanceActiveCamera;
     ModuleManager.ModRenderer.RenderScene;
     end;

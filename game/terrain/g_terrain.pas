@@ -86,7 +86,7 @@ var
   e: TDOMElement;
   l, m: TDOMNodeList;
   tempTex: TTexImage;
-  TexFormat: GLEnum;
+  CompressedTexFormat, TexFormat: GLEnum;
   function LoadAutoplantTexture(ID: Integer): TTexture;
   var
     i: Integer;
@@ -133,9 +133,13 @@ begin
         else
           raise EInvalidFormat.Create('Invalid Format');
         TexFormat := GL_RGB;
+        CompressedTexFormat := GL_COMPRESSED_RGB;
         if TempTex.BPP = 32 then
+          begin
           TexFormat := GL_RGBA;
-        fTexture.CreateNew(Temptex.Width, Temptex.Height, TexFormat);
+          CompressedTexFormat := GL_COMPRESSED_RGBA;
+          end;
+        fTexture.CreateNew(Temptex.Width, Temptex.Height, CompressedTexFormat);
         fTexture.setClamp(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
         gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
         fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);

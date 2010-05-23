@@ -7,6 +7,14 @@ uses
   m_renderer_opengl_interface;
 
 type
+  TWaterLayerFBO = class
+    public
+      Height: Single;
+      RefractionFBO, ReflectionFBO: TFBO;
+      constructor Create;
+      destructor Free;
+    end;
+
   TRTerrain = class
     protected
       fQuery: GLUInt;
@@ -17,6 +25,8 @@ type
       fAPPositions: Array[0..7] of Array of TVector2D;
       fShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
       fWaterShader, fWaterShaderTransformDepth, fWaterShaderTransformSunShadow: TShader;
+      fWaterBumpmap: TTexture;
+      fWaterBumpmapOffset: TVector2D;
       fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
       fPixelsPassed: Array of Array of GLInt;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
@@ -26,6 +36,7 @@ type
       fFrameCount: Byte;
       RenderStep: Single;
     public
+      fWaterLayerFBOs: Array of TWaterLayerFBO;
       procedure Render;
       procedure RenderWaterSurfaces;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
@@ -37,7 +48,27 @@ type
 implementation
 
 uses
-  g_park, u_events, m_varlist, u_files, u_graphics;
+  g_park, u_events, m_varlist, u_files, u_graphics, main;
+
+constructor TWaterLayerFBO.Create;
+begin
+  ReflectionFBO := TFBO.Create(512, 512, true);
+  ReflectionFBO.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+  ReflectionFBO.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  ReflectionFBO.Unbind;
+
+  RefractionFBO := TFBO.Create(512, 512, true);
+  RefractionFBO.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+  RefractionFBO.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  RefractionFBO.Unbind;
+end;
+
+destructor TWaterLayerFBO.Free;
+begin
+  RefractionFBO.Free;
+  ReflectionFBO.Free;
+end;
+
 
 procedure TRTerrain.Render;
 var
@@ -87,8 +118,8 @@ const
   AUTOPLANT_UPDATE_FRAMES = 10;
 begin
   glDisable(GL_BLEND);
-  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 64, 0, Park.pTerrain.SizeX - 128) / 4);
-  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 64, 0, Park.pTerrain.SizeY - 128) / 4);
+  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
+  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
   fHeightMap.Textures[0].Bind(1);
   Park.pTerrain.Collection.Texture.Bind(0);
   fBoundShader := fShader;
@@ -199,50 +230,40 @@ end;
 
 procedure TRTerrain.RenderWaterSurfaces;
 var
-  x, y: Integer;
+  i, j, k: Integer;
   fBoundShader: TShader;
 begin
   glDisable(GL_BLEND);
   glDisable(GL_CULL_FACE);
 
-  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 64, 0, Park.pTerrain.SizeX - 128) / 4);
-  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 64, 0, Park.pTerrain.SizeY - 128) / 4);
-  fHeightMap.Textures[0].Bind(0);
   fBoundShader := fWaterShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fWaterShaderTransformDepth
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
     fBoundShader := fWaterShaderTransformSunShadow;
   fBoundShader.Bind;
-  if fInterface.Options.Items['terrain:hd'] <> 'off' then
-    fBoundShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5)
-  else
-    fBoundShader.UniformF('offset', -10000, -10000);
 
-  for x := 0 to Park.pTerrain.SizeX div 128 - 1 do
-    for y := 0 to Park.pTerrain.SizeY div 128 - 1 do
-      begin
-      fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
-      if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
-        begin
-        fBoundShader.UniformI('LOD', 1);
-        fGoodVBO.Render;
-        end
-      else
-        begin
-        fBoundShader.UniformI('LOD', 0);
-        fRawVBO.Render;
-        end;
-      end;
+  fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00003, 0.00015) * FPSDisplay.MS;
 
-  if fInterface.Options.Items['terrain:hd'] <> 'off' then
+  for k := 0 to high(fWaterLayerFBOs) do
     begin
-    fBoundShader.UniformI('LOD', 2);
-    fBoundShader.UniformF('VOffset', fFineOffsetX / 5, fFineOffsetY / 5);
-    fFineVBO.Bind;
-    fFineVBO.Render;
-    fFineVBO.Unbind;
+    fWaterLayerFBOs[k].ReflectionFBO.Textures[0].Bind(1);
+    fWaterLayerFBOs[k].RefractionFBO.Textures[0].Bind(2);
+    fWaterBumpmap.Bind(3);
+    fHeightMap.Textures[0].Bind(0);
+    glBegin(GL_QUADS);
+      glTexCoord2f(fWaterBumpmapOffset.X, fWaterBumpmapOffset.Y);
+      for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+        for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+          begin
+          glVertex3f(25.6 * (i + 0), fWaterLayerFBOs[k].Height, 25.6 * (j + 0));
+          glVertex3f(25.6 * (i + 1), fWaterLayerFBOs[k].Height, 25.6 * (j + 0));
+          glVertex3f(25.6 * (i + 1), fWaterLayerFBOs[k].Height, 25.6 * (j + 1));
+          glVertex3f(25.6 * (i + 0), fWaterLayerFBOs[k].Height, 25.6 * (j + 1));
+          end;
+    glEnd;
     end;
+
   fBoundShader.Unbind;
 
   glEnable(GL_CULL_FACE);
@@ -275,6 +296,20 @@ var
   begin
     glColor4f(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glVertex3f(X, Y, -1);
+  end;
+
+  procedure CheckWaterLevel(X, Y: Word);
+  var
+    i: integer;
+  begin
+    if Park.pTerrain.WaterMap[X / 5, Y / 5] = 0 then
+      exit;
+    for i := 0 to high(fWaterLayerFBOs) do
+      if fWaterLayerFBOs[i].Height = Park.pTerrain.WaterMap[X / 5, Y / 5] then
+        exit;
+    setLength(fWaterLayerFBOs, length(fWaterLayerFBOs) + 1);
+    fWaterLayerFBOs[high(fWaterLayerFBOs)] := TWaterLayerFBO.Create;
+    fWaterLayerFBOs[high(fWaterLayerFBOs)].Height := Park.pTerrain.WaterMap[X / 5, Y / 5];
   end;
 
   procedure EndUpdate;
@@ -347,6 +382,7 @@ begin
     StartUpdate;
     UpdateVertex(i, j);
     EndUpdate;
+    CheckWaterLevel(i, j);
     RecalcBoundingSpheres(i div 128, j div 128);
     end;
   if (Event = 'TTerrain.ChangedAll') then
@@ -357,6 +393,9 @@ begin
       for j := 0 to Park.pTerrain.SizeY do
         UpdateVertex(i, j);
     EndUpdate;
+    for i := 0 to Park.pTerrain.SizeX do
+      for j := 0 to Park.pTerrain.SizeY do
+        CheckWaterLevel(i, j);
     end;
   for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
     for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
@@ -405,6 +444,9 @@ begin
     fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 80));
     fWaterShader := TShader.Create('rendereropengl/glsl/terrain/water.vs', 'rendereropengl/glsl/terrain/water.fs');
     fWaterShader.UniformI('HeightMap', 0);
+    fWaterShader.UniformI('ReflectionMap', 1);
+    fWaterShader.UniformI('RefractionMap', 2);
+    fWaterShader.UniformI('BumpMap', 3);
     fWaterShader.UniformI('SunShadowMap', 7);
     fShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/simple.fs');
     fShaderTransformDepth.UniformI('HeightMap', 1);
@@ -418,6 +460,9 @@ begin
     fAPShader.UniformI('Autoplant', 0);
     fAPShader.UniformI('HeightMap', 1);
     fAPShader.UniformI('SunShadowMap', 7);
+    fWaterBumpmap := TTexture.Create;
+    fWaterBumpmap.FromFile(fInterface.Option('water:bumpmap', 'terrain/water-bumpmap.tga'));
+    fWaterBumpmapOffset := Vector(0, 0);
     fFineOffsetX := 0;
     fFineOffsetY := 0;
     fFineVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
@@ -468,6 +513,8 @@ begin
   for i := 0 to high(fAPVBOs) do
     if fAPVBOs[i] <> nil then
       fAPVBOs[i].Free;
+  for i := 0 to high(fWaterLayerFBOs) do
+    fWaterLayerFBOs[i].Free;
   EventManager.RemoveCallback(@ApplyChanges);
   EventManager.RemoveCallback(@UpdateCollection);
   fFineVBO.Free;
@@ -476,6 +523,10 @@ begin
   fShader.Free;
   fShaderTransformDepth.Free;
   fShaderTransformSunShadow.Free;
+  fWaterShader.Free;
+  fWaterShaderTransformDepth.Free;
+  fWaterShaderTransformSunShadow.Free;
+  fWaterBumpmap.Free;
   fAPShader.Free;
   if fHeightMap <> nil then
     fHeightMap.Free;

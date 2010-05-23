@@ -74,7 +74,7 @@ end;
 
 procedure TModuleRendererOpenGL.Render(EyeMode: Single = 0; EyeFocus: Single = 10);
 const
-  ClipPlaneUnderneathWater: Array[0..3] of GLDouble = (0.0, -1.0, 0.0, 0.0);
+  ClipPlane: Array[0..3] of GLDouble = (0, -1, 0, 0);
 var
   i: Integer;
 begin
@@ -90,6 +90,7 @@ begin
     RCamera.ApplyRotation(Vector(1, 1, 1));
   if fInterface.Options.Items['all:applytranslation'] <> 'off' then
     RCamera.ApplyTransformation(Vector(1, 1, 1));
+  fFrustum.Calculate;
 
   glClear(GL_DEPTH_BUFFER_BIT);
   glDisable(GL_BLEND);
@@ -108,51 +109,44 @@ begin
     fInterface.PopOptions;
     end;
 
-  glEnable(GL_CLIP_PLANE0);
-  glPushMatrix;
   for i := 0 to high(RTerrain.fWaterLayerFBOs) do
     begin
+    glEnable(GL_CLIP_PLANE0);
+
     RTerrain.fWaterLayerFBOs[i].ReflectionFBO.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     glPushMatrix;
     glTranslatef(0, RTerrain.fWaterLayerFBOs[i].Height, 0);
-    glClipPlane(GL_CLIP_PLANE0, @ClipPlaneUnderneathWater[0]);
+    glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
     glScalef(1, -1, 1);
     glTranslatef(0, -RTerrain.fWaterLayerFBOs[i].Height, 0);
     fFrustum.Calculate;
-
     glFrontFace(GL_CW);
-    glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
     RenderParts;
     glFrontFace(GL_CCW);
     glPopMatrix;
-    RTerrain.fWaterLayerFBOs[i].ReflectionFBO.UnBind;
-
-    glPopMatrix;
-    glPushMatrix;
+    RTerrain.fWaterLayerFBOs[i].ReflectionFBO.Unbind;
 
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Bind;
     glPushMatrix;
     glTranslatef(0, RTerrain.fWaterLayerFBOs[i].Height, 0);
+    glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
     glPopMatrix;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     fFrustum.Calculate;
-
-    glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
     RenderParts;
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Unbind;
-
     glDisable(GL_CLIP_PLANE0);
     end;
-  glPopMatrix;
-  glClear(GL_DEPTH_BUFFER_BIT);
-  fFrustum.Calculate;
-  RenderParts;
 
+  glClear(GL_DEPTH_BUFFER_BIT);
   RTerrain.RenderWaterSurfaces;
+
+  RenderParts;
 end;
 
 procedure TModuleRendererOpenGL.RenderShadows;
 begin
-  glDisable(GL_CULL_FACE);
   with ModuleManager.ModRenderer.RSky.Sun.Position do
     OS := Vector(X, Y, Z);
   OC := ModuleManager.ModCamera.ActiveCamera.Position;
@@ -182,7 +176,6 @@ begin
   RenderParts;
 
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
-
   fInterface.PopOptions;
 end;
 
@@ -190,8 +183,6 @@ procedure TModuleRendererOpenGL.RenderScene;
 var
   ResX, ResY, i: Integer;
 begin
-  glClearColor(0, 0, 0, 1);
-
   fInterface.Options.Items['all:renderpass'] := '0';
   fShadowDelay := fShadowDelay + FPSDisplay.MS;
 
@@ -231,8 +222,6 @@ begin
   if fInterface.Options.Items['shadows:enabled'] = 'on' then
     ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
 
-  glEnable(GL_CULL_FACE);
-
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
 
   glMatrixMode(GL_TEXTURE);
@@ -254,13 +243,11 @@ begin
     SetConfVal('terrain:hd', 'on');
     SetConfVal('shadows:enabled', 'on');
     SetConfVal('shadows:texsize', '2048');
-    SetConfVal('water:bumpmap', 'terrain/water-bumpmap.tga');
     end;
   fInterface.Options.Items['terrain:autoplants'] := GetConfVal('terrain:autoplants');
   fInterface.Options.Items['terrain:hd'] := GetConfVal('terrain:hd');
   fInterface.Options.Items['shadows:enabled'] := GetConfVal('shadows:enabled');
   fInterface.Options.Items['shadows:texsize'] := GetConfVal('shadows:texsize');
-  fInterface.Options.Items['water:bumpmap'] := GetConfVal('water:bumpmap');
 end;
 
 constructor TModuleRendererOpenGL.Create;

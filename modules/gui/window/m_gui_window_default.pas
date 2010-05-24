@@ -47,6 +47,8 @@ begin
 
   fTexture := TTexture.Create;
   fTexture.FromFile(GetConfVal('background'));
+  fTexture.SetFilter(GL_NEAREST, GL_NEAREST);
+  fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
 
   fShader := TShader.Create('guiwindowdefault/blur.vs', 'guiwindowdefault/blur.fs');
   fShader.Bind;

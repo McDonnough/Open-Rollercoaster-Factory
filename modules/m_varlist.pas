@@ -24,6 +24,7 @@ interface
       fModGUI: TModuleGUI;
       fModGUIWindow: TModuleGUIWindow;
       fModGUILabel: TModuleGUILabel;
+      fModGUITabBar: TModuleGUITabBar;
       fModGUIProgressBar: TModuleGUIProgressBar;
       fModGUIButton: TModuleGUIButton;
       fModGUIIconifiedButton: TModuleGUIIconifiedButton;
@@ -48,6 +49,7 @@ interface
       property ModGUI: TModuleGUI read fModGUI;
       property ModGUIWindow: TModuleGUIWindow read fModGUIWindow;
       property ModGUILabel: TModuleGUILabel read fModGUILabel;
+      property ModGUITabBar: TModuleGUITabBar read fModGUITabBar;
       property ModGUIProgressBar: TModuleGUIProgressBar read fModGUIProgressBar;
       property ModGUIButton: TModuleGUIButton read fModGUIButton;
       property ModGUIIconifiedButton: TModuleGUIIconifiedButton read fModGUIIconifiedButton;
@@ -115,6 +117,9 @@ begin
   fModGUILabel := TModuleGUILabel.Create;
   fModGUILabel.CheckModConf;
 
+  fModGUITabBar := TModuleGUITabBar.Create;
+  fModGUITabBar.CheckModConf;
+
   fModGUIProgressBar := TModuleGUIProgressBar.Create;
   fModGUIProgressBar.CheckModConf;
 
@@ -159,6 +164,7 @@ begin
   fModGUIButton.Free;
   fModGUIProgressBar.Free;
   fModGUILabel.Free;
+  fModGUITabBar.Free;
   fModGUIWindow.Free;
   fModGUI.Free;
   fModFont.Free;

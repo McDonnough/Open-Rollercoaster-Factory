@@ -23,7 +23,7 @@ implementation
 
 uses
   m_gui_window_class, m_gui_label_class, m_gui_progressbar_class, m_varlist, m_inputhandler_class, m_gui_button_class, m_gui_iconifiedbutton_class,
-  m_gui_edit_class, m_gui_timer_class;
+  m_gui_edit_class, m_gui_timer_class, m_gui_tabbar_class;
 
 procedure TModuleGUIDefault.Render;
 var
@@ -37,6 +37,7 @@ var
       exit;
     case Component.ComponentType of
       CWindow: TWindow(Component).Render;
+      CTabBar: TTabBar(Component).Render;
       CLabel: TLabel(Component).Render;
       CProgressBar: TProgressBar(Component).Render;
       CButton: TButton(Component).Render;
@@ -110,13 +111,15 @@ begin
     if ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT] then
       begin
       if (not fClicking) and (fHoverComponent.OnClick <> nil) then
+        begin
+        Container := fHoverComponent;
+        while (Container.Parent <> nil) and (Container.Parent <> fBasicComponent) do
+          Container := Container.Parent;
+        if Container.Parent = fBasicComponent then
+          fBasicComponent.BringToFront(Container);
         fHoverComponent.OnClick(fHoverComponent);
+        end;
       fFocusComponent := fHoverComponent;
-      Container := fFocusComponent;
-      while (Container.Parent <> nil) and (Container.Parent <> fBasicComponent) do
-        Container := Container.Parent;
-      if Container.Parent = fBasicComponent then
-        fBasicComponent.BringToFront(Container);
       fClicking := true;
       end;
     end;

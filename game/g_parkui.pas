@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml,
-  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, u_functions, g_leave;
+  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, m_gui_tabbar_class, u_functions, g_leave;
 
 type
   TCallbackArray = record
@@ -12,6 +12,7 @@ type
     OnKeyDown, OnKeyUp: String;
     OnHover, OnLeave: String;
     OnEdit: String;
+    OnChangeTab: String;
     OnExpire: String;
     end;
 
@@ -57,7 +58,7 @@ type
 
   TParkUIActions = class
     protected
-      fLeaveActions: TGameLeaveActions;
+      fLeaveActions, fInfoActions: TGameLeaveActions;
     public
       constructor Create;
       destructor Free;
@@ -65,7 +66,7 @@ type
 
   TParkUI = class
     protected
-      fTestWindow: TParkUIWindow;
+      fLeaveWindow, fInfoWindow: TParkUIWindow;
       fDragging: TParkUIWindow;
       fDragStartLeft, fDragStartTop, fMouseOfsX, fMouseOfsY: Integer;
       fActions: TParkUIActions;
@@ -88,6 +89,14 @@ begin
   SetLength(fCallbackArrays, length(fCallbackArrays) + 1);
   Result := Length(fCallbackArrays);
   fCallbackArrays[Result - 1].OnClick := A.GetAttribute('onclick');
+  fCallbackArrays[Result - 1].OnRelease := A.GetAttribute('onrelease');
+  fCallbackArrays[Result - 1].OnHover := A.GetAttribute('onhover');
+  fCallbackArrays[Result - 1].OnLeave := A.GetAttribute('onleave');
+  fCallbackArrays[Result - 1].OnKeyDown := A.GetAttribute('onkeydown');
+  fCallbackArrays[Result - 1].OnKeyUp := A.GetAttribute('onkeyup');
+  fCallbackArrays[Result - 1].OnEdit := A.GetAttribute('onedit');
+  fCallbackArrays[Result - 1].OnExpire := A.GetAttribute('onexpire');
+  fCallbackArrays[Result - 1].OnChangeTab := A.GetAttribute('onchangetab');
 end;
 
 procedure TParkUIWindow.HandleOnclick(Sender: TGUIComponent);
@@ -160,6 +169,7 @@ end;
 
 procedure TParkUIWindow.Show;
 begin
+  ModuleManager.ModGUI.BasicComponent.BringToFront(fWindow);
   fExpanded := true;
   fWindow.Width := fWidth;
   fWindow.Height := fHeight;
@@ -190,9 +200,11 @@ procedure TParkUIWindow.ReadFromXML(Resource: String);
 var
   XMLFile: TDOMDocument;
   a: TDOMNodeList;
-  CurrChild: TDOMElement;
+  CurrChild, CurrChildChild: TDOMElement;
   ResX, ResY: Integer;
+  S: String;
 begin
+  writeln('Loading GUI file ' + Resource);
   XMLFile := LoadXMLFile(GetFirstExistingFileName(Resource));
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   try
@@ -247,6 +259,30 @@ begin
               OnClick := @HandleOnclick;
               end;
             end
+          else if NodeName = 'tabbar' then
+            begin
+            with TTabBar.Create(fWindow) do
+              begin
+              Left := StrToIntWD(GetAttribute('left'), 16);
+              Top := StrToIntWD(GetAttribute('top'), 16);
+              Width := StrToIntWD(GetAttribute('width'), 64);
+              Height := StrToIntWD(GetAttribute('height'), 64);
+              Tag := AddCallbackArray(CurrChild);
+              CurrChildChild := TDOMElement(FirstChild);
+              while CurrChildChild <> nil do
+                begin
+                with CurrChildChild do
+                  if NodeName = 'tab' then
+                    begin
+                    S := '';
+                    if FirstChild <> nil then
+                      S := FirstChild.NodeValue;
+                    AddTab(S, StrToIntWD(GetAttribute('minwidth'), 150));
+                    end;
+                CurrChildChild := TDOMElement(CurrChildChild.NextSibling);
+                end;
+              end;
+            end;
           end;
         CurrChild := TDOMElement(CurrChild.NextSibling);
         end;
@@ -322,7 +358,8 @@ var
   ResX, ResY: Integer;
 begin
   fActions := TParkUIActions.Create;
-  fTestWindow := TParkUIWindow.Create('ui/leave.xml', self);
+  fLeaveWindow := TParkUIWindow.Create('ui/leave.xml', self);
+  fInfoWindow := TParkUIWindow.Create('ui/info.xml', self);
 end;
 
 procedure TParkUI.SetDragging(A: TParkUIWindow);
@@ -348,7 +385,8 @@ end;
 destructor TParkUI.Free;
 begin
   fActions.Free;
-  fTestWindow.Free;
+  fLeaveWindow.Free;
+  fInfoWindow.Free;
 end;
 
 end.

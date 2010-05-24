@@ -2,3 +2,5 @@ You need FPC to compile this
 
 MacOS-specific notes:
 After compiling, execute "bundle_orcf.sh" to build an application-bundle.
+
+Most icons are taken from the Oxygen project.

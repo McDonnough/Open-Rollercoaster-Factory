@@ -89,7 +89,7 @@ procedure TModuleGUIDefault.CallSignals;
       fHoverComponent := Component;
 
     for i := 0 to high(Component.Children) do
-      SendSignals(Component.Children[i]);
+      SendSignals(Component.ChildrenRightOrder[i]);
   end;
 var
   i: integer;

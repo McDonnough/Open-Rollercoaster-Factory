@@ -46,7 +46,7 @@ void main(void) {
   float MirrorFactor = 0.2 + 0.6 * dot(normalize(gl_NormalMatrix * normal), normalize(-v.xyz));
   vec4 RefractColor;
   RefractColor.a = Vertex.y - texture2D(RefractionMap, RealPosition).a;
-  RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * (1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0));
+  RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * pow((1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0)), 2.0);
   gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
   gl_FragColor += MirrorFactor * RefractColor;
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);

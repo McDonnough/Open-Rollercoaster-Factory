@@ -39,6 +39,7 @@ type
       procedure EndDragging(Sender: TGUIComponent);
       function AddCallbackArray(A: TDOMElement): Integer;
       procedure HandleOnclick(Sender: TGUIComponent);
+      procedure BringButtonToFront(Sender: TGUIComponent);
     public
       property Window: TWindow read fWindow;
       property Width: Single read fWidth write SetWidth;
@@ -279,9 +280,15 @@ begin
   fWindow.Top := 24;
   fWindow.Tag := 0;
   fWindow.OnClick := @StartDragging;
+  fWindow.OnGainFocus := @BringButtonToFront;
   fWindow.OnRelease := @EndDragging;
 
   ReadFromXML(Resource);
+end;
+
+procedure TParkUIWindow.BringButtonToFront(Sender: TGUIComponent);
+begin
+  ModuleManager.ModGUI.BasicComponent.BringToFront(fButton);
 end;
 
 procedure TParkUIWindow.StartDragging(Sender: TGUIComponent);

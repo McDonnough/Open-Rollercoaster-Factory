@@ -51,7 +51,7 @@ var
     for i := 0 to high(Component.Children) do
       begin
       glScissor(Round(Component.MinX), ResY - Round(Component.MaxY), Round(Component.MaxX - Component.MinX), Round(Component.MaxY - Component.MinY));
-      RenderComponent(Component.Children[i]);
+      RenderComponent(Component.ChildrenRightOrder[i]);
       end;
     glPopMatrix;
   end;
@@ -94,6 +94,7 @@ procedure TModuleGUIDefault.CallSignals;
 var
   i: integer;
   ResX, ResY: Integer;
+  Container: TGUIComponent;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBasicComponent.Width := ResX;
@@ -111,6 +112,11 @@ begin
       if (not fClicking) and (fHoverComponent.OnClick <> nil) then
         fHoverComponent.OnClick(fHoverComponent);
       fFocusComponent := fHoverComponent;
+      Container := fFocusComponent;
+      while (Container.Parent <> nil) and (Container.Parent <> fBasicComponent) do
+        Container := Container.Parent;
+      if Container.Parent = fBasicComponent then
+        fBasicComponent.BringToFront(Container);
       fClicking := true;
       end;
     end;

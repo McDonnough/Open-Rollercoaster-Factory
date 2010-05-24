@@ -25,7 +25,9 @@ type
       fWidth, fHeight, fDestWidth, fDestHeight, fSpeedWidth, fSpeedHeight: GLFloat;
       fParent: TGUIComponent;
       fChildren: AGUIComponent;
+      fChildOrder: Array of Integer;
       fTypeName: TComponentType;
+      function GetChildInOrder(I: Integer): TGUIComponent;
       function GetAbsX: GLFloat;
       function GetAbsY: GLFloat;
       function GetMinX: GLFloat;
@@ -39,6 +41,7 @@ type
     public
       Tag: Integer;
       OnClick: TCallbackProcedure;
+      OnGainFocus: TCallbackProcedure;
       OnRelease: TCallbackProcedure;
       OnHover: TCallbackProcedure;
       OnLeave: TCallbackProcedure;
@@ -51,6 +54,7 @@ type
       property Height: GLFloat read fHeight write fDestHeight;
       property Parent: TGUIComponent read fParent;
       property Children: AGUIComponent read fChildren;
+      property ChildrenRightOrder[I: Integer]: TGUIComponent read GetChildInOrder;
       property ComponentType: TComponentType read fTypeName;
       property AbsX: GLFloat read GetAbsX;
       property AbsY: GLFloat read GetAbsY;
@@ -58,6 +62,7 @@ type
       property MinY: GLFloat read GetMinY;
       property MaxX: GLFloat read GetMaxX;
       property MaxY: GLFloat read GetMaxY;
+      procedure BringToFront(Child: TGUIComponent);
       procedure Render;
       constructor Create(mParent: TGUIComponent; TypeName: TComponentType);
       destructor Free;
@@ -90,6 +95,16 @@ implementation
 
 uses
   m_varlist, math, u_math;
+
+function TGUIComponent.GetChildInOrder(I: Integer): TGUIComponent;
+var
+  j: Integer;
+begin
+  Result := nil;
+  for j := 0 to high(fChildOrder) do
+    if fChildOrder[j] = i then
+      exit(fChildren[j]);
+end;
 
 function TGUIComponent.GetAbsX: GLFloat;
 begin
@@ -138,6 +153,8 @@ begin
   setLength(fChildren, length(fChildren) + 1);
   fChildren[high(fChildren)] := Child;
   Result := high(fChildren);
+  SetLength(fChildOrder, length(fChildOrder) + 1);
+  fChildOrder[high(fChildOrder)] := high(fChildOrder);
 end;
 
 procedure TGUIComponent.RemoveChild(Child: TGUIComponent);
@@ -146,10 +163,15 @@ var
 begin
   for i := Child.fChildID + 1 to high(fChildren) do
     begin
+    fChildOrder[i - 1] := fChildOrder[i];
     fChildren[i - 1] := fChildren[i];
     dec(fChildren[i - 1].fChildID);
     end;
+  setLength(fChildOrder, length(fChildOrder) - 1);
   setLength(fChildren, length(fChildren) - 1);
+  for i := 0 to high(fChildOrder) do
+    if fChildOrder[i] > Child.fChildID then
+      dec(fChildOrder[i]);
 end;
 
 procedure TGUIComponent.Render;
@@ -179,6 +201,31 @@ begin
   fRendered := 1;
 end;
 
+procedure TGUIComponent.BringToFront(Child: TGUIComponent);
+var
+  i, j, OldPosition: Integer;
+begin
+  j := 0;
+  OldPosition := High(fChildOrder);
+  for i := 0 to high(fChildOrder) do
+    if fChildren[i] = Child then
+      OldPosition := fChildOrder[i];
+  for i := 0 to high(fChildOrder) do
+    begin
+    if fChildren[i] = Child then
+      fChildOrder[i] := High(fChildOrder)
+    else if fChildOrder[i] > OldPosition then
+      dec(fChildOrder[i]);
+    if fChildOrder[i] < j then
+      j := fChildOrder[i];
+    end;
+  for i := 0 to high(fChildOrder) do
+    if fChildOrder[i] <> High(fChildOrder) then
+      fChildOrder[i] := fChildOrder[i] - j;
+  if Child.OnGainFocus <> nil then
+    Child.OnGainFocus(Child);
+end;
+
 constructor TGUIComponent.Create(mParent: TGUIComponent; TypeName: TComponentType);
 begin
   if (mParent = nil) and (TypeName <> CNothing) then
@@ -205,6 +252,8 @@ begin
   fRendered := 0;
 
   OnClick := nil;
+  OnRelease := nil;
+  OnGainFocus := nil;
   OnHover := nil;
   OnLeave := nil;
   OnKeyDown := nil;

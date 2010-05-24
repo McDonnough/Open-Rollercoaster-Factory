@@ -28,6 +28,7 @@ type
       fWaterBumpmap: TTexture;
       fWaterBumpmapOffset: TVector2D;
       fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
+      fHeightRanges: Array of Array of Array[0..1] of Single;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
       fPrevPos: TVector2D;
@@ -48,7 +49,7 @@ type
 implementation
 
 uses
-  g_park, u_events, m_varlist, u_files, u_graphics, main;
+  g_park, u_events, m_varlist, u_files, u_graphics, main, u_functions;
 
 constructor TWaterLayerFBO.Create;
 begin
@@ -83,6 +84,8 @@ var
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 128 - 1) and (Y <= Park.pTerrain.SizeY div 128 - 1) then
         if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y, fBoundingSphereRadius[X, Y])) then
           begin
+          if (fHeightRanges[X, Y, 0] > StrToFloatWD(fInterface.Options.Items['all:below'], 256)) or (fHeightRanges[X, Y, 1] < StrToFloatWD(fInterface.Options.Items['all:above'], 0)) then
+            exit;
           fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
           if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
             begin
@@ -347,10 +350,14 @@ var
     a, b, c, d: Single;
   begin
     avgh := 0;
+    fHeightRanges[X, Y, 0] := 256;
+    fHeightRanges[X, Y, 1] := 0;
     for i := 0 to 128 do
       for j := 0 to 128 do
         begin
         temp := Park.pTerrain.HeightMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
+        if temp < fHeightRanges[X, Y, 0] then fHeightRanges[X, Y, 0] := temp;
+        if temp > fHeightRanges[X, Y, 1] then fHeightRanges[X, Y, 1] := temp;
         if (i = 0) and (j = 0) then
           a := temp
         else if (i = 128) and (j = 0) then
@@ -360,6 +367,7 @@ var
         else if (i = 128) and (j = 128) then
           d := temp;
         avgh := avgh + temp;
+
         end;
     avgh := avgh / 129 / 129;
     fAvgHeight[X, Y] := avgh;
@@ -382,10 +390,12 @@ begin
     fHeightMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
     SetLength(fAvgHeight, Park.pTerrain.SizeX div 128);
+    SetLength(fHeightRanges, Park.pTerrain.SizeX div 128);
     SetLength(fBoundingSphereRadius, length(fAvgHeight));
     for i := 0 to high(fAvgHeight) do
       begin
       SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 128);
+      SetLength(fHeightRanges[i], Park.pTerrain.SizeY div 128);
       SetLength(fBoundingSphereRadius[i], length(fAvgHeight[i]));
       end;
     end;
@@ -445,6 +455,8 @@ end;
 constructor TRTerrain.Create;
 var
   i, j: Integer;
+  tempTex: TTexImage;
+  TexFormat, CompressedTexFormat: GLEnum;
 begin
   fFrameCount := 0;
   try
@@ -474,7 +486,17 @@ begin
     fAPShader.UniformI('HeightMap', 1);
     fAPShader.UniformI('SunShadowMap', 7);
     fWaterBumpmap := TTexture.Create;
-    fWaterBumpmap.FromFile(fInterface.Option('water:bumpmap', 'terrain/water-bumpmap.tga'));
+    tempTex := TexFromTGA(ByteStreamFromFile(fInterface.Option('water:bumpmap', 'terrain/water-bumpmap.tga')));
+    TexFormat := GL_RGB;
+    CompressedTexFormat := GL_COMPRESSED_RGB;
+    if TempTex.BPP = 32 then
+      begin
+      TexFormat := GL_RGBA;
+      CompressedTexFormat := GL_COMPRESSED_RGBA;
+      end;
+    fWaterBumpmap.CreateNew(Temptex.Width, Temptex.Height, CompressedTexFormat);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
+    fWaterBumpmap.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
     fWaterBumpmapOffset := Vector(0, 0);
     fFineOffsetX := 0;
     fFineOffsetY := 0;

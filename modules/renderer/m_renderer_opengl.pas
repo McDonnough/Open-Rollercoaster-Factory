@@ -79,7 +79,8 @@ const
 var
   i: Integer;
 begin
-  fInterface.Options.Items['terrain:occlusionquery'] := 'off';
+  fInterface.Options.Items['all:above'] := '0';
+  fInterface.Options.Items['all:below'] := '256';
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glEnable(GL_CULL_FACE);
   if fInterface.Options.Items['all:polygonmode'] = 'wireframe' then
@@ -106,14 +107,20 @@ begin
       fInterface.Options.Items['sky:rendering'] := 'off';
 
       RenderParts;
+      RTerrain.CheckWaterLayerVisibility;
     glPopMatrix;
     fInterface.PopOptions;
     end;
 
   for i := 0 to high(RTerrain.fWaterLayerFBOs) do
     begin
+    if RTerrain.fWaterLayerFBOs[i].Query.Result = 0 then
+      continue;
+
     glEnable(GL_CLIP_PLANE0);
 
+    fInterface.Options.Items['all:above'] := FloatToStr(RTerrain.fWaterLayerFBOs[i].Height);
+    fInterface.Options.Items['all:below'] := '256';
     RTerrain.fWaterLayerFBOs[i].ReflectionFBO.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     glPushMatrix;
@@ -128,6 +135,8 @@ begin
     glPopMatrix;
     RTerrain.fWaterLayerFBOs[i].ReflectionFBO.Unbind;
 
+    fInterface.Options.Items['all:above'] := '0';
+    fInterface.Options.Items['all:below'] := FloatToStr(RTerrain.fWaterLayerFBOs[i].Height);
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Bind;
     glPushMatrix;
     fInterface.PushOptions;
@@ -153,6 +162,8 @@ begin
   glClear(GL_DEPTH_BUFFER_BIT);
   RTerrain.RenderWaterSurfaces;
 
+  fInterface.Options.Items['all:above'] := '0';
+  fInterface.Options.Items['all:below'] := '256';
   RenderParts;
 end;
 

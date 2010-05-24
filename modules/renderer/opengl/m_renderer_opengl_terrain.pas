@@ -10,6 +10,7 @@ type
   TWaterLayerFBO = class
     public
       Height: Single;
+      Query: TOcclusionQuery;
       RefractionFBO, ReflectionFBO: TFBO;
       constructor Create;
       destructor Free;
@@ -17,7 +18,6 @@ type
 
   TRTerrain = class
     protected
-      fQuery: GLUInt;
       fUpdatePlants: Boolean;
       fFineVBO, fGoodVBO, fRawVBO: TVBO;
       fAPVBOs: Array[0..7] of TVBO;
@@ -28,7 +28,6 @@ type
       fWaterBumpmap: TTexture;
       fWaterBumpmapOffset: TVector2D;
       fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
-      fPixelsPassed: Array of Array of GLInt;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
       fPrevPos: TVector2D;
@@ -38,6 +37,7 @@ type
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
       procedure Render;
+      procedure CheckWaterLayerVisibility;
       procedure RenderWaterSurfaces;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
@@ -52,6 +52,8 @@ uses
 
 constructor TWaterLayerFBO.Create;
 begin
+  Query := TOcclusionQuery.Create;
+
   ReflectionFBO := TFBO.Create(512, 512, true);
   ReflectionFBO.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
   ReflectionFBO.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
@@ -67,6 +69,7 @@ destructor TWaterLayerFBO.Free;
 begin
   RefractionFBO.Free;
   ReflectionFBO.Free;
+  Query.Free;
 end;
 
 
@@ -80,12 +83,6 @@ var
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 128 - 1) and (Y <= Park.pTerrain.SizeY div 128 - 1) then
         if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y, fBoundingSphereRadius[X, Y])) then
           begin
-          if (fInterface.Options.Items['terrain:occlusionquery'] <> 'off') and (fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow') then
-            if Check then
-              glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
-            else
-              if fPixelsPassed[X, Y] = 0 then
-                exit;
           fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
           if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
             begin
@@ -97,12 +94,6 @@ var
             fBoundShader.UniformI('LOD', 0);
             fRawVBO.Render;
             end;
-          if (fInterface.Options.Items['terrain:occlusionquery'] <> 'off') and (fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow') then
-            if Check then
-              begin
-              glEndQueryARB(GL_SAMPLES_PASSED_ARB);
-              glGetQueryObjectivARB(fQuery, GL_QUERY_RESULT_ARB, @fPixelsPassed[X, Y]);
-              end;
           end;
     except
       writeln('Exception: ', X, ' ', Y);
@@ -228,6 +219,29 @@ begin
     end;
 end;
 
+procedure TRTerrain.CheckWaterLayerVisibility;
+var
+  i: Integer;
+begin
+  glDisable(GL_CULL_FACE);
+  fWaterShaderTransformDepth.Bind;
+  fHeightMap.Textures[0].Bind(0);
+  for i := 0 to high(fWaterLayerFBOs) do
+    begin
+    fWaterLayerFBOs[i].Query.StartCounter;
+    glBegin(GL_QUADS);
+      glVertex3f(0, fWaterLayerFBOs[i].Height, 0);
+      glVertex3f(Park.pTerrain.SizeX / 5, fWaterLayerFBOs[i].Height, 0);
+      glVertex3f(Park.pTerrain.SizeX / 5, fWaterLayerFBOs[i].Height, Park.pTerrain.SizeY / 5);
+      glVertex3f(0, fWaterLayerFBOs[i].Height, Park.pTerrain.SizeY / 5);
+    glEnd;
+    fWaterLayerFBOs[i].Query.EndCounter;
+    end;
+  fHeightMap.Textures[0].Unbind;
+  fWaterShaderTransformDepth.Unbind;
+  glEnable(GL_CULL_FACE);
+end;
+
 procedure TRTerrain.RenderWaterSurfaces;
 var
   i, j, k: Integer;
@@ -247,6 +261,8 @@ begin
 
   for k := 0 to high(fWaterLayerFBOs) do
     begin
+    if fWaterLayerFBOs[k].Query.Result = 0 then
+      continue;
     fWaterLayerFBOs[k].ReflectionFBO.Textures[0].Bind(1);
     fWaterLayerFBOs[k].RefractionFBO.Textures[0].Bind(2);
     fWaterBumpmap.Bind(3);
@@ -365,12 +381,10 @@ begin
     fHeightMap.AddTexture(GL_RGBA16F, GL_NEAREST, GL_NEAREST);
     fHeightMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
-    SetLength(fPixelsPassed, Park.pTerrain.SizeX div 128);
     SetLength(fAvgHeight, Park.pTerrain.SizeX div 128);
     SetLength(fBoundingSphereRadius, length(fAvgHeight));
     for i := 0 to high(fAvgHeight) do
       begin
-      SetLength(fPixelsPassed[i], Park.pTerrain.SizeY div 128);
       SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 128);
       SetLength(fBoundingSphereRadius[i], length(fAvgHeight[i]));
       end;
@@ -432,7 +446,6 @@ constructor TRTerrain.Create;
 var
   i, j: Integer;
 begin
-  glGenQueriesARB(1, @fQuery);
   fFrameCount := 0;
   try
     writeln('Initializing terrain renderer');
@@ -452,7 +465,7 @@ begin
     fShaderTransformDepth.UniformI('HeightMap', 1);
     fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fShaderTransformSunShadow.UniformI('HeightMap', 1);
-    fWaterShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/waterTransform.vs', 'rendereropengl/glsl/simple.fs');
+    fWaterShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/waterTransform.vs', 'rendereropengl/glsl/terrain/simpleWater.fs');
     fWaterShaderTransformDepth.UniformI('HeightMap', 0);
     fWaterShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/waterSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fWaterShaderTransformSunShadow.UniformI('HeightMap', 0);
@@ -530,7 +543,6 @@ begin
   fAPShader.Free;
   if fHeightMap <> nil then
     fHeightMap.Free;
-  glDeleteQueriesARB(1, @fQuery);
 end;
 
 end.

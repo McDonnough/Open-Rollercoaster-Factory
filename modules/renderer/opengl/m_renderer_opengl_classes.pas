@@ -59,6 +59,18 @@ type
       destructor Free;
     end;
 
+  TOcclusionQuery = class
+    protected
+      fResult: GLInt;
+      fQuery: GLUInt;
+    public
+      property Result: GLInt read fResult;
+      procedure StartCounter;
+      procedure EndCounter;
+      constructor Create;
+      destructor Free;
+    end;
+
 implementation
 
 uses
@@ -297,6 +309,29 @@ begin
   glDeleteFramebuffersEXT(1, @fID);
   if fDepthBuffer <> 0 then
     glDeleteRenderbuffersEXT(1, @fDepthBuffer);
+end;
+
+
+
+procedure TOcclusionQuery.StartCounter;
+begin
+  glBeginQueryARB(GL_SAMPLES_PASSED_ARB, fQuery)
+end;
+
+procedure TOcclusionQuery.EndCounter;
+begin
+  glEndQueryARB(GL_SAMPLES_PASSED_ARB);
+  glGetQueryObjectivARB(fQuery, GL_QUERY_RESULT_ARB, @fResult);
+end;
+
+constructor TOcclusionQuery.Create;
+begin
+  glGenQueriesARB(1, @fQuery);
+end;
+
+destructor TOcclusionQuery.Free;
+begin
+  glDeleteQueries(1, @fQuery);
 end;
 
 end.

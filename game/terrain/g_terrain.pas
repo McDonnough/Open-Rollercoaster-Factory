@@ -372,6 +372,19 @@ var
       inc(i);
       end;
   end;
+
+  procedure MakeMountain(X, Y, Radius: Word; Height: Single);
+  var
+    i, j: Integer;
+  begin
+    for i := -Radius to Radius do
+      for j := -Radius to Radius do
+        begin
+        if i * i + j * j > Radius * Radius then
+          continue;
+        fMap[X + i, Y + j].Height := Round(Mix(fMap[X + i, Y + j].Height, 256 * Height, (0.5 + 0.5 * Cos(i / Radius * 3.141592)) * (0.5 + 0.5 * Cos(j / Radius * 3.141592))));
+        end;
+  end;
 begin
   sdc := 0;
   fSizeX := 0;
@@ -383,7 +396,10 @@ begin
   fMap[0, SizeY - 1].Height := 20000;
   fMap[SizeX - 1, SizeY - 1].Height := 20000;
   Subdivide(0, 0, SizeX, SizeY);
+  MakeMountain(512, 512, 384, 36000 / 256);
+  MakeMountain(512, 512, 128, 30000 / 256);
   FillWithWater(0, 0, 28000);
+  FillWithWater(512, 512, 32000);
   for i := 1 to SizeX - 2 do
     for j := 1 to SizeY - 2 do
       fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height

@@ -31,7 +31,7 @@ void main(void) {
   vec4 Position = gl_ModelViewProjectionMatrix * Vertex;
   vec2 RealPosition = 0.5 + 0.5 * (Position.xy / Position.w);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  vec3 normal = normalize(-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 10.0 + gl_TexCoord[0].xy).rbg);
+  vec3 normal = normalize((-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 10.0 + gl_TexCoord[0].xy).rbg) + (-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 5.0 + 0.5 * gl_TexCoord[0].yx).rbg));
   vec2 reflectionOffset = normal.xz / 10.0;
   vec4 result = gl_TextureMatrix[0] * Vertex;
   result = sqrt(abs(result)) * sign(result);

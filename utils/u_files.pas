@@ -23,6 +23,7 @@ uses
 function GetFirstExistingFilename(FileName: String): String;
 begin
   Result := '';
+  FileName := ModuleManager.ModPathes.Convert(FileName);
   if FileExists(FileName) then
     Exit(FileName)
   else if FileExists(ModuleManager.ModPathes.PersonalDataPath + FileName) then

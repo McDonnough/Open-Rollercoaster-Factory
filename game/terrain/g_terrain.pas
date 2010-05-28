@@ -74,7 +74,7 @@ type
 implementation
 
 uses
-  u_math, m_varlist, u_events, math, u_graphics;
+  u_math, m_varlist, u_events, math, u_graphics, u_functions;
 
 type
   EInvalidFormat = class(Exception);
@@ -154,7 +154,7 @@ begin
       Materials[i].AutoplantProperties.Factor := 0;
       with TDOMElement(l[i]) do
         begin
-        Materials[i].TexID := StrToInt(GetAttribute('texture'));
+        Materials[i].TexID := StrToIntWD(GetAttribute('texture'), 0);
         Materials[i].Name := GetAttribute('name');
         m := GetElementsByTagName('autoplants');
         if length(m) > 0 then
@@ -165,7 +165,7 @@ begin
               begin
               Materials[i].AutoplantProperties.Available := true;
               Materials[i].AutoplantProperties.Texture := LoadAutoplantTexture(StrToInt(GetAttribute('resource:id')));
-              Materials[i].AutoplantProperties.Factor := StrToFloat(GetAttribute('count'));
+              Materials[i].AutoplantProperties.Factor := StrToFloatWD(GetAttribute('count'), 1);
               end;
           end;
         end;

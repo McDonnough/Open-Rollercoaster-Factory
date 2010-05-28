@@ -171,6 +171,7 @@ begin
   fFName := '';
   if FName <> '' then
     fFName := GetFirstExistingFilename(FName);
+  writeln('Loading OCF file ' + fFName);
   try
     if FileExists(FFName) then
       begin

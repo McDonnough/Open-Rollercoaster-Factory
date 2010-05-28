@@ -112,9 +112,9 @@ begin
         glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),       py / 16);
         glVertex2f(Round(X),        Round(Y));
         glTexCoord2f((px + 1) / 16 - (refCellWidth - fLetterPositions[Ord(Text[i])].lastPixel) / (refCellHeight * 16),  py / 16);
-        glVertex2f(Round(X + fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y));
+        glVertex2f(Round(X) + Round(fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y));
         glTexCoord2f((px + 1) / 16 - (refCellWidth - fLetterPositions[Ord(Text[i])].lastPixel) / (refCellHeight * 16), (py + 1) / 16);
-        glVertex2f(Round(X + fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y + Size));
+        glVertex2f(Round(X) + Round(fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y + Size));
         glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),      (py + 1) / 16);
         glVertex2f(Round(X),        Round(Y + Size));
         X := X + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
@@ -163,6 +163,8 @@ begin
 end;
 
 constructor TModuleFontTextureVariableWidth.Create;
+var
+  i: Integer;
 begin
   fModName := 'FontTextureVariableWidth';
   fModType := 'Font';
@@ -170,12 +172,17 @@ begin
   CheckModConf;
 
   writeln('Loading font texture from ' + GetFirstExistingFileName(GetConfVal('fonttex')));
-  temptex := TexFromTGA(ByteStreamFromFile(GetFirstExistingFileName(GetConfVal('fonttex'))));
+  temptex := TexFromTGA(ByteStreamFromFile(GetFirstExistingFileName(GetConfVal('fonttex') + '.0')));
   fTexture := TTexture.Create;
   fTexture.CreateNew(TempTex.Width, TempTex.Height, GL_RGBA);
   fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
-  fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
-  gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, GL_RGBA, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
+  fTexture.SetFilter(GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+  for i := 0 to 1 do
+    begin
+    temptex := TexFromTGA(ByteStreamFromFile(GetFirstExistingFileName(GetConfVal('fonttex') + '.' + IntToStr(i))));
+    glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, temptex.Width, temptex.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
+    end;
 
   GetLetterWidths;
 

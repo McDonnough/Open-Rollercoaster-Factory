@@ -135,7 +135,7 @@ begin
     glPopMatrix;
     RTerrain.fWaterLayerFBOs[i].ReflectionFBO.Unbind;
 
-    fInterface.Options.Items['all:above'] := '0';
+    fInterface.Options.Items['all:above'] := FloatToStr(RTerrain.fWaterLayerFBOs[i].Height - 10);
     fInterface.Options.Items['all:below'] := FloatToStr(RTerrain.fWaterLayerFBOs[i].Height);
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Bind;
     glPushMatrix;

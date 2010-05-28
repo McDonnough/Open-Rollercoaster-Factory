@@ -12,6 +12,7 @@ type
       Height: Single;
       Query: TOcclusionQuery;
       RefractionFBO, ReflectionFBO: TFBO;
+      Blocks: Array of Array of Boolean;
       constructor Create;
       destructor Free;
     end;
@@ -52,6 +53,8 @@ uses
   g_park, u_events, m_varlist, u_files, u_graphics, main, u_functions;
 
 constructor TWaterLayerFBO.Create;
+var
+  i: Integer;
 begin
   Query := TOcclusionQuery.Create;
 
@@ -64,6 +67,10 @@ begin
   RefractionFBO.AddTexture(GL_RGBA16F, GL_LINEAR, GL_LINEAR);
   RefractionFBO.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   RefractionFBO.Unbind;
+
+  setLength(Blocks, Park.pTerrain.SizeX div 128);
+  for i := 0 to high(Blocks) do
+    setLength(Blocks[i], Park.pTerrain.SizeY div 128);
 end;
 
 destructor TWaterLayerFBO.Free;
@@ -84,6 +91,9 @@ var
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 128 - 1) and (Y <= Park.pTerrain.SizeY div 128 - 1) then
         if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y, fBoundingSphereRadius[X, Y])) then
           begin
+          if fInterface.Options.Items['water:mode'] = 'refraction' then
+            if not fWaterLayerFBOs[StrToIntWD(fInterface.Options.Items['water:currlayer'], 0)].Blocks[X, Y] then
+              exit;
           if (fHeightRanges[X, Y, 0] > StrToFloatWD(fInterface.Options.Items['all:below'], 256)) or (fHeightRanges[X, Y, 1] < StrToFloatWD(fInterface.Options.Items['all:above'], 0)) then
             exit;
           fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
@@ -260,7 +270,7 @@ begin
     fBoundShader := fWaterShaderTransformSunShadow;
   fBoundShader.Bind;
 
-  fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00003, 0.00015) * FPSDisplay.MS;
+  fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00002, 0.00010) * FPSDisplay.MS;
 
   for k := 0 to high(fWaterLayerFBOs) do
     begin
@@ -345,17 +355,22 @@ var
 
   procedure RecalcBoundingSpheres(X, Y: Integer);
   var
-    i, j: Integer;
-    avgh, temp: Single;
+    i, j, k: Integer;
+    avgh, temp, temp2: Single;
     a, b, c, d: Single;
   begin
     avgh := 0;
     fHeightRanges[X, Y, 0] := 256;
     fHeightRanges[X, Y, 1] := 0;
+    for i := 0 to high(fWaterLayerFBOs) do
+      fWaterLayerFBOs[i].Blocks[X, Y] := false;
     for i := 0 to 128 do
       for j := 0 to 128 do
         begin
         temp := Park.pTerrain.HeightMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
+        temp2 := Park.pTerrain.WaterMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
+        for k := 0 to high(fWaterLayerFBOs) do
+          fWaterLayerFBOs[k].Blocks[X, Y] := fWaterLayerFBOs[k].Blocks[X, Y] or (Round(256 * temp2) = Round(256 * fWaterLayerFBOs[k].Height));
         if temp < fHeightRanges[X, Y, 0] then fHeightRanges[X, Y, 0] := temp;
         if temp > fHeightRanges[X, Y, 1] then fHeightRanges[X, Y, 1] := temp;
         if (i = 0) and (j = 0) then
@@ -397,6 +412,12 @@ begin
       SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 128);
       SetLength(fHeightRanges[i], Park.pTerrain.SizeY div 128);
       SetLength(fBoundingSphereRadius[i], length(fAvgHeight[i]));
+      end;
+    for i := 0 to high(fWaterLayerFBOs) do
+      begin
+      setLength(fWaterLayerFBOs[i].Blocks, Park.pTerrain.SizeX div 128);
+      for j := 0 to high(fWaterLayerFBOs[i].Blocks) do
+        setLength(fWaterLayerFBOs[i].Blocks[j], Park.pTerrain.SizeX div 128);
       end;
     end;
   if (Data <> nil) and (Event = 'TTerrain.Changed') then

@@ -50,7 +50,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_huffman;
 
 type
   EOCFWrongInternalFormat = class(Exception);
@@ -127,6 +127,7 @@ begin
       tmpDW := length(fBinarySections); write(tmpDW, 4);
       for i := 0 to high(fBinarySections) do
         begin
+        fBinarySections[i].Stream := HuffmanEncode(fBinarySections[i].Stream);
         tmpDW := length(fBinarySections[i].Stream.Data);
         write(tmpDW, 4);
         end;
@@ -135,7 +136,8 @@ begin
         write(fBinarySections[i].Stream.Data[0], length(fBinarySections[i].Stream.Data));
       end;
   except
-    ModuleManager.ModLog.AddError('Error saving OCF file ' + FFName + ': Internal error');
+    if ModuleManager <> nil then // Independent mode
+      ModuleManager.ModLog.AddError('Error saving OCF file ' + FFName + ': Internal error');
   end;
 end;
 
@@ -171,7 +173,8 @@ begin
   fFName := '';
   if FName <> '' then
     fFName := GetFirstExistingFilename(FName);
-  writeln('Loading OCF file ' + fFName);
+  if fFName <> '' then
+    writeln('Loading OCF file ' + fFName);
   try
     if FileExists(FFName) then
       begin
@@ -199,6 +202,7 @@ begin
             fBinarySections[i] := TOCFBinarySection.Create;
             setLength(fBinarySections[i].Stream.Data, BinarySectionLength[i]);
             Read(fBinarySections[i].Stream.Data[0], BinarySectionLength[i]);
+            fBinarySections[i].Stream := HuffmanDecode(fBinarySections[i].Stream);
             end;
         Free;
         end;

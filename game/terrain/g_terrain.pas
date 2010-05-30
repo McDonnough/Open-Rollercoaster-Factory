@@ -98,8 +98,8 @@ var
       begin
       if Format = 'tga' then
         temptex := TexFromTGA(fOCF.Bin[Section].Stream)
-      else if Format = 'ocg' then
-        temptex := TexFromOCG(fOCF.Bin[Section].Stream)
+      else if Format = 'dbcg' then
+        temptex := TexFromDBCG(fOCF.Bin[Section].Stream)
       else
         raise EInvalidFormat.Create('Invalid Format');
       TexFormat := GL_RGB;
@@ -128,8 +128,8 @@ begin
         begin
         if Format = 'tga' then
           temptex := TexFromTGA(fOCF.Bin[Section].Stream)
-        else if Format = 'ocg' then
-          temptex := TexFromOCG(fOCF.Bin[Section].Stream)
+        else if Format = 'dbcg' then
+          temptex := TexFromDBCG(fOCF.Bin[Section].Stream)
         else
           raise EInvalidFormat.Create('Invalid Format');
         TexFormat := GL_RGB;

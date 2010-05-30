@@ -17,15 +17,14 @@ type
 function RGBAToHSLA(Input: DWord): DWord;
 function HSLAToRGBA(Input: DWord): DWord;
 
-
 function TexFromTGA(Stream: TByteStream): TTexImage;
-function TexFromOCG(Stream: TByteStream): TTexImage;
-function OCGFromTex(TexImg: TTexImage; Tolerance: Integer = 20): TByteStream;
+function TexFromDBCG(Stream: TByteStream): TTexImage;
+function DBCGFromTex(TexImg: TTexImage): TByteStream;
 
 implementation
 
 uses
-  m_varlist, u_vectors, u_math, math;
+  m_varlist, u_vectors, u_math, math, u_huffman;
 
 type
   EUnsupportedStream = class(Exception);
@@ -307,290 +306,59 @@ begin
     end;
 end;
 
-function TexFromOCG(Stream: TByteStream): TTexImage;
+function TexFromDBCG(Stream: TByteStream): TTexImage;
 var
-  Maps: Array[1..4] of Array of Array of Byte;
-  Bitmap: Array of Array of Byte;
-  i, j, k: Integer;
-  X, Y: Integer;
-  DP: Integer;
-  Bytes: DWord;
-  tmp: Byte;
-  Pixel: DWord;
-  procedure FillMap(Map, X, Y, Pixel: Integer);
-  begin
-    Maps[Map, X, Y] := Pixel;
-    BitMap[X, Y] := 1;
-    if (X > 0) then if (BitMap[X - 1, Y] = 0) then
-      FillMap(Map, X - 1, Y, Pixel);
-    if (X < high(Maps[Map])) then if (BitMap[X + 1, Y] = 0) then
-      FillMap(Map, X + 1, Y, Pixel);
-    if (Y > 0) then if (BitMap[X, Y - 1] = 0) then
-      FillMap(Map, X, Y - 1, Pixel);
-    if (Y < high(Maps[Map, 0])) then if (BitMap[X, Y + 1] = 0) then
-      FillMap(Map, X, Y + 1, Pixel);
-  end;
+  i, j: Integer;
+  Last: Array[0..3] of Byte;
 begin
-  try
-    Result.BPP := 8 * Stream.Data[1];
-    Result.Width := Word((@Stream.Data[2])^);
-    Result.Height := Word((@Stream.Data[4])^);
-    setLength(Result.Data, Stream.Data[1] * Result.Width * Result.Height);
-    setLength(Bitmap, Result.Width);
-    for i := 1 to 4 do
-      setLength(Maps[i], Result.Width);
+  Result.BPP := Stream.Data[0];
+  Result.Width := Word((@Stream.Data[1])^);
+  Result.Height := Word((@Stream.Data[3])^);
+  SetLength(Result.Data, Result.Width * Result.Height * Result.BPP div 8);
+  for i := 0 to 3 do
+    Last[i] := 0;
+  for j := 0 to Result.Height - 1 do
     for i := 0 to Result.Width - 1 do
       begin
-      setLength(Bitmap[i], Result.Height);
-      for j := 1 to 4 do
-        setLength(Maps[j, i], Result.Height);
+      Last[0] := Byte(Last[0] + Stream.Data[5 + ((Result.Width * j + i) * Result.BPP div 8)]);
+      Last[1] := Byte(Last[1] + Stream.Data[6 + ((Result.Width * j + i) * Result.BPP div 8)]);
+      Last[2] := Byte(Last[2] + Stream.Data[7 + ((Result.Width * j + i) * Result.BPP div 8)]);
+      if Result.BPP = 32 then
+        Last[3] := Byte(Last[3] + Stream.Data[8 + ((Result.Width * j + i) * Result.BPP div 8)]);
+      Result.Data[0 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[0];
+      Result.Data[1 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[1];
+      Result.Data[2 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[2];
+      if Result.BPP = 32 then
+        Result.Data[3 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[3];
       end;
-    x := 0;
-    y := 0;
-    DP := 6;
-    for k := 1 to Stream.Data[1] do
-      begin
-      Bytes := DWord((@Stream.Data[DP])^);
-      inc(DP, 4);
-      for j := 0 to Result.Height - 1 do
-        for i := 0 to (Result.Width div 8) - 1 do
-          begin
-          tmp := Stream.Data[DP];
-          BitMap[8 * i, j] := tmp and 1;
-          BitMap[8 * i + 1, j] := (tmp and (1 shl 1)) shr 1;
-          BitMap[8 * i + 2, j] := (tmp and (1 shl 2)) shr 2;
-          BitMap[8 * i + 3, j] := (tmp and (1 shl 3)) shr 3;
-          BitMap[8 * i + 4, j] := (tmp and (1 shl 4)) shr 4;
-          BitMap[8 * i + 5, j] := (tmp and (1 shl 5)) shr 5;
-          BitMap[8 * i + 6, j] := (tmp and (1 shl 6)) shr 6;
-          BitMap[8 * i + 7, j] := (tmp and (1 shl 7)) shr 7;
-          inc(DP);
-          end;
-      for j := 0 to Result.Height - 1 do
-        for i := 0 to Result.Width - 1 do
-          if BitMap[i, j] <> 0 then
-            begin
-            Maps[k, i, j] := Stream.Data[DP];
-            inc(DP);
-            end;
-      for j := 0 to Result.Height - 1 do
-        for i := 0 to Result.Width - 1 do
-          begin
-          if BitMap[i, j] = 0 then
-            begin
-            tmp := Stream.Data[DP];
-            FillMap(k, i, j, tmp);
-            inc(DP);
-            end;
-          end;
-      end;
-    DP := 0;
-    for j := 0 to Result.Height - 1 do
-      for i := 0 to Result.Width - 1 do
-        begin
-        Pixel := Maps[1, i, j] or (Maps[2, i, j] shl 8) or (Maps[3, i, j] shl 16);
-        if Result.BPP = 32 then
-          Pixel := Pixel or (Maps[4, i, j] shl 24)
-        else
-          Pixel := Pixel or $FF000000;
-        Pixel := HSLAToRGBA(Pixel);
-        if Result.BPP = 24 then
-          begin
-          Pixel := Pixel and $00FFFFFF;
-          Result.Data[3 * DP + 2] := Pixel and $0000FF;
-          Result.Data[3 * DP + 1] := (Pixel and $00FF00) shr 8;
-          Result.Data[3 * DP + 0] := (Pixel and $FF0000) shr 16;
-          end
-        else
-          begin
-          Result.Data[4 * DP + 2] := (Pixel and $000000FF);
-          Result.Data[4 * DP + 1] := (Pixel and $0000FF00) shr 8;
-          Result.Data[4 * DP + 0] := (Pixel and $00FF0000) shr 16;
-          Result.Data[4 * DP + 3] := (Pixel and $FF000000) shr 24;
-          end;
-        inc(DP);
-        end;
-  except
-    on EUnsupportedStream do ModuleManager.ModLog.AddError('Error loading OCG Stream: Unsupported stream');
-  else
-    ModuleManager.ModLog.AddError('Internal error');
-  end;
 end;
 
-function OCGFromTex(TexImg: TTexImage; Tolerance: Integer = 20): TByteStream;
-type
-  AAByte = Array of Array of Byte;
-  AByte = Array of Byte;
-
-  procedure CompressMap(var Map: AAByte);
-  var
-    LaplaceMap: AAByte;
-    ConvertedMap: Array of Array of Byte;
-    DiffSum: Array of Array of Integer;
-    i, j, k, l: Integer;
-    NeighbourCount: Integer;
-    ByteCount: DWord;
-    DP: Integer;
-    Bitmap: AAByte;
-    Areas, Pixels: AByte;
-    Value, Count: Integer;
-
-    function MapPixel(x, y: Integer): Integer;
-    begin
-      Result := 0;
-      if (x >= 0) and (y >= 0) and (x <= high(LaplaceMap)) and (y <= high(LaplaceMap[i])) then
-        begin
-        inc(NeighbourCount);
-        Result := Map[X, Y];
-        end;
-    end;
-
-    procedure InitArea;
-    begin
-      Count := 0;
-      Value := 0;
-    end;
-
-    procedure MarkArea(X, Y: Integer);
-    begin
-      inc(Count);
-      inc(Value, Map[X, Y]);
-      ConvertedMap[X, Y] := 1;
-      if (X > 0) then if (ConvertedMap[X - 1, Y] = 0) then
-        MarkArea(X - 1, Y);
-      if (X < high(Map)) then if (ConvertedMap[X + 1, Y] = 0) then
-        MarkArea(X + 1, Y);
-      if (Y > 0) then if (ConvertedMap[X, Y - 1] = 0) then
-        MarkArea(X, Y - 1);
-      if (Y < high(Map[0])) then if (ConvertedMap[X, Y + 1] = 0) then
-        MarkArea(X, Y + 1);
-    end;
-  begin
-    SetLength(LaplaceMap, length(Map));
-    SetLength(ConvertedMap, length(Map));
-    for i := 0 to high(LaplaceMap) do
-      begin
-      setLength(LaplaceMap[i], length(Map[i]));
-      setLength(ConvertedMap[i], length(Map[i]));
-      end;
-    SetLength(DiffSum, Length(LaplaceMap) div 8);
-    for i := 0 to high(DiffSum) do
-      setLength(DiffSum[i], Length(LaplaceMap[i]) div 8);
-    for j := 0 to high(LaplaceMap[0]) do
-      for i := 0 to high(LaplaceMap) do
-        begin
-        NeighbourCount := 0;
-        LaplaceMap[i, j] := abs(Integer(MapPixel(i - 1, j) + MapPixel(i - 1, j - 1) + MapPixel(i, j - 1) + MapPixel(i + 1, j - 1) + MapPixel(i + 1, j) + MapPixel(i + 1, j + 1) + MapPixel(i, j + 1) + MapPixel(i - 1, j + 1) - NeighbourCount * MapPixel(i, j)));
-        end;
-    for i := 0 to high(DiffSum) do
-      for j := 0 to high(DiffSum[i]) div 8 do
-        begin
-        DiffSum[i, j] := 0;
-        for k := 0 to 7 do
-          for l := 0 to 7 do
-            DiffSum[i, j] := DiffSum[i, j] + LaplaceMap[8 * i + k, 8 * j + l];
-        end;
-    for j := 0 to high(LaplaceMap[0]) do
-      for i := 0 to high(LaplaceMap) do
-        begin
-        if (LaplaceMap[i, j] > Tolerance) or (((i / 8 = i div 8) or (j div 8 = j / 8))) then
-          begin
-          LaplaceMap[i, j] := 1;
-          setLength(Pixels, length(Pixels) + 1);
-          Pixels[high(Pixels)] := Map[I, J];
-          end
-        else
-          begin
-          LaplaceMap[i, j] := 0;
-          end;
-        ConvertedMap[i, j] := LaplaceMap[i, j];
-        end;
-    for j := 0 to high(LaplaceMap[0]) do
-      for i := 0 to high(LaplaceMap) do
-        begin
-        if ConvertedMap[i, j] = 0 then
-          begin
-          setlength(Areas, length(Areas) + 1);
-          InitArea;
-          MarkArea(i, j);
-          Areas[high(Areas)] := Value div Count;
-          end;
-        end;
-    for j := 0 to high(LaplaceMap[0]) do
-      for i := 0 to high(LaplaceMap) div 8 do
-        LaplaceMap[i, j] := LaplaceMap[8 * i, j] or (LaplaceMap[8 * i + 1, j] shl 1) or (LaplaceMap[8 * i + 2, j] shl 2) or (LaplaceMap[8 * i + 3, j] shl 3)
-                       or (LaplaceMap[8 * i + 4, j] shl 4) or (LaplaceMap[8 * i + 5, j] shl 5) or (LaplaceMap[8 * i + 6, j] shl 6) or (LaplaceMap[8 * i + 7, j] shl 7);
-    setLength(LaplaceMap, length(LaplaceMap) div 8);
-    ByteCount := Length(LaplaceMap) * Length(LaplaceMap[0]) + Length(Pixels) + Length(Areas);
-    DP := Length(Result.Data);
-    setLength(Result.Data, DP + 4 + ByteCount);
-    DWord((@Result.Data[DP])^) := ByteCount; inc(DP, 4);
-    for j := 0 to high(LaplaceMap[0]) do
-      for i := 0 to high(LaplaceMap) do
-        begin
-        Result.Data[DP] := LaplaceMap[i, j];
-        inc(DP);
-        end;
-    for i := 0 to high(Pixels) do
-      begin
-      Result.Data[DP] := Pixels[i];
-      inc(DP);
-      end;
-    for i := 0 to high(Areas) do
-      begin
-      Result.Data[DP] := Areas[i];
-      inc(DP);
-      end;
-  end;
+function DBCGFromTex(TexImg: TTexImage): TByteStream;
 var
-  H, S, L, A: AAByte;
-  i: Integer;
-  x, y: Integer;
-  Pixel: DWord;
+  i, j: Integer;
 begin
-  SetLength(Result.Data, 6);
-  x := 0;
-  y := 0;
-  with TexImg do
-    begin
-    Result.Data[0] := 255;
-    Result.Data[1] := BPP div 8;;
-    Word((@Result.Data[2])^) := Width;
-    Word((@Result.Data[4])^) := Height;
-    setLength(H, Width);
-    setLength(S, Width);
-    setLength(L, Width);
-    if BPP = 32 then
-      setLength(A, Width);
-    for i := 0 to Width - 1 do
-      begin
-      setLength(H[i], Height);
-      setLength(S[i], Height);
-      setLength(L[i], Height);
-      if BPP = 32 then
-        setLength(A[i], Height);
-      end;
-    for i := 0 to high(Data) div BPP * 8 do
-      begin
-      Pixel := RGBAToHSLA(DWord((@Data[BPP div 8 * i])^));
-      H[x, y] := Pixel and $FF;
-      S[x, y] := (Pixel and $FF00) shr 8;
-      L[x, y] := (Pixel and $FF0000) shr 16;
-      if BPP = 32 then
-        A[x, y] := (Pixel and $FF000000) shr 24;
-      inc(x);
-      if x = width then
+  SetLength(Result.Data, 5 + TexImg.BPP div 8 * TexImg.Height * TexImg.Width);
+  Result.Data[0] := TexImg.BPP;
+  Word((@Result.Data[1])^) := TexImg.Width;
+  Word((@Result.Data[3])^) := TexImg.Height;
+  for j := 0 to TexImg.Height - 1 do
+    for i := 0 to TexImg.Width - 1 do
+      if i + j = 0 then
         begin
-        x := 0;
-        inc(y);
+        Result.Data[5 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[0 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
+        Result.Data[6 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[1 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
+        Result.Data[7 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[2 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
+        if TexImg.BPP = 32 then
+          Result.Data[8 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[3 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
+        end
+      else
+        begin
+        Result.Data[5 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[0 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[0 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
+        Result.Data[6 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[1 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[1 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
+        Result.Data[7 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[2 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[2 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
+        if TexImg.BPP = 32 then
+          Result.Data[8 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[3 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[3 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
         end;
-      end;
-    CompressMap(H);
-    CompressMap(S);
-    CompressMap(L);
-    if BPP = 32 then
-      CompressMap(A);
-    end;
 end;
 
 end.

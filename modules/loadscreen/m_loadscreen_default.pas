@@ -50,18 +50,18 @@ begin
   fWindow.Width := 450;
 
   fHLabel := TLabel.Create(fWindow);
-  fHLabel.Size := 16;
+  fHLabel.Size := 24;
   fHLabel.Left := 16;
   fHLabel.Top := 16;
   fHLabel.Width := 418;
-  fHLabel.Height := 16;
+  fHLabel.Height := 24;
 
   fTLabel := TLabel.Create(fWindow);
-  fTLabel.Size := 12;
+  fTLabel.Size := 16;
   fTLabel.Left := 32;
   fTLabel.Top := 48;
   fTLabel.Width := 386;
-  fTLabel.Height := 12;
+  fTLabel.Height := 16;
 
   fPB := TProgressBar.Create(fWindow);
   fPB.Left := 32;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ocf resource:version="1.0">
 	<resources>
-		<resource resource:id="0" resource:section="0" resource:format="ocg" resource:version="1.0" />
+		<resource resource:id="0" resource:section="0" resource:format="dbcg" resource:version="1.0" />
 		<resource resource:id="1" resource:section="1" resource:format="tga" resource:version="1.0" />
 	</resources>
 	<texturecollection name="Default texture collection" resource:version="1.0">

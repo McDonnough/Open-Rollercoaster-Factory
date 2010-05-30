@@ -69,7 +69,7 @@ interface
     end;
 
 var
-  ModuleManager: TModuleManager;
+  ModuleManager: TModuleManager = nil;
 
 implementation
 

@@ -22,6 +22,8 @@ uses
 
 function GetFirstExistingFilename(FileName: String): String;
 begin
+  if ModuleManager = nil then // Independent mode
+    exit(FileName);
   Result := '';
   FileName := ModuleManager.ModPathes.Convert(FileName);
   if FileExists(FileName) then

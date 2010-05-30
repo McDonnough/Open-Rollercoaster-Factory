@@ -82,8 +82,8 @@ begin
     exit(-2);
   if lowercase(extractFileExt(Filename)) = '.tga' then
     TexImage := TexFromTGA(ByteStreamFromFile(filename))
-  else if lowercase(extractFileExt(Filename)) = '.ocg' then
-    TexImage := TexFromOCG(ByteStreamFromFile(filename))
+  else if lowercase(extractFileExt(Filename)) = '.dbcg' then
+    TexImage := TexFromDBCG(ByteStreamFromFile(filename))
   else
     exit(-1);
   try

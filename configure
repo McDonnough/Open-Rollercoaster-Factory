@@ -103,6 +103,6 @@ for i in `find . -type d | grep -v .git`; do
 done
 
 echo "all:" > Makefile
-echo "	fpc -MObjFPC -Sghi $options -O3 -vewnhi $incdirs $LinkerOpt orcf.lpr" >> Makefile
+echo "	fpc -MObjFPC -g -Sghi $options -O3 -vewnhi $incdirs $LinkerOpt orcf.lpr" >> Makefile
 
 echo "Configure done"

@@ -17,6 +17,9 @@ type
 function RGBAToHSLA(Input: DWord): DWord;
 function HSLAToRGBA(Input: DWord): DWord;
 
+function TexFromStream(Stream: TByteStream; Format: String): TTexImage;
+function StreamFromTex(TexImg: TTexImage; Format: String): TByteStream;
+
 function TexFromTGA(Stream: TByteStream): TTexImage;
 function TexFromDBCG(Stream: TByteStream): TTexImage;
 function DBCGFromTex(TexImg: TTexImage): TByteStream;
@@ -29,6 +32,24 @@ uses
 type
   EUnsupportedStream = class(Exception);
   EConversionError = class(Exception);
+
+function TexFromStream(Stream: TByteStream; Format: String): TTexImage;
+begin
+  Result.BPP := 0;
+  Result.Width := 0;
+  Result.Height := 0;
+  if Format = '.tga' then
+    Result := TexFromTGA(Stream)
+  else if Format = '.dbcg' then
+    Result := TexFromDBCG(Stream);
+end;
+
+function StreamFromTex(TexImg: TTexImage; Format: String): TByteStream;
+begin
+  SetLength(Result.Data, 0);
+  if Format = '.dbcg' then
+    Result := DBCGFromTex(TexImg);
+end;
 
 function RGBAToHSLA(Input: DWord): DWord;
 var

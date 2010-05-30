@@ -19,7 +19,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_math;
 
 constructor TModuleGUIProgressBarDefault.Create;
 begin
@@ -43,48 +43,53 @@ end;
 
 procedure TModuleGUIProgressBarDefault.Render(pb: TProgressBar);
 var
-  fPercentage: GLFloat;
+  BulletSize, Bullets: Integer;
+  FullyFilledBullets: Integer;
+  MiddleBulletPercentage: GLFloat;
 begin
-  fPercentage := min(max(0.0, pb.Progress * 0.01), 1.0);
+  BulletSize := Round(pb.Height + 1);
+  repeat
+    dec(BulletSize);
+    Bullets := Ceil(pb.Width / BulletSize);
+  until
+    BulletSize * Bullets <= pb.Width;
+  FullyFilledBullets := Floor(Bullets * pb.Progress / 100);
+  MiddleBulletPercentage := FPart(Bullets * pb.Progress / 100);
 
-  glColor4f(1, 1, 1, 1);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_ALPHA_TEST);
+  glAlphaFunc(GL_GREATER, 0.0);
   fTexture.Bind;
   glBegin(GL_QUADS);
-    glTexCoord2f(0,                   0);       glVertex3f(pb.Left,      pb.Top, 0);
-    glTexCoord2f(16 / fTexture.Width, 0);       glVertex3f(pb.Left + 16, pb.Top, 0);
-    glTexCoord2f(16 / fTexture.Width, 0.5);     glVertex3f(pb.Left + 16, pb.Top + pb.Height, 0);
-    glTexCoord2f(0,                   0.5);     glVertex3f(pb.Left,      pb.Top + pb.Height, 0);
-
-    glTexCoord2f(16 / fTexture.Width,     0);   glVertex3f(pb.Left + 16,            pb.Top, 0);
-    glTexCoord2f(1 - 16 / fTexture.Width, 0);   glVertex3f(pb.Left + pb.Width - 16, pb.Top, 0);
-    glTexCoord2f(1 - 16 / fTexture.Width, 0.5); glVertex3f(pb.Left + pb.Width - 16, pb.Top + pb.Height, 0);
-    glTexCoord2f(16 / fTexture.Width,     0.5); glVertex3f(pb.Left + 16,            pb.Top + pb.Height, 0);
-
-    glTexCoord2f(1 - 16 / fTexture.Width, 0);   glVertex3f(pb.Left + pb.Width - 16, pb.Top, 0);
-    glTexCoord2f(1,                       0);   glVertex3f(pb.Left + pb.Width,      pb.Top, 0);
-    glTexCoord2f(1,                       0.5); glVertex3f(pb.Left + pb.Width,      pb.Top + pb.Height, 0);
-    glTexCoord2f(1 - 16 / fTexture.Width, 0.5); glVertex3f(pb.Left + pb.Width - 16, pb.Top + pb.Height, 0);
-
-    if fPercentage > 0 then
+    if FullyFilledBullets < Bullets then
       begin
-      glTexCoord2f(0,                   0.5);     glVertex3f(pb.Left,      pb.Top, 0);
-      glTexCoord2f(16 / fTexture.Width, 0.5);     glVertex3f(pb.Left + 16, pb.Top, 0);
-      glTexCoord2f(16 / fTexture.Width, 1);       glVertex3f(pb.Left + 16, pb.Top + pb.Height, 0);
-      glTexCoord2f(0,                   1);       glVertex3f(pb.Left,      pb.Top + pb.Height, 0);
+      glColor4f(1, 1, 1, 1);
+      glTexCoord2f(FullyFilledBullets + 1, 0.5); glVertex2f(pb.Left + BulletSize * (FullyFilledBullets + 1), pb.Top);
+      glTexCoord2f(Bullets, 0.5); glVertex2f(pb.Left + BulletSize * Bullets, pb.Top);
+      glTexCoord2f(Bullets, 1); glVertex2f(pb.Left + BulletSize * Bullets, pb.Top + BulletSize);
+      glTexCoord2f(FullyFilledBullets + 1, 1); glVertex2f(pb.Left + BulletSize * (FullyFilledBullets + 1), pb.Top + BulletSize);
 
-      glTexCoord2f(16 / fTexture.Width,     0.5); glVertex3f(pb.Left + 16,                                 pb.Top, 0);
-      glTexCoord2f(1 - 16 / fTexture.Width, 0.5); glVertex3f(pb.Left + (pb.Width - 32) * fPercentage + 16, pb.Top, 0);
-      glTexCoord2f(1 - 16 / fTexture.Width, 1);   glVertex3f(pb.Left + (pb.Width - 32) * fPercentage + 16, pb.Top + pb.Height, 0);
-      glTexCoord2f(16 / fTexture.Width,     1);   glVertex3f(pb.Left + 16,                                 pb.Top + pb.Height, 0);
+      glColor4f(1, 1, 1, 1 - MiddleBulletPercentage);
+      glTexCoord2f(0, 0.5); glVertex2f(pb.Left + BulletSize * FullyFilledBullets, pb.Top);
+      glTexCoord2f(1, 0.5); glVertex2f(pb.Left + BulletSize * (1 + FullyFilledBullets), pb.Top);
+      glTexCoord2f(1, 1); glVertex2f(pb.Left + BulletSize * (1 + FullyFilledBullets), pb.Top + BulletSize);
+      glTexCoord2f(0, 1); glVertex2f(pb.Left + BulletSize * FullyFilledBullets, pb.Top + BulletSize);
+
+      glColor4f(1, 1, 1, MiddleBulletPercentage);
+      glTexCoord2f(0, 0); glVertex2f(pb.Left + BulletSize * FullyFilledBullets, pb.Top);
+      glTexCoord2f(1, 0); glVertex2f(pb.Left + BulletSize * (1 + FullyFilledBullets), pb.Top);
+      glTexCoord2f(1, 0.5); glVertex2f(pb.Left + BulletSize * (1 + FullyFilledBullets), pb.Top + BulletSize);
+      glTexCoord2f(0, 0.5); glVertex2f(pb.Left + BulletSize * FullyFilledBullets, pb.Top + BulletSize);
       end;
-    if fPercentage = 1 then
-      begin
-      glTexCoord2f(1 - 16 / fTexture.Width, 0.5); glVertex3f(pb.Left + pb.Width - 16, pb.Top, 0);
-      glTexCoord2f(1,                       0.5); glVertex3f(pb.Left + pb.Width,      pb.Top, 0);
-      glTexCoord2f(1,                       1);   glVertex3f(pb.Left + pb.Width,      pb.Top + pb.Height, 0);
-      glTexCoord2f(1 - 16 / fTexture.Width, 1);   glVertex3f(pb.Left + pb.Width - 16, pb.Top + pb.Height, 0);
-      end;
+
+    glColor4f(1, 1, 1, 1);
+    glTexCoord2f(FullyFilledBullets, 0); glVertex2f(pb.Left + BulletSize * FullyFilledBullets, pb.Top);
+    glTexCoord2f(0, 0); glVertex2f(pb.Left, pb.Top);
+    glTexCoord2f(0, 0.5); glVertex2f(pb.Left, pb.Top + BulletSize);
+    glTexCoord2f(FullyFilledBullets, 0.5); glVertex2f(pb.Left + BulletSize * FullyFilledBullets, pb.Top + BulletSize);
   glEnd;
+
   fTexture.Unbind;
 end;
 

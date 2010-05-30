@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ocf resource:version="1.0">
+	<resources>
+		<resource resource:id="0" resource:section="0" resource:format="dbcg" resource:version="1.0" />
+		<resource resource:id="1" resource:section="1" resource:format="dbcg" resource:version="1.0" />
+		<resource resource:id="2" resource:section="2" resource:format="dbcg" resource:version="1.0" />
+		<resource resource:id="3" resource:section="3" resource:format="dbcg" resource:version="1.0" />
+	</resources>
+	<fonttexture name="default" resource:version="1.0">
+		<texture resource:id="0" minsize="28" />
+		<texture resource:id="1" minsize="20" maxsize="28" />
+		<texture resource:id="2" minsize="14" maxsize="20" />
+		<texture resource:id="3" maxsize="14" />
+	</fonttexture>
+</ocf>

@@ -5,20 +5,23 @@ unit m_font_textureVariableWidth;
 interface
 
 uses
-  Classes, SysUtils, m_font_class, m_texmng_class, m_shdmng_class, DGLOpenGL, u_graphics, u_math;
+  Classes, SysUtils, m_font_class, m_texmng_class, m_shdmng_class, DGLOpenGL, u_graphics, u_math, g_loader_ocf;
 
 type
   TLetterPosition = record
-    firstPixel, lastPixel, width: byte;
-  end;
+    FirstPixel, Width: byte;
+    end;
+
+  TFontTexture = record
+    MinSize, MaxSize: Integer;
+    Texture: TTexture;
+    LetterPositions: Array[0..255] of TLetterPosition;
+    end;
+
   TModuleFontTextureVariableWidth = class(TModuleFontClass)
-    private
-      refCellWidth, refCellHeight: integer;
     protected
-      TempTex: TTexImage;
-      fTexture: TTexture;
-      fLetterPositions: array[0..255] of TLetterPosition;
-      procedure GetLetterWidths;
+      fTextures: Array of TFontTexture;
+      procedure GetLetterWidth(Tex: Integer);
       function ConvertText(Input: String): String;
     public
       procedure Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
@@ -31,114 +34,122 @@ type
 implementation
 
 uses
-  m_varlist, u_files;
+  m_varlist, u_files, u_dom, u_functions;
 
-procedure TModuleFontTextureVariableWidth.GetLetterWidths;
+procedure TModuleFontTextureVariableWidth.GetLetterWidth(Tex: Integer);
 var
-  i: Byte;
-  j, k: Word;
-  currentX, currentY: Word;
-  currentAlpha: Byte;
-  searchingFirstPixel: boolean;
-  tmpX1, tmpX2: byte;
+  i, j, k, l: Integer;
+  doBreak: Boolean;
+  CellWidth, CellHeight: Integer;
 begin
-  refCellWidth := round(fTexture.Width / 16);
-  refCellHeight := round(fTexture.Height / 16);
-  for i := 0 to 255 do
-    begin
-  	currentX := (i mod 16);
-  	currentY := round((i - currentX) / 16) * refCellHeight;
-  	currentX := currentX * refCellWidth;
-  	searchingFirstPixel := true;
-  	for j := 0 to refCellWidth - 1 do
-  	  begin
-  	  for k := 0 to refCellHeight - 1 do
-  	    begin
-  	    currentAlpha := (fTexture.Pixels[currentX + j, currentY + k] AND $FF000000) SHR 24;
-  	    if currentAlpha >= 1 then
-  	      begin
-  	      if searchingFirstPixel then
-  	        begin
-  	        tmpX1 := j;
-  	        tmpX2 := j;
-  	        searchingFirstPixel := false;
-  	        end
-  	      else
-  	        begin
-  	        tmpX2 := j;
-  	        end;
-  	      end;
-  	    end;
-  	  end;
-  	if searchingFirstPixel then
-  	  begin
-  	  tmpX1 := 0;
-  	  tmpX2 := refCellWidth;
-  	  end;
-  	fLetterPositions[i].firstPixel := tmpX1;
-  	fLetterPositions[i].width := tmpX2 - tmpX1;
-  	fLetterPositions[i].lastPixel := tmpX2;
-    end;
+  CellWidth := fTextures[Tex].Texture.Width div 16;
+  CellHeight := fTextures[Tex].Texture.Height div 16;
+  for i := 0 to 15 do
+    for j := 0 to 15 do
+      begin
+      fTextures[Tex].LetterPositions[16 * j + i].FirstPixel := 0;
+      fTextures[Tex].LetterPositions[16 * j + i].Width := CellWidth;
+      doBreak := false;
+      for k := 0 to CellWidth - 1 do
+        begin
+        for l := 0 to CellHeight - 1 do
+          if fTextures[Tex].Texture.Pixels[CellWidth * i + k, CellHeight * j + l] and $FF000000 > 0 then
+            begin
+            fTextures[Tex].LetterPositions[16 * j + i].FirstPixel := k;
+            doBreak := true;
+            break;
+            end;
+        if doBreak then
+          break;
+        end;
+
+      doBreak := false;
+      for k := CellWidth - 1 downto 0 do
+        begin
+        for l := 0 to CellHeight - 1 do
+          if fTextures[Tex].Texture.Pixels[CellWidth * i + k, CellHeight * j + l] and $FF000000 > 0 then
+            begin
+            fTextures[Tex].LetterPositions[16 * j + i].Width := k - fTextures[Tex].LetterPositions[16 * j + i].FirstPixel + 1;
+            doBreak := true;
+            break;
+            end;
+        if doBreak then
+          break;
+        end;
+      end;
 end;
 
 procedure TModuleFontTextureVariableWidth.Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
 var
   px, py: Integer;
-  X, Y: GLFloat;
-  i: integer;
-  widthFac: single;
+  X, Y: Integer;
+  i, BoundTexture: integer;
+  LO: Integer;
 begin
+  if (Size = 0) or (Text = '') or (A = 0) then
+    exit;
   Text := ConvertText(Text);
-  X := Left;
-  Y := Top;
-  widthFac := Size / refCellHeight;
-  fTexture.Bind();
+  X := Round(Left);
+  Y := Round(Top);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER, 0.0);
+  BoundTexture := 0;
+  for i := 0 to high(fTextures) do
+    if (Size >= fTextures[i].MinSize) and (Size < fTextures[i].MaxSize) then
+      begin
+      fTextures[i].Texture.Bind(0);
+      BoundTexture := i;
+      end;
   glBegin(GL_QUADS);
   glColor4f(R, G, B, A);
-  X := Left;
-    for i := 1 to Length(Text) do
-      case Text[i] of
-        #9: X := X + 4 * 0.8 * Size;
-        #10: begin X := Left; Y := Y + Size; end;
-        #0: break;
-        #32: begin X := X + Size / 3; end;
-      else
-        py := Ord(Text[i]) div 16;
-        px := Ord(Text[i]) - 16 * py;
-        glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),       py / 16);
-        glVertex2f(Round(X),        Round(Y));
-        glTexCoord2f((px + 1) / 16 - (refCellWidth - fLetterPositions[Ord(Text[i])].lastPixel) / (refCellHeight * 16),  py / 16);
-        glVertex2f(Round(X) + Round(fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y));
-        glTexCoord2f((px + 1) / 16 - (refCellWidth - fLetterPositions[Ord(Text[i])].lastPixel) / (refCellHeight * 16), (py + 1) / 16);
-        glVertex2f(Round(X) + Round(fLetterPositions[Ord(Text[i])].width * widthFac), Round(Y + Size));
-        glTexCoord2f (px / 16 + fLetterPositions[Ord(Text[i])].firstPixel / (refCellHeight * 16),      (py + 1) / 16);
-        glVertex2f(Round(X),        Round(Y + Size));
-        X := X + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
-        end;
+  for i := 1 to length(Text) do
+    begin
+    py := Ord(Text[i]) div 16;
+    px := Ord(Text[i]) mod 16;
+
+    LO := Round(fTextures[BoundTexture].LetterPositions[Ord(Text[i])].FirstPixel * Size / (fTextures[BoundTexture].Texture.Width / 16));
+
+    glTexCoord2f(px / 16, py / 16); glVertex2f(X - LO, Y);
+    glTexCoord2f((px + 1) / 16, py / 16); glVertex2f(X + Size - LO, Y);
+    glTexCoord2f((px + 1) / 16, (py + 1) / 16); glVertex2f(X + Size - LO, Y + Size);
+    glTexCoord2f(px / 16, (py + 1) / 16); glVertex2f(X - LO, Y + Size);
+
+    case Text[i] of
+      #9: X := Round(X + 2.4 * Size);
+      #10: begin X := Round(Left); Y := Round(Y + Size); end;
+      #0: break;
+      #32: X := Round(X + Size / 3);
+      else X := Round(X + (fLetterSpacing * 33 / Size) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
+      end;
+    end;
   glEnd;
-  fTexture.Unbind;
+  fTextures[BoundTexture].Texture.Unbind;
+  glDisable(GL_BLEND);
+  glDisable(GL_ALPHA_TEST);
 end;
 
 function TModuleFontTextureVariableWidth.CalculateTextWidth(text: String; Size: Integer): Integer;
 var
-  i: integer;
-  width, widthFac: single;
+  i, BoundTexture: integer;
 begin
-  width := 0;
-  widthFac := Size / refCellHeight;
+  Result := 0;
+  BoundTexture := 0;
+  for i := 0 to high(fTextures) do
+    if (Size >= fTextures[i].MinSize) and (Size < fTextures[i].MaxSize) then
+      begin
+      fTextures[i].Texture.Bind(0);
+      BoundTexture := i;
+      end;
   for i := 1 to Length(Text) do
-      case Text[i] of
-        #9: width := width + 4 * 0.8 * Size;
-        #0: break;
-        #32: begin width := width + Size / 3; end;
-      else
-        width := width + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
-        end;
-  result := round(width);
+    case Text[i] of
+      #9: Result := Round(Result + 2.4 * Size);
+      #10: ;
+      #0: break;
+      #32: Result := Round(Result + Size / 3);
+      else Result := Round(Result + (fLetterSpacing * 33 / Size) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
+      end;
 end;
 
 function TModuleFontTextureVariableWidth.ConvertText(Input: String): String;
@@ -155,43 +166,57 @@ end;
 
 procedure TModuleFontTextureVariableWidth.CheckModConf;
 begin
-  if GetConfVal('used') = '' then
+  if GetConfVal('used') <> '1' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('fonttex', 'fonttexture/default.tga');
+    SetConfVal('fonttex', 'fontocf/default.ocf');
     end;
 end;
 
 constructor TModuleFontTextureVariableWidth.Create;
 var
   i: Integer;
+  fOCF: TOCFFile;
+  e: TDOMElement;
+  TempTex: TTexImage;
 begin
   fModName := 'FontTextureVariableWidth';
   fModType := 'Font';
 
   CheckModConf;
 
-  writeln('Loading font texture from ' + GetFirstExistingFileName(GetConfVal('fonttex')));
-  temptex := TexFromTGA(ByteStreamFromFile(GetFirstExistingFileName(GetConfVal('fonttex') + '.0')));
-  fTexture := TTexture.Create;
-  fTexture.CreateNew(TempTex.Width, TempTex.Height, GL_RGBA);
-  fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
-  fTexture.SetFilter(GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-  for i := 0 to 1 do
+  writeln('Loading font textures from ' + GetFirstExistingFileName(GetConfVal('fonttex')));
+  fOCF := TOCFFile.Create(GetFirstExistingFileName(GetConfVal('fonttex')));
+  e := TDOMElement(fOCF.XML.Document.GetElementsByTagName('fonttexture')[0].FirstChild);
+  while e <> nil do
     begin
-    temptex := TexFromTGA(ByteStreamFromFile(GetFirstExistingFileName(GetConfVal('fonttex') + '.' + IntToStr(i))));
-    glTexImage2D(GL_TEXTURE_2D, i, GL_RGBA, temptex.Width, temptex.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
+    if e.nodeName = 'texture' then
+      with e do
+        begin
+        setLength(fTextures, length(fTextures) + 1);
+        i := high(fTextures);
+        fTextures[i].MinSize := StrToIntWD(GetAttribute('minsize'), 0);
+        fTextures[i].MaxSize := StrToIntWD(GetAttribute('maxsize'), 1024);
+        TempTex := TexFromStream(fOCF.Bin[fOCF.Resources[StrToIntWD(GetAttribute('resource:id'), 0)].Section].Stream, '.' + fOCF.Resources[StrToIntWD(GetAttribute('resource:id'), 0)].Format);
+        fTextures[i].Texture := TTexture.Create;
+        fTextures[i].Texture.FromTexImage(TempTex);
+        GetLetterWidth(i);
+        fTextures[i].Texture.Unbind;
+        end;
+    e := TDOMElement(e.nextSibling);
     end;
 
-  GetLetterWidths;
+  fOCF.Free;
 
-  fLetterSpacing := 3;
+  fLetterSpacing := 2;
 end;
 
 destructor TModuleFontTextureVariableWidth.Free;
+var
+  i: Integer;
 begin
-  fTexture.Free;
+  for i := 0 to high(fTextures) do
+    fTextures[i].Texture.Free;
 end;
 
 end.

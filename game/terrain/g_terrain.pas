@@ -126,11 +126,8 @@ begin
       begin
       with fOCF.Resources[StrToInt(GetAttribute('resource:id'))] do
         begin
-        if Format = 'tga' then
-          temptex := TexFromTGA(fOCF.Bin[Section].Stream)
-        else if Format = 'dbcg' then
-          temptex := TexFromDBCG(fOCF.Bin[Section].Stream)
-        else
+        TempTex := TexFromStream(fOCF.Bin[Section].Stream, '.' + Format);
+        if TempTex.BPP = 0 then
           raise EInvalidFormat.Create('Invalid Format');
         TexFormat := GL_RGB;
         CompressedTexFormat := GL_COMPRESSED_RGB;

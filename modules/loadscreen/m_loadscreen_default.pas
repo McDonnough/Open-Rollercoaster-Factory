@@ -64,10 +64,10 @@ begin
   fTLabel.Height := 16;
 
   fPB := TProgressBar.Create(fWindow);
-  fPB.Left := 32;
-  fPB.Top := 56;
-  fPB.Width := 386;
-  fPB.Height := 64;
+  fPB.Left := 33;
+  fPB.Top := 72;
+  fPB.Width := 384;
+  fPB.Height := 24;
 
   SetVisibility(false);
   fWindow.Render;

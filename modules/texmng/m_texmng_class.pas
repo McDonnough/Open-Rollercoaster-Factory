@@ -5,7 +5,7 @@ unit m_texmng_class;
 interface
 
 uses
-  Classes, SysUtils, m_module, DGLOpenGL;
+  Classes, SysUtils, m_module, DGLOpenGL, u_graphics;
 
 type
   TModuleTextureManagerClass = class(TBasicModule)
@@ -107,6 +107,7 @@ type
       procedure SetFilter(Min, Max: GLEnum);
       procedure SetClamp(X, Y: GLEnum);
       function GetRealTexID: GLUInt;
+      procedure FromTexImage(Tex: TTexImage);
       destructor Free;
     end;
 
@@ -171,6 +172,17 @@ end;
 function TTexture.GetRealTexID: GLUInt;
 begin
   Result := ModuleManager.ModTexMng.GetRealTexID(fID);
+end;
+
+procedure TTexture.FromTexImage(Tex: TTexImage);
+var
+  Format: GLEnum;
+begin
+  Format := GL_RGB;
+  if Tex.BPP = 32 then
+    Format := GL_RGBA;
+  CreateNew(Tex.Width, Tex.Height, Format);
+  Fill(@Tex.Data[0], Format);
 end;
 
 destructor TTexture.Free;

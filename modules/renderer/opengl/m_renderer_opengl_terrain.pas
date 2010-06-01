@@ -193,12 +193,12 @@ begin
           fAPVBOs[i].Bind;
           for j := 0 to high(fAPPositions[i]) * fFrameCount div AUTOPLANT_UPDATE_FRAMES do
             begin
-            if VecLengthNoRoot(fAPPositions[i, j] - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > 900 then
+            if VecLengthNoRoot(fAPPositions[i, j] - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > 400 then
               begin
               fDeg := PI * 2 * Random;
               fRot := PI * 2 * Random;
               fTMP := Vector(Sin(fRot), Cos(fRot)) * 0.4;
-              Position := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) + Vector(Sin(fDeg), Cos(fDeg)) * (5 * Random + 25);
+              Position := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) + Vector(Sin(fDeg), Cos(fDeg)) * (2 * Random + 18);
               fAPPositions[i, j] := Position;
               inc(fAPCount[i]);
               if Park.pTerrain.TexMap[Position.X, Position.Y] = i then
@@ -457,8 +457,8 @@ begin
   for i := 0 to high(fAPVBOs) do
     if Park.pTerrain.Collection.Materials[i].AutoplantProperties.Available then
       begin
-      fAPVBOs[i] := TVBO.Create(4 * Round(50000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor), GL_T2F_V3F, GL_QUADS);
-      setLength(fAPPositions[i], Round(50000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor));
+      fAPVBOs[i] := TVBO.Create(4 * Round(20000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor), GL_T2F_V3F, GL_QUADS);
+      setLength(fAPPositions[i], Round(20000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor));
       fAPCount[i] := 0;
       for j := 0 to high(fAPPositions[i]) do
         begin

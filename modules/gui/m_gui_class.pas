@@ -40,6 +40,7 @@ type
       procedure RemoveChild(Child: TGUIComponent);
     public
       Tag: Integer;
+      Name: String;
       OnClick: TCallbackProcedure;
       OnGainFocus: TCallbackProcedure;
       OnRelease: TCallbackProcedure;
@@ -64,6 +65,7 @@ type
       property MaxY: GLFloat read GetMaxY;
       procedure BringToFront(Child: TGUIComponent);
       procedure Render;
+      function GetChildByName(S: String): TGUIComponent;
       constructor Create(mParent: TGUIComponent; TypeName: TComponentType);
       destructor Free;
     end;
@@ -199,6 +201,22 @@ begin
   fSpeedWidth := clamp(sign(fDestWidth - fWidth) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fWidth - fDestWidth))), max(fSpeedWidth - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedWidth + SPEED_ADD, MAX_MOTION_SPEED));
   fSpeedHeight := clamp(sign(fDestHeight - fHeight) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fHeight - fDestHeight))), max(fSpeedHeight - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedHeight + SPEED_ADD, MAX_MOTION_SPEED));
   fRendered := 1;
+end;
+
+function TGUIComponent.GetChildByName(S: String): TGUIComponent;
+var
+  i: Integer;
+begin
+  Result := nil;
+  if Name = S then
+    Result := Self
+  else
+    for i := 0 to high(fChildren) do
+      begin
+      Result := fChildren[i].GetChildByName(S);
+      if Result <> nil then
+        exit;
+      end;
 end;
 
 procedure TGUIComponent.BringToFront(Child: TGUIComponent);

@@ -121,7 +121,7 @@ begin
       #10: begin X := Round(Left); Y := Round(Y + Size); end;
       #0: break;
       #32: X := Round(X + Size / 3);
-      else X := Round(X + (fLetterSpacing * 33 / Size) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
+      else X := Round(X + (fLetterSpacing * Size / 32) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
       end;
     end;
   glEnd;
@@ -148,7 +148,7 @@ begin
       #10: ;
       #0: break;
       #32: Result := Round(Result + Size / 3);
-      else Result := Round(Result + (fLetterSpacing * 33 / Size) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
+      else Result := Round(Result + (fLetterSpacing * Size / 32) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
       end;
 end;
 
@@ -208,7 +208,7 @@ begin
 
   fOCF.Free;
 
-  fLetterSpacing := 2;
+  fLetterSpacing := 3;
 end;
 
 destructor TModuleFontTextureVariableWidth.Free;

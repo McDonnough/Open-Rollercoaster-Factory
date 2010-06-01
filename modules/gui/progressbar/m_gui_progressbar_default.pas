@@ -30,6 +30,7 @@ begin
 
   fTexture := TTexture.Create;
   fTexture.FromFile(GetConfVal('background'));
+  fTexture.SetFilter(GL_LINEAR, GL_LINEAR);
 end;
 
 procedure TModuleGUIProgressBarDefault.CheckModConf;

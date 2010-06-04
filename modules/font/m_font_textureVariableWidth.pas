@@ -145,7 +145,7 @@ begin
   for i := 1 to Length(Text) do
     case Text[i] of
       #9: Result := Round(Result + 2.4 * Size);
-      #10: ;
+      #10: continue;
       #0: break;
       #32: Result := Round(Result + Size / 3);
       else Result := Round(Result + (fLetterSpacing * Size / 32) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));

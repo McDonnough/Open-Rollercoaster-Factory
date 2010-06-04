@@ -20,7 +20,7 @@ type
   TRTerrain = class
     protected
       fUpdatePlants: Boolean;
-      fFineVBO, fGoodVBO, fRawVBO: TVBO;
+      fFineVBO, fGoodVBO, fRawVBO, fWaterVBO: TVBO;
       fAPVBOs: Array[0..7] of TVBO;
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
@@ -39,6 +39,7 @@ type
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
       procedure Render;
+      procedure RecreateWaterVBO;
       procedure CheckWaterLayerVisibility;
       procedure RenderWaterSurfaces;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
@@ -80,6 +81,25 @@ begin
   Query.Free;
 end;
 
+
+procedure TRTerrain.RecreateWaterVBO;
+var
+  i, j: Integer;
+begin
+  if fWaterVBO <> nil then
+    fWaterVBO.Free;
+  fWaterVBO := TVBO.Create(4 * (Park.pTerrain.SizeX div 128) * (Park.pTerrain.SizeY div 128), GL_V3F, GL_QUADS);
+  fWaterVBO.Bind;
+  for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+    for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+      begin
+      fWaterVBO.Vertices[4 * (Park.pTerrain.SizeX div 128 * j + i) + 0] := Vector(128 * i / 5, 0, 128 * j / 5);
+      fWaterVBO.Vertices[4 * (Park.pTerrain.SizeX div 128 * j + i) + 1] := Vector(128 * (i + 1) / 5, 0, 128 * j / 5);
+      fWaterVBO.Vertices[4 * (Park.pTerrain.SizeX div 128 * j + i) + 2] := Vector(128 * (i + 1) / 5, 0, 128 * (j + 1) / 5);
+      fWaterVBO.Vertices[4 * (Park.pTerrain.SizeX div 128 * j + i) + 3] := Vector(128 * i / 5, 0, 128 * (j + 1) / 5);
+      end;
+  fWaterVBO.Unbind;
+end;
 
 procedure TRTerrain.Render;
 var
@@ -241,12 +261,13 @@ begin
   fHeightMap.Textures[0].Bind(0);
   for i := 0 to high(fWaterLayerFBOs) do
     begin
+    glTexCoord3f(0, 0, fWaterLayerFBOs[i].Height);
     fWaterLayerFBOs[i].Query.StartCounter;
     glBegin(GL_QUADS);
-      glVertex3f(0, fWaterLayerFBOs[i].Height, 0);
-      glVertex3f(Park.pTerrain.SizeX / 5, fWaterLayerFBOs[i].Height, 0);
-      glVertex3f(Park.pTerrain.SizeX / 5, fWaterLayerFBOs[i].Height, Park.pTerrain.SizeY / 5);
-      glVertex3f(0, fWaterLayerFBOs[i].Height, Park.pTerrain.SizeY / 5);
+      glVertex3f(0, 0, 0);
+      glVertex3f(Park.pTerrain.SizeX / 5, 0, 0);
+      glVertex3f(Park.pTerrain.SizeX / 5, 0, Park.pTerrain.SizeY / 5);
+      glVertex3f(0, 0, Park.pTerrain.SizeY / 5);
     glEnd;
     fWaterLayerFBOs[i].Query.EndCounter;
     end;
@@ -280,17 +301,10 @@ begin
     fWaterLayerFBOs[k].RefractionFBO.Textures[0].Bind(2);
     fWaterBumpmap.Bind(3);
     fHeightMap.Textures[0].Bind(0);
-    glBegin(GL_QUADS);
-      glTexCoord2f(fWaterBumpmapOffset.X, fWaterBumpmapOffset.Y);
-      for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-        for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-          begin
-          glVertex3f(25.6 * (i + 0), fWaterLayerFBOs[k].Height, 25.6 * (j + 0));
-          glVertex3f(25.6 * (i + 1), fWaterLayerFBOs[k].Height, 25.6 * (j + 0));
-          glVertex3f(25.6 * (i + 1), fWaterLayerFBOs[k].Height, 25.6 * (j + 1));
-          glVertex3f(25.6 * (i + 0), fWaterLayerFBOs[k].Height, 25.6 * (j + 1));
-          end;
-    glEnd;
+    glTexCoord3f(fWaterBumpmapOffset.X, fWaterBumpmapOffset.Y, fWaterLayerFBOs[k].Height);
+    fWaterVBO.Bind;
+    fWaterVBO.Render;
+    fWaterVBO.Unbind;
     end;
 
   fBoundShader.Unbind;
@@ -391,6 +405,7 @@ var
 begin
   if Event = 'TTerrain.Resize' then
     begin
+    RecreateWaterVBO;
     fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformDepth.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformSunShadow.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
@@ -475,11 +490,12 @@ end;
 
 constructor TRTerrain.Create;
 var
-  i, j: Integer;
+  i, j, k, l, cv: Integer;
   tempTex: TTexImage;
   TexFormat, CompressedTexFormat: GLEnum;
 begin
   fFrameCount := 0;
+  fWaterVBO := nil;
   try
     writeln('Initializing terrain renderer');
     fHeightMap := nil;
@@ -487,7 +503,7 @@ begin
     fShader.UniformI('TerrainTexture', 0);
     fShader.UniformI('HeightMap', 1);
     fShader.UniformI('SunShadowMap', 7);
-    fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 80));
+    fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 40));
     fWaterShader := TShader.Create('rendereropengl/glsl/terrain/water.vs', 'rendereropengl/glsl/terrain/water.fs');
     fWaterShader.UniformI('HeightMap', 0);
     fWaterShader.UniformI('ReflectionMap', 1);
@@ -521,15 +537,31 @@ begin
     fWaterBumpmapOffset := Vector(0, 0);
     fFineOffsetX := 0;
     fFineOffsetY := 0;
-    fFineVBO := TVBO.Create(256 * 256 * 4, GL_V3F, GL_QUADS);
-    for i := 0 to 255 do
-      for j := 0 to 255 do
+    fFineVBO := TVBO.Create(130 * 130 * 4 + 8 * 32 * 32 * 4, GL_V3F, GL_QUADS);
+    cv := 0;
+    for i := -1 to 128 do
+      for j := -1 to 128 do
         begin
-        fFineVBO.Vertices[4 * (256 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
-        fFineVBO.Vertices[4 * (256 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
-        fFineVBO.Vertices[4 * (256 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
-        fFineVBO.Vertices[4 * (256 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        fFineVBO.Vertices[cv + 0] := Vector(12.8 + 0.2 * i, 1.0, 0.2 * j + 13.0);
+        fFineVBO.Vertices[cv + 1] := Vector(13.0 + 0.2 * i, 1.1, 0.2 * j + 13.0);
+        fFineVBO.Vertices[cv + 2] := Vector(13.0 + 0.2 * i, 0.1, 0.2 * j + 12.8);
+        fFineVBO.Vertices[cv + 3] := Vector(12.8 + 0.2 * i, 0.0, 0.2 * j + 12.8);
+        inc(cv, 4);
         end;
+    for k := 0 to 3 do
+      for l := 0 to 3 do
+        if (k = 0) or (k = 3) or (l = 3) or (l = 0) then
+          begin
+          for i := 0 to 31 do
+            for j := 0 to 31 do
+              begin
+              fFineVBO.Vertices[cv + 0] := Vector(12.8 * k + 0.4 * i,       1.0, 12.8 * l + 0.4 * j + 0.4);
+              fFineVBO.Vertices[cv + 1] := Vector(12.8 * k + 0.4 * i + 0.4, 1.1, 12.8 * l + 0.4 * j + 0.4);
+              fFineVBO.Vertices[cv + 2] := Vector(12.8 * k + 0.4 * i + 0.4, 0.1, 12.8 * l + 0.4 * j);
+              fFineVBO.Vertices[cv + 3] := Vector(12.8 * k + 0.4 * i,       0.0, 12.8 * l + 0.4 * j);
+              inc(cv, 4);
+              end;
+          end;
     fFineVBO.Unbind;
     fGoodVBO := TVBO.Create(32 * 32 * 4, GL_V3F, GL_QUADS);
     for i := 0 to 31 do
@@ -584,6 +616,8 @@ begin
   fWaterShaderTransformSunShadow.Free;
   fWaterBumpmap.Free;
   fAPShader.Free;
+  if fWaterVBO <> nil then
+    fWaterVBO.Free;
   if fHeightMap <> nil then
     fHeightMap.Free;
 end;

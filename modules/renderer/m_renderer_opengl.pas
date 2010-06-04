@@ -13,8 +13,10 @@ type
   TModuleRendererOpenGL = class(TModuleRendererClass)
     protected
       fFrustum: TFrustum;
+      fDistPixel: Array[0..3] of GLFloat;
       fInterface: TRendererOpenGLInterface;
       RenderEffectManager: TRenderEffectManager;
+      ResX, ResY: Integer;
     public
       RCamera: TRCamera;
       RTerrain: TRTerrain;
@@ -97,20 +99,20 @@ begin
   glClear(GL_DEPTH_BUFFER_BIT);
   glDisable(GL_BLEND);
   glColor4f(1, 1, 1, 1);
-  if fInterface.Options.Items['terrain:occlusionquery'] <> 'off' then
-    begin
-    fInterface.PushOptions;
-    glPushMatrix;
-      fInterface.Options.Items['terrain:autoplants'] := 'off';
-      fInterface.Options.Items['all:transparent'] := 'off';
-      fInterface.Options.Items['shader:mode'] := 'transform:depth';
-      fInterface.Options.Items['sky:rendering'] := 'off';
 
-      RenderParts;
-      RTerrain.CheckWaterLayerVisibility;
-    glPopMatrix;
-    fInterface.PopOptions;
-    end;
+  fInterface.PushOptions;
+  glPushMatrix;
+    fInterface.Options.Items['terrain:autoplants'] := 'off';
+    fInterface.Options.Items['all:transparent'] := 'off';
+    fInterface.Options.Items['shader:mode'] := 'transform:depth';
+    fInterface.Options.Items['sky:rendering'] := 'off';
+
+    RenderParts;
+    RTerrain.CheckWaterLayerVisibility;
+  glPopMatrix;
+  fInterface.PopOptions;
+  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @fDistPixel[0]);
+  fMouseDistance := 256 * fDistPixel[0] + fDistPixel[1];
 
   for i := 0 to high(RTerrain.fWaterLayerFBOs) do
     begin
@@ -202,7 +204,7 @@ end;
 
 procedure TModuleRendererOpenGL.RenderScene;
 var
-  ResX, ResY, i: Integer;
+  i: Integer;
 begin
   CR := true;
   CG := true;
@@ -217,7 +219,6 @@ begin
   // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';
   fInterface.Options.Items['all:frustumcull'] := 'on';
-  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 
   glEnable(GL_DEPTH_TEST);
   glDepthMask(true);
@@ -276,15 +277,12 @@ begin
 end;
 
 constructor TModuleRendererOpenGL.Create;
-var
-  ResX, ResY: Integer;
 begin
   fModName := 'RendererGL';
   fModType := 'Renderer';
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fInterface := TRendererOpenGLInterface.Create;
   fFrustum := TFrustum.Create;
-
   SetConfVal('all:polygonmode', 'fill');
 end;
 

@@ -4,6 +4,7 @@ uniform sampler2D HeightMap;
 uniform vec2 TerrainSize;
 
 varying vec4 Vertex;
+varying float dist;
 
 float fpart(float a) {
   return a - floor(a);
@@ -20,5 +21,5 @@ void main(void) {
   float h = fetchHeight(1);
   if (h < Vertex.y - 0.01 || h > Vertex.y + 0.01)
     discard;
-  gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+  gl_FragColor = vec4(dist / 256.0, fpart(dist), 1.0, Vertex.y);
 }

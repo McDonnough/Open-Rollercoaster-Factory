@@ -11,7 +11,10 @@ type
   TModuleRendererClass = class(TBasicModule)
     protected
       RenderEffects: Array of TRenderCallback;
+      fMouseDistance: Single;
     public
+      property MouseDistance: Single read fMouseDistance;
+
       (**
         * Renders the whole scene
         *)

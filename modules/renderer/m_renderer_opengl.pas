@@ -150,7 +150,6 @@ begin
     glDisable(GL_BLEND);
     glClear(GL_DEPTH_BUFFER_BIT);
     fInterface.Options.Items['shader:mode'] := 'transform:depth';
-    fInterface.Options.Items['terrain:autoplants'] := 'off';
     RenderParts;
     fInterface.Options.Items['shader:mode'] := 'normal:normal';
     glColorMask(CR, CG, CB, true);

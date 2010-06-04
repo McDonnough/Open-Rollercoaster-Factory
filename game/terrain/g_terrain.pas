@@ -393,7 +393,7 @@ begin
   fMap[0, SizeY - 1].Height := 20000;
   fMap[SizeX - 1, SizeY - 1].Height := 20000;
   Subdivide(0, 0, SizeX, SizeY);
-  MakeMountain(512, 512, 384, 36000 / 256);
+  MakeMountain(512, 512, 384, 38000 / 256);
   MakeMountain(512, 512, 128, 30000 / 256);
   FillWithWater(0, 0, 28000);
   FillWithWater(512, 512, 32000);
@@ -414,9 +414,9 @@ begin
       if (abs((fMap[i, j].Height - fMap[i - 1, j].Height) / 0.2) > 200)
       or (abs((fMap[i, j].Height - fMap[i - 1, j - 1].Height) / 0.282) > 200)
       or (abs((fMap[i, j].Height - fMap[i, j - 1].Height) / 0.2) > 200) then
-        begin
         fMap[i, j].Texture := 5;
-        end;
+      if fMap[i, j].Height < fMap[i, j].Water then
+        fMap[i, j].Texture := 3;
       end;
   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;

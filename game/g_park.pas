@@ -10,9 +10,10 @@ type
     protected
       fFile: TDOMDocument;
       fParkLoader: TParkLoader;
-      fInited: Boolean;
+      fInited, fPostLoading: Boolean;
       fCanRender: Boolean;
       fParkUI: TParkUI;
+      fLoadState: Integer;
       fTimeUntilInvisible: Integer;
     public
       // Parts of the park
@@ -23,11 +24,6 @@ type
 
       property ParkLoader: TParkLoader read fParkLoader;
       property OCFFile: TDOMDocument read fFile;
-
-      (**
-        * Stop gameplay
-        *)
-      procedure GoToMainMenu(Sender: TGUIComponent);
 
       (**
         * Call render modules, handle input
@@ -43,6 +39,11 @@ type
         * Post-initialization
         *)
       procedure PostInit(Event: String; Arg, Result: Pointer);
+
+      (**
+        * Methods of post-initialization
+        *)
+      procedure ContinueLoading;
 
       (**
         * Load a park
@@ -79,15 +80,51 @@ begin
   EventManager.AddCallback('TPark.Render', @StartPostInit);
 end;
 
-procedure TPark.GoToMainMenu(Sender: TGUIComponent);
+procedure TPark.ContinueLoading;
 begin
-  ChangeRenderState(rsMainMenu);
+  case fLoadState of
+    0:
+      begin
+      ModuleManager.ModLoadScreen.Progress := 90;
+      ModuleManager.ModLoadScreen.Text := 'Preparing terrain';
+      end;
+    1:
+      begin
+      pTerrain := TTerrain.Create;
+      pTerrain.LoadDefaults;
+      end;
+    2:
+      begin
+      ModuleManager.ModLoadScreen.Progress := 98;
+      ModuleManager.ModLoadScreen.Text := 'Creating sky';
+      end;
+    3: pSky := TSky.Create;
+    4:
+      begin
+      ModuleManager.ModLoadScreen.Progress := 99;
+      ModuleManager.ModLoadScreen.Text := 'Loading user interface files';
+      end;
+    5: fParkUI := TParkUI.Create;
+    6:
+      begin
+      ModuleManager.ModLoadScreen.Progress := 100;
+      ModuleManager.ModLoadScreen.Text := 'Preparing for gameplay';
+      end;
+    200:
+      begin
+      fPostLoading := false;
+      ModuleManager.ModLoadScreen.SetVisibility(false);
+      fParkLoader.Visible := false;
+      fCanRender := true;
+      end;
+    end;
+  inc(fLoadState);
 end;
 
 procedure TPark.StartPostInit(Event: String; Arg, Result: Pointer);
 begin
-  ModuleManager.ModLoadScreen.Progress := 100;
-  ModuleManager.ModLoadScreen.Text := 'Preparing terrain';
+  ModuleManager.ModLoadScreen.Progress := 0;
+  ModuleManager.ModLoadScreen.Text := 'Preparing renderer';
   if fTimeUntilInvisible = 0 then
     begin
     EventManager.RemoveCallback(@StartPostInit);
@@ -101,15 +138,10 @@ procedure TPark.PostInit(Event: String; Arg, Result: Pointer);
 begin
   EventManager.RemoveCallback('TParkLoader.LoadFiles.NoFilesLeft', @PostInit);
   ModuleManager.ModRenderer.PostInit;
-  ModuleManager.ModLoadScreen.SetVisibility(false);
-  fParkLoader.Visible := false;
   ModuleManager.ModCamera.ActiveCamera := TCamera.Create;
   ModuleManager.ModCamera.ActiveCamera.LoadDefaults;
-  fCanRender := true;
-  pTerrain := TTerrain.Create;
-  pTerrain.LoadDefaults;
-  pSky := TSky.Create;
-  fParkUI := TParkUI.Create;
+  fLoadState := 0;
+  fPostLoading := true;
 end;
 
 procedure TPark.Render;
@@ -123,6 +155,8 @@ begin
     ModuleManager.ModCamera.AdvanceActiveCamera;
     ModuleManager.ModRenderer.RenderScene;
     end;
+  if fPostLoading then
+    ContinueLoading;
   EventManager.CallEvent('TPark.Render', nil, nil);
 end;
 

@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml,
-  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, u_functions, g_leave;
+  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, m_gui_tabbar_class, u_functions;
 
 type
   TCallbackArray = record
@@ -12,6 +12,7 @@ type
     OnKeyDown, OnKeyUp: String;
     OnHover, OnLeave: String;
     OnEdit: String;
+    OnChangeTab: String;
     OnExpire: String;
     end;
 
@@ -39,6 +40,8 @@ type
       procedure EndDragging(Sender: TGUIComponent);
       function AddCallbackArray(A: TDOMElement): Integer;
       procedure HandleOnclick(Sender: TGUIComponent);
+      procedure HandleOnChangeTab(Sender: TGUIComponent);
+      procedure BringButtonToFront(Sender: TGUIComponent);
     public
       property Window: TWindow read fWindow;
       property Width: Single read fWidth write SetWidth;
@@ -54,20 +57,10 @@ type
       destructor Free;
     end;
 
-  TParkUIActions = class
-    protected
-      fLeaveActions: TGameLeaveActions;
-    public
-      constructor Create;
-      destructor Free;
-      end;
-
   TParkUI = class
     protected
-      fTestWindow: TParkUIWindow;
       fDragging: TParkUIWindow;
       fDragStartLeft, fDragStartTop, fMouseOfsX, fMouseOfsY: Integer;
-      fActions: TParkUIActions;
       procedure SetDragging(A: TParkUIWindow);
     public
       property Dragging: TParkUIWindow read fDragging write setDragging;
@@ -79,20 +72,42 @@ type
 implementation
 
 uses
-  u_events, m_varlist, g_park;
+  u_events, m_varlist, g_park, g_leave, g_info;
 
+type
+  TParkUIWindowList = record
+    fLeaveWindow: TGameLeave;
+    fInfoWindow: TGameInfo;
+    end;
+
+var
+  WindowList: TParkUIWindowList;
 
 function TParkUIWindow.AddCallbackArray(A: TDOMElement): Integer;
 begin
   SetLength(fCallbackArrays, length(fCallbackArrays) + 1);
   Result := Length(fCallbackArrays);
   fCallbackArrays[Result - 1].OnClick := A.GetAttribute('onclick');
+  fCallbackArrays[Result - 1].OnRelease := A.GetAttribute('onrelease');
+  fCallbackArrays[Result - 1].OnHover := A.GetAttribute('onhover');
+  fCallbackArrays[Result - 1].OnLeave := A.GetAttribute('onleave');
+  fCallbackArrays[Result - 1].OnKeyDown := A.GetAttribute('onkeydown');
+  fCallbackArrays[Result - 1].OnKeyUp := A.GetAttribute('onkeyup');
+  fCallbackArrays[Result - 1].OnEdit := A.GetAttribute('onedit');
+  fCallbackArrays[Result - 1].OnExpire := A.GetAttribute('onexpire');
+  fCallbackArrays[Result - 1].OnChangeTab := A.GetAttribute('onchangetab');
 end;
 
 procedure TParkUIWindow.HandleOnclick(Sender: TGUIComponent);
 begin
   if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
     EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnClick, Sender, nil);
+end;
+
+procedure TParkUIWindow.HandleOnChangeTab(Sender: TGUIComponent);
+begin
+  if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
+    EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnChangeTab, Sender, nil);
 end;
 
 procedure TParkUIWindow.Toggle(Sender: TGUIComponent);
@@ -159,6 +174,7 @@ end;
 
 procedure TParkUIWindow.Show;
 begin
+  ModuleManager.ModGUI.BasicComponent.BringToFront(fWindow);
   fExpanded := true;
   fWindow.Width := fWidth;
   fWindow.Height := fHeight;
@@ -189,13 +205,85 @@ procedure TParkUIWindow.ReadFromXML(Resource: String);
 var
   XMLFile: TDOMDocument;
   a: TDOMNodeList;
-  CurrChild: TDOMElement;
+  CurrChild: TDOMNode;
   ResX, ResY: Integer;
+  S: String;
+
+  procedure AddChildren(P: TGUIComponent; DE: TDOMNode);
+  var
+    A: TGUIComponent;
+    CurrChild: TDOMNode;
+  begin
+    A := nil;
+    with P, TDOMElement(DE) do
+      begin
+      if NodeName = 'label' then
+        begin
+        A := TLabel.Create(P);
+        with TLabel(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), Round(P.Width - Left - 16));
+          Size := Round(StrToIntWD(GetAttribute('size'), 16));
+          Height := StrToIntWD(GetAttribute('height'), Round(Height));
+          if FirstChild <> nil then
+            Caption := FirstChild.NodeValue;
+          Tag := AddCallbackArray(TDOMElement(DE));
+          OnClick := @HandleOnclick;
+          end;
+        end
+      else if NodeName = 'iconbutton' then
+        begin
+        A := TIconifiedButton.Create(P);
+        with TIconifiedButton(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Icon := GetAttribute('icon');
+          Width := StrToIntWD(GetAttribute('width'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 64);
+          Tag := AddCallbackArray(TDOMElement(DE));
+          OnClick := @HandleOnclick;
+          end;
+        end
+      else if NodeName = 'tabbar' then
+        begin
+        A := TTabBar.Create(P);
+        with TTabBar(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 64);
+          Tag := AddCallbackArray(TDOMElement(DE));
+          OnChangeTab := @HandleOnChangeTab;
+          end;
+        end
+      else if NodeName = 'tab' then
+        begin
+        S := '';
+        if FirstChild <> nil then
+          S := FirstChild.NodeValue;
+        TTabBar(P).AddTab(S, StrToIntWD(GetAttribute('minwidth'), 150));
+        end;
+      end;
+    if A <> nil then
+      begin
+      A.Name := TDOMElement(DE).GetAttribute('name');
+      CurrChild := DE.FirstChild;
+      while CurrChild <> nil do
+        begin
+        AddChildren(A, TDOMElement(CurrChild));
+        CurrChild := CurrChild.NextSibling;
+        end;
+      end;
+  end;
 begin
+  writeln('Loading GUI file ' + Resource);
   XMLFile := LoadXMLFile(GetFirstExistingFileName(Resource));
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   try
-    begin
     a := XMLFile.GetElementsByTagName('window');
     with TDOMElement(a[0]) do
       begin
@@ -206,51 +294,25 @@ begin
       BtnLeft := StrToInt(GetAttribute('btnleft')) - 800 + ResX;
       BtnTop := StrToInt(GetAttribute('btntop')) - 300 + ResY / 2;
       fButton.Icon := GetAttribute('icon');
-      CurrChild := TDOMElement(FirstChild);
+
+      AddChildren(fWindow, TDOMElement(a[0]));
+
+      CurrChild := FirstChild;
       while CurrChild <> nil do
-        begin
-        with CurrChild do
+        with TDOMElement(CurrChild) do
           begin
           if NodeName = 'panel' then
             begin
-            fWindow.OfsX1 := StrToInt(GetAttribute('leftspace'));
-            fWindow.OfsX2 := StrToInt(GetAttribute('rightspace'));
-            fWindow.OfsY1 := StrToInt(GetAttribute('topspace'));
-            fWindow.OfsY2 := StrToInt(GetAttribute('bottomspace'));
+            fWindow.OfsX1 := StrToIntWD(GetAttribute('leftspace'), 0);
+            fWindow.OfsX2 := StrToIntWD(GetAttribute('rightspace'), 0);
+            fWindow.OfsY1 := StrToIntWD(GetAttribute('topspace'), 0);
+            fWindow.OfsY2 := StrToIntWD(GetAttribute('bottomspace'), 0);
             end
-          else if NodeName = 'label' then
-            begin
-            with TLabel.Create(fWindow) do
-              begin
-              Left := StrToIntWD(GetAttribute('left'), 16);
-              Top := StrToIntWD(GetAttribute('top'), 16);
-              Width := StrToIntWD(GetAttribute('width'), Round(fWindow.Width - Left - 16));
-              Size := Round(StrToIntWD(GetAttribute('size'), 16));
-              Height := StrToIntWD(GetAttribute('height'), Round(Height));
-              if FirstChild <> nil then
-                Caption := FirstChild.NodeValue;
-              Tag := AddCallbackArray(CurrChild);
-              OnClick := @HandleOnclick;
-              end;
-            end
-          else if NodeName = 'iconbutton' then
-            begin
-            with TIconifiedButton.Create(fWindow) do
-              begin
-              Left := StrToIntWD(GetAttribute('left'), 16);
-              Top := StrToIntWD(GetAttribute('top'), 16);
-              Icon := GetAttribute('icon');
-              Width := StrToIntWD(GetAttribute('width'), 64);
-              Height := StrToIntWD(GetAttribute('height'), 64);
-              Tag := AddCallbackArray(CurrChild);
-              OnClick := @HandleOnclick;
-              end;
-            end
+          else
+            AddChildren(fWindow, TDOMElement(CurrChild));
+          CurrChild := NextSibling;
           end;
-        CurrChild := TDOMElement(CurrChild.NextSibling);
-        end;
       end;
-    end;
   except
     ModuleManager.ModLog.AddError('Could not load Park UI resouce ' + Resource + ': Internal error')
   end;
@@ -279,9 +341,15 @@ begin
   fWindow.Top := 24;
   fWindow.Tag := 0;
   fWindow.OnClick := @StartDragging;
+  fWindow.OnGainFocus := @BringButtonToFront;
   fWindow.OnRelease := @EndDragging;
 
   ReadFromXML(Resource);
+end;
+
+procedure TParkUIWindow.BringButtonToFront(Sender: TGUIComponent);
+begin
+  ModuleManager.ModGUI.BasicComponent.BringToFront(fButton);
 end;
 
 procedure TParkUIWindow.StartDragging(Sender: TGUIComponent);
@@ -300,22 +368,12 @@ begin
   fButton.Free;
 end;
 
-constructor TParkUIActions.Create;
-begin
-  fLeaveActions := TGameLeaveActions.Create;
-end;
-
-destructor TParkUIActions.Free;
-begin
-  fLeaveActions.Free;
-end;
-
 constructor TParkUI.Create;
 var
   ResX, ResY: Integer;
 begin
-  fActions := TParkUIActions.Create;
-  fTestWindow := TParkUIWindow.Create('ui/leave.xml', self);
+  WindowList.fLeaveWindow := TGameLeave.Create('ui/leave.xml', self);
+  WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
 end;
 
 procedure TParkUI.SetDragging(A: TParkUIWindow);
@@ -340,8 +398,8 @@ end;
 
 destructor TParkUI.Free;
 begin
-  fActions.Free;
-  fTestWindow.Free;
+  WindowList.fLeaveWindow.Free;
+  WindowList.fInfoWindow.Free;
 end;
 
 end.

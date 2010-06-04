@@ -9,34 +9,30 @@ var
   b: TOCFBinarySection;
   Outfile: String;
 begin
-  try
-    OCF := TOCFFile.Create('');
-    i := 1;
-    while paramstr(i) <> '' do
+  OCF := TOCFFile.Create('');
+  i := 1;
+  while paramstr(i) <> '' do
+    begin
+    if paramstr(i) = '-o' then
       begin
-      if paramstr(i) = '-o' then
-        begin
-        inc(i);
-        outfile := paramstr(i);
-        end
-      else if paramstr(i) = '-b' then
-        begin
-        inc(i);
-        b := TOCFBinarySection.Create;
-        with ByteStreamFromFile(paramstr(i)) do
-          b.Replace(@Data[0], length(Data));
-        OCF.AddBinarySection(b);
-        end
-      else if paramstr(i) = '-x' then
-        begin
-        inc(i);
-        OCF.XML.Document := LoadXMLFile(paramstr(i));
-        end;
       inc(i);
+      outfile := paramstr(i);
+      end
+    else if paramstr(i) = '-b' then
+      begin
+      inc(i);
+      b := TOCFBinarySection.Create;
+      with ByteStreamFromFile(paramstr(i)) do
+        b.Replace(@Data[0], length(Data));
+      OCF.AddBinarySection(b);
+      end
+    else if paramstr(i) = '-x' then
+      begin
+      inc(i);
+      OCF.XML.Document := LoadXMLFile(paramstr(i));
       end;
-    OCF.SaveTo(Outfile);
-    OCF.Free;
-  except
-    writeln('Error writing file');
-  end;
+    inc(i);
+    end;
+  OCF.SaveTo(Outfile);
+  OCF.Free;
 end.

@@ -74,7 +74,7 @@ type
 implementation
 
 uses
-  u_math, m_varlist, u_events, math, u_graphics;
+  u_math, m_varlist, u_events, math, u_graphics, u_functions;
 
 type
   EInvalidFormat = class(Exception);
@@ -98,8 +98,8 @@ var
       begin
       if Format = 'tga' then
         temptex := TexFromTGA(fOCF.Bin[Section].Stream)
-      else if Format = 'ocg' then
-        temptex := TexFromOCG(fOCF.Bin[Section].Stream)
+      else if Format = 'dbcg' then
+        temptex := TexFromDBCG(fOCF.Bin[Section].Stream)
       else
         raise EInvalidFormat.Create('Invalid Format');
       TexFormat := GL_RGB;
@@ -126,11 +126,8 @@ begin
       begin
       with fOCF.Resources[StrToInt(GetAttribute('resource:id'))] do
         begin
-        if Format = 'tga' then
-          temptex := TexFromTGA(fOCF.Bin[Section].Stream)
-        else if Format = 'ocg' then
-          temptex := TexFromOCG(fOCF.Bin[Section].Stream)
-        else
+        TempTex := TexFromStream(fOCF.Bin[Section].Stream, '.' + Format);
+        if TempTex.BPP = 0 then
           raise EInvalidFormat.Create('Invalid Format');
         TexFormat := GL_RGB;
         CompressedTexFormat := GL_COMPRESSED_RGB;
@@ -154,7 +151,7 @@ begin
       Materials[i].AutoplantProperties.Factor := 0;
       with TDOMElement(l[i]) do
         begin
-        Materials[i].TexID := StrToInt(GetAttribute('texture'));
+        Materials[i].TexID := StrToIntWD(GetAttribute('texture'), 0);
         Materials[i].Name := GetAttribute('name');
         m := GetElementsByTagName('autoplants');
         if length(m) > 0 then
@@ -165,7 +162,7 @@ begin
               begin
               Materials[i].AutoplantProperties.Available := true;
               Materials[i].AutoplantProperties.Texture := LoadAutoplantTexture(StrToInt(GetAttribute('resource:id')));
-              Materials[i].AutoplantProperties.Factor := StrToFloat(GetAttribute('count'));
+              Materials[i].AutoplantProperties.Factor := StrToFloatWD(GetAttribute('count'), 1);
               end;
           end;
         end;
@@ -372,6 +369,19 @@ var
       inc(i);
       end;
   end;
+
+  procedure MakeMountain(X, Y, Radius: Word; Height: Single);
+  var
+    i, j: Integer;
+  begin
+    for i := -Radius to Radius do
+      for j := -Radius to Radius do
+        begin
+        if i * i + j * j > Radius * Radius then
+          continue;
+        fMap[X + i, Y + j].Height := Round(Mix(fMap[X + i, Y + j].Height, 256 * Height, (0.5 + 0.5 * Cos(i / Radius * 3.141592)) * (0.5 + 0.5 * Cos(j / Radius * 3.141592))));
+        end;
+  end;
 begin
   sdc := 0;
   fSizeX := 0;
@@ -383,7 +393,10 @@ begin
   fMap[0, SizeY - 1].Height := 20000;
   fMap[SizeX - 1, SizeY - 1].Height := 20000;
   Subdivide(0, 0, SizeX, SizeY);
+  MakeMountain(512, 512, 384, 36000 / 256);
+  MakeMountain(512, 512, 128, 30000 / 256);
   FillWithWater(0, 0, 28000);
+  FillWithWater(512, 512, 32000);
   for i := 1 to SizeX - 2 do
     for j := 1 to SizeY - 2 do
       fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height

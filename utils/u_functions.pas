@@ -71,6 +71,7 @@ procedure GetFilesInDirectory(Directory: string; const Mask: string; List: TStri
   *@return Number or default
   *)
 function StrToIntWD(A: String; Default: Integer): Integer;
+function StrToFloatWD(A: String; Default: Single): Single;
 
 implementation
 
@@ -242,6 +243,15 @@ function StrToIntWD(A: String; Default: Integer): Integer;
 begin
   try
     Result := StrToInt(A);
+  except
+    Result := Default;
+  end;
+end;
+
+function StrToFloatWD(A: String; Default: Single): Single;
+begin
+  try
+    Result := StrToFloat(A);
   except
     Result := Default;
   end;

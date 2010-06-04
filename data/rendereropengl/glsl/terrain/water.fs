@@ -31,7 +31,7 @@ void main(void) {
   vec4 Position = gl_ModelViewProjectionMatrix * Vertex;
   vec2 RealPosition = 0.5 + 0.5 * (Position.xy / Position.w);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  vec3 normal = normalize(-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 10.0 + gl_TexCoord[0].xy).rbg);
+  vec3 normal = normalize((-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 30.0 + gl_TexCoord[0].xy).rbg) - (-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 15.0 + 0.5 * gl_TexCoord[0].yx).rbg) + vec3(0.0, 1.0, 0.0));
   vec2 reflectionOffset = normal.xz / 10.0;
   vec4 result = gl_TextureMatrix[0] * Vertex;
   result = sqrt(abs(result)) * sign(result);
@@ -46,7 +46,7 @@ void main(void) {
   float MirrorFactor = 0.2 + 0.6 * dot(normalize(gl_NormalMatrix * normal), normalize(-v.xyz));
   vec4 RefractColor;
   RefractColor.a = Vertex.y - texture2D(RefractionMap, RealPosition).a;
-  RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * (1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0));
+  RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * pow((1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0)), 2.0);
   gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
   gl_FragColor += MirrorFactor * RefractColor;
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);

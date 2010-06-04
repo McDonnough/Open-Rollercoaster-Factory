@@ -80,11 +80,8 @@ begin
     end;
   if not FileExists(FileName) then
     exit(-2);
-  if lowercase(extractFileExt(Filename)) = '.tga' then
-    TexImage := TexFromTGA(ByteStreamFromFile(filename))
-  else if lowercase(extractFileExt(Filename)) = '.ocg' then
-    TexImage := TexFromOCG(ByteStreamFromFile(filename))
-  else
+  TexImage := TexFromStream(ByteStreamFromFile(filename), lowercase(extractFileExt(Filename)));
+  if TexImage.BPP = 0 then
     exit(-1);
   try
     if TexImage.bpp = 24 then

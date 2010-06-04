@@ -23,7 +23,7 @@ implementation
 
 uses
   m_gui_window_class, m_gui_label_class, m_gui_progressbar_class, m_varlist, m_inputhandler_class, m_gui_button_class, m_gui_iconifiedbutton_class,
-  m_gui_edit_class, m_gui_timer_class;
+  m_gui_edit_class, m_gui_timer_class, m_gui_tabbar_class;
 
 procedure TModuleGUIDefault.Render;
 var
@@ -37,6 +37,7 @@ var
       exit;
     case Component.ComponentType of
       CWindow: TWindow(Component).Render;
+      CTabBar: TTabBar(Component).Render;
       CLabel: TLabel(Component).Render;
       CProgressBar: TProgressBar(Component).Render;
       CButton: TButton(Component).Render;
@@ -51,7 +52,7 @@ var
     for i := 0 to high(Component.Children) do
       begin
       glScissor(Round(Component.MinX), ResY - Round(Component.MaxY), Round(Component.MaxX - Component.MinX), Round(Component.MaxY - Component.MinY));
-      RenderComponent(Component.Children[i]);
+      RenderComponent(Component.ChildrenRightOrder[i]);
       end;
     glPopMatrix;
   end;
@@ -89,11 +90,12 @@ procedure TModuleGUIDefault.CallSignals;
       fHoverComponent := Component;
 
     for i := 0 to high(Component.Children) do
-      SendSignals(Component.Children[i]);
+      SendSignals(Component.ChildrenRightOrder[i]);
   end;
 var
   i: integer;
   ResX, ResY: Integer;
+  Container: TGUIComponent;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBasicComponent.Width := ResX;
@@ -109,7 +111,14 @@ begin
     if ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT] then
       begin
       if (not fClicking) and (fHoverComponent.OnClick <> nil) then
+        begin
+        Container := fHoverComponent;
+        while (Container.Parent <> nil) and (Container.Parent <> fBasicComponent) do
+          Container := Container.Parent;
+        if Container.Parent = fBasicComponent then
+          fBasicComponent.BringToFront(Container);
         fHoverComponent.OnClick(fHoverComponent);
+        end;
       fFocusComponent := fHoverComponent;
       fClicking := true;
       end;

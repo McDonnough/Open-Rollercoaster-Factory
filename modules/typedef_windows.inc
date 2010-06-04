@@ -1,5 +1,9 @@
 uses
+<<<<<<< HEAD
   m_pathes_windows,
+=======
+  m_pathes_Windows,
+>>>>>>> 2b1c79fdfce5687b102d0317ae29915293d8bcb9
   m_moduleconfig_xml,
   m_log_file,
   m_language_textfile,
@@ -11,6 +15,7 @@ uses
   m_font_textureVariableWidth,
   m_gui_default,
   m_gui_window_default,
+  m_gui_tabbar_default,
   m_gui_label_default,
   m_gui_progressbar_default,
   m_gui_button_default,
@@ -37,6 +42,7 @@ type
   TModuleFont = TModuleFontTextureVariableWidth;
   TModuleGUI = TModuleGUIDefault;
   TModuleGUIWindow = TModuleGUIWindowDefault;
+  TModuleGUITabBar = TModuleGUITabBarDefault;
   TModuleGUILabel = TModuleGUILabelDefault;
   TModuleGUIProgressBar = TModuleGUIProgressBarDefault;
   TModuleGUIButton = TModuleGUIButtonDefault;

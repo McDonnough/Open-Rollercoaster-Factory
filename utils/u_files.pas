@@ -22,7 +22,10 @@ uses
 
 function GetFirstExistingFilename(FileName: String): String;
 begin
+  if ModuleManager = nil then // Independent mode
+    exit(FileName);
   Result := '';
+  FileName := ModuleManager.ModPathes.Convert(FileName);
   if FileExists(FileName) then
     Exit(FileName)
   else if FileExists(ModuleManager.ModPathes.PersonalDataPath + FileName) then
@@ -42,7 +45,10 @@ begin
       Free;
       end;
   except
-    ModuleManager.ModLog.AddError('Error loading file ' + FileName);
+    if ModuleManager <> nil then // Independent mode
+      ModuleManager.ModLog.AddError('Error loading file ' + FileName)
+    else
+      writeln('Error loading file ' + FileName);
   end;
 end;
 
@@ -55,7 +61,10 @@ begin
       Free;
       end;
   except
-    ModuleManager.ModLog.AddError('Error saving file ' + FileName);
+    if ModuleManager <> nil then // Independent mode
+      ModuleManager.ModLog.AddError('Error saving file ' + FileName)
+    else
+      writeln('Error saving file ' + FileName);
   end;
 end;
 

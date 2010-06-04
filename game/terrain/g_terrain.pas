@@ -65,7 +65,6 @@ type
       property Collection: TTerrainCollection read fCollection;
       procedure ChangeCollection(S: String);
       procedure Resize(X, Y: Integer);
-      procedure AdvanceAutomaticWater;
       procedure LoadDefaults;
       constructor Create;
       destructor Free;
@@ -196,7 +195,6 @@ begin
     if fCanAdvance then
       begin
       fAdvancing := true;
-      AdvanceAutomaticWater;
       fAdvancing := false;
       end;
     fDiff := ModuleManager.ModGUITimer.GetTime - fTime;
@@ -297,14 +295,6 @@ begin
   EventManager.CallEvent('TTerrain.Resize', @X, nil);
   EventManager.CallEvent('TTerrain.Changed', nil, nil);
   fCanAdvance := true;
-end;
-
-procedure TTerrain.AdvanceAutomaticWater;
-begin
-  try
-  except
-    writeln('Exception');
-  end;
 end;
 
 procedure TTerrain.LoadDefaults;

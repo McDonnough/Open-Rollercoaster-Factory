@@ -72,12 +72,13 @@ type
 implementation
 
 uses
-  u_events, m_varlist, g_park, g_leave, g_info;
+  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit;
 
 type
   TParkUIWindowList = record
     fLeaveWindow: TGameLeave;
     fInfoWindow: TGameInfo;
+    fGameTerrainEdit: TGameTerrainEdit;
     end;
 
 var
@@ -374,6 +375,7 @@ var
 begin
   WindowList.fLeaveWindow := TGameLeave.Create('ui/leave.xml', self);
   WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
+  WindowList.fGameTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
 end;
 
 procedure TParkUI.SetDragging(A: TParkUIWindow);
@@ -400,6 +402,7 @@ destructor TParkUI.Free;
 begin
   WindowList.fLeaveWindow.Free;
   WindowList.fInfoWindow.Free;
+  WindowList.fGameTerrainEdit.Free;
 end;
 
 end.

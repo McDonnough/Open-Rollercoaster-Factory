@@ -82,10 +82,10 @@ begin
     Tex.Bind;
     glBegin(GL_QUADS);
       glColor4f(1, 1, 1, 1);
-      glTexCoord2f(0, 0); glVertex3f(Button.Left + 0.125 * Button.Width, Button.Top + 0.125 * Button.Height, 0);
-      glTexCoord2f(1, 0); glVertex3f(Button.Left + 0.875 * Button.Width, Button.Top + 0.125 * Button.Height, 0);
-      glTexCoord2f(1, 1); glVertex3f(Button.Left + 0.875 * Button.Width, Button.Top + 0.875 * Button.Height, 0);
-      glTexCoord2f(0, 1); glVertex3f(Button.Left + 0.125 * Button.Width, Button.Top + 0.875 * Button.Height, 0);
+      glTexCoord2f(0, 0); glVertex3f(Button.Left + 0.15 * Button.Width, Button.Top + 0.15 * Button.Height, 0);
+      glTexCoord2f(1, 0); glVertex3f(Button.Left + 0.85 * Button.Width, Button.Top + 0.15 * Button.Height, 0);
+      glTexCoord2f(1, 1); glVertex3f(Button.Left + 0.85 * Button.Width, Button.Top + 0.85 * Button.Height, 0);
+      glTexCoord2f(0, 1); glVertex3f(Button.Left + 0.15 * Button.Width, Button.Top + 0.85 * Button.Height, 0);
     glEnd;
     Tex.UnBind;
     end;

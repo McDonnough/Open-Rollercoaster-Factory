@@ -18,6 +18,9 @@ type
       RenderEffectManager: TRenderEffectManager;
       ResX, ResY: Integer;
     public
+      fShadowDelay: Single;
+      OS, OC: TVector3D;
+      CR, CG, CB: Boolean;
       RCamera: TRCamera;
       RTerrain: TRTerrain;
       RSky: TRSky;
@@ -32,10 +35,6 @@ type
       procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
       constructor Create;
       destructor Free;
-    public
-      fShadowDelay: Single;
-      OS, OC: TVector3D;
-      CR, CG, CB: Boolean;
     end;
 
 const

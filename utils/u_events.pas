@@ -29,6 +29,9 @@ var
 
 implementation
 
+uses
+  m_varlist;
+
 procedure TEventManager.CallEvent(Event: String; Data, Result: Pointer);
 var
   i, j: Integer;
@@ -37,7 +40,11 @@ begin
     if fEvents[i].name = Event then
       begin
       for j := 0 to high(fEvents[i].Callbacks) do
-        fEvents[i].Callbacks[j](Event, Data, Result);
+         try
+          fEvents[i].Callbacks[j](Event, Data, Result);
+        except
+          ModuleManager.ModLog.AddError('Event ' + Event + ' #' + IntToStr(j) + ' caused an exception');
+        end;
       exit;
       end;
 end;

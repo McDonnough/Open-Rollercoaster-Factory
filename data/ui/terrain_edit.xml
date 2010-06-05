@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window width="750" height="200" left="25" top="200" btnleft="718" btntop="388" icon="terrain-edit.tga">
+  <panel leftspace="0" rightspace="0" bottomspace="0" topspace="32" />
+  <tabbar left="40" top="8" width="600" height="32" onchangetab="terrain_edit.changeTab" name="terrain_edit.tabbar">
+    <tab>Raise and lower</tab>
+    <tab>Water</tab>
+    <tab>Waterfalls</tab>
+    <tab>Textures</tab>
+  </tabbar>
+</window>

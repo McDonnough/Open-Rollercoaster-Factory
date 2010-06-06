@@ -35,6 +35,10 @@ var
   begin
     if Component = nil then
       exit;
+    Component.Render;
+    if (Component.ComponentType <> CLabel) and (Component.ComponentType <> CTimer) then
+      if ((Component.Alpha = 0) or (Component.Width <= 0) or (Component.Height <= 0)) then
+        exit;
     case Component.ComponentType of
       CWindow: TWindow(Component).Render;
       CTabBar: TTabBar(Component).Render;

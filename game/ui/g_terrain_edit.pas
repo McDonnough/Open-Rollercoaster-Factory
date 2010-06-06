@@ -20,7 +20,7 @@ uses
 
 procedure TGameTerrainEdit.changeTab(Event: String; Data, Result: Pointer);
 begin
-  TLabel(fWindow.GetChildByName('terrain_edit.tab.container')).Left := -800 * TTabBar(fWindow.GetChildByName('terrain_edit.tabbar')).SelectedTab;
+  TLabel(fWindow.GetChildByName('terrain_edit.tab.container')).Left := -750 * TTabBar(fWindow.GetChildByName('terrain_edit.tabbar')).SelectedTab;
 end;
 
 constructor TGameTerrainEdit.Create(Resource: String; ParkUI: TParkUI);

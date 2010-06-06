@@ -31,7 +31,6 @@ uses
 
 procedure TProgressBar.Render;
 begin
-  inherited Render;
   if abs(fProgress - fDestProgress) < 3 then
     fProgress := fDestProgress
   else if fDestProgress > fProgress then

@@ -248,6 +248,36 @@ var
           OnClick := @HandleOnclick;
           end;
         end
+      else if NodeName = 'button' then
+        begin
+        A := TButton.Create(P);
+        with TButton(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 64);
+          if FirstChild <> nil then
+            Caption := FirstChild.NodeValue;
+          Tag := AddCallbackArray(TDOMElement(DE));
+          OnClick := @HandleOnclick;
+          end;
+        end
+      else if NodeName = 'edit' then
+        begin
+        A := TEdit.Create(P);
+        with TEdit(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 64);
+          if FirstChild <> nil then
+            Text := FirstChild.NodeValue;
+          Tag := AddCallbackArray(TDOMElement(DE));
+          OnClick := @HandleOnclick;
+          end;
+        end
       else if NodeName = 'tabbar' then
         begin
         A := TTabBar.Create(P);

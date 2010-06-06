@@ -4,7 +4,13 @@
   <tabbar left="40" top="8" width="600" height="32" onchangetab="terrain_edit.changeTab" name="terrain_edit.tabbar">
     <tab>Raise and lower</tab>
     <tab>Water</tab>
-    <tab>Waterfalls</tab>
     <tab>Textures</tab>
+    <tab>Grass</tab>
   </tabbar>
+  <label left="0" top="40" height="156" width="3000" name="terrain_edit.tab.container">
+    <label left="0" width="750" height="156" top="0">
+      <button left="16" width="100" height="32" top="8">Test</button>
+      <edit left="16" width="100" height="32" top="48">Bla</edit>
+    </label>
+  </label>
 </window>

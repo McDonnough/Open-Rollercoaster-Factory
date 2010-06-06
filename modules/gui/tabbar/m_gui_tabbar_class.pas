@@ -89,7 +89,6 @@ end;
 
 procedure TTabBar.Render;
 begin
-  inherited Render;
   ModuleManager.ModGUITabBar.Render(Self);
 end;
 

@@ -50,7 +50,6 @@ end;
 
 procedure TIconifiedButton.Render;
 begin
-  inherited Render;
   ModuleManager.ModGUIIconifiedButton.Render(Self);
 end;
 

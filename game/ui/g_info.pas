@@ -20,7 +20,7 @@ uses
 
 procedure TGameInfo.changeTab(Event: String; Data, Result: Pointer);
 begin
-  TLabel(fWindow.GetChildByName('info.tab.container')).Left := -800 * TTabBar(fWindow.GetChildByName('info.tabbar')).SelectedTab;
+  TLabel(fWindow.GetChildByName('info.tab.container')).Left := -600 * TTabBar(fWindow.GetChildByName('info.tabbar')).SelectedTab;
 end;
 
 constructor TGameInfo.Create(Resource: String; ParkUI: TParkUI);

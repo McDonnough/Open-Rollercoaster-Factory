@@ -13,13 +13,15 @@ vec2 fitCoords(vec2 Coord) {
 }
 
 vec4 do_blur(void) {
-  return 0.25  * BackTexel
-       + 0.2   * texture2D(BackTex, fitCoords(gl_FragCoord.xy + BlurAmount * 1.5))
-       + 0.2   * texture2D(BackTex, fitCoords(gl_FragCoord.xy - BlurAmount * 1.5))
-       + 0.1   * texture2D(BackTex, fitCoords(gl_FragCoord.xy + BlurAmount * 3.5))
-       + 0.1   * texture2D(BackTex, fitCoords(gl_FragCoord.xy - BlurAmount * 3.5))
-       + 0.075 * texture2D(BackTex, fitCoords(gl_FragCoord.xy + BlurAmount * 5.5))
-       + 0.075 * texture2D(BackTex, fitCoords(gl_FragCoord.xy - BlurAmount * 5.5));
+  return 0.22  * BackTexel
+       + 0.20  * texture2D(BackTex, fitCoords(gl_FragCoord.xy + BlurAmount * 1.5))
+       + 0.20  * texture2D(BackTex, fitCoords(gl_FragCoord.xy - BlurAmount * 1.5))
+       + 0.13  * texture2D(BackTex, fitCoords(gl_FragCoord.xy + BlurAmount * 3.5))
+       + 0.13  * texture2D(BackTex, fitCoords(gl_FragCoord.xy - BlurAmount * 3.5))
+       + 0.05  * texture2D(BackTex, fitCoords(gl_FragCoord.xy + BlurAmount * 5.5))
+       + 0.05  * texture2D(BackTex, fitCoords(gl_FragCoord.xy - BlurAmount * 5.5))
+       + 0.01  * texture2D(BackTex, fitCoords(gl_FragCoord.xy + BlurAmount * 7.5))
+       + 0.01  * texture2D(BackTex, fitCoords(gl_FragCoord.xy - BlurAmount * 7.5));
 }
 
 void main(void) {

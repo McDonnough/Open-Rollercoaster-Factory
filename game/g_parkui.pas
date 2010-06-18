@@ -72,12 +72,13 @@ type
 implementation
 
 uses
-  u_events, m_varlist, g_park, g_leave, g_info;
+  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit;
 
 type
   TParkUIWindowList = record
     fLeaveWindow: TGameLeave;
     fInfoWindow: TGameInfo;
+    fGameTerrainEdit: TGameTerrainEdit;
     end;
 
 var
@@ -247,6 +248,36 @@ var
           OnClick := @HandleOnclick;
           end;
         end
+      else if NodeName = 'button' then
+        begin
+        A := TButton.Create(P);
+        with TButton(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 64);
+          if FirstChild <> nil then
+            Caption := FirstChild.NodeValue;
+          Tag := AddCallbackArray(TDOMElement(DE));
+          OnClick := @HandleOnclick;
+          end;
+        end
+      else if NodeName = 'edit' then
+        begin
+        A := TEdit.Create(P);
+        with TEdit(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 64);
+          if FirstChild <> nil then
+            Text := FirstChild.NodeValue;
+          Tag := AddCallbackArray(TDOMElement(DE));
+          OnClick := @HandleOnclick;
+          end;
+        end
       else if NodeName = 'tabbar' then
         begin
         A := TTabBar.Create(P);
@@ -374,6 +405,7 @@ var
 begin
   WindowList.fLeaveWindow := TGameLeave.Create('ui/leave.xml', self);
   WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
+  WindowList.fGameTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
 end;
 
 procedure TParkUI.SetDragging(A: TParkUIWindow);
@@ -400,6 +432,7 @@ destructor TParkUI.Free;
 begin
   WindowList.fLeaveWindow.Free;
   WindowList.fInfoWindow.Free;
+  WindowList.fGameTerrainEdit.Free;
 end;
 
 end.

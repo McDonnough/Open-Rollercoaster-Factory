@@ -32,7 +32,6 @@ uses
 
 procedure TLabel.Render;
 begin
-  inherited Render;
   ModuleManager.ModGUILabel.Render(Self);
 end;
 

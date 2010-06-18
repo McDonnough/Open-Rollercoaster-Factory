@@ -49,7 +49,6 @@ end;
 
 procedure TTimer.Render;
 begin
-  inherited Render;
   if IsOn then
     begin
     fTimeToExpire := fTimeToExpire - ModuleManager.ModGUITimer.GetTimeDifference(fLastUpdate);

@@ -57,7 +57,6 @@ end;
 
 procedure TEdit.Render;
 begin
-  inherited Render;
   ModuleManager.ModGUIEdit.Render(Self);
 end;
 

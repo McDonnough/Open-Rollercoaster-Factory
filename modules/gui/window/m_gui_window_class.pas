@@ -31,7 +31,6 @@ uses
 
 procedure TWindow.Render;
 begin
-  inherited Render;
   ModuleManager.ModGUIWindow.Render(Self);
 end;
 

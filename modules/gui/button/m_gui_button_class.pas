@@ -40,7 +40,6 @@ end;
 
 procedure TButton.Render;
 begin
-  inherited Render;
   ModuleManager.ModGUIButton.Render(Self);
 end;
 

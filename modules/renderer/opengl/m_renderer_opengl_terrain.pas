@@ -21,9 +21,9 @@ type
     protected
       fUpdatePlants: Boolean;
       fFineVBO, fGoodVBO, fRawVBO, fWaterVBO: TVBO;
-      fAPVBOs: Array of TVBO;
-      fAPCount: Array of Integer;
-      fAPPositions: Array of Array of TVector2D;
+      fAPVBOs: Array[0..7] of TVBO;
+      fAPCount: Array[0..7] of Integer;
+      fAPPositions: Array[0..7] of Array of TVector2D;
       fShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
       fWaterShader, fWaterShaderTransformDepth, fWaterShaderTransformSunShadow: TShader;
       fWaterBumpmap: TTexture;
@@ -42,7 +42,7 @@ type
       procedure RecreateWaterVBO;
       procedure CheckWaterLayerVisibility;
       procedure RenderWaterSurfaces;
-      procedure AddMaterial(Event: String; Data, Result: Pointer);
+      procedure UpdateCollection(Event: String; Data, Result: Pointer);
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
       constructor Create;
       destructor Free;
@@ -51,7 +51,7 @@ type
 implementation
 
 uses
-  g_park, u_events, m_varlist, u_files, u_graphics, main, u_functions, g_terrain;
+  g_park, u_events, m_varlist, u_files, u_graphics, main, u_functions;
 
 constructor TWaterLayerFBO.Create;
 var
@@ -144,9 +144,8 @@ begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
-  for i := 0 to high(Park.pTerrain.Materials) do
-    Park.pTerrain.Materials[i].Texture.Bind(1 + i);
-  fHeightMap.Textures[0].Bind(0);
+  fHeightMap.Textures[0].Bind(1);
+  Park.pTerrain.Collection.Texture.Bind(0);
   fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fShaderTransformDepth
@@ -183,9 +182,8 @@ begin
     fFineVBO.Render;
     fFineVBO.Unbind;
     end;
-  for i := 0 to high(Park.pTerrain.Materials) do
-    Park.pTerrain.Materials[i].Texture.Unbind;
   fBoundShader.Unbind;
+  Park.pTerrain.Collection.Texture.UnBind;
 
   if fInterface.Options.Items['all:renderpass'] = '0' then
     fUpdatePlants := true;
@@ -205,11 +203,10 @@ begin
       if fFrameCount = AUTOPLANT_UPDATE_FRAMES then
         fFrameCount := 0;
       end;
-    for i := 0 to high(Park.pTerrain.Materials) do
+    for i := 0 to high(fAPVBOs) do
       if fAPVBOs[i] <> nil then
         begin
-        Park.pTerrain.Materials[i].AutoplantProperties.Texture.Bind(1);
-        fHeightMap.Textures[0].Bind(0);
+        Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
         if fUpdatePlants then
           begin
           fUpdatePlants := false;
@@ -249,12 +246,10 @@ begin
           fAPVBOs[i].Render;
           fAPVBOs[i].Unbind;
           end;
-       Park.pTerrain.Materials[i].AutoplantProperties.Texture.Unbind;
-       end;
+        end;
     fAPShader.Unbind;
     glEnable(GL_CULL_FACE);
     end;
-  fHeightMap.Textures[0].Unbind;
 end;
 
 procedure TRTerrain.CheckWaterLayerVisibility;
@@ -467,38 +462,30 @@ begin
       RecalcBoundingSpheres(i, j);
 end;
 
-procedure TRTerrain.AddMaterial(Event: String; Data, Result: Pointer);
+procedure TRTerrain.UpdateCollection(Event: String; Data, Result: Pointer);
 var
-  Material: TTerrainMaterial;
-  i: Integer;
+  i, j: Integer;
 begin
-  Material := TTerrainMaterial(Data^);
-  SetLength(fAPVBOs, length(fAPVBOs) + 1);
-  SetLength(fAPCount, length(fAPCount) + 1);
-  SetLength(fAPPositions, length(fAPPositions) + 1);
-  fAPVBOs[high(fAPVBOs)] := nil;
-  if Material.AutoplantProperties.Available then
-    begin
-    fAPCount[high(fAPCount)] := Round(20000 * Material.AutoplantProperties.Factor);
-    fAPVBOs[high(fAPVBOs)] := TVBO.Create(fAPCount[high(fAPCount)] * 4, GL_T2F_V3F, GL_QUADS);
-    setLength(fAPPositions[high(fAPPositions)], fAPCount[high(fAPCount)]);
-    fAPVBOs[high(fAPVBOs)].Bind;
-    for i := 0 to fAPCount[high(fAPCount)] - 1 do
+  for i := 0 to high(fAPVBOs) do
+    if fAPVBOs[i] <> nil then
+      fAPVBOs[i].Free;
+  for i := 0 to high(fAPVBOs) do
+    if Park.pTerrain.Collection.Materials[i].AutoplantProperties.Available then
       begin
-      fAPPositions[high(fAPPositions), i] := Vector(-10000, -10000);
-      fAPVBOs[high(fAPVBOs)].Vertices[4 * i + 0] := Vector(0, 0, 0);
-      fAPVBOs[high(fAPVBOs)].Vertices[4 * i + 1] := Vector(0, 0, 0);
-      fAPVBOs[high(fAPVBOs)].Vertices[4 * i + 2] := Vector(0, 0, 0);
-      fAPVBOs[high(fAPVBOs)].Vertices[4 * i + 3] := Vector(0, 0, 0);
-
-      fAPVBOs[high(fAPVBOs)].TexCoords[4 * i + 0] := Vector(0, 1);
-      fAPVBOs[high(fAPVBOs)].TexCoords[4 * i + 1] := Vector(0, 0);
-      fAPVBOs[high(fAPVBOs)].TexCoords[4 * i + 2] := Vector(1, 0);
-      fAPVBOs[high(fAPVBOs)].TexCoords[4 * i + 3] := Vector(1, 1);
-      end;
-    fAPCount[high(fAPCount)] := 0;
-    fAPVBOs[high(fAPVBOs)].Unbind;
-    end;
+      fAPVBOs[i] := TVBO.Create(4 * Round(20000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor), GL_T2F_V3F, GL_QUADS);
+      setLength(fAPPositions[i], Round(20000 * Park.pTerrain.Collection.Materials[i].AutoplantProperties.Factor));
+      fAPCount[i] := 0;
+      for j := 0 to high(fAPPositions[i]) do
+        begin
+        fAPPositions[i, j] := Vector(-10000, -10000);
+        fAPVBOs[i].TexCoords[4 * j + 0] := Vector(0, 1);
+        fAPVBOs[i].TexCoords[4 * j + 1] := Vector(0, 0);
+        fAPVBOs[i].TexCoords[4 * j + 2] := Vector(1, 0);
+        fAPVBOs[i].TexCoords[4 * j + 3] := Vector(1, 1);
+        end;
+      end
+    else
+      fAPVBOs[i] := nil;
 end;
 
 constructor TRTerrain.Create;
@@ -513,11 +500,8 @@ begin
     writeln('Initializing terrain renderer');
     fHeightMap := nil;
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
-    fShader.UniformI('TerrainTex1', 1);
-    fShader.UniformI('TerrainTex2', 2);
-    fShader.UniformI('TerrainTex3', 3);
-    fShader.UniformI('TerrainTex4', 4);
-    fShader.UniformI('HeightMap', 0);
+    fShader.UniformI('TerrainTexture', 0);
+    fShader.UniformI('HeightMap', 1);
     fShader.UniformI('SunShadowMap', 7);
     fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 80));
     fWaterShader := TShader.Create('rendereropengl/glsl/terrain/water.vs', 'rendereropengl/glsl/terrain/water.fs');
@@ -527,16 +511,16 @@ begin
     fWaterShader.UniformI('BumpMap', 3);
     fWaterShader.UniformI('SunShadowMap', 7);
     fShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/simple.fs');
-    fShaderTransformDepth.UniformI('HeightMap', 0);
+    fShaderTransformDepth.UniformI('HeightMap', 1);
     fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
-    fShaderTransformSunShadow.UniformI('HeightMap', 0);
+    fShaderTransformSunShadow.UniformI('HeightMap', 1);
     fWaterShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/waterTransform.vs', 'rendereropengl/glsl/terrain/simpleWater.fs');
     fWaterShaderTransformDepth.UniformI('HeightMap', 0);
     fWaterShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/waterSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fWaterShaderTransformSunShadow.UniformI('HeightMap', 0);
     fAPShader := TShader.Create('rendereropengl/glsl/terrain/autoplant.vs', 'rendereropengl/glsl/terrain/autoplant.fs');
-    fAPShader.UniformI('Autoplant', 1);
-    fAPShader.UniformI('HeightMap', 0);
+    fAPShader.UniformI('Autoplant', 0);
+    fAPShader.UniformI('HeightMap', 1);
     fAPShader.UniformI('SunShadowMap', 7);
     fWaterBumpmap := TTexture.Create;
     tempTex := TexFromTGA(ByteStreamFromFile(fInterface.Option('water:bumpmap', 'terrain/water-bumpmap.tga')));
@@ -599,10 +583,12 @@ begin
         fRawVBO.Vertices[4 * (8 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fRawVBO.Unbind;
+    for i := 0 to high(fAPVBOs) do
+      fAPVBOs[i] := nil;
     EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
     EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedAll', @ApplyChanges);
-    EventManager.AddCallback('TTerrain.AddMaterial', @AddMaterial);
+    EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
   except
     ModuleManager.ModLog.AddError('Failed to create terrain renderer in OpenGL rendering module: Internal error');
   end;
@@ -618,7 +604,7 @@ begin
   for i := 0 to high(fWaterLayerFBOs) do
     fWaterLayerFBOs[i].Free;
   EventManager.RemoveCallback(@ApplyChanges);
-  EventManager.RemoveCallback(@AddMaterial);
+  EventManager.RemoveCallback(@UpdateCollection);
   fFineVBO.Free;
   fGoodVBO.Free;
   fRawVBO.Free;

@@ -22,6 +22,8 @@ function StreamFromTex(TexImg: TTexImage; Format: String): TByteStream;
 
 function TexFromTGA(Stream: TByteStream): TTexImage;
 function TexFromDBCG(Stream: TByteStream): TTexImage;
+
+function TGAFromTex(TexImg: TTexImage): TByteStream;
 function DBCGFromTex(TexImg: TTexImage): TByteStream;
 
 implementation
@@ -47,7 +49,9 @@ end;
 function StreamFromTex(TexImg: TTexImage; Format: String): TByteStream;
 begin
   SetLength(Result.Data, 0);
-  if Format = '.dbcg' then
+  if Format = '.tga' then
+    Result := TGAFromTex(TexImg)
+  else if Format = '.dbcg' then
     Result := DBCGFromTex(TexImg);
 end;
 
@@ -352,6 +356,47 @@ begin
       if Result.BPP = 32 then
         Result.Data[3 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[3];
       end;
+end;
+
+function TGAFromTex(TexImg: TTexImage): TByteStream;
+var
+  i, j: Integer;
+begin
+  SetLength(Result.Data, 18 + TexImg.Width * TexImg.Height * 4 + 26);
+  Result.Data[0] := 0;
+  Result.Data[1] := 0;
+  Result.Data[2] := 2;
+  Word((@Result.Data[3])^) := 0;
+  Word((@Result.Data[5])^) := 0;
+  Result.Data[6] := 32;
+  Word((@Result.Data[8])^) := 0;
+  Word((@Result.Data[10])^) := 0;
+  Word((@Result.Data[12])^) := TexImg.Width;
+  Word((@Result.Data[14])^) := TexImg.Height;
+  Result.Data[16] := 32;
+  Result.Data[17] := 32;
+  for i := 0 to high(TexImg.Data) do
+    Result.Data[18 + i] := TexImg.Data[i];
+  DWord((@Result.Data[Length(Result.Data) - 26])^) := 0;
+  DWord((@Result.Data[Length(Result.Data) - 22])^) := 0;
+  Result.Data[Length(Result.Data) - 18] := Ord('T');
+  Result.Data[Length(Result.Data) - 17] := Ord('R');
+  Result.Data[Length(Result.Data) - 16] := Ord('U');
+  Result.Data[Length(Result.Data) - 15] := Ord('E');
+  Result.Data[Length(Result.Data) - 14] := Ord('V');
+  Result.Data[Length(Result.Data) - 13] := Ord('I');
+  Result.Data[Length(Result.Data) - 12] := Ord('S');
+  Result.Data[Length(Result.Data) - 11] := Ord('I');
+  Result.Data[Length(Result.Data) - 10] := Ord('O');
+  Result.Data[Length(Result.Data) - 09] := Ord('N');
+  Result.Data[Length(Result.Data) - 08] := Ord('-');
+  Result.Data[Length(Result.Data) - 07] := Ord('X');
+  Result.Data[Length(Result.Data) - 06] := Ord('F');
+  Result.Data[Length(Result.Data) - 05] := Ord('I');
+  Result.Data[Length(Result.Data) - 04] := Ord('L');
+  Result.Data[Length(Result.Data) - 03] := Ord('E');
+  Result.Data[Length(Result.Data) - 02] := Ord('.');
+  Result.Data[Length(Result.Data) - 01] := 0;
 end;
 
 function DBCGFromTex(TexImg: TTexImage): TByteStream;

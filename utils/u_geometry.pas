@@ -9,11 +9,86 @@ type
   TTriangle = Array[0..2] of TVector3D;
   TRay = Array[0..1] of TVector3D;
 
+  TMeshTriangleVertexArray = Array[0..2] of Integer;
+
+  TMeshVertex = record
+    Position, Normal: TVector3D;
+    TexCoord: TVector2D;
+    end;
+
+  TMesh = class
+    protected
+      fVertices: Array of TMeshVertex;
+      fTriangles: Array of TMeshTriangleVertexArray;
+      procedure setVertex(I: Integer; V: TMeshVertex);
+      procedure setTriangle(I: Integer; V: TMeshTriangleVertexArray);
+      function getVertex(I: Integer): TMeshVertex;
+      function getTriangle(I: Integer): TMeshTriangleVertexArray;
+      function getVCount: Integer;
+      function getTCount: Integer;
+    public
+      property Vertices[i: Integer]: TMeshVertex read getVertex write setVertex;
+      property Triangles[i: Integer]: TMeshTriangleVertexArray read getTriangle write setTriangle;
+      property VertexCount: Integer read getVCount;
+      property TriangleCount: Integer read getTCount;
+    end;
+
 function MakeRay(A, B: TVector3D): TRay;
 function MakeTriangle(A, B, C: TVector3D): TTriangle;
+function MakeTriangleFromMeshTriangleVertexArray(Mesh: TMesh; A: TMeshTriangleVertexArray): TTriangle;
 function RayTriangleIntersection(Ray: TRay; Tri: TTriangle; var I: TVector3D): Boolean;
+function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
 
 implementation
+
+uses
+  u_selection;
+
+procedure TMesh.setVertex(I: Integer; V: TMeshVertex);
+begin
+  if I > VertexCount then
+    exit;
+  if I = VertexCount then
+    SetLength(fVertices, I + 1);
+  fVertices[i] := V;
+end;
+
+procedure TMesh.setTriangle(I: Integer; V: TMeshTriangleVertexArray);
+begin
+  if I > TriangleCount then
+    exit;
+  if I = TriangleCount then
+    SetLength(fTriangles, I + 1);
+  fTriangles[i] := V;
+end;
+
+function TMesh.getVertex(I: Integer): TMeshVertex;
+begin
+  if I < VertexCount then
+    Exit(fVertices[i]);
+  Result := MakeMeshVertex(Vector(0, 0, 0), Vector(0, 0, 0), Vector(0, 0));
+end;
+
+function TMesh.getTriangle(I: Integer): TMeshTriangleVertexArray;
+begin
+  Result[0] := 0;
+  Result[1] := 0;
+  Result[2] := 0;
+  if I >= TriangleCount then
+    exit;
+  Result := fTriangles[i];
+end;
+
+function TMesh.getVCount: Integer;
+begin
+  Result := Length(fVertices);
+end;
+
+function TMesh.getTCount: Integer;
+begin
+  Result := Length(fTriangles);
+end;
+
 
 function MakeRay(A, B: TVector3D): TRay;
 begin
@@ -26,6 +101,20 @@ begin
   Result[0] := A;
   Result[1] := B;
   Result[2] := C;
+end;
+
+function MakeTriangleFromMeshTriangleVertexArray(Mesh: TMesh; A: TMeshTriangleVertexArray): TTriangle;
+begin
+  Result[0] := Mesh.Vertices[A[0]].Position;
+  Result[1] := Mesh.Vertices[A[1]].Position;
+  Result[2] := Mesh.Vertices[A[2]].Position;
+end;
+
+function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
+begin
+  Result.Position := P;
+  Result.Normal := N;
+  Result.TexCoord := T;
 end;
 
 //

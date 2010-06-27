@@ -58,7 +58,8 @@ begin
   ModuleManager.ModGLContext.GetResolution(X, Y);
   fMatrixMode := mm3D;
   glLoadIdentity;
-  gluPerspective(45 * (y / x / 2 + 0.5), X / Y, 0.1, 10000);
+  fFOV := 45 * (y / x / 2 + 0.5);
+  gluPerspective(fFOV, X / Y * AspectRatioFactor, 0.1, 10000);
 end;
 
 procedure TModuleGLMngDefault.SetUpIdentityMatrix;
@@ -78,6 +79,7 @@ begin
   ModuleManager.ModGLContext.GetResolution(X, Y);
   glViewport(0, 0, X, Y);
   glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+  AspectRatioFactor := 1;
 end;
 
 end.

@@ -39,6 +39,8 @@ begin
   writeln('Converting texture');
   if ExtractFileExt(Outfile) = '.dbcg' then
     tmpStream := DBCGFromTex(tempTex)
+  else if ExtractFileExt(Outfile) = '.tga' then
+    tmpStream := TGAFromTex(tempTex)
   else
     begin
     writeln('Invalid output format');

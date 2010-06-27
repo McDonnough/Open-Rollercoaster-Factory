@@ -375,8 +375,13 @@ begin
   Word((@Result.Data[14])^) := TexImg.Height;
   Result.Data[16] := 32;
   Result.Data[17] := 32;
-  for i := 0 to high(TexImg.Data) do
-    Result.Data[18 + i] := TexImg.Data[i];
+  for i := 0 to high(TexImg.Data) div 4 do
+    begin
+    Result.Data[18 + 4 * i + 0] := TexImg.Data[4 * i + 2];
+    Result.Data[18 + 4 * i + 1] := TexImg.Data[4 * i + 1];
+    Result.Data[18 + 4 * i + 2] := TexImg.Data[4 * i + 0];
+    Result.Data[18 + 4 * i + 3] := TexImg.Data[4 * i + 3];
+    end;
   DWord((@Result.Data[Length(Result.Data) - 26])^) := 0;
   DWord((@Result.Data[Length(Result.Data) - 22])^) := 0;
   Result.Data[Length(Result.Data) - 18] := Ord('T');

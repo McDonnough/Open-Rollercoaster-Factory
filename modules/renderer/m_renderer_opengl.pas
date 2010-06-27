@@ -7,7 +7,7 @@ uses
   m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
   m_shdmng_class, m_renderer_opengl_plugins, u_functions, m_renderer_opengl_frustum,
   m_renderer_opengl_interface, m_renderer_opengl_lights, m_renderer_opengl_sky,
-  m_renderer_opengl_classes;
+  m_renderer_opengl_classes, u_geometry;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)

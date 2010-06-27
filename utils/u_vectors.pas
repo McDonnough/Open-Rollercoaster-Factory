@@ -18,6 +18,10 @@ type
     X, Y, Z, W: Single;
     end;
 
+  PVector2D = ^TVector2D;
+  PVector3D = ^TVector3D;
+  PVector4D = ^TVector4D;
+
   TMatrix = Array[0..15] of Single;
 
 function Vector(X, Y: Single): TVector2D;
@@ -344,8 +348,6 @@ end;
 
 function DotProduct(VectorA, VectorB: TVector3D): Single;
 begin
-  VectorA := Normalize(VectorA);
-  VectorB := Normalize(VectorB);
   Result := VectorA.x * VectorB.x + VectorA.y * VectorB.y + VectorA.z * VectorB.z;
 end;
 

@@ -230,10 +230,10 @@ begin
     begin
     glColor4f(1, 1, 1, Window.Alpha);
     glBegin(GL_QUADS);
-      glVertex2f(Round(Window.Left + 8 + Window.OfsX1), Round(Window.Top + 8 + Window.OfsY1));
+      glVertex2f(Round(Window.Left + 7 + Window.OfsX1), Round(Window.Top + 8 + Window.OfsY1));
       glVertex2f(Round(Window.Left + Window.Width - 8 - Window.OfsX2), Round(Window.Top + 8 + Window.OfsY1));
-      glVertex2f(Round(Window.Left + Window.Width - 8 - Window.OfsX2), Round(Window.Top + Window.Height - 8 - Window.OfsY2));
-      glVertex2f(Round(Window.Left + 8 + Window.OfsX1), Round(Window.Top + Window.Height - 8 - Window.OfsY2));
+      glVertex2f(Round(Window.Left + Window.Width - 8 - Window.OfsX2), Round(Window.Top + Window.Height - 7 - Window.OfsY2));
+      glVertex2f(Round(Window.Left + 7 + Window.OfsX1), Round(Window.Top + Window.Height - 7 - Window.OfsY2));
     glEnd;
 
     glColor4f(0, 0, 0, Window.Alpha);

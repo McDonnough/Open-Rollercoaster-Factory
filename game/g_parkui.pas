@@ -231,7 +231,8 @@ var
           if FirstChild <> nil then
             Caption := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
-          OnClick := @HandleOnclick;
+          OnClick := @StartDragging;
+          OnRelease := @EndDragging;
           end;
         end
       else if NodeName = 'iconbutton' then
@@ -371,8 +372,8 @@ begin
   fWindow.Left := 24;
   fWindow.Top := 24;
   fWindow.Tag := 0;
-  fWindow.OnClick := @StartDragging;
   fWindow.OnGainFocus := @BringButtonToFront;
+  fWindow.OnClick := @StartDragging;
   fWindow.OnRelease := @EndDragging;
 
   ReadFromXML(Resource);

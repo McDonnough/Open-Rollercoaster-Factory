@@ -7,7 +7,7 @@ uses
   m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
   m_shdmng_class, m_renderer_opengl_plugins, u_functions, m_renderer_opengl_frustum,
   m_renderer_opengl_interface, m_renderer_opengl_lights, m_renderer_opengl_sky,
-  m_renderer_opengl_classes;
+  m_renderer_opengl_classes, u_geometry;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
@@ -204,6 +204,28 @@ end;
 procedure TModuleRendererOpenGL.RenderScene;
 var
   i: Integer;
+
+  procedure GetSelectionRay;
+  var
+    pmatrix: TMatrix;
+    MX, MY: Single;
+    VecToFront, VecLeft, VecUp: TVector3d;
+  begin
+    fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+
+    glGetFloatv(GL_PROJECTION_MATRIX, @pmatrix[0]);
+
+    MX := 2 * (ModuleManager.ModInputHandler.MouseX / ResX) - 1;
+    MY := -2 * (ModuleManager.ModInputHandler.MouseY / ResY) + 1;
+
+    with ModuleManager.ModCamera do
+      VecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                    -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                    -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+    VecLeft := Normal(VecToFront, Vector(0, 1, 0));
+    VecUp := Normal(VecLeft, VecToFront);
+    fSelectionRay := normalize(VecToFront + VecUp * (MY / pMatrix[5]) + VecLeft * (MX / pMatrix[0]));
+  end;
 begin
   CR := true;
   CG := true;
@@ -239,6 +261,7 @@ begin
 
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
+  GetSelectionRay;
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 

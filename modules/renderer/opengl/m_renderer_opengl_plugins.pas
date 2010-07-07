@@ -51,6 +51,16 @@ type
       destructor Free;
     end;
 
+  TRE3DInterlaced =  class
+    protected
+      ResX, ResY: Integer;
+      fShader: TShader;
+    public
+      procedure Apply(Event: String; Param, Result: Pointer);
+      constructor Create;
+      destructor Free;
+    end;
+
   TRenderEffectManager = class
     protected
       RENormal: TRENormal;
@@ -70,6 +80,7 @@ const
   RE_2D_FOCUS = 3;
   RE_MOTIONBLUR = 4;
   RE_BLOOM = 5;
+  RE_3D_INTERLACED = 6;
 
 implementation
 
@@ -92,33 +103,21 @@ begin
 end;
 
 procedure TRE3DAnaglyph.Apply(Event: String; Param, Result: Pointer);
-var
-  DistPixel: DWord;
-  Distance: Single;
 begin
   fInterface.Options.Items['terrain:occlusionquery'] := 'off';
-  fInterface.PushOptions;
-  fInterface.Options.Items['shader:mode'] := 'transform:depth';
-  fInterface.Options.Items['terrain:autoplants'] := 'off';
-  glColorMask(false, false, false, false);
-  ModuleManager.ModRenderer.Render();
-  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
-  Distance := (DistPixel / High(DWord)) ** 2 * 10000;
-  fInterface.PopOptions;
-  glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
 
   glColorMask(true, false, false, true);
   ModuleManager.ModRenderer.CR := True;
   ModuleManager.ModRenderer.CG := False;
   ModuleManager.ModRenderer.CB := False;
   glLoadIdentity;
-  ModuleManager.ModRenderer.Render(-0.4, Distance);
+  ModuleManager.ModRenderer.Render(-0.4, ModuleManager.ModRenderer.MouseDistance);
   glColorMask(false, true, true, true);
   ModuleManager.ModRenderer.CR := False;
   ModuleManager.ModRenderer.CG := True;
   ModuleManager.ModRenderer.CB := True;
   glLoadIdentity;
-  ModuleManager.ModRenderer.Render(0.4, Distance);
+  ModuleManager.ModRenderer.Render(0.4, ModuleManager.ModRenderer.MouseDistance);
   glColorMask(true, true, true, true);
 end;
 
@@ -138,8 +137,6 @@ var
   DistPixel: DWord;
   Distance: Single;
 begin
-  glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, @DistPixel);
-  Distance := (DistPixel / High(DWord)) ** 2 * 10000;
   FTexture.Bind(1);
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, ResX, ResY, 0);
   FTexture2.Bind(0);
@@ -151,7 +148,7 @@ begin
   glLoadIdentity;
   glDisable(GL_DEPTH_TEST);
   FShader.Bind;
-  FShader.UniformF('focusDist', Distance);
+  FShader.UniformF('focusDist', ModuleManager.ModRenderer.MouseDistance);
   FShader.UniformF('blurDirection', 1.0, 0.0);
   glBegin(GL_QUADS);
     glVertex2f(-1, -1);
@@ -306,6 +303,30 @@ begin
   fShader2.Free;
   fTexture.Free;
   fTexture2.Free;
+end;
+
+procedure TRE3DInterlaced.Apply(Event: String; Param, Result: Pointer);
+begin
+  fInterface.Options.Items['terrain:occlusionquery'] := 'off';
+
+  fShader.Bind;
+  fShader.UniformI('ModMode', 0);
+
+
+  glLoadIdentity;
+  ModuleManager.ModRenderer.Render(-0.4, ModuleManager.ModRenderer.MouseDistance);
+  glLoadIdentity;
+  ModuleManager.ModRenderer.Render(0.4, ModuleManager.ModRenderer.MouseDistance);
+end;
+
+constructor TRE3DInterlaced.Create;
+begin
+  ModuleManager.ModGLMng.AspectRatioFactor := 2;
+end;
+
+destructor TRE3DInterlaced.Free;
+begin
+  ModuleManager.ModGLMng.AspectRatioFactor := 1;
 end;
 
 constructor TRenderEffectManager.Create;

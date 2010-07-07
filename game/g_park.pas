@@ -3,7 +3,7 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui, g_sky;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection;
 
 type
   TPark = class
@@ -15,6 +15,7 @@ type
       fParkUI: TParkUI;
       fLoadState: Integer;
       fTimeUntilInvisible: Integer;
+      fSelectionEngine: TSelectionEngine;
     public
       // Parts of the park
       pTerrain: TTerrain;
@@ -24,6 +25,7 @@ type
 
       property ParkLoader: TParkLoader read fParkLoader;
       property OCFFile: TDOMDocument read fFile;
+      property SelectionEngine: TSelectionEngine read fSelectionEngine;
 
       (**
         * Call render modules, handle input
@@ -75,6 +77,7 @@ begin
   fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName);
 
   ModuleManager.ModLoadScreen.Progress := 5;
+  fSelectionEngine := TSelectionEngine.Create;
   fParkLoader := TParkLoader.Create;
   fParkLoader.InitDisplay;
   EventManager.AddCallback('TPark.Render', @StartPostInit);
@@ -163,6 +166,7 @@ end;
 destructor TPark.Free;
 begin
   ModuleManager.ModRenderer.Unload;
+  fSelectionEngine.Free;
   fParkLoader.Free;
   pSky.Free;
   pTerrain.Free;

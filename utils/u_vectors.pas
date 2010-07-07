@@ -18,6 +18,12 @@ type
     X, Y, Z, W: Single;
     end;
 
+  PVector2D = ^TVector2D;
+  PVector3D = ^TVector3D;
+  PVector4D = ^TVector4D;
+
+  TMatrix = Array[0..15] of Single;
+
 function Vector(X, Y: Single): TVector2D;
 function Vector(X, Y, Z: Single): TVector3D;
 function Vector(X, Y, Z, W: Single): TVector4D;
@@ -51,9 +57,16 @@ operator * (A: TVector2D; B: Single): TVector2D;
 operator * (A: TVector3D; B: Single): TVector3D;
 operator * (A: TVector4D; B: Single): TVector4D;
 
+operator * (A: TVector2D; B: TMatrix): TVector2D;
+operator * (A: TVector3D; B: TMatrix): TVector3D;
+operator * (A: TVector4D; B: TMatrix): TVector4D;
+
 operator / (A: TVector2D; B: Single): TVector2D;
 operator / (A: TVector3D; B: Single): TVector3D;
 operator / (A: TVector4D; B: Single): TVector4D;
+
+
+
 
 
 function VecLength(A: TVector2D): Single;
@@ -64,6 +77,7 @@ function VecLengthNoRoot(A: TVector2D): Single;
 function VecLengthNoRoot(A: TVector3D): Single;
 function VecLengthNoRoot(A: TVector4D): Single;
 
+function Cross(VectorA, VectorB: TVector3D): TVector3D;
 function Normal(VectorA, VectorB: TVector3D): TVector3D;
 function DotProduct(VectorA, VectorB: TVector3D): Single;
 
@@ -234,6 +248,31 @@ begin
 end;
 
 
+operator * (A: TVector2D; B: TMatrix): TVector2D;
+var
+  Tmp: TVector4D;
+begin
+  Tmp := Vector(A.X, A.Y, 0, 1) * B;
+  Result := Vector(Tmp.X, Tmp.Y);
+end;
+
+operator * (A: TVector3D; B: TMatrix): TVector3D;
+var
+  Tmp: TVector4D;
+begin
+  Tmp := Vector(A.X, A.Y, A.Z, 1) * B;
+  Result := Vector(Tmp.X, Tmp.Y, Tmp.Z);
+end;
+
+operator * (A: TVector4D; B: TMatrix): TVector4D;
+begin
+  Result := Vector(A.X * B[0] + A.Y * B[4] + A.Z * B[8]  + A.W * B[12],
+                   A.X * B[1] + A.Y * B[5] + A.Z * B[9]  + A.W * B[13],
+                   A.X * B[2] + A.Y * B[6] + A.Z * B[10] + A.W * B[14],
+                   A.X * B[3] + A.Y * B[7] + A.Z * B[10] + A.W * B[15]);
+end;
+
+
 operator / (A: TVector2D; B: Single): TVector2D;
 begin
   Result.X := A.X / B;
@@ -295,19 +334,20 @@ begin
 end;
 
 
-function Normal(VectorA, VectorB: TVector3D): TVector3D;
+function Cross(VectorA, VectorB: TVector3D): TVector3D;
 begin
   Result.X := VectorA.Y * VectorB.Z - VectorA.Z * VectorB.Y;
   Result.Y := VectorA.Z * VectorB.X - VectorA.X * VectorB.Z;
   Result.Z := VectorA.X * VectorB.Y - VectorA.Y * VectorB.X;
+end;
 
-  Result := Normalize(Result);
+function Normal(VectorA, VectorB: TVector3D): TVector3D;
+begin
+  Result := Normalize(Cross(VectorA, VectorB));
 end;
 
 function DotProduct(VectorA, VectorB: TVector3D): Single;
 begin
-  VectorA := Normalize(VectorA);
-  VectorB := Normalize(VectorB);
   Result := VectorA.x * VectorB.x + VectorA.y * VectorB.y + VectorA.z * VectorB.z;
 end;
 

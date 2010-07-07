@@ -9,7 +9,12 @@ uses
 
 type
   TModuleGLMngClass = class(TBasicModule)
+    protected
+      fFOV: Single;
     public
+      AspectRatioFactor: Integer;
+      property FOV: Single read fFOV;
+
       (**
         * Create glortho matrix
         *)
@@ -29,7 +34,7 @@ type
         * Clear buffers
         *)
       procedure SetUpScreen; virtual abstract;
-    end;
+  end;
 
 implementation
 

@@ -47,6 +47,7 @@ begin
         end;
       exit;
       end;
+  ModuleManager.ModLog.AddWarning('Calling event ' + Event + ' which is not registered');
 end;
 
 procedure TEventManager.AddCallback(Event: String; Callback: TEventCallback);

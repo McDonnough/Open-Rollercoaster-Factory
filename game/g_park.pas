@@ -16,6 +16,8 @@ type
       fLoadState: Integer;
       fTimeUntilInvisible: Integer;
       fSelectionEngine: TSelectionEngine;
+      fNormalSelectionEngine: TSelectionEngine;
+      fTerrainSelectionEngine: TSelectionEngine;
     public
       // Parts of the park
       pTerrain: TTerrain;
@@ -23,9 +25,12 @@ type
       pMainCamera: TCamera;
       pCameras: Array of TCamera;
 
+      property CanRender: Boolean read fCanRender;
       property ParkLoader: TParkLoader read fParkLoader;
       property OCFFile: TDOMDocument read fFile;
-      property SelectionEngine: TSelectionEngine read fSelectionEngine;
+      property SelectionEngine: TSelectionEngine read fSelectionEngine write fSelectionEngine;
+      property NormalSelectionEngine: TSelectionEngine read fNormalSelectionEngine;
+      property TerrainSelectionEngine: TSelectionEngine read fTerrainSelectionEngine;
 
       (**
         * Call render modules, handle input
@@ -77,7 +82,9 @@ begin
   fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName);
 
   ModuleManager.ModLoadScreen.Progress := 5;
-  fSelectionEngine := TSelectionEngine.Create;
+  fNormalSelectionEngine := TSelectionEngine.Create;
+  fTerrainSelectionEngine := TSelectionEngine.Create;
+  fSelectionEngine := fNormalSelectionEngine;
   fParkLoader := TParkLoader.Create;
   fParkLoader.InitDisplay;
   EventManager.AddCallback('TPark.Render', @StartPostInit);
@@ -156,6 +163,7 @@ begin
     fParkUI.Drag;
     pSky.Time := pSky.Time + FPSDisplay.MS / 10;
     ModuleManager.ModCamera.AdvanceActiveCamera;
+    fSelectionEngine.Update;
     ModuleManager.ModRenderer.RenderScene;
     end;
   if fPostLoading then
@@ -166,7 +174,9 @@ end;
 destructor TPark.Free;
 begin
   ModuleManager.ModRenderer.Unload;
-  fSelectionEngine.Free;
+  fNormalSelectionEngine.Free;
+  fTerrainSelectionEngine.Free;
+  fSelectionEngine := nil;
   fParkLoader.Free;
   pSky.Free;
   pTerrain.Free;

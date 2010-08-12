@@ -7,14 +7,14 @@
     <tab>Textures</tab>
     <tab>Grass</tab>
   </tabbar>
-  <iconbutton left="678" top="0" icon="selection-add.tga" />
-  <iconbutton left="678" top="68" icon="selection-delete.tga" />
+  <iconbutton left="678" top="0" icon="selection-add.tga" name="terrain_edit.add_marks" onclick="terrain_edit.marks.add" />
+  <iconbutton left="678" top="68" icon="selection-delete.tga" name="terrain_edit.delete_marks" onclick="terrain_edit.marks.delete" />
   <label left="8" top="40" height="80" width="662">
     <label left="0" top="0" height="80" width="3000" name="terrain_edit.tab.container">
       <label left="8" width="734" height="80" top="0">
-        <iconbutton left="0" top="8" icon="terrain-raise.tga" />
-        <iconbutton left="80" top="8" icon="terrain-lower.tga" />
-        <iconbutton left="152" top="8" icon="terrain-setfix.tga" />
+        <iconbutton left="0" top="8" icon="terrain-raise.tga" name="terrain_edit.modify_raise" onclick="terrain_edit.modify.raise" />
+        <iconbutton left="72" top="8" icon="terrain-lower.tga" name="terrain_edit.modify_lower" onclick="terrain_edit.modify.lower" />
+        <iconbutton left="144" top="8" icon="terrain-setfix.tga" name="terrain_edit.modify_setfix" onclick="terrain_edit.modify.setfix" />
         <edit left="368" top="8" height="32" width="100">0.0</edit>
         <button left="368" top="48" height="32" width="100">Set</button>
       </label>

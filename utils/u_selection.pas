@@ -66,6 +66,8 @@ var
 begin
   MinDist := 2000 * 2000;
   for i := 0 to high(fSelectableObjects) do
+    begin
+    fSelectableObjects[i].Selected := false;
     for j := 0 to fSelectableObjects[i].Mesh.TriangleCount do
       if RayTriangleIntersection(MakeRay(ModuleManager.ModRenderer.SelectionStart, ModuleManager.ModRenderer.SelectionRay), MakeTriangleFromMeshTriangleVertexArray(fSelectableObjects[i].Mesh, fSelectableObjects[i].Mesh.Triangles[j]), fSelectableObjects[i].IntersectionPoint) then
         if MinDist > VecLengthNoRoot(fSelectableObjects[i].IntersectionPoint - ModuleManager.ModRenderer.SelectionStart) then
@@ -74,10 +76,11 @@ begin
           fSelectableObjects[i].Selected := true;
           break;
           end;
+    end;
   for i := 0 to high(fSelectableObjects) do
     if VecLengthNoRoot(fSelectableObjects[i].IntersectionPoint - ModuleManager.ModRenderer.SelectionStart) > MinDist then
       fSelectableObjects[i].Selected := false
-    else if fSelectableObjects[i].Event <> '' then
+    else if (fSelectableObjects[i].Selected) and (fSelectableObjects[i].Event <> '') then
       EventManager.CallEvent(fSelectableObjects[i].Event, fSelectableObjects[i].Mesh, nil);
 end;
 

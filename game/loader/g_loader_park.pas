@@ -21,7 +21,7 @@ type
 implementation
 
 uses
-  m_varlist, main, g_terrain, g_camera, u_events;
+  m_varlist, main, g_terrain, g_camera, u_events, g_park;
 
 function TParkLoader.FileOnList(F: String): Boolean;
 var
@@ -73,7 +73,8 @@ begin
   until
     ModuleManager.ModGUITimer.GetTime - fTime > 25;
 
-  EventManager.CallEvent('TParkLoaser.LoadFiles.RenderStep', nil, nil);
+  if not Park.CanRender then
+    EventManager.CallEvent('TParkLoaser.LoadFiles.RenderStep', nil, nil);
 
   if Visible then
     ModuleManager.ModLoadscreen.Render;

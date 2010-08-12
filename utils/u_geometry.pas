@@ -38,16 +38,17 @@ function MakeTriangle(A, B, C: TVector3D): TTriangle;
 function MakeTriangleFromMeshTriangleVertexArray(Mesh: TMesh; A: TMeshTriangleVertexArray): TTriangle;
 function RayTriangleIntersection(Ray: TRay; Tri: TTriangle; var I: TVector3D): Boolean;
 function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
+function MakeTriangleVertexArray(A, B, C: Integer): TMeshTriangleVertexArray;
 
 implementation
 
 uses
   u_selection;
 
+
 procedure TMesh.setVertex(I: Integer; V: TMeshVertex);
 begin
-  if I > VertexCount then
-    exit;
+  if I > VertexCount then I := VertexCount;
   if I = VertexCount then
     SetLength(fVertices, I + 1);
   fVertices[i] := V;
@@ -55,8 +56,7 @@ end;
 
 procedure TMesh.setTriangle(I: Integer; V: TMeshTriangleVertexArray);
 begin
-  if I > TriangleCount then
-    exit;
+  if I > TriangleCount then I := TriangleCount;
   if I = TriangleCount then
     SetLength(fTriangles, I + 1);
   fTriangles[i] := V;
@@ -173,6 +173,13 @@ begin
     exit(false);
 
   Result := true;                 // I is in T
+end;
+
+function MakeTriangleVertexArray(A, B, C: Integer): TMeshTriangleVertexArray;
+begin
+  Result[0] := A;
+  Result[1] := B;
+  Result[2] := C;
 end;
 
 end.

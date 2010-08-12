@@ -104,7 +104,7 @@ void main(void) {
   if (SunShadow.a + 0.1 >= SDist)
     SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   vec4 Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
-  vec4 Ambient = gl_LightSource[0].ambient * dot(bumpNormal, vec3(0.0, 1.0, 0.0));
+  vec4 Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
   gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (Diffuse + Ambient);
   gl_FragColor.a = 1.0;
 }

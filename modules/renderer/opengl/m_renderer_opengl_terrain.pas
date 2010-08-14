@@ -38,7 +38,7 @@ type
       RenderStep: Single;
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
-      procedure Render;
+      procedure Render(Event: String; Data, Result: Pointer);
       procedure RecreateWaterVBO;
       procedure CheckWaterLayerVisibility;
       procedure RenderWaterSurfaces;
@@ -101,7 +101,7 @@ begin
   fWaterVBO.Unbind;
 end;
 
-procedure TRTerrain.Render;
+procedure TRTerrain.Render(Event: String; Data, Result: Pointer);
 var
   fBoundShader: TShader;
 
@@ -250,6 +250,24 @@ begin
     fAPShader.Unbind;
     glEnable(GL_CULL_FACE);
     end;
+  glUseProgram(0);
+
+  // Render marks - WILL BE REPLACED
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_CULL_FACE);
+
+  glColor4f(1, 1, 1, 1);
+  glBegin(GL_QUADS);
+    for i := 0 to Park.pTerrain.Marks.Height - 1 do
+      begin
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
+      end;
+  glEnd;
+
+  glEnable(GL_TEXTURE_2D);
 end;
 
 procedure TRTerrain.CheckWaterLayerVisibility;
@@ -338,7 +356,6 @@ var
 
   procedure UpdateVertex(X, Y: Word);
   begin
-    // make this MUCH faster
     Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
@@ -605,6 +622,7 @@ begin
   except
     ModuleManager.ModLog.AddError('Failed to create terrain renderer in OpenGL rendering module: Internal error');
   end;
+  EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 
 destructor TRTerrain.Free;
@@ -618,6 +636,7 @@ begin
     fWaterLayerFBOs[i].Free;
   EventManager.RemoveCallback(@ApplyChanges);
   EventManager.RemoveCallback(@UpdateCollection);
+  EventManager.RemoveCallback(@Render);
   fFineVBO.Free;
   fGoodVBO.Free;
   fRawVBO.Free;

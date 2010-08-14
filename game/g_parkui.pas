@@ -114,9 +114,17 @@ end;
 procedure TParkUIWindow.Toggle(Sender: TGUIComponent);
 begin
   if Expanded then
-    hide
+    begin
+    hide;
+    if fWindow.Name <> '' then
+      EventManager.CallEvent('GUIActions.' + fWindow.Name + '.close', Sender, nil);
+    end
   else
+    begin
     show;
+    if fWindow.Name <> '' then
+      EventManager.CallEvent('GUIActions.' + fWindow.Name + '.open', Sender, nil);
+    end;
 end;
 
 procedure TParkUIWindow.SetWidth(A: Single);
@@ -319,6 +327,7 @@ begin
     a := XMLFile.GetElementsByTagName('window');
     with TDOMElement(a[0]) do
       begin
+      fWindow.Name := GetAttribute('name');
       Width := StrToInt(GetAttribute('width'));
       Height := StrToInt(GetAttribute('height'));
       Left := StrToInt(GetAttribute('left')) - 400 + ResX / 2;

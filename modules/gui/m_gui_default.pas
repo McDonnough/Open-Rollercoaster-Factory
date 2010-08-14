@@ -161,6 +161,8 @@ begin
   fModType := 'GUI';
 
   fBasicComponent := TGUIComponent.Create(nil, CNothing);
+  fBasicComponent.OnClick := @BasicComponentOnClick;
+  fBasicComponent.OnRelease := @BasicComponentOnRelease;
 
   fFocusComponent := nil;
   fHoverComponent := nil;

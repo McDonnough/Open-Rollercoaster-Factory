@@ -76,6 +76,8 @@ type
       fFocusComponent: TGUIComponent;
       fHoverComponent: TGUIComponent;
       fClicking: Boolean;
+      procedure BasicComponentOnClick(Sender: TGUIComponent);
+      procedure BasicComponentOnRelease(Sender: TGUIComponent);
     public
       property Clicking: Boolean read fClicking;
       property BasicComponent: TGUIComponent read fBasicComponent;
@@ -96,7 +98,18 @@ type
 implementation
 
 uses
-  m_varlist, math, u_math, main;
+  m_varlist, math, u_math, main, u_events;
+
+procedure TModuleGUIClass.BasicComponentOnClick(Sender: TGUIComponent);
+begin
+  EventManager.CallEvent('BasicComponent.OnClick', Sender, nil);
+end;
+
+procedure TModuleGUIClass.BasicComponentOnRelease(Sender: TGUIComponent);
+begin
+  EventManager.CallEvent('BasicComponent.OnRelease', Sender, nil);
+end;
+
 
 function TGUIComponent.GetChildInOrder(I: Integer): TGUIComponent;
 var

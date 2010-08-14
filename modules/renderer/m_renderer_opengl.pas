@@ -69,8 +69,10 @@ end;
 
 procedure TModuleRendererOpenGL.RenderParts;
 begin
-  RSky.Render;
-  RTerrain.Render;
+  RSky.Render('', nil, nil);
+  RTerrain.Render('', nil, nil);
+// Does NOT work yet:
+//   EventManager.CallEvent('TPark.RenderParts', nil, nil);
   fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
 end;
 

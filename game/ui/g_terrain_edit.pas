@@ -3,20 +3,22 @@ unit g_terrain_edit;
 interface
 
 uses
-  SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors;
+  SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors, u_arrays;
 
 type
   TGameTerrainEdit = class(TParkUIWindow)
     protected
       MarkMode: TIconifiedButton;
       fSelectionMap: TMesh;
+      fSelectionObject: PSelectableObject;
       fTerrainSelectionEngine, fFlagSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
     public
       procedure CreateNewMark(Event: String; Data, Result: Pointer);
       procedure UpdateTerrainSelectionMap(Event: String; Data, Result: Pointer);
       procedure MarksChange(Event: String; Data, Result: Pointer);
-      procedure changeTab(Event: String; Data, Result: Pointer);
+      procedure ChangeTab(Event: String; Data, Result: Pointer);
+      procedure OnClose(Event: String; Data, Result: Pointer);
       constructor Create(Resource: String; ParkUI: TParkUI);
       destructor Free;
     end;
@@ -24,11 +26,21 @@ type
 implementation
 
 uses
-  u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist;
+  u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist, m_inputhandler_class;
 
 procedure TGameTerrainEdit.CreateNewMark(Event: String; Data, Result: Pointer);
+var
+  Row: TRow;
 begin
-  Park.pTerrain.TexMap[TSelectableObject(Data^).IntersectionPoint.X, TSelectableObject(Data^).IntersectionPoint.Z] := 2;
+  if ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT] then
+    begin
+    Row := TRow.Create;
+    Row.Insert(0, Round(5 * fSelectionObject^.IntersectionPoint.X));
+    Row.Insert(1, Round(5 * fSelectionObject^.IntersectionPoint.Z));
+    if not Park.pTerrain.Marks.HasRow(Row) then
+      Park.pTerrain.Marks.InsertRow(Park.pTerrain.Marks.Height, Row);
+    Row.Free;
+    end;
 end;
 
 procedure TGameTerrainEdit.UpdateTerrainSelectionMap(Event: String; Data, Result: Pointer);
@@ -56,10 +68,12 @@ begin
   if MarkMode <> nil then
     MarkMode.Left := 678;
   EventManager.RemoveCallback(@UpdateTerrainSelectionMap);
+  EventManager.RemoveCallback(@CreateNewMark);
   if Data = Pointer(fWindow.GetChildByName('terrain_edit.add_marks')) then
     begin
     Park.SelectionEngine := fTerrainSelectionEngine;
     EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
+    EventManager.AddCallback('BasicComponent.OnClick', @CreateNewMark);
     MarkMode := TIconifiedButton(Data);
     MarkMode.Left := 678 + 16;
     end
@@ -81,6 +95,12 @@ begin
   TLabel(fWindow.GetChildByName('terrain_edit.tab.container')).Left := -750 * TTabBar(fWindow.GetChildByName('terrain_edit.tabbar')).SelectedTab;
 end;
 
+procedure TGameTerrainEdit.OnClose(Event: String; Data, Result: Pointer);
+begin
+  Park.pTerrain.Marks.Resize(2, 0);
+  MarksChange('', nil, nil);
+end;
+
 constructor TGameTerrainEdit.Create(Resource: String; ParkUI: TParkUI);
 var
   i, j: Integer;
@@ -91,6 +111,7 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.marks.add', @MarksChange);
   EventManager.AddCallback('GUIActions.terrain_edit.marks.delete', @MarksChange);
   EventManager.AddCallback('GUIActions.terrain_edit.final.marks.add', @CreateNewMark);
+  EventManager.AddCallback('GUIActions.terrain_edit.close', @OnClose);
   fCameraOffset := Vector(0, 0, 0);
   fSelectionMap := TMesh.Create;
   for j := 0 to 100 do
@@ -105,7 +126,7 @@ begin
       end;
   fFlagSelectionEngine := TSelectionEngine.Create;
   fTerrainSelectionEngine := TSelectionEngine.Create;
-  fTerrainSelectionEngine.Add(fSelectionMap, 'GUIActions.terrain_edit.final.marks.add');
+  fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, '');
 end;
 
 destructor TGameTerrainEdit.Free;
@@ -114,6 +135,7 @@ begin
   fTerrainSelectionEngine.Free;
   fSelectionMap.Free;
   EventManager.RemoveCallback(@changeTab);
+  EventManager.RemoveCallback(@OnClose);
   EventManager.RemoveCallback(@MarksChange);
   inherited Free;
 end;

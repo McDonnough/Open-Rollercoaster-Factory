@@ -277,7 +277,7 @@ procedure TTable.DeleteRow(Y: Integer);
 var
   i, j: Integer;
 begin
-  if Height = 0 then exit;
+  if (Y < 0) or (Y >= Height) then exit;
   for i := Y + 1 to Height - 1 do
     for j := 0 to Width - 1 do
       fData[j, i - 1] := fData[j, i];
@@ -288,7 +288,7 @@ procedure TTable.DeleteCol(X: Integer);
 var
   i, j: Integer;
 begin
-  if Width = 0 then exit;
+  if (X < 0) or (X >= Width) then exit;
   for i := X + 1 to Width - 1 do
     for j := 0 to Height - 1 do
       fData[i - 1, j] := fData[i, j];
@@ -305,11 +305,10 @@ begin
       Value[OfsX + i, OfsY + j] := Items.Value[i, j];
 end;
 
-function TTable.HasRow(Items: TRow): Boolean;
+function TTable.HasRow(Items: TRow): Integer;
 var
   i, j: Integer;
 begin
-  Result := -1;
   if Width >= Items.Length then
     begin
     for j := 0 to Height - 1 do
@@ -323,13 +322,13 @@ begin
         end;
       end;
     end;
+  Result := -1;
 end;
 
-function TTable.HasCol(Items: TRow): Boolean;
+function TTable.HasCol(Items: TRow): Integer;
 var
   i, j: Integer;
 begin
-  Result := -1;
   if Height >= Items.Length then
     begin
     for j := 0 to Width - 1 do
@@ -343,6 +342,7 @@ begin
         end;
       end;
     end;
+  Result := -1;
 end;
 
 function TTable.GetPart(OfsX, OfsY, W, H: Integer): TTable;

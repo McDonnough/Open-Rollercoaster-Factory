@@ -47,8 +47,16 @@ begin
     Row := TRow.Create;
     Row.Insert(0, Round(5 * fSelectionObject^.IntersectionPoint.X));
     Row.Insert(1, Round(5 * fSelectionObject^.IntersectionPoint.Z));
-    if Park.pTerrain.Marks.HasRow(Row) <> -1 then
+    if Park.pTerrain.Marks.HasRow(Row) = -1 then
       Park.pTerrain.Marks.InsertRow(Park.pTerrain.Marks.Height, Row);
+    Row.Free;
+    end
+  else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
+    begin
+    Row := TRow.Create;
+    Row.Insert(0, Round(5 * fSelectionObject^.IntersectionPoint.X));
+    Row.Insert(1, Round(5 * fSelectionObject^.IntersectionPoint.Z));
+    Park.pTerrain.Marks.DeleteRow(Park.pTerrain.Marks.HasRow(Row));
     Row.Free;
     end;
 end;
@@ -67,7 +75,6 @@ begin
       fSelectionMap.pVertices[SELECTION_SIZE * j + i]^.Position := fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position - fCameraOffset + fTmpCameraOffset;
       fSelectionMap.pVertices[SELECTION_SIZE * j + i]^.Position.Y := Park.pTerrain.HeightMap[fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position.X, fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position.Z];
       end;
-
   fCameraOffset := fTmpCameraOffset;
 end;
 
@@ -90,8 +97,6 @@ begin
     end
   else if Data = Pointer(fWindow.GetChildByName('terrain_edit.delete_marks')) then
     begin
-    EventManager.AddCallback('TPark.Render', @UpdateMarkSelection);
-    EventManager.AddCallback('BasicComponent.OnClick', @DeleteMark);
     Park.SelectionEngine := fFlagSelectionEngine;
     MarkMode := TIconifiedButton(Data);
     MarkMode.Left := 678 + 16;
@@ -122,7 +127,6 @@ begin
   MarkMode := nil;
   EventManager.AddCallback('GUIActions.terrain_edit.changeTab', @changeTab);
   EventManager.AddCallback('GUIActions.terrain_edit.marks.add', @MarksChange);
-  EventManager.AddCallback('GUIActions.terrain_edit.marks.delete', @MarksChange);
   EventManager.AddCallback('GUIActions.terrain_edit.final.marks.add', @CreateNewMark);
   EventManager.AddCallback('GUIActions.terrain_edit.close', @OnClose);
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @MoveMark);

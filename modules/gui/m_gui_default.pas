@@ -112,7 +112,7 @@ begin
     begin
     if fHoverComponent.OnHover <> nil then
       fHoverComponent.OnHover(fHoverComponent);
-    if ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT] then
+    if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) or ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
       begin
       if (not fClicking) and (fHoverComponent.OnClick <> nil) then
         begin
@@ -137,7 +137,7 @@ begin
       if (fFocusComponent.OnKeyUp <> nil) and (ModuleManager.ModInputHandler.Key[i]) and (fKeys[i] <> ModuleManager.ModInputHandler.Key[i]) then
         fFocusComponent.OnKeyUp(fFocusComponent, i);
       end;
-    if (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (fClicking) then
+    if (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (fClicking) and not (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT])then
       begin
       if (fFocusComponent.OnRelease <> nil) then
         fFocusComponent.OnRelease(fFocusComponent);

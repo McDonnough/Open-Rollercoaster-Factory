@@ -11,7 +11,7 @@ type
       MarkMode: TIconifiedButton;
       fSelectionMap: TMesh;
       fSelectionObject: PSelectableObject;
-      fTerrainSelectionEngine, fFlagSelectionEngine: TSelectionEngine;
+      fTerrainSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
     public
       procedure MoveMark(Event: String; Data, Result: Pointer);
@@ -35,6 +35,13 @@ const
 procedure TGameTerrainEdit.MoveMark(Event: String; Data, Result: Pointer);
 begin
   Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5);
+  if Park.pTerrain.Marks.Height > 0 then
+    begin
+    if abs(Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.X) < abs(Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.Y) then
+      Park.pTerrain.CurrMark.X := Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1] / 5
+    else
+      Park.pTerrain.CurrMark.Y := Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1] / 5;
+    end;
   fSelectionObject := PSelectableObject(Data);
 end;
 
@@ -48,7 +55,19 @@ begin
     Row.Insert(0, Round(5 * fSelectionObject^.IntersectionPoint.X));
     Row.Insert(1, Round(5 * fSelectionObject^.IntersectionPoint.Z));
     if Park.pTerrain.Marks.HasRow(Row) = -1 then
-      Park.pTerrain.Marks.InsertRow(Park.pTerrain.Marks.Height, Row);
+      begin
+      Row.Resize(0);
+      Row.Insert(0, Round(5 * Park.pTerrain.CurrMark.X));
+      Row.Insert(1, Round(5 * Park.pTerrain.CurrMark.Y));
+      if Park.pTerrain.Marks.HasRow(Row) = -1 then
+        Park.pTerrain.Marks.InsertRow(Park.pTerrain.Marks.Height, Row)
+      end
+    else
+      while Park.pTerrain.Marks.HasRow(Row) <> Park.pTerrain.Marks.Height - 1 do
+        begin
+        Park.pTerrain.Marks.InsertRow(Park.pTerrain.Marks.Height, Park.pTerrain.Marks.GetRow(0));
+        Park.pTerrain.Marks.DeleteRow(0);
+        end;
     Row.Free;
     end
   else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
@@ -95,17 +114,11 @@ begin
     MarkMode := TIconifiedButton(Data);
     MarkMode.Left := 678 + 16;
     end
-  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.delete_marks')) then
-    begin
-    Park.SelectionEngine := fFlagSelectionEngine;
-    MarkMode := TIconifiedButton(Data);
-    MarkMode.Left := 678 + 16;
-    end
   else
     begin
     Park.SelectionEngine := Park.NormalSelectionEngine;
+    MarkMode := TIconifiedButton(Data);
     end;
-  MarkMode := TIconifiedButton(Data);
 end;
 
 procedure TGameTerrainEdit.changeTab(Event: String; Data, Result: Pointer);
@@ -127,6 +140,7 @@ begin
   MarkMode := nil;
   EventManager.AddCallback('GUIActions.terrain_edit.changeTab', @changeTab);
   EventManager.AddCallback('GUIActions.terrain_edit.marks.add', @MarksChange);
+  EventManager.AddCallback('GUIActions.terrain_edit.marks.delete', @OnClose);
   EventManager.AddCallback('GUIActions.terrain_edit.final.marks.add', @CreateNewMark);
   EventManager.AddCallback('GUIActions.terrain_edit.close', @OnClose);
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @MoveMark);
@@ -143,14 +157,12 @@ begin
         fSelectionMap.Triangles[2 * (SELECTION_SIZE * j + i) + 1] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * (j + 1) + i, (SELECTION_SIZE + 1) * (j + 1) + (i + 1), (SELECTION_SIZE + 1) * j + i + 1 );
         end;
       end;
-  fFlagSelectionEngine := TSelectionEngine.Create;
   fTerrainSelectionEngine := TSelectionEngine.Create;
   fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, 'GUIActions.terrain_edit.marks.move');
 end;
 
 destructor TGameTerrainEdit.Free;
 begin
-  fFlagSelectionEngine.Free;
   fTerrainSelectionEngine.Free;
   fSelectionMap.Free;
   EventManager.RemoveCallback(@changeTab);

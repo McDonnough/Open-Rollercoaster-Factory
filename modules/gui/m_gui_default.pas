@@ -137,7 +137,7 @@ begin
       if (fFocusComponent.OnKeyUp <> nil) and (ModuleManager.ModInputHandler.Key[i]) and (fKeys[i] <> ModuleManager.ModInputHandler.Key[i]) then
         fFocusComponent.OnKeyUp(fFocusComponent, i);
       end;
-    if (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (fClicking) and not (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT])then
+    if (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (fClicking) and (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT])then
       begin
       if (fFocusComponent.OnRelease <> nil) then
         fFocusComponent.OnRelease(fFocusComponent);

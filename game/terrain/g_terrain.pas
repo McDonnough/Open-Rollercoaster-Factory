@@ -218,13 +218,15 @@ end;
 procedure TTerrain.SetHeightAtPosition(X, Y, Height: Single);
 var
   fX, fY: Word;
-  fFinal: DWord;
+  fData: Array of Word;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Height := Round(256 * Height);
-  fFinal := fX + 65536 * fY;
-  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
+  fData[0] := 1;
+  fData[1] := Round(5 * X);
+  fData[2] := Round(5 * Y);
+  EventManager.CallEvent('TTerrain.Changed', @fData[0], nil);
 end;
 
 function TTerrain.GetWaterAtPosition(X, Y: Single): Single;
@@ -241,13 +243,15 @@ end;
 procedure TTerrain.SetWaterAtPosition(X, Y, Height: Single);
 var
   fX, fY: Word;
-  fFinal: DWord;
+  fData: Array of Word;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Water := Round(256 * Height);
-  fFinal := fX + 65536 * fY;
-  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
+  fData[0] := 1;
+  fData[1] := Round(5 * X);
+  fData[2] := Round(5 * Y);
+  EventManager.CallEvent('TTerrain.Changed', @fData[0], nil);
 end;
 
 function TTerrain.GetTextureAtPosition(X, Y: Single): Byte;
@@ -262,12 +266,16 @@ end;
 procedure TTerrain.SetTextureAtPosition(X, Y: Single; Tex: Byte);
 var
   fX, fY: Word;
-  fFinal: DWord;
+  fData: Array of Word;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Texture := Tex;
-  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
+  SetLength(fData, 3);
+  fData[0] := 1;
+  fData[1] := Round(5 * X);
+  fData[2] := Round(5 * Y);
+  EventManager.CallEvent('TTerrain.ChangedTexmap', @fData[0], nil);
 end;
 
 procedure TTerrain.Resize(X, Y: Integer);

@@ -45,6 +45,11 @@ operator / (A, B: TVector3D): TVector3D;
 operator / (A, B: TVector4D): TVector4D;
 
 
+operator = (A, B: TVector2D): Boolean;
+operator = (A, B: TVector3D): Boolean;
+operator = (A, B: TVector4D): Boolean;
+
+
 operator + (A: TVector2D; B: Single): TVector2D;
 operator + (A: TVector3D; B: Single): TVector3D;
 operator + (A: TVector4D; B: Single): TVector4D;
@@ -66,6 +71,10 @@ operator / (A: TVector3D; B: Single): TVector3D;
 operator / (A: TVector4D; B: Single): TVector4D;
 
 
+
+function VecRound(A: TVector2D): TVector2D;
+function VecRound(A: TVector3D): TVector3D;
+function VecRound(A: TVector4D): TVector4D;
 
 
 
@@ -113,7 +122,6 @@ begin
   Result.Z := A.Z + B.Z;
   Result.W := A.W + B.W;
 end;
-
 
 operator - (A, B: TVector2D): TVector2D;
 begin
@@ -179,6 +187,23 @@ begin
   Result.Z := A.Z / B.Z;
   Result.W := A.W / B.W;
 end;
+
+
+operator = (A, B: TVector2D): Boolean;
+begin
+  Result := (A.X = B.X) and (A.Y = B.Y);
+end;
+
+operator = (A, B: TVector3D): Boolean;
+begin
+  Result := (A.X = B.X) and (A.Y = B.Y) and (A.Z = B.Z);
+end;
+
+operator = (A, B: TVector4D): Boolean;
+begin
+  Result := (A.X = B.X) and (A.Y = B.Y) and (A.Z = B.Z) and (A.W = B.W);
+end;
+
 
 
 
@@ -292,6 +317,23 @@ begin
   Result.Y := A.Y / B;
   Result.Z := A.Z / B;
   Result.W := A.W / B;
+end;
+
+
+
+function VecRound(A: TVector2D): TVector2D;
+begin
+  Result := Vector(Round(A.X), Round(A.Y));
+end;
+
+function VecRound(A: TVector3D): TVector3D;
+begin
+  Result := Vector(Round(A.X), Round(A.Y), Round(A.Z));
+end;
+
+function VecRound(A: TVector4D): TVector4D;
+begin
+  Result := Vector(Round(A.X), Round(A.Y), ROund(A.Z), Round(A.W));
 end;
 
 

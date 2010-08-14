@@ -315,9 +315,10 @@ end;
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
   i, j, k, l: Integer;
+  Pixel: TVector4D;
   procedure StartUpdate;
   begin
-    glUseProgram(0);
+{    glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     fHeightMap.Bind;
     glClear(GL_COLOR_BUFFER_BIT);
@@ -331,14 +332,15 @@ var
     glPushMatrix;
     glLoadIdentity;
 
-    glDisable(GL_DEPTH_TEST);
-    glBegin(GL_POINTS);
+    glDisable(GL_DEPTH_TEST);}
+    fHeightMap.Textures[0].Bind(0);
   end;
 
   procedure UpdateVertex(X, Y: Word);
   begin
-    glColor4f(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
-    glVertex3f(X, Y, -1);
+    // make this MUCH faster
+    Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
 
   procedure CheckWaterLevel(X, Y: Word);
@@ -357,14 +359,14 @@ var
 
   procedure EndUpdate;
   begin
-    glEnd;
-    glEnable(GL_DEPTH_TEST);
+    fHeightMap.Textures[0].Unbind;
+{    glEnable(GL_DEPTH_TEST);
     glEnable(GL_ALPHA_TEST);
     glPopMatrix;
     glMatrixMode(GL_PROJECTION);
     glPopMatrix;
     glMatrixMode(GL_MODELVIEW);
-    fHeightMap.Unbind;
+    fHeightMap.Unbind;}
   end;
 
   procedure RecalcBoundingSpheres(X, Y: Integer);
@@ -434,16 +436,26 @@ begin
       for j := 0 to high(fWaterLayerFBOs[i].Blocks) do
         setLength(fWaterLayerFBOs[i].Blocks[j], Park.pTerrain.SizeX div 128);
       end;
+    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+        RecalcBoundingSpheres(i, j);
     end;
-  if (Data <> nil) and (Event = 'TTerrain.Changed') then
+  if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap')) then
     begin
-    i := Word(Data^);
-    j := Word(Pointer(PtrUInt(Data) + 2)^);
+    k := Word(Data^);
     StartUpdate;
-    UpdateVertex(i, j);
+    for i := 0 to k - 1 do
+      UpdateVertex(Word((Data + 2 * i + 2)^), Word((Data + 2 * i + 4)^));
     EndUpdate;
-    CheckWaterLevel(i, j);
-    RecalcBoundingSpheres(i div 128, j div 128);
+    if Event <> 'TTerrain.ChangedTexmap' then
+      begin
+      for i := 0 to Park.pTerrain.SizeX do
+        for j := 0 to Park.pTerrain.SizeY do
+          CheckWaterLevel(i, j);
+      for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+        for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+          RecalcBoundingSpheres(i, j);
+      end;
     end;
   if (Event = 'TTerrain.ChangedAll') then
     begin
@@ -456,10 +468,10 @@ begin
     for i := 0 to Park.pTerrain.SizeX do
       for j := 0 to Park.pTerrain.SizeY do
         CheckWaterLevel(i, j);
+    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+        RecalcBoundingSpheres(i, j);
     end;
-  for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-    for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-      RecalcBoundingSpheres(i, j);
 end;
 
 procedure TRTerrain.UpdateCollection(Event: String; Data, Result: Pointer);
@@ -587,6 +599,7 @@ begin
       fAPVBOs[i] := nil;
     EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
     EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
+    EventManager.AddCallback('TTerrain.ChangedTexmap', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedAll', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
   except

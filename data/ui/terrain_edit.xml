@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window width="750" height="132" left="25" top="440" btnleft="718" btntop="388" icon="terrain-edit.tga">
-  <panel leftspace="0" rightspace="72" bottomspace="0" topspace="32" />
+<window width="758" height="132" left="21" top="440" btnleft="718" btntop="388" icon="terrain-edit.tga">
+  <panel leftspace="0" rightspace="80" bottomspace="0" topspace="32" />
   <tabbar left="40" top="8" width="600" height="32" onchangetab="terrain_edit.changeTab" name="terrain_edit.tabbar">
     <tab>Raise and lower</tab>
     <tab>Water</tab>

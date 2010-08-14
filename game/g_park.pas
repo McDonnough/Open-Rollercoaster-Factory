@@ -17,7 +17,7 @@ type
       fTimeUntilInvisible: Integer;
       fSelectionEngine: TSelectionEngine;
       fNormalSelectionEngine: TSelectionEngine;
-      fTerrainSelectionEngine: TSelectionEngine;
+      procedure SetSelectionEngine(E: TSelectionEngine);
     public
       // Parts of the park
       pTerrain: TTerrain;
@@ -28,9 +28,8 @@ type
       property CanRender: Boolean read fCanRender;
       property ParkLoader: TParkLoader read fParkLoader;
       property OCFFile: TDOMDocument read fFile;
-      property SelectionEngine: TSelectionEngine read fSelectionEngine write fSelectionEngine;
+      property SelectionEngine: TSelectionEngine read fSelectionEngine write setSelectionEngine;
       property NormalSelectionEngine: TSelectionEngine read fNormalSelectionEngine;
-      property TerrainSelectionEngine: TSelectionEngine read fTerrainSelectionEngine;
 
       (**
         * Call render modules, handle input
@@ -72,6 +71,15 @@ implementation
 uses
   Main, m_varlist, u_events;
 
+procedure TPark.SetSelectionEngine(E: TSelectionEngine);
+begin
+  if E = nil then
+    writeln('Disabled selection engine')
+  else
+    writeln('Enabled selection engine (' + IntToStr(E.ObjectCount) + ' meshes)');
+  fSelectionEngine := E;
+end;
+
 constructor TPark.Create(FileName: String);
 begin
   fTimeUntilInvisible := 120;
@@ -83,7 +91,6 @@ begin
 
   ModuleManager.ModLoadScreen.Progress := 5;
   fNormalSelectionEngine := TSelectionEngine.Create;
-  fTerrainSelectionEngine := TSelectionEngine.Create;
   fSelectionEngine := fNormalSelectionEngine;
   fParkLoader := TParkLoader.Create;
   fParkLoader.InitDisplay;
@@ -175,7 +182,6 @@ destructor TPark.Free;
 begin
   ModuleManager.ModRenderer.Unload;
   fNormalSelectionEngine.Free;
-  fTerrainSelectionEngine.Free;
   fSelectionEngine := nil;
   fParkLoader.Free;
   pSky.Free;

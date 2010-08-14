@@ -17,6 +17,7 @@ type
     protected
       fSelectableObjects: Array of TSelectableObject;
     public
+      function ObjectCount: Integer;
       procedure Add(Mesh: TMesh; Event: String = '');
       procedure Delete(Mesh: TMesh);
       function IsSelected(Mesh: TMesh): Boolean;
@@ -27,6 +28,11 @@ implementation
 
 uses
   m_varlist, u_events;
+
+function TSelectionEngine.ObjectCount: Integer;
+begin
+  Result := Length(fSelectableObjects);
+end;
 
 procedure TSelectionEngine.Add(Mesh: TMesh; Event: String = '');
 begin
@@ -81,7 +87,7 @@ begin
     if VecLengthNoRoot(fSelectableObjects[i].IntersectionPoint - ModuleManager.ModRenderer.SelectionStart) > MinDist then
       fSelectableObjects[i].Selected := false
     else if (fSelectableObjects[i].Selected) and (fSelectableObjects[i].Event <> '') then
-      EventManager.CallEvent(fSelectableObjects[i].Event, fSelectableObjects[i].Mesh, nil);
+      EventManager.CallEvent(fSelectableObjects[i].Event, @fSelectableObjects[i], nil);
 end;
 
 end.

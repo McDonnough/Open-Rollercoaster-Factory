@@ -272,6 +272,20 @@ begin
 
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
 
+//   glUseProgram(0);
+//   glDisable(GL_TEXTURE_2D);
+//   glDisable(GL_CULL_FACE);
+//
+//   glColor4f(1, 1, 1, 1);
+//   glBegin(GL_QUADS);
+//     glVertex3f(-10, 0, -10);
+//     glVertex3f( 10, 0, -10);
+//     glVertex3f( 10, 0,  10);
+//     glVertex3f(-10, 0,  10);
+//   glEnd;
+//
+//   glEnable(GL_TEXTURE_2D);
+
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity;
   glMatrixMode(GL_MODELVIEW);

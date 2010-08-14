@@ -74,7 +74,7 @@ begin
     ModuleManager.ModGUITimer.GetTime - fTime > 25;
 
   if not Park.CanRender then
-    EventManager.CallEvent('TParkLoaser.LoadFiles.RenderStep', nil, nil);
+    EventManager.CallEvent('TParkLoader.LoadFiles.RenderStep', nil, nil);
 
   if Visible then
     ModuleManager.ModLoadscreen.Render;

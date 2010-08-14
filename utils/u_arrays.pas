@@ -44,8 +44,8 @@ type
       procedure DeleteRow(Y: Integer);
       procedure DeleteCol(X: Integer);
       procedure Injenct(OfsX, OfsY: Integer; Items: TTable);
-      function HasRow(Items: TRow): Boolean;
-      function HasCol(Items: TRow): Boolean;
+      function HasRow(Items: TRow): Integer;
+      function HasCol(Items: TRow): Integer;
       function GetPart(OfsX, OfsY, W, H: Integer): TTable;
       destructor Free;
     end;
@@ -309,7 +309,7 @@ function TTable.HasRow(Items: TRow): Boolean;
 var
   i, j: Integer;
 begin
-  Result := false;
+  Result := -1;
   if Width >= Items.Length then
     begin
     for j := 0 to Height - 1 do
@@ -319,7 +319,7 @@ begin
         if Value[i, j] <> Items.Value[i] then
           break;
         if i = Items.Length - 1 then
-          exit(true);
+          exit(j);
         end;
       end;
     end;
@@ -329,7 +329,7 @@ function TTable.HasCol(Items: TRow): Boolean;
 var
   i, j: Integer;
 begin
-  Result := false;
+  Result := -1;
   if Height >= Items.Length then
     begin
     for j := 0 to Width - 1 do
@@ -339,7 +339,7 @@ begin
         if Value[j, i] <> Items.Value[i] then
           break;
         if i = Items.Length - 1 then
-          exit(true);
+          exit(j);
         end;
       end;
     end;

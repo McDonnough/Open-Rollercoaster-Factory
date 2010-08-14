@@ -59,6 +59,7 @@ type
       function GetTextureAtPosition(X, Y: Single): Byte;
       procedure SetTextureAtPosition(X, Y: Single; Tex: Byte);
     public
+      CurrMark: TVector2D;
       property SizeX: Word read fSizeX;
       property SizeY: Word read fSizeY;
       property HeightMap[X: Single; Y: Single]: Single read GetHeightAtPosition write SetHeightAtPosition;
@@ -458,6 +459,7 @@ begin
     fAdvancing := false;
     fCollection := nil;
     fMarks := TTable.Create;
+    CurrMark := Vector(-1, -1);
     Resume;
   except
     ModuleManager.ModLog.AddError('Could not create terrain: Internal error');

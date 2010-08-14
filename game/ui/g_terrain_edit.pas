@@ -14,6 +14,7 @@ type
       fTerrainSelectionEngine, fFlagSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
     public
+      procedure MoveMark(Event: String; Data, Result: Pointer);
       procedure CreateNewMark(Event: String; Data, Result: Pointer);
       procedure UpdateTerrainSelectionMap(Event: String; Data, Result: Pointer);
       procedure MarksChange(Event: String; Data, Result: Pointer);
@@ -28,6 +29,15 @@ implementation
 uses
   u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist, m_inputhandler_class;
 
+const
+  SELECTION_SIZE = 200;
+
+procedure TGameTerrainEdit.MoveMark(Event: String; Data, Result: Pointer);
+begin
+  Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5);
+  fSelectionObject := PSelectableObject(Data);
+end;
+
 procedure TGameTerrainEdit.CreateNewMark(Event: String; Data, Result: Pointer);
 var
   Row: TRow;
@@ -37,7 +47,7 @@ begin
     Row := TRow.Create;
     Row.Insert(0, Round(5 * fSelectionObject^.IntersectionPoint.X));
     Row.Insert(1, Round(5 * fSelectionObject^.IntersectionPoint.Z));
-    if not Park.pTerrain.Marks.HasRow(Row) then
+    if Park.pTerrain.Marks.HasRow(Row) <> -1 then
       Park.pTerrain.Marks.InsertRow(Park.pTerrain.Marks.Height, Row);
     Row.Free;
     end;
@@ -51,11 +61,11 @@ begin
   fTmpCameraOffset := VecRound(ModuleManager.ModCamera.ActiveCamera.Position * 5) / 5;
   if fTmpCameraOffset = fCameraOffset then
     exit;
-  for j := 0 to 100 do
-    for i := 0 to 100 do
+  for j := 0 to SELECTION_SIZE do
+    for i := 0 to SELECTION_SIZE do
       begin
-      fSelectionMap.pVertices[100 * j + i]^.Position := fSelectionMap.Vertices[100 * j + i].Position - fCameraOffset + fTmpCameraOffset;
-      fSelectionMap.pVertices[100 * j + i]^.Position.Y := Park.pTerrain.HeightMap[fSelectionMap.Vertices[100 * j + i].Position.X, fSelectionMap.Vertices[100 * j + i].Position.Z];
+      fSelectionMap.pVertices[SELECTION_SIZE * j + i]^.Position := fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position - fCameraOffset + fTmpCameraOffset;
+      fSelectionMap.pVertices[SELECTION_SIZE * j + i]^.Position.Y := Park.pTerrain.HeightMap[fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position.X, fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position.Z];
       end;
 
   fCameraOffset := fTmpCameraOffset;
@@ -67,6 +77,7 @@ begin
     Data := nil;
   if MarkMode <> nil then
     MarkMode.Left := 678;
+  Park.pTerrain.CurrMark := Vector(-1, -1);
   EventManager.RemoveCallback(@UpdateTerrainSelectionMap);
   EventManager.RemoveCallback(@CreateNewMark);
   if Data = Pointer(fWindow.GetChildByName('terrain_edit.add_marks')) then
@@ -79,6 +90,8 @@ begin
     end
   else if Data = Pointer(fWindow.GetChildByName('terrain_edit.delete_marks')) then
     begin
+    EventManager.AddCallback('TPark.Render', @UpdateMarkSelection);
+    EventManager.AddCallback('BasicComponent.OnClick', @DeleteMark);
     Park.SelectionEngine := fFlagSelectionEngine;
     MarkMode := TIconifiedButton(Data);
     MarkMode.Left := 678 + 16;
@@ -112,21 +125,23 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.marks.delete', @MarksChange);
   EventManager.AddCallback('GUIActions.terrain_edit.final.marks.add', @CreateNewMark);
   EventManager.AddCallback('GUIActions.terrain_edit.close', @OnClose);
+  EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @MoveMark);
+
   fCameraOffset := Vector(0, 0, 0);
   fSelectionMap := TMesh.Create;
-  for j := 0 to 100 do
-    for i := 0 to 100 do
+  for j := 0 to SELECTION_SIZE do
+    for i := 0 to SELECTION_SIZE do
       begin
-      fSelectionMap.Vertices[101 * j + i] := MakeMeshVertex(Vector(i - 50, 0, j - 50) * 0.2, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
-      if (i < 100) and (j < 100) then
+      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i] := MakeMeshVertex(Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.2, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
+      if (i < SELECTION_SIZE) and (j < SELECTION_SIZE) then
         begin
-        fSelectionMap.Triangles[2 * (100 * j + i) + 0] := MakeTriangleVertexArray(101 * j + i, 101 * (j + 1) + i, 101 * (j + 1) + (i + 1));
-        fSelectionMap.Triangles[2 * (100 * j + i) + 1] := MakeTriangleVertexArray(101 * (j + 1) + i, 101 * (j + 1) + (i + 1), 101 * j + i + 1 );
+        fSelectionMap.Triangles[2 * (SELECTION_SIZE * j + i) + 0] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * j + i, (SELECTION_SIZE + 1) * (j + 1) + i, (SELECTION_SIZE + 1) * (j + 1) + (i + 1));
+        fSelectionMap.Triangles[2 * (SELECTION_SIZE * j + i) + 1] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * (j + 1) + i, (SELECTION_SIZE + 1) * (j + 1) + (i + 1), (SELECTION_SIZE + 1) * j + i + 1 );
         end;
       end;
   fFlagSelectionEngine := TSelectionEngine.Create;
   fTerrainSelectionEngine := TSelectionEngine.Create;
-  fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, '');
+  fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, 'GUIActions.terrain_edit.marks.move');
 end;
 
 destructor TGameTerrainEdit.Free;

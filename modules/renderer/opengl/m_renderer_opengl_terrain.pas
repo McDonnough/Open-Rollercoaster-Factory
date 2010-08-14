@@ -150,7 +150,14 @@ begin
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fShaderTransformDepth
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
-    fBoundShader := fShaderTransformSunShadow;
+    fBoundShader := fShaderTransformSunShadow
+  else
+    begin
+    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
+      fBoundShader.UniformF('PointToHighlight', Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
+    else
+      fBoundShader.UniformF('PointToHighlight', -1, -1);
+    end;
   fBoundShader.Bind;
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     fBoundShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5)
@@ -256,8 +263,8 @@ begin
   glDisable(GL_TEXTURE_2D);
   glDisable(GL_CULL_FACE);
 
-  glColor4f(1, 1, 1, 1);
   glBegin(GL_QUADS);
+    glColor4f(1, 1, 1, 1);
     for i := 0 to Park.pTerrain.Marks.Height - 1 do
       begin
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
@@ -265,6 +272,24 @@ begin
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
       end;
+    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
+      begin
+      glColor4f(1, 0, 0, 1.0);
+      glVertex3f(Park.pTerrain.CurrMark.X - 0.1, Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
+      glVertex3f(Park.pTerrain.CurrMark.X + 0.1, Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
+      glVertex3f(Park.pTerrain.CurrMark.X + 0.1, Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
+      glVertex3f(Park.pTerrain.CurrMark.X - 0.1, Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
+      end;
+  glEnd;
+
+  glBegin(GL_LINE_LOOP);
+    glColor4f(1, 1, 1, 1);
+    for i := 0 to Park.pTerrain.Marks.Height - 1 do
+      begin
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i], Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i]);
+      end;
+    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
+      glVertex3f(Park.pTerrain.CurrMark.X, Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y);
   glEnd;
 
   glEnable(GL_TEXTURE_2D);

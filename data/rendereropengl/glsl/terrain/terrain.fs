@@ -7,6 +7,7 @@ uniform int LOD;
 uniform vec2 offset;
 uniform float maxBumpDistance;
 uniform vec2 TerrainSize;
+uniform vec2 PointToHighlight;
 
 varying float dist;
 varying float SDist;
@@ -107,4 +108,6 @@ void main(void) {
   vec4 Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
   gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (Diffuse + Ambient);
   gl_FragColor.a = 1.0;
+  if (PointToHighlight.x >= 0)
+    gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)));
 }

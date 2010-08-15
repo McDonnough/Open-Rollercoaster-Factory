@@ -48,7 +48,7 @@ void main(void) {
   RefractColor.a = Vertex.y - texture2D(RefractionMap, RealPosition).a;
   RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * pow((1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0)), 2.0);
   gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
-  gl_FragColor += MirrorFactor * RefractColor;
+  gl_FragColor += RefractColor * MirrorFactor;
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);
   gl_FragColor += Specular;
   gl_FragColor.a = 1.0;

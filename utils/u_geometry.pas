@@ -16,6 +16,8 @@ type
     TexCoord: TVector2D;
     end;
 
+  PMeshVertex = ^TMeshVertex;
+
   TMesh = class
     protected
       fVertices: Array of TMeshVertex;
@@ -23,11 +25,13 @@ type
       procedure setVertex(I: Integer; V: TMeshVertex);
       procedure setTriangle(I: Integer; V: TMeshTriangleVertexArray);
       function getVertex(I: Integer): TMeshVertex;
+      function getPVertex(I: Integer): PMeshVertex;
       function getTriangle(I: Integer): TMeshTriangleVertexArray;
       function getVCount: Integer;
       function getTCount: Integer;
     public
       property Vertices[i: Integer]: TMeshVertex read getVertex write setVertex;
+      property pVertices[i: Integer]: PMeshVertex read getPVertex;
       property Triangles[i: Integer]: TMeshTriangleVertexArray read getTriangle write setTriangle;
       property VertexCount: Integer read getVCount;
       property TriangleCount: Integer read getTCount;
@@ -67,6 +71,13 @@ begin
   if I < VertexCount then
     Exit(fVertices[i]);
   Result := MakeMeshVertex(Vector(0, 0, 0), Vector(0, 0, 0), Vector(0, 0));
+end;
+
+function TMesh.getPVertex(I: Integer): PMeshVertex;
+begin
+  if I < VertexCount then
+    Exit(@fVertices[i]);
+  Result := nil;
 end;
 
 function TMesh.getTriangle(I: Integer): TMeshTriangleVertexArray;

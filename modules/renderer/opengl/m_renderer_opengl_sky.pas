@@ -12,7 +12,7 @@ type
       fShader: TShader;
     public
       property Sun: TSun read fSun;
-      procedure Render;
+      procedure Render(Event: String; Data, Result: Pointer);
       procedure Advance;
       constructor Create;
       destructor Free;
@@ -23,7 +23,7 @@ implementation
 uses
   g_park, m_varlist, m_renderer_opengl;
 
-procedure TRSky.Render;
+procedure TRSky.Render(Event: String; Data, Result: Pointer);
 begin
   glPushMatrix;
   glLoadIdentity;
@@ -83,10 +83,12 @@ constructor TRSky.Create;
 begin
   fShader := TShader.Create('rendereropengl/glsl/sky/sky.vs', 'rendereropengl/glsl/sky/sky.fs');
   fSun := TSun.Create;
+  EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 
 destructor TRSky.Free;
 begin
+  EventManager.RemoveCallback(@Render);
   fSun.Free;
   fShader.Free;
 end;

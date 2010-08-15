@@ -38,7 +38,7 @@ type
       RenderStep: Single;
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
-      procedure Render;
+      procedure Render(Event: String; Data, Result: Pointer);
       procedure RecreateWaterVBO;
       procedure CheckWaterLayerVisibility;
       procedure RenderWaterSurfaces;
@@ -101,7 +101,7 @@ begin
   fWaterVBO.Unbind;
 end;
 
-procedure TRTerrain.Render;
+procedure TRTerrain.Render(Event: String; Data, Result: Pointer);
 var
   fBoundShader: TShader;
 
@@ -150,7 +150,14 @@ begin
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fShaderTransformDepth
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
-    fBoundShader := fShaderTransformSunShadow;
+    fBoundShader := fShaderTransformSunShadow
+  else
+    begin
+    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
+      fBoundShader.UniformF('PointToHighlight', Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
+    else
+      fBoundShader.UniformF('PointToHighlight', -1, -1);
+    end;
   fBoundShader.Bind;
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     fBoundShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5)
@@ -250,6 +257,42 @@ begin
     fAPShader.Unbind;
     glEnable(GL_CULL_FACE);
     end;
+  glUseProgram(0);
+
+  // Render marks - WILL BE REPLACED
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_CULL_FACE);
+
+  glBegin(GL_QUADS);
+    glColor4f(1, 1, 1, 1);
+    for i := 0 to Park.pTerrain.Marks.Height - 1 do
+      begin
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
+      end;
+    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
+      begin
+      glColor4f(1, 0, 0, 1.0);
+      glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
+      glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
+      glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
+      glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
+      end;
+  glEnd;
+
+  glBegin(GL_LINE_LOOP);
+    glColor4f(1, 1, 1, 1);
+    for i := 0 to Park.pTerrain.Marks.Height - 1 do
+      begin
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i], 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i]);
+      end;
+    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
+      glVertex3f(Park.pTerrain.CurrMark.X, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y);
+  glEnd;
+
+  glEnable(GL_TEXTURE_2D);
 end;
 
 procedure TRTerrain.CheckWaterLayerVisibility;
@@ -315,9 +358,10 @@ end;
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
   i, j, k, l: Integer;
+  Pixel: TVector4D;
   procedure StartUpdate;
   begin
-    glUseProgram(0);
+{    glUseProgram(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     fHeightMap.Bind;
     glClear(GL_COLOR_BUFFER_BIT);
@@ -331,14 +375,14 @@ var
     glPushMatrix;
     glLoadIdentity;
 
-    glDisable(GL_DEPTH_TEST);
-    glBegin(GL_POINTS);
+    glDisable(GL_DEPTH_TEST);}
+    fHeightMap.Textures[0].Bind(0);
   end;
 
   procedure UpdateVertex(X, Y: Word);
   begin
-    glColor4f(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
-    glVertex3f(X, Y, -1);
+    Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
 
   procedure CheckWaterLevel(X, Y: Word);
@@ -357,14 +401,14 @@ var
 
   procedure EndUpdate;
   begin
-    glEnd;
-    glEnable(GL_DEPTH_TEST);
+    fHeightMap.Textures[0].Unbind;
+{    glEnable(GL_DEPTH_TEST);
     glEnable(GL_ALPHA_TEST);
     glPopMatrix;
     glMatrixMode(GL_PROJECTION);
     glPopMatrix;
     glMatrixMode(GL_MODELVIEW);
-    fHeightMap.Unbind;
+    fHeightMap.Unbind;}
   end;
 
   procedure RecalcBoundingSpheres(X, Y: Integer);
@@ -434,16 +478,26 @@ begin
       for j := 0 to high(fWaterLayerFBOs[i].Blocks) do
         setLength(fWaterLayerFBOs[i].Blocks[j], Park.pTerrain.SizeX div 128);
       end;
+    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+        RecalcBoundingSpheres(i, j);
     end;
-  if (Data <> nil) and (Event = 'TTerrain.Changed') then
+  if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap')) then
     begin
-    i := Word(Data^);
-    j := Word(Pointer(PtrUInt(Data) + 2)^);
+    k := Word(Data^);
     StartUpdate;
-    UpdateVertex(i, j);
+    for i := 0 to k - 1 do
+      UpdateVertex(Word((Data + 2 * i + 2)^), Word((Data + 2 * i + 4)^));
     EndUpdate;
-    CheckWaterLevel(i, j);
-    RecalcBoundingSpheres(i div 128, j div 128);
+    if Event <> 'TTerrain.ChangedTexmap' then
+      begin
+      for i := 0 to Park.pTerrain.SizeX do
+        for j := 0 to Park.pTerrain.SizeY do
+          CheckWaterLevel(i, j);
+      for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+        for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+          RecalcBoundingSpheres(i, j);
+      end;
     end;
   if (Event = 'TTerrain.ChangedAll') then
     begin
@@ -456,10 +510,10 @@ begin
     for i := 0 to Park.pTerrain.SizeX do
       for j := 0 to Park.pTerrain.SizeY do
         CheckWaterLevel(i, j);
+    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+        RecalcBoundingSpheres(i, j);
     end;
-  for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-    for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-      RecalcBoundingSpheres(i, j);
 end;
 
 procedure TRTerrain.UpdateCollection(Event: String; Data, Result: Pointer);
@@ -587,11 +641,13 @@ begin
       fAPVBOs[i] := nil;
     EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
     EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
+    EventManager.AddCallback('TTerrain.ChangedTexmap', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedAll', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
   except
     ModuleManager.ModLog.AddError('Failed to create terrain renderer in OpenGL rendering module: Internal error');
   end;
+  EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 
 destructor TRTerrain.Free;
@@ -605,6 +661,7 @@ begin
     fWaterLayerFBOs[i].Free;
   EventManager.RemoveCallback(@ApplyChanges);
   EventManager.RemoveCallback(@UpdateCollection);
+  EventManager.RemoveCallback(@Render);
   fFineVBO.Free;
   fGoodVBO.Free;
   fRawVBO.Free;

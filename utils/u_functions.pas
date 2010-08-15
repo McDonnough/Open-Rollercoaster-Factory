@@ -154,6 +154,7 @@ function Explode(d: Char; s: String): AString;
 var
   i, DPos, OPos, LOcc: integer;
 begin
+  SetLength(Result, 0);
   if s = '' then
     exit;
   s := s + d;

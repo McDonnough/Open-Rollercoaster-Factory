@@ -3,7 +3,7 @@ unit g_terrain;
 interface
 
 uses
-  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf, u_dom;
+  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf, u_dom, u_arrays;
 
 type
   TTerrainMapPoint = record
@@ -49,6 +49,8 @@ type
       fTmpMap: Array of Array of Word;
       fCanAdvance, fAdvancing: Boolean;
       fCollection: TTerrainCollection;
+      fCoordsToUpdate: Array of Word;
+      fMarks: TTable;
       procedure Execute; override;
       function GetHeightAtPosition(X, Y: Single): Single;
       procedure SetHeightAtPosition(X, Y, Height: Single);
@@ -57,16 +59,20 @@ type
       function GetTextureAtPosition(X, Y: Single): Byte;
       procedure SetTextureAtPosition(X, Y: Single; Tex: Byte);
     public
+      CurrMark: TVector2D;
       property SizeX: Word read fSizeX;
       property SizeY: Word read fSizeY;
       property HeightMap[X: Single; Y: Single]: Single read GetHeightAtPosition write SetHeightAtPosition;
       property WaterMap[X: Single; Y: Single]: Single read GetWaterAtPosition write SetWaterAtPosition;
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
       property Collection: TTerrainCollection read fCollection;
+      property Marks: TTable read fMarks;
       procedure ChangeCollection(S: String);
       procedure Resize(X, Y: Integer);
       procedure AdvanceAutomaticWater;
       procedure LoadDefaults;
+      procedure BeginUpdate;
+      procedure EndUpdate;
       constructor Create;
       destructor Free;
     end;
@@ -218,13 +224,13 @@ end;
 procedure TTerrain.SetHeightAtPosition(X, Y, Height: Single);
 var
   fX, fY: Word;
-  fFinal: DWord;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Height := Round(256 * Height);
-  fFinal := fX + 65536 * fY;
-  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
+  SetLength(fCoordsToUpdate, 2 + length(fCoordsToUpdate));
+  fCoordsToUpdate[high(fCoordsToUpdate) - 1] := Round(5 * X);
+  fCoordsToUpdate[high(fCoordsToUpdate) - 0] := Round(5 * Y);
 end;
 
 function TTerrain.GetWaterAtPosition(X, Y: Single): Single;
@@ -241,13 +247,13 @@ end;
 procedure TTerrain.SetWaterAtPosition(X, Y, Height: Single);
 var
   fX, fY: Word;
-  fFinal: DWord;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Water := Round(256 * Height);
-  fFinal := fX + 65536 * fY;
-  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
+  SetLength(fCoordsToUpdate, 2 + length(fCoordsToUpdate));
+  fCoordsToUpdate[high(fCoordsToUpdate) - 1] := Round(5 * X);
+  fCoordsToUpdate[high(fCoordsToUpdate) - 0] := Round(5 * Y);
 end;
 
 function TTerrain.GetTextureAtPosition(X, Y: Single): Byte;
@@ -262,12 +268,16 @@ end;
 procedure TTerrain.SetTextureAtPosition(X, Y: Single; Tex: Byte);
 var
   fX, fY: Word;
-  fFinal: DWord;
+  fData: Array of Word;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Texture := Tex;
-  EventManager.CallEvent('TTerrain.Changed', @fFinal, nil);
+  SetLength(fData, 3);
+  fData[0] := 1;
+  fData[1] := Round(5 * X);
+  fData[2] := Round(5 * Y);
+  EventManager.CallEvent('TTerrain.ChangedTexmap', @fData[0], nil);
 end;
 
 procedure TTerrain.Resize(X, Y: Integer);
@@ -388,7 +398,7 @@ begin
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
   Resize(1024, 1024);
-  fMap[0, 0].Height := 20000;
+(*  fMap[0, 0].Height := 20000;
   fMap[SizeX - 1, 0].Height := 20000;
   fMap[0, SizeY - 1].Height := 20000;
   fMap[SizeX - 1, SizeY - 1].Height := 20000;
@@ -417,7 +427,7 @@ begin
         fMap[i, j].Texture := 5;
       if fMap[i, j].Height < fMap[i, j].Water then
         fMap[i, j].Texture := 3;
-      end;
+      end;*)
   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;
 
@@ -429,6 +439,18 @@ begin
   EventManager.CallEvent('TTerrain.ChangedCollection', nil, nil);
 end;
 
+procedure TTerrain.BeginUpdate;
+begin
+  SetLength(fCoordsToUpdate, 1);
+end;
+
+procedure TTerrain.EndUpdate;
+begin
+  fCoordsToUpdate[0] := (Length(fCoordsToUpdate) - 1) div 2;
+  EventManager.CallEvent('TTerrain.Changed', @fCoordsToUpdate[0], nil);
+end;
+
+
 constructor TTerrain.Create;
 begin
   try
@@ -436,6 +458,8 @@ begin
     fCanAdvance := false;
     fAdvancing := false;
     fCollection := nil;
+    fMarks := TTable.Create;
+    CurrMark := Vector(-1, -1);
     Resume;
   except
     ModuleManager.ModLog.AddError('Could not create terrain: Internal error');
@@ -448,6 +472,7 @@ begin
   sleep(100);
   if fCollection <> nil then
     fCollection.Free;
+  fMarks.Free;
 end;
 
 end.

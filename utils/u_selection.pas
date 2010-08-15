@@ -13,11 +13,14 @@ type
     Event: String;
     end;
 
+  PSelectableObject = ^TSelectableObject;
+
   TSelectionEngine = class
     protected
       fSelectableObjects: Array of TSelectableObject;
     public
-      procedure Add(Mesh: TMesh; Event: String = '');
+      function ObjectCount: Integer;
+      function Add(Mesh: TMesh; Event: String = ''): PSelectableObject;
       procedure Delete(Mesh: TMesh);
       function IsSelected(Mesh: TMesh): Boolean;
       procedure Update;
@@ -28,13 +31,19 @@ implementation
 uses
   m_varlist, u_events;
 
-procedure TSelectionEngine.Add(Mesh: TMesh; Event: String = '');
+function TSelectionEngine.ObjectCount: Integer;
+begin
+  Result := Length(fSelectableObjects);
+end;
+
+function TSelectionEngine.Add(Mesh: TMesh; Event: String = ''): PSelectableObject;
 begin
   setLength(fSelectableObjects, length(fSelectableObjects) + 1);
-  fSelectableObjects[high(fSelectableObjects)].Mesh := Mesh;
-  fSelectableObjects[high(fSelectableObjects)].Selected := false;
-  fSelectableObjects[high(fSelectableObjects)].IntersectionPoint := Vector(0, 0, 0);
-  fSelectableObjects[high(fSelectableObjects)].Event := Event;
+  Result := @fSelectableObjects[high(fSelectableObjects)];
+  Result^.Mesh := Mesh;
+  Result^.Selected := false;
+  Result^.IntersectionPoint := Vector(0, 0, 0);
+  Result^.Event := Event;
 end;
 
 procedure TSelectionEngine.Delete(Mesh: TMesh);
@@ -63,6 +72,7 @@ procedure TSelectionEngine.Update;
 var
   i, j: Integer;
   MinDist: Single;
+  Sel: TVector3D;
 begin
   MinDist := 2000 * 2000;
   for i := 0 to high(fSelectableObjects) do
@@ -72,16 +82,18 @@ begin
       if RayTriangleIntersection(MakeRay(ModuleManager.ModRenderer.SelectionStart, ModuleManager.ModRenderer.SelectionRay), MakeTriangleFromMeshTriangleVertexArray(fSelectableObjects[i].Mesh, fSelectableObjects[i].Mesh.Triangles[j]), fSelectableObjects[i].IntersectionPoint) then
         if MinDist > VecLengthNoRoot(fSelectableObjects[i].IntersectionPoint - ModuleManager.ModRenderer.SelectionStart) then
           begin
+          Sel := fSelectableObjects[i].IntersectionPoint;
           MinDist := VecLengthNoRoot(fSelectableObjects[i].IntersectionPoint - ModuleManager.ModRenderer.SelectionStart);
           fSelectableObjects[i].Selected := true;
-          break;
           end;
+    if fSelectableObjects[i].Selected then
+      fSelectableObjects[i].IntersectionPoint := Sel;
     end;
   for i := 0 to high(fSelectableObjects) do
     if VecLengthNoRoot(fSelectableObjects[i].IntersectionPoint - ModuleManager.ModRenderer.SelectionStart) > MinDist then
       fSelectableObjects[i].Selected := false
     else if (fSelectableObjects[i].Selected) and (fSelectableObjects[i].Event <> '') then
-      EventManager.CallEvent(fSelectableObjects[i].Event, fSelectableObjects[i].Mesh, nil);
+      EventManager.CallEvent(fSelectableObjects[i].Event, @fSelectableObjects[i], nil);
 end;
 
 end.

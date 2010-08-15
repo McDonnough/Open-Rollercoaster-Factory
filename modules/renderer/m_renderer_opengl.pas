@@ -69,8 +69,10 @@ end;
 
 procedure TModuleRendererOpenGL.RenderParts;
 begin
-  RSky.Render;
-  RTerrain.Render;
+  RSky.Render('', nil, nil);
+  RTerrain.Render('', nil, nil);
+// Does NOT work yet:
+//   EventManager.CallEvent('TPark.RenderParts', nil, nil);
   fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
 end;
 
@@ -271,6 +273,20 @@ begin
     ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
 
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
+
+//   glUseProgram(0);
+//   glDisable(GL_TEXTURE_2D);
+//   glDisable(GL_CULL_FACE);
+//
+//   glColor4f(1, 1, 1, 1);
+//   glBegin(GL_QUADS);
+//     glVertex3f(-10, 0, -10);
+//     glVertex3f( 10, 0, -10);
+//     glVertex3f( 10, 0,  10);
+//     glVertex3f(-10, 0,  10);
+//   glEnd;
+//
+//   glEnable(GL_TEXTURE_2D);
 
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity;

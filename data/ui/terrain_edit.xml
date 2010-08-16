@@ -7,8 +7,9 @@
     <tab>Textures</tab>
     <tab>Grass</tab>
   </tabbar>
-  <iconbutton left="678" top="0" icon="selection-add.tga" name="terrain_edit.add_marks" onclick="terrain_edit.marks.add" />
-  <iconbutton left="678" top="68" icon="selection-delete.tga" name="terrain_edit.delete_marks" onclick="terrain_edit.marks.delete" />
+  <iconbutton left="678" top="4" icon="selection-add.tga" name="terrain_edit.add_marks" onclick="terrain_edit.marks.add" />
+  <iconbutton left="678" top="64" icon="selection-delete.tga" name="terrain_edit.delete_marks" onclick="terrain_edit.marks.delete" />
+  <iconbutton left="678" top="48" width="32" height="32" icon="selection-add.tga" name="terrain_edit.fix_marks" onclick="terrain_edit.marks.fix" />
   <label left="8" top="40" height="80" width="662">
     <label left="0" top="0" height="80" width="3000" name="terrain_edit.tab.container">
       <label left="8" width="734" height="80" top="0">

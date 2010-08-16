@@ -484,10 +484,10 @@ begin
     end;
   if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap')) then
     begin
-    k := Word(Data^);
+    k := Integer(Data^);
     StartUpdate;
     for i := 0 to k - 1 do
-      UpdateVertex(Word((Data + 2 * i + 2)^), Word((Data + 2 * i + 4)^));
+      UpdateVertex(Integer((Data + 8 * i + 4)^), Integer((Data + 8 * i + 8)^));
     EndUpdate;
     if Event <> 'TTerrain.ChangedTexmap' then
       begin

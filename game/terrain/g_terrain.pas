@@ -49,8 +49,8 @@ type
       fTmpMap: Array of Array of Word;
       fCanAdvance, fAdvancing: Boolean;
       fCollection: TTerrainCollection;
-      fCoordsToUpdate: Array of Word;
-      fMarks: TTable;
+      fCoordsToUpdate: Array of Integer;
+      fMarks, fMarkMap: TTable;
       procedure Execute; override;
       function GetHeightAtPosition(X, Y: Single): Single;
       procedure SetHeightAtPosition(X, Y, Height: Single);
@@ -73,6 +73,10 @@ type
       procedure LoadDefaults;
       procedure BeginUpdate;
       procedure EndUpdate;
+      procedure CreateMarkMap;
+      procedure SetTo(Height: Single);
+      procedure RaiseTo(Height: Single = -1);
+      procedure LowerTo(Height: Single = -1);
       constructor Create;
       destructor Free;
     end;
@@ -268,7 +272,7 @@ end;
 procedure TTerrain.SetTextureAtPosition(X, Y: Single; Tex: Byte);
 var
   fX, fY: Word;
-  fData: Array of Word;
+  fData: Array of Integer;
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
@@ -307,6 +311,7 @@ begin
   EventManager.CallEvent('TTerrain.Resize', @X, nil);
   EventManager.CallEvent('TTerrain.Changed', nil, nil);
   fCanAdvance := true;
+  fMarkMap.Resize(X, Y);
 end;
 
 procedure TTerrain.AdvanceAutomaticWater;
@@ -397,7 +402,7 @@ begin
   fSizeX := 0;
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
-  Resize(1024, 1024);
+  Resize(512, 512);
 (*  fMap[0, 0].Height := 20000;
   fMap[SizeX - 1, 0].Height := 20000;
   fMap[0, SizeY - 1].Height := 20000;
@@ -450,6 +455,121 @@ begin
   EventManager.CallEvent('TTerrain.Changed', @fCoordsToUpdate[0], nil);
 end;
 
+procedure TTerrain.CreateMarkMap;
+var
+  i, j: Integer;
+
+  procedure Mark(X, Y: Single; F: Integer);
+  var
+    MM: Array[0..1, 0..1] of Single;
+  begin
+    MM[0, 0] := (1 - fPart(Y)) * (1 - fPart(X));
+    MM[1, 0] := (1 - fPart(Y)) * (fPart(X));
+    MM[0, 1] := (fPart(Y)) * (1 - fPart(X));
+    MM[1, 1] := (fPart(Y)) * (fPart(X));
+    fMarkMap.Value[Floor(X) + 0, Floor(Y) + 0] := Min(100, fMarkMap.Value[Floor(X) + 0, Floor(Y) + 0] + Round(MM[0, 0] * F));
+    fMarkMap.Value[Floor(X) + 1, Floor(Y) + 0] := Min(100, fMarkMap.Value[Floor(X) + 1, Floor(Y) + 0] + Round(MM[1, 0] * F));
+    fMarkMap.Value[Floor(X) + 0, Floor(Y) + 1] := Min(100, fMarkMap.Value[Floor(X) + 0, Floor(Y) + 1] + Round(MM[0, 1] * F));
+    fMarkMap.Value[Floor(X) + 1, Floor(Y) + 1] := Min(100, fMarkMap.Value[Floor(X) + 1, Floor(Y) + 1] + Round(MM[1, 1] * F));
+  end;
+
+  procedure MakeLine(X, Y, A, B: Integer);
+  var
+    XPerStep, YPerStep: Single;
+    Length, i: Integer;
+  begin
+    Length := Max(Abs(A -B), Abs(X - Y));
+    XPerStep := (A - X) / Length;
+    YPerStep := (B - Y) / Length;
+    for i := 0 to Length do
+      Mark(X + I * XPerStep, Y + I * YPerStep, 100);
+  end;
+
+  procedure CreatedField(OX, OY: Integer);
+    procedure FillField(X, Y: Integer);
+    var
+      a: TRow;
+    begin
+      a := TRow.Create;
+      repeat
+        fMarkMap.Value[X, Y] := 100;
+        if (X > 0) and (fMarkMap.Value[X - 1, Y] = 0) then
+          begin
+          A.Insert(A.Length, X);
+          A.Insert(A.Length, Y);
+          dec(X);
+          end
+        else if (X < SizeX - 1) and (fMarkMap.Value[X + 1, Y] = 0) then
+          begin
+          A.Insert(A.Length, X);
+          A.Insert(A.Length, Y);
+          inc(X);
+          end
+        else if (Y > 0) and (fMarkMap.Value[X, Y - 1] = 0) then
+          begin
+          A.Insert(A.Length, X);
+          A.Insert(A.Length, Y);
+          dec(Y);
+          end
+        else if (Y < SizeY - 1) and (fMarkMap.Value[X, Y + 1] = 0) then
+          begin
+          A.Insert(A.Length, X);
+          A.Insert(A.Length, Y);
+          inc(Y);
+          end
+        else
+          begin
+          Y := A.Value[A.Length - 1];
+          X := A.Value[A.Length - 2];
+          A.Delete(A.Length - 1);
+          A.Delete(A.Length - 1);
+          end;
+      until
+        A.Length = 0;
+      a.Free;
+    end;
+  var
+    LastWasEmpty: Boolean;
+    EmptyCount: Integer;
+    i, j: Integer;
+    x, y: Integer;
+  begin
+    FillField(0, 0);
+    for i := 0 to SizeX - 1 do
+      for j := 0 to SizeY - 1 do
+        fMarkMap.Value[i, j] := 100 - fMarkMap.Value[i, j];
+  end;
+begin
+  if Marks.Height < 3 then
+    exit;
+  for i := 0 to SizeX - 1 do
+    for j := 0 to SizeY - 1 do
+      fMarkMap.Value[I, J] := 0;
+  for i := 0 to Marks.Height - 2 do
+    MakeLine(Marks.Value[0, i], Marks.Value[1, i], Marks.Value[0, i + 1], Marks.Value[1, i + 1]);
+  MakeLine(Marks.Value[0, Marks.Height - 1], Marks.Value[1, Marks.Height - 1], Marks.Value[0, 0], Marks.Value[1, 0]);
+  CreatedField(0, 0);
+end;
+
+procedure TTerrain.SetTo(Height: Single);
+var
+  i, j: Integer;
+begin
+  BeginUpdate;
+  for i := 0 to SizeX - 1 do
+    for j := 0 to SizeY - 1 do
+      if fMarkMap.Value[I, J] > 0 then
+        HeightMap[i / 5, j / 5] := Mix(HeightMap[i / 5, j / 5], Height, 0.01 * fMarkMap.Value[I, J]);
+  EndUpdate;
+end;
+
+procedure TTerrain.RaiseTo(Height: Single = -1);
+begin
+end;
+
+procedure TTerrain.LowerTo(Height: Single = -1);
+begin
+end;
 
 constructor TTerrain.Create;
 begin
@@ -459,6 +579,7 @@ begin
     fAdvancing := false;
     fCollection := nil;
     fMarks := TTable.Create;
+    fMarkMap := TTable.Create;
     CurrMark := Vector(-1, -1);
     Resume;
   except
@@ -472,6 +593,7 @@ begin
   sleep(100);
   if fCollection <> nil then
     fCollection.Free;
+  fMarkMap.Free;
   fMarks.Free;
 end;
 

@@ -9,11 +9,14 @@ type
   TGameTerrainEdit = class(TParkUIWindow)
     protected
       MarkMode: TIconifiedButton;
+      MarksFixed: Boolean;
       fSelectionMap: TMesh;
       fSelectionObject: PSelectableObject;
       fTerrainSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
     public
+      procedure Modify(Event: String; Data, Result: Pointer);
+      procedure FixMarks(Event: String; Data, Result: Pointer);
       procedure MoveMark(Event: String; Data, Result: Pointer);
       procedure CreateNewMark(Event: String; Data, Result: Pointer);
       procedure UpdateTerrainSelectionMap(Event: String; Data, Result: Pointer);
@@ -32,10 +35,25 @@ uses
 const
   SELECTION_SIZE = 200;
 
+procedure TGameTerrainEdit.Modify(Event: String; Data, Result: Pointer);
+begin
+  MarksChange('', nil, nil);
+  Park.pTerrain.SetTo(5);
+end;
+
+procedure TGameTerrainEdit.FixMarks(Event: String; Data, Result: Pointer);
+begin
+  MarksFixed := not MarksFixed;
+  if MarksFixed then
+    TIconifiedButton(Data).Left := 678 + 48
+  else
+    TIconifiedButton(Data).Left := 678;
+end;
+
 procedure TGameTerrainEdit.MoveMark(Event: String; Data, Result: Pointer);
 begin
   Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5);
-  if Park.pTerrain.Marks.Height > 0 then
+  if (Park.pTerrain.Marks.Height > 0) and (MarksFixed) then
     begin
     if abs(Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.X) < abs(Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.Y) then
       Park.pTerrain.CurrMark.X := Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1] / 5
@@ -117,6 +135,7 @@ begin
   else
     begin
     Park.SelectionEngine := Park.NormalSelectionEngine;
+    Park.pTerrain.CreateMarkMap;
     MarkMode := TIconifiedButton(Data);
     end;
 end;
@@ -138,12 +157,17 @@ var
 begin
   inherited Create(Resource, ParkUI);
   MarkMode := nil;
+  MarksFixed := false;
   EventManager.AddCallback('GUIActions.terrain_edit.changeTab', @changeTab);
   EventManager.AddCallback('GUIActions.terrain_edit.marks.add', @MarksChange);
   EventManager.AddCallback('GUIActions.terrain_edit.marks.delete', @OnClose);
+  EventManager.AddCallback('GUIActions.terrain_edit.marks.fix', @FixMarks);
+  EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @MoveMark);
   EventManager.AddCallback('GUIActions.terrain_edit.final.marks.add', @CreateNewMark);
   EventManager.AddCallback('GUIActions.terrain_edit.close', @OnClose);
-  EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @MoveMark);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.setfix', @Modify);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.raise', @Modify);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.lower', @Modify);
 
   fCameraOffset := Vector(0, 0, 0);
   fSelectionMap := TMesh.Create;

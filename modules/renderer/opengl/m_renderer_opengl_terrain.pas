@@ -334,7 +334,8 @@ begin
     fBoundShader := fWaterShaderTransformSunShadow;
   fBoundShader.Bind;
 
-  fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00002, 0.00010) * FPSDisplay.MS;
+  if fBoundShader <> fWaterShaderTransformDepth then
+    fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00002, 0.00010) * FPSDisplay.MS;
 
   for k := 0 to high(fWaterLayerFBOs) do
     begin

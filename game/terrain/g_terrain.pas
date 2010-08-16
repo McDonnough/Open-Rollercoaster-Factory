@@ -403,7 +403,8 @@ begin
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
   Resize(512, 512);
-(*  fMap[0, 0].Height := 20000;
+(*  Resize(2048, 2048);
+  fMap[0, 0].Height := 20000;
   fMap[SizeX - 1, 0].Height := 20000;
   fMap[0, SizeY - 1].Height := 20000;
   fMap[SizeX - 1, SizeY - 1].Height := 20000;

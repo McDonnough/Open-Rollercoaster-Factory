@@ -166,7 +166,7 @@ begin
     glDisable(GL_CLIP_PLANE0);
     end;
 
-  glClear(GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   RTerrain.RenderWaterSurfaces;
 
   fInterface.Options.Items['all:above'] := '0';

@@ -11,7 +11,8 @@ float calcBlurFactor(float a) {
 }
 
 void main(void) {
-  float cdist = 10000.0 * pow(texture2D(dist, gl_TexCoord[0].xy).r, 2.0);
+  vec2 a = texture2D(dist, gl_TexCoord[0].xy).rg * vec2(256.0, 1.0);
+  float cdist = a.x + a.y;
   vec2 blurFactor = blurDirection * calcBlurFactor(cdist);
   float AblurFactor = length(blurFactor);
   gl_FragColor = 0.25 * texture2D(tex, gl_TexCoord[0].xy)

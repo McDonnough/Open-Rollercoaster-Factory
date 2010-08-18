@@ -145,6 +145,8 @@ begin
             tmpString := '';
             Mode := M_ATTRIB_NAME;
             end
+        else if Source[i] = '/' then
+          SelfClose := True
         else
           tmpString := tmpString + Source[i];
         end;

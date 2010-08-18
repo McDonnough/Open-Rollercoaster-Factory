@@ -108,13 +108,18 @@ begin
     fInterface.Options.Items['shader:mode'] := 'transform:depth';
     fInterface.Options.Items['sky:rendering'] := 'off';
 
+    RTerrain.RenderWaterSurfaces;
+    glClear(GL_DEPTH_BUFFER_BIT);
     RenderParts;
     RTerrain.CheckWaterLayerVisibility;
   glPopMatrix;
   fInterface.PopOptions;
+  fDistTexture.Bind;
+  glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, ResX, ResY, 0);
+  fDistTexture.UnBind;
   glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @fDistPixel[0]);
   fMouseDistance := 256 * fDistPixel[0] + fDistPixel[1];
-
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   for i := 0 to high(RTerrain.fWaterLayerFBOs) do
     begin
     if RTerrain.fWaterLayerFBOs[i].Query.Result = 0 then
@@ -161,7 +166,7 @@ begin
     glDisable(GL_CLIP_PLANE0);
     end;
 
-  glClear(GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   RTerrain.RenderWaterSurfaces;
 
   fInterface.Options.Items['all:above'] := '0';
@@ -322,10 +327,15 @@ begin
   fInterface := TRendererOpenGLInterface.Create;
   fFrustum := TFrustum.Create;
   SetConfVal('all:polygonmode', 'fill');
+  fDistTexture := TTexture.Create;
+  fDistTexture.CreateNew(ResX, ResY, GL_RGBA);
+  fDistTexture.SetClamp(GL_CLAMP, GL_CLAMP);
+  fDistTexture.SetFilter(GL_NEAREST, GL_NEAREST);
 end;
 
 destructor TModuleRendererOpenGL.Free;
 begin
+  fDistTexture.Free;
   fFrustum.Free;
   fInterface.Free;
 end;

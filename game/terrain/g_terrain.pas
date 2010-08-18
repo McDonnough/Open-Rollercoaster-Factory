@@ -403,7 +403,8 @@ begin
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
   Resize(512, 512);
-(*  fMap[0, 0].Height := 20000;
+(*  Resize(2048, 2048);
+  fMap[0, 0].Height := 20000;
   fMap[SizeX - 1, 0].Height := 20000;
   fMap[0, SizeY - 1].Height := 20000;
   fMap[SizeX - 1, SizeY - 1].Height := 20000;
@@ -456,9 +457,6 @@ begin
 end;
 
 procedure TTerrain.CreateMarkMap;
-var
-  i, j: Integer;
-
   procedure Mark(X, Y: Single; F: Integer);
   var
     MM: Array[0..1, 0..1] of Single;
@@ -467,10 +465,11 @@ var
     MM[1, 0] := (1 - fPart(Y)) * (fPart(X));
     MM[0, 1] := (fPart(Y)) * (1 - fPart(X));
     MM[1, 1] := (fPart(Y)) * (fPart(X));
-    fMarkMap.Value[Floor(X) + 0, Floor(Y) + 0] := Min(100, fMarkMap.Value[Floor(X) + 0, Floor(Y) + 0] + Round(MM[0, 0] * F));
-    fMarkMap.Value[Floor(X) + 1, Floor(Y) + 0] := Min(100, fMarkMap.Value[Floor(X) + 1, Floor(Y) + 0] + Round(MM[1, 0] * F));
-    fMarkMap.Value[Floor(X) + 0, Floor(Y) + 1] := Min(100, fMarkMap.Value[Floor(X) + 0, Floor(Y) + 1] + Round(MM[0, 1] * F));
-    fMarkMap.Value[Floor(X) + 1, Floor(Y) + 1] := Min(100, fMarkMap.Value[Floor(X) + 1, Floor(Y) + 1] + Round(MM[1, 1] * F));
+
+    fMarkMap.Value[Floor(X) + 0, Floor(Y) + 0] := Round(Mix(fMarkMap.Value[Floor(X) + 0, Floor(Y) + 0], F, MM[1, 1]));
+    fMarkMap.Value[Floor(X) + 1, Floor(Y) + 0] := Round(Mix(fMarkMap.Value[Floor(X) + 1, Floor(Y) + 0], F, MM[0, 1]));
+    fMarkMap.Value[Floor(X) + 0, Floor(Y) + 1] := Round(Mix(fMarkMap.Value[Floor(X) + 0, Floor(Y) + 1], F, MM[1, 0]));
+    fMarkMap.Value[Floor(X) + 1, Floor(Y) + 1] := Round(Mix(fMarkMap.Value[Floor(X) + 1, Floor(Y) + 1], F, MM[0, 0]));
   end;
 
   procedure MakeLine(X, Y, A, B: Integer);
@@ -478,7 +477,7 @@ var
     XPerStep, YPerStep: Single;
     Length, i: Integer;
   begin
-    Length := Max(Abs(A -B), Abs(X - Y));
+    Length := Max(Abs(A - X), Abs(B - Y));
     XPerStep := (A - X) / Length;
     YPerStep := (B - Y) / Length;
     for i := 0 to Length do
@@ -486,6 +485,8 @@ var
   end;
 
   procedure CreatedField(OX, OY: Integer);
+  var
+    MinX, MinY, MaxX, MaxY, i, j: Integer;
     procedure FillField(X, Y: Integer);
     var
       a: TRow;
@@ -493,25 +494,25 @@ var
       a := TRow.Create;
       repeat
         fMarkMap.Value[X, Y] := 100;
-        if (X > 0) and (fMarkMap.Value[X - 1, Y] = 0) then
+        if (X > MinX) and (fMarkMap.Value[X - 1, Y] = 0) then
           begin
           A.Insert(A.Length, X);
           A.Insert(A.Length, Y);
           dec(X);
           end
-        else if (X < SizeX - 1) and (fMarkMap.Value[X + 1, Y] = 0) then
+        else if (X < MaxX) and (fMarkMap.Value[X + 1, Y] = 0) then
           begin
           A.Insert(A.Length, X);
           A.Insert(A.Length, Y);
           inc(X);
           end
-        else if (Y > 0) and (fMarkMap.Value[X, Y - 1] = 0) then
+        else if (Y > MinY) and (fMarkMap.Value[X, Y - 1] = 0) then
           begin
           A.Insert(A.Length, X);
           A.Insert(A.Length, Y);
           dec(Y);
           end
-        else if (Y < SizeY - 1) and (fMarkMap.Value[X, Y + 1] = 0) then
+        else if (Y < MaxY) and (fMarkMap.Value[X, Y + 1] = 0) then
           begin
           A.Insert(A.Length, X);
           A.Insert(A.Length, Y);
@@ -528,26 +529,30 @@ var
         A.Length = 0;
       a.Free;
     end;
-  var
-    LastWasEmpty: Boolean;
-    EmptyCount: Integer;
-    i, j: Integer;
-    x, y: Integer;
   begin
-    FillField(0, 0);
-    for i := 0 to SizeX - 1 do
-      for j := 0 to SizeY - 1 do
+    MinX := Max(0, fMarks.GetCol(0).Min - 2);
+    MinY := Max(0, fMarks.GetCol(1).Min - 2);
+    MaxX := Min(SizeX - 1, fMarks.GetCol(0).Max + 2);
+    MaxY := Min(SizeY - 1, fMarks.GetCol(1).Max + 2);
+    if Marks.Height < 3 then
+      exit;
+    for i := MinX to MaxX do
+      for j := MinY to MaxY do
+        fMarkMap.Value[I, J] := 0;
+    for i := 0 to Marks.Height - 2 do
+      MakeLine(Marks.Value[0, i], Marks.Value[1, i], Marks.Value[0, i + 1], Marks.Value[1, i + 1]);
+    MakeLine(Marks.Value[0, Marks.Height - 1], Marks.Value[1, Marks.Height - 1], Marks.Value[0, 0], Marks.Value[1, 0]);
+    FillField(MinX, MinY);
+    for i := MinX to MaxX do
+      for j := MinY to MaxY do
+        if fMarkMap.Value[I, J] <= 50 then
+          if ((fMarkMap.Value[I + 1, J] > 50) and (fMarkMap.Value[I - 1, J] > 50)) or ((fMarkMap.Value[I, J + 1] > 50) and (fMarkMap.Value[I, J - 1] > 50)) then
+            fMarkMap.Value[I, J] := 100;
+    for i := MinX to MaxX do
+      for j := MinY to MaxY do
         fMarkMap.Value[i, j] := 100 - fMarkMap.Value[i, j];
   end;
 begin
-  if Marks.Height < 3 then
-    exit;
-  for i := 0 to SizeX - 1 do
-    for j := 0 to SizeY - 1 do
-      fMarkMap.Value[I, J] := 0;
-  for i := 0 to Marks.Height - 2 do
-    MakeLine(Marks.Value[0, i], Marks.Value[1, i], Marks.Value[0, i + 1], Marks.Value[1, i + 1]);
-  MakeLine(Marks.Value[0, Marks.Height - 1], Marks.Value[1, Marks.Height - 1], Marks.Value[0, 0], Marks.Value[1, 0]);
   CreatedField(0, 0);
 end;
 

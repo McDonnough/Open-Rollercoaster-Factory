@@ -21,6 +21,8 @@ type
       procedure Sort;
       procedure Resize(L: Integer);
       function Extract(X, C: Integer): TRow;
+      function Min: Integer;
+      function Max: Integer;
       constructor Create;
       constructor Create(Count: Integer; Items: Pointer);
     end;
@@ -167,10 +169,27 @@ begin
   Result := nil;
   if (X < 0) or (X >= Length) then
     exit;
-  C := Min(C, Length - X);
+  C := Math.Min(C, Length - X);
   Result := TRow.Create(C, @fData[X]);
 end;
 
+function TRow.Min: Integer;
+var
+  i: Integer;
+begin
+  Result := Value[0];
+  for i := 1 to Length - 1 do
+    Result := Math.Min(Result, Value[i]);
+end;
+
+function TRow.Max: Integer;
+var
+  i: Integer;
+begin
+  Result := Value[0];
+  for i := 1 to Length - 1 do
+    Result := Math.Max(Result, Value[i]);
+end;
 
 constructor TRow.Create;
 begin

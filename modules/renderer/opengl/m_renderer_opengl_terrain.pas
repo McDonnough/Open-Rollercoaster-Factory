@@ -334,7 +334,8 @@ begin
     fBoundShader := fWaterShaderTransformSunShadow;
   fBoundShader.Bind;
 
-  fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00002, 0.00010) * FPSDisplay.MS;
+  if fBoundShader <> fWaterShaderTransformDepth then
+    fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00002, 0.00010) * FPSDisplay.MS;
 
   for k := 0 to high(fWaterLayerFBOs) do
     begin
@@ -591,7 +592,7 @@ begin
     fWaterBumpmapOffset := Vector(0, 0);
     fFineOffsetX := 0;
     fFineOffsetY := 0;
-    fFineVBO := TVBO.Create(130 * 130 * 4 + 8 * 32 * 32 * 4, GL_V3F, GL_QUADS);
+    fFineVBO := TVBO.Create(130 * 130 * 4 + 12 * 32 * 32 * 4, GL_V3F, GL_QUADS);
     cv := 0;
     for i := -1 to 128 do
       for j := -1 to 128 do

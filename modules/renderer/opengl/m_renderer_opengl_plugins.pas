@@ -25,7 +25,7 @@ type
   TRE2DFocus = class
     protected
       ResX, ResY: Integer;
-      FTexture, FTexture2: TTexture;
+      FTexture2: TTexture;
       FShader: TShader;
     public
       procedure Apply(Event: String; Param, Result: Pointer);
@@ -137,8 +137,7 @@ var
   DistPixel: DWord;
   Distance: Single;
 begin
-  FTexture.Bind(1);
-  glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, ResX, ResY, 0);
+  ModuleManager.ModRenderer.DistTexture.Bind(1);
   FTexture2.Bind(0);
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, ResX, ResY, 0);
 
@@ -169,10 +168,6 @@ end;
 
 constructor TRE2DFocus.Create;
 begin
-  FTexture := TTexture.Create;
-  FTexture.CreateNew(ResX, ResY, GL_LUMINANCE);
-  FTexture.SetClamp(GL_CLAMP, GL_CLAMP);
-  FTexture.SetFilter(GL_NEAREST, GL_NEAREST);
   FTexture2 := TTexture.Create;
   FTexture2.CreateNew(ResX, ResY, GL_RGBA);
   FTexture2.SetClamp(GL_CLAMP, GL_CLAMP);
@@ -188,7 +183,6 @@ end;
 destructor TRE2DFocus.Free;
 begin
   EventManager.RemoveCallback(@Self.Apply);
-  FTexture.Free;
   FTexture2.Free;
   FShader.Free;
 end;

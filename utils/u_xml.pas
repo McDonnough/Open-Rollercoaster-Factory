@@ -130,10 +130,14 @@ begin
         if Source[i] = '>' then
           begin
           Mode := M_NORMAL;
+          if tmpString[length(tmpString)] = '/' then
+            SelfClose := True;
           if tmpString[1] = '/' then
             CloseTag
           else
             OpenTag;
+          if SelfClose then
+            CloseTag;
           tmpString := '';
           end
         else if isWhitespace(Source[i]) then
@@ -145,8 +149,6 @@ begin
             tmpString := '';
             Mode := M_ATTRIB_NAME;
             end
-        else if Source[i] = '/' then
-          SelfClose := True
         else
           tmpString := tmpString + Source[i];
         end;

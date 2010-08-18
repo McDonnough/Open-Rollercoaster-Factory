@@ -119,6 +119,8 @@ begin
   fDistTexture.UnBind;
   glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @fDistPixel[0]);
   fMouseDistance := 256 * fDistPixel[0] + fDistPixel[1];
+  if fMouseDistance = 0 then
+    fMouseDistance := 257;
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   for i := 0 to high(RTerrain.fWaterLayerFBOs) do
     begin

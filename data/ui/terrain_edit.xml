@@ -15,8 +15,10 @@
       <label left="8" width="734" height="80" top="0">
         <iconbutton left="0" top="8" icon="terrain-raise.tga" name="terrain_edit.modify_raise" onclick="terrain_edit.modify.raise" />
         <iconbutton left="72" top="8" icon="terrain-lower.tga" name="terrain_edit.modify_lower" onclick="terrain_edit.modify.lower" />
-        <iconbutton left="144" top="8" icon="terrain-setfix.tga" name="terrain_edit.modify_setfix" onclick="terrain_edit.modify.setfix" />
-        <edit left="368" top="8" height="32" width="100">0.0</edit>
+        <iconbutton left="144" top="8" icon="terrain-maximum.tga" name="terrain_edit.modify_maximum" onclick="terrain_edit.modify.maximum" />
+        <iconbutton left="216" top="8" icon="terrain-minimum.tga" name="terrain_edit.modify_minimum" onclick="terrain_edit.modify.minimum" />
+        <iconbutton left="288" top="8" icon="terrain-setfix.tga" name="terrain_edit.modify_setfix" onclick="terrain_edit.modify.setfix" />
+        <edit left="368" top="8" height="32" width="100" name="terrain_edit.selected_height">0.0</edit>
         <button left="368" top="48" height="32" width="100">Set</button>
       </label>
       <label left="758" width="734" height="80" top="0">

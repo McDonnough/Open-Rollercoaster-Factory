@@ -30,7 +30,7 @@ type
 implementation
 
 uses
-  u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist, m_inputhandler_class;
+  u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist, m_inputhandler_class, m_gui_edit_class;
 
 const
   SELECTION_SIZE = 200;
@@ -38,7 +38,16 @@ const
 procedure TGameTerrainEdit.Modify(Event: String; Data, Result: Pointer);
 begin
   MarksChange('', nil, nil);
-  Park.pTerrain.SetTo(5);
+  try
+    if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_setfix')) then
+      Park.pTerrain.SetTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_minimum')) then
+      Park.pTerrain.SetToMin(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_maximum')) then
+      Park.pTerrain.SetToMax(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text));
+  except
+    ModuleManager.ModLog.AddError('Modifying terrain failed (' + TIconifiedButton(Data).Name + ')');
+  end;
 end;
 
 procedure TGameTerrainEdit.FixMarks(Event: String; Data, Result: Pointer);
@@ -165,6 +174,8 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @MoveMark);
   EventManager.AddCallback('GUIActions.terrain_edit.final.marks.add', @CreateNewMark);
   EventManager.AddCallback('GUIActions.terrain_edit.close', @OnClose);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.minimum', @Modify);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.maximum', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.setfix', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.raise', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.lower', @Modify);

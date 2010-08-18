@@ -75,6 +75,8 @@ type
       procedure EndUpdate;
       procedure CreateMarkMap;
       procedure SetTo(Height: Single);
+      procedure SetToMin(Height: Single);
+      procedure SetToMax(Height: Single);
       procedure RaiseTo(Height: Single = -1);
       procedure LowerTo(Height: Single = -1);
       constructor Create;
@@ -402,8 +404,8 @@ begin
   fSizeX := 0;
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
-  Resize(512, 512);
-(*  Resize(2048, 2048);
+  Resize(2048, 2048);
+  Resize(2048, 2048);
   fMap[0, 0].Height := 20000;
   fMap[SizeX - 1, 0].Height := 20000;
   fMap[0, SizeY - 1].Height := 20000;
@@ -433,7 +435,7 @@ begin
         fMap[i, j].Texture := 5;
       if fMap[i, j].Height < fMap[i, j].Water then
         fMap[i, j].Texture := 3;
-      end;*)
+      end;
   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;
 
@@ -565,6 +567,30 @@ begin
     for j := 0 to SizeY - 1 do
       if fMarkMap.Value[I, J] > 0 then
         HeightMap[i / 5, j / 5] := Mix(HeightMap[i / 5, j / 5], Height, 0.01 * fMarkMap.Value[I, J]);
+  EndUpdate;
+end;
+
+procedure TTerrain.SetToMin(Height: Single);
+var
+  i, j: Integer;
+begin
+  BeginUpdate;
+  for i := 0 to SizeX - 1 do
+    for j := 0 to SizeY - 1 do
+      if fMarkMap.Value[I, J] > 0 then
+        HeightMap[i / 5, j / 5] := Mix(HeightMap[i / 5, j / 5], Max(HeightMap[i / 5, j / 5], Height), 0.01 * fMarkMap.Value[I, J]);
+  EndUpdate;
+end;
+
+procedure TTerrain.SetToMax(Height: Single);
+var
+  i, j: Integer;
+begin
+  BeginUpdate;
+  for i := 0 to SizeX - 1 do
+    for j := 0 to SizeY - 1 do
+      if fMarkMap.Value[I, J] > 0 then
+        HeightMap[i / 5, j / 5] := Mix(HeightMap[i / 5, j / 5], Min(HeightMap[i / 5, j / 5], Height), 0.01 * fMarkMap.Value[I, J]);
   EndUpdate;
 end;
 

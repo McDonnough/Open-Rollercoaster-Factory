@@ -3,7 +3,7 @@ unit g_terrain_edit;
 interface
 
 uses
-  SysUtils, Classes, m_gui_class, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors, u_arrays;
+  SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors, u_arrays;
 
 type
   TGameTerrainEdit = class(TXMLUIWindow)
@@ -23,7 +23,7 @@ type
       procedure MarksChange(Event: String; Data, Result: Pointer);
       procedure ChangeTab(Event: String; Data, Result: Pointer);
       procedure OnClose(Event: String; Data, Result: Pointer);
-      constructor Create(Resource: String; ParkUI: TXMLUI);
+      constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
     end;
 
@@ -164,7 +164,7 @@ begin
   MarksChange('', nil, nil);
 end;
 
-constructor TGameTerrainEdit.Create(Resource: String; ParkUI: TXMLUI);
+constructor TGameTerrainEdit.Create(Resource: String; ParkUI: TXMLUIManager);
 var
   i, j: Integer;
 begin

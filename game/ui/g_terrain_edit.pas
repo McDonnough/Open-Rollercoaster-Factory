@@ -33,7 +33,7 @@ uses
   u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist, m_inputhandler_class, m_gui_edit_class;
 
 const
-  SELECTION_SIZE = 200;
+  SELECTION_SIZE = 100;
 
 procedure TGameTerrainEdit.Modify(Event: String; Data, Result: Pointer);
 begin
@@ -189,7 +189,7 @@ begin
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
       begin
-      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i] := MakeMeshVertex(Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.2, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
+      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i] := MakeMeshVertex(Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.8, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
       if (i < SELECTION_SIZE) and (j < SELECTION_SIZE) then
         begin
         fSelectionMap.Triangles[2 * (SELECTION_SIZE * j + i) + 0] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * j + i, (SELECTION_SIZE + 1) * (j + 1) + i, (SELECTION_SIZE + 1) * (j + 1) + (i + 1));

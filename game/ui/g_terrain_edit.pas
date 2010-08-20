@@ -44,7 +44,11 @@ begin
     else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_minimum')) then
       Park.pTerrain.SetToMin(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
     else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_maximum')) then
-      Park.pTerrain.SetToMax(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text));
+      Park.pTerrain.SetToMax(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_raise')) then
+      Park.pTerrain.RaiseTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_lower')) then
+      Park.pTerrain.LowerTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text));
   except
     ModuleManager.ModLog.AddError('Modifying terrain failed (' + TIconifiedButton(Data).Name + ')');
   end;

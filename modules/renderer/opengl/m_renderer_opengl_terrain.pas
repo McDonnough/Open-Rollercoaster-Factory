@@ -362,21 +362,6 @@ var
   Pixel: TVector4D;
   procedure StartUpdate;
   begin
-{    glUseProgram(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    fHeightMap.Bind;
-    glClear(GL_COLOR_BUFFER_BIT);
-    glMatrixMode(GL_PROJECTION);
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
-    glPushMatrix;
-    glLoadIdentity;
-    glOrtho(0, Park.pTerrain.SizeX, 0, Park.pTerrain.SizeY, 0, 255);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix;
-    glLoadIdentity;
-
-    glDisable(GL_DEPTH_TEST);}
     fHeightMap.Textures[0].Bind(0);
   end;
 
@@ -403,13 +388,6 @@ var
   procedure EndUpdate;
   begin
     fHeightMap.Textures[0].Unbind;
-{    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_ALPHA_TEST);
-    glPopMatrix;
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix;
-    glMatrixMode(GL_MODELVIEW);
-    fHeightMap.Unbind;}
   end;
 
   procedure RecalcBoundingSpheres(X, Y: Integer);

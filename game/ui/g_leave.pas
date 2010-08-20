@@ -3,13 +3,13 @@ unit g_leave;
 interface
 
 uses
-  SysUtils, Classes, g_parkui;
+  SysUtils, Classes, m_gui_class;
 
 type
-  TGameLeave = class(TParkUIWindow)
+  TGameLeave = class(TXMLUIWindow)
     public
       procedure doQuit(Event: String; Data, Result: Pointer);
-      constructor Create(Resource: String; ParkUI: TParkUI);
+      constructor Create(Resource: String; ParkUI: TXMLUI);
       destructor Free;
     end;
 
@@ -23,7 +23,7 @@ begin
   changeRenderState(rsMainMenu);
 end;
 
-constructor TGameLeave.Create(Resource: String; ParkUI: TParkUI);
+constructor TGameLeave.Create(Resource: String; ParkUI: TXMLUI);
 begin
   inherited Create(Resource, ParkUI);
   EventManager.AddCallback('GUIActions.doQuit', @doQuit);

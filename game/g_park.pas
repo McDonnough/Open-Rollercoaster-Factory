@@ -3,7 +3,7 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_sky, u_selection;
 
 type
   TPark = class
@@ -12,7 +12,7 @@ type
       fParkLoader: TParkLoader;
       fInited, fPostLoading: Boolean;
       fCanRender: Boolean;
-      fParkUI: TParkUI;
+      fParkUI: TXMLUI;
       fLoadState: Integer;
       fTimeUntilInvisible: Integer;
       fSelectionEngine: TSelectionEngine;
@@ -121,7 +121,7 @@ begin
       ModuleManager.ModLoadScreen.Progress := 99;
       ModuleManager.ModLoadScreen.Text := 'Loading user interface files';
       end;
-    5: fParkUI := TParkUI.Create;
+    5: fParkUI := TXMLUI.Create;
     6:
       begin
       ModuleManager.ModLoadScreen.Progress := 100;

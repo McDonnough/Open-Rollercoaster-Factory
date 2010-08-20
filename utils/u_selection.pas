@@ -42,12 +42,15 @@ var
   i, j: Integer;
   Sel: TVector3D;
 begin
+  fCanWork := false;
+  fWorking := false;
   while not Terminated do
     begin
     try
       if fCanWork then
         begin
         fWorking := true;
+        fCanWork := false;
         MinDist := 2000 * 2000;
         for i := 0 to high(fSelectableObjects) do
           begin
@@ -63,7 +66,6 @@ begin
           if fSelectableObjects[i].Selected then
             fSelectableObjects[i].IntersectionPoint := Sel;
           end;
-        fCanWork := false;
         end
       else
         sleep(1);

@@ -379,8 +379,8 @@ begin
   fSizeX := 0;
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
-  Resize(512, 512);
-(*  Resize(2048, 2048);
+//  Resize(512, 512);
+  Resize(2048, 2048);
   fMap[0, 0].Height := 20000;
   fMap[SizeX - 1, 0].Height := 20000;
   fMap[0, SizeY - 1].Height := 20000;
@@ -410,7 +410,7 @@ begin
         fMap[i, j].Texture := 5;
       if fMap[i, j].Height < fMap[i, j].Water then
         fMap[i, j].Texture := 3;
-      end;*)
+      end;
   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;
 

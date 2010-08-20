@@ -63,6 +63,7 @@ procedure TModuleRendererOpenGL.Unload;
 begin
   RenderEffectManager.Free;
   RSky.Free;
+  RTerrain.Unload;
   RTerrain.Free;
   RCamera.Free;
 end;

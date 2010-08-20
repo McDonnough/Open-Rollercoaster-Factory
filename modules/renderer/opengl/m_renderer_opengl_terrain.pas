@@ -17,8 +17,9 @@ type
       destructor Free;
     end;
 
-  TRTerrain = class
+  TRTerrain = class(TThread)
     protected
+      fCanWork, fWorking: Boolean;
       fUpdatePlants: Boolean;
       fFineVBO, fGoodVBO, fRawVBO, fWaterVBO: TVBO;
       fAPVBOs: Array[0..7] of TVBO;
@@ -36,6 +37,10 @@ type
       fHeightMap: TFBO;
       fFrameCount: Byte;
       RenderStep: Single;
+      procedure Sync;
+      procedure Execute; override;
+      procedure RecalcBoundingSpheres(X, Y: Integer);
+      procedure CheckWaterLevel(X, Y: Word);
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
       procedure Render(Event: String; Data, Result: Pointer);
@@ -44,8 +49,8 @@ type
       procedure RenderWaterSurfaces;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
+      procedure Unload;
       constructor Create;
-      destructor Free;
     end;
 
 implementation
@@ -81,6 +86,43 @@ begin
   Query.Free;
 end;
 
+
+procedure TRTerrain.Sync;
+begin
+  while fWorking do
+    sleep(1);
+  sleep(1);
+end;
+
+procedure TRTerrain.Execute;
+var
+  i, j: Integer;
+begin
+  fCanWork := false;
+  fWorking := false;
+  while not Terminated do
+    begin
+    try
+      if fCanWork then
+        begin
+        fWorking := true;
+        fCanWork := false;
+        for i := 0 to Park.pTerrain.SizeX do
+          for j := 0 to Park.pTerrain.SizeY do
+            CheckWaterLevel(i, j);
+        for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+          for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+            RecalcBoundingSpheres(i, j);
+        end
+      else
+        sleep(1);
+      fWorking := false;
+    except
+      ModuleManager.ModLog.AddError('Exception in terrain renderer thread');
+    end;
+    end;
+  writeln('Hint: Terminated terrain renderer thread');
+end;
 
 procedure TRTerrain.RecreateWaterVBO;
 var
@@ -356,27 +398,62 @@ begin
   glEnable(GL_CULL_FACE);
 end;
 
+procedure TRTerrain.RecalcBoundingSpheres(X, Y: Integer);
+var
+  i, j, k: Integer;
+  avgh, temp, temp2: Single;
+  a, b, c, d: Single;
+begin
+  avgh := 0;
+  fHeightRanges[X, Y, 0] := 256;
+  fHeightRanges[X, Y, 1] := 0;
+  for i := 0 to high(fWaterLayerFBOs) do
+    fWaterLayerFBOs[i].Blocks[X, Y] := false;
+  for i := 0 to 128 do
+    for j := 0 to 128 do
+      begin
+      temp := Park.pTerrain.HeightMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
+      temp2 := Park.pTerrain.WaterMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
+      for k := 0 to high(fWaterLayerFBOs) do
+        fWaterLayerFBOs[k].Blocks[X, Y] := fWaterLayerFBOs[k].Blocks[X, Y] or (Round(256 * temp2) = Round(256 * fWaterLayerFBOs[k].Height));
+      if temp < fHeightRanges[X, Y, 0] then fHeightRanges[X, Y, 0] := temp;
+      if temp > fHeightRanges[X, Y, 1] then fHeightRanges[X, Y, 1] := temp;
+      if (i = 0) and (j = 0) then
+        a := temp
+      else if (i = 128) and (j = 0) then
+        b := temp
+      else if (i = 0) and (j = 128) then
+        c := temp
+      else if (i = 128) and (j = 128) then
+        d := temp;
+      avgh := avgh + temp;
+
+      end;
+  avgh := avgh / 129 / 129;
+  fAvgHeight[X, Y] := avgh;
+  fBoundingSphereRadius[X, Y] := VecLength(Vector(12.8, Max(Max(a, b), Max(c, d)) - avgh, 12.8));
+end;
+
+procedure TRTerrain.CheckWaterLevel(X, Y: Word);
+var
+  i: integer;
+begin
+  if Park.pTerrain.WaterMap[X / 5, Y / 5] = 0 then
+    exit;
+  for i := 0 to high(fWaterLayerFBOs) do
+    if fWaterLayerFBOs[i].Height = Park.pTerrain.WaterMap[X / 5, Y / 5] then
+      exit;
+  setLength(fWaterLayerFBOs, length(fWaterLayerFBOs) + 1);
+  fWaterLayerFBOs[high(fWaterLayerFBOs)] := TWaterLayerFBO.Create;
+  fWaterLayerFBOs[high(fWaterLayerFBOs)].Height := Park.pTerrain.WaterMap[X / 5, Y / 5];
+end;
+
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
   i, j, k, l: Integer;
   Pixel: TVector4D;
   procedure StartUpdate;
   begin
-{    glUseProgram(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    fHeightMap.Bind;
-    glClear(GL_COLOR_BUFFER_BIT);
-    glMatrixMode(GL_PROJECTION);
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
-    glPushMatrix;
-    glLoadIdentity;
-    glOrtho(0, Park.pTerrain.SizeX, 0, Park.pTerrain.SizeY, 0, 255);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix;
-    glLoadIdentity;
-
-    glDisable(GL_DEPTH_TEST);}
     fHeightMap.Textures[0].Bind(0);
   end;
 
@@ -386,70 +463,14 @@ var
     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
 
-  procedure CheckWaterLevel(X, Y: Word);
-  var
-    i: integer;
-  begin
-    if Park.pTerrain.WaterMap[X / 5, Y / 5] = 0 then
-      exit;
-    for i := 0 to high(fWaterLayerFBOs) do
-      if fWaterLayerFBOs[i].Height = Park.pTerrain.WaterMap[X / 5, Y / 5] then
-        exit;
-    setLength(fWaterLayerFBOs, length(fWaterLayerFBOs) + 1);
-    fWaterLayerFBOs[high(fWaterLayerFBOs)] := TWaterLayerFBO.Create;
-    fWaterLayerFBOs[high(fWaterLayerFBOs)].Height := Park.pTerrain.WaterMap[X / 5, Y / 5];
-  end;
-
   procedure EndUpdate;
   begin
     fHeightMap.Textures[0].Unbind;
-{    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_ALPHA_TEST);
-    glPopMatrix;
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix;
-    glMatrixMode(GL_MODELVIEW);
-    fHeightMap.Unbind;}
-  end;
-
-  procedure RecalcBoundingSpheres(X, Y: Integer);
-  var
-    i, j, k: Integer;
-    avgh, temp, temp2: Single;
-    a, b, c, d: Single;
-  begin
-    avgh := 0;
-    fHeightRanges[X, Y, 0] := 256;
-    fHeightRanges[X, Y, 1] := 0;
-    for i := 0 to high(fWaterLayerFBOs) do
-      fWaterLayerFBOs[i].Blocks[X, Y] := false;
-    for i := 0 to 128 do
-      for j := 0 to 128 do
-        begin
-        temp := Park.pTerrain.HeightMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
-        temp2 := Park.pTerrain.WaterMap[25.6 * X + 0.2 * i, 25.6 * Y + 0.2 * j];
-        for k := 0 to high(fWaterLayerFBOs) do
-          fWaterLayerFBOs[k].Blocks[X, Y] := fWaterLayerFBOs[k].Blocks[X, Y] or (Round(256 * temp2) = Round(256 * fWaterLayerFBOs[k].Height));
-        if temp < fHeightRanges[X, Y, 0] then fHeightRanges[X, Y, 0] := temp;
-        if temp > fHeightRanges[X, Y, 1] then fHeightRanges[X, Y, 1] := temp;
-        if (i = 0) and (j = 0) then
-          a := temp
-        else if (i = 128) and (j = 0) then
-          b := temp
-        else if (i = 0) and (j = 128) then
-          c := temp
-        else if (i = 128) and (j = 128) then
-          d := temp;
-        avgh := avgh + temp;
-
-        end;
-    avgh := avgh / 129 / 129;
-    fAvgHeight[X, Y] := avgh;
-    fBoundingSphereRadius[X, Y] := VecLength(Vector(12.8, Max(Max(a, b), Max(c, d)) - avgh, 12.8));
   end;
 begin
   if Event = 'TTerrain.Resize' then
     begin
+    Sync;
     RecreateWaterVBO;
     fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformDepth.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
@@ -491,17 +512,11 @@ begin
       UpdateVertex(Integer((Data + 8 * i + 4)^), Integer((Data + 8 * i + 8)^));
     EndUpdate;
     if Event <> 'TTerrain.ChangedTexmap' then
-      begin
-      for i := 0 to Park.pTerrain.SizeX do
-        for j := 0 to Park.pTerrain.SizeY do
-          CheckWaterLevel(i, j);
-      for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-        for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-          RecalcBoundingSpheres(i, j);
-      end;
+      fCanWork := true;
     end;
   if (Event = 'TTerrain.ChangedAll') then
     begin
+    Sync;
     writeln('Copying entire terrain to VRam');
     StartUpdate;
     for i := 0 to Park.pTerrain.SizeX do
@@ -549,6 +564,7 @@ var
   tempTex: TTexImage;
   TexFormat, CompressedTexFormat: GLEnum;
 begin
+  inherited Create(false);
   fFrameCount := 0;
   fWaterVBO := nil;
   try
@@ -651,10 +667,12 @@ begin
   EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 
-destructor TRTerrain.Free;
+procedure TRTerrain.Unload;
 var
   i, j: Integer;
 begin
+  Terminate;
+  Sync;
   for i := 0 to high(fAPVBOs) do
     if fAPVBOs[i] <> nil then
       fAPVBOs[i].Free;

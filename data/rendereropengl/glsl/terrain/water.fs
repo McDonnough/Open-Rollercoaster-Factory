@@ -30,11 +30,11 @@ void main(void) {
   float terrainHeight = fetchHeight(3);
   vec4 Position = gl_ModelViewProjectionMatrix * Vertex;
   vec2 RealPosition = 0.5 + 0.5 * (Position.xy / Position.w);
-  vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   vec3 normal = normalize((-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 30.0 + gl_TexCoord[0].xy).rbg) - (-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 15.0 + 0.5 * gl_TexCoord[0].yx).rbg) + vec3(0.0, 1.0, 0.0));
   vec2 reflectionOffset = normal.xz / 10.0;
   vec4 result = gl_TextureMatrix[0] * Vertex;
   result = sqrt(abs(result)) * sign(result);
+  vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   if (length(result.xy / result.w) < 1.0)
     SunShadow = texture2D(SunShadowMap, 0.5 + 0.5 * result.xy / result.w);
   if (SunShadow.a + 0.1 >= SDist)

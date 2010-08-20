@@ -30,15 +30,28 @@ type
 implementation
 
 uses
-  u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist, m_inputhandler_class;
+  u_events, g_park, main, m_gui_label_class, m_gui_tabbar_class, m_varlist, m_inputhandler_class, m_gui_edit_class;
 
 const
-  SELECTION_SIZE = 200;
+  SELECTION_SIZE = 100;
 
 procedure TGameTerrainEdit.Modify(Event: String; Data, Result: Pointer);
 begin
   MarksChange('', nil, nil);
-  Park.pTerrain.SetTo(5);
+  try
+    if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_setfix')) then
+      Park.pTerrain.SetTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_minimum')) then
+      Park.pTerrain.SetToMin(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_maximum')) then
+      Park.pTerrain.SetToMax(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_raise')) then
+      Park.pTerrain.RaiseTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_lower')) then
+      Park.pTerrain.LowerTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text));
+  except
+    ModuleManager.ModLog.AddError('Modifying terrain failed (' + TIconifiedButton(Data).Name + ')');
+  end;
 end;
 
 procedure TGameTerrainEdit.FixMarks(Event: String; Data, Result: Pointer);
@@ -165,6 +178,8 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @MoveMark);
   EventManager.AddCallback('GUIActions.terrain_edit.final.marks.add', @CreateNewMark);
   EventManager.AddCallback('GUIActions.terrain_edit.close', @OnClose);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.minimum', @Modify);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.maximum', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.setfix', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.raise', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.lower', @Modify);
@@ -174,7 +189,7 @@ begin
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
       begin
-      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i] := MakeMeshVertex(Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.2, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
+      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i] := MakeMeshVertex(Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.8, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
       if (i < SELECTION_SIZE) and (j < SELECTION_SIZE) then
         begin
         fSelectionMap.Triangles[2 * (SELECTION_SIZE * j + i) + 0] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * j + i, (SELECTION_SIZE + 1) * (j + 1) + i, (SELECTION_SIZE + 1) * (j + 1) + (i + 1));

@@ -40,11 +40,11 @@ begin
     if fEvents[i].name = Event then
       begin
       for j := 0 to high(fEvents[i].Callbacks) do
-//          try
+        try
           fEvents[i].Callbacks[j](Event, Data, Result);
-//         except
-//           ModuleManager.ModLog.AddError('Event ' + Event + ' #' + IntToStr(j) + ' caused an exception');
-//         end;
+        except
+          ModuleManager.ModLog.AddError('Event ' + Event + ' #' + IntToStr(j) + ' caused an exception');
+        end;
       exit;
       end;
 end;

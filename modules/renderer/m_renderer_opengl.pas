@@ -63,6 +63,7 @@ procedure TModuleRendererOpenGL.Unload;
 begin
   RenderEffectManager.Free;
   RSky.Free;
+  RTerrain.Unload;
   RTerrain.Free;
   RCamera.Free;
 end;
@@ -119,6 +120,8 @@ begin
   fDistTexture.UnBind;
   glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @fDistPixel[0]);
   fMouseDistance := 256 * fDistPixel[0] + fDistPixel[1];
+  if fMouseDistance = 0 then
+    fMouseDistance := 257;
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   for i := 0 to high(RTerrain.fWaterLayerFBOs) do
     begin
@@ -307,7 +310,7 @@ begin
   if GetConfVal('used') = '' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('effects', IntToStr(RE_NORMAL) + ',' + IntToStr(RE_2D_FOCUS) + ',' + IntToStr(RE_BLOOM) + ',' + IntToStr(RE_MOTIONBLUR));
+    SetConfVal('effects', IntToStr(RE_NORMAL) + ',' + IntToStr(RE_2D_FOCUS) + ',' + IntToStr(RE_BLOOM));
     SetConfVal('terrain:autoplants', 'on');
     SetConfVal('terrain:hd', 'on');
     SetConfVal('shadows:enabled', 'on');

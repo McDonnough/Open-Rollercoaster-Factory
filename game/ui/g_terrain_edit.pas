@@ -122,8 +122,8 @@ begin
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
       begin
-      fSelectionMap.pVertices[SELECTION_SIZE * j + i]^.Position := fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position - fCameraOffset + fTmpCameraOffset;
-      fSelectionMap.pVertices[SELECTION_SIZE * j + i]^.Position.Y := Park.pTerrain.HeightMap[fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position.X, fSelectionMap.Vertices[SELECTION_SIZE * j + i].Position.Z];
+      fSelectionMap.pVertices[(SELECTION_SIZE + 1) * j + i]^.Position := fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position - fCameraOffset + fTmpCameraOffset;
+      fSelectionMap.pVertices[(SELECTION_SIZE + 1) * j + i]^.Position.Y := Park.pTerrain.HeightMap[fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position.X, fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position.Z];
       end;
   fCameraOffset := fTmpCameraOffset;
 end;
@@ -188,13 +188,12 @@ begin
   fSelectionMap := TMesh.Create;
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
-      begin
       fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i] := MakeMeshVertex(Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.8, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
-      if (i < SELECTION_SIZE) and (j < SELECTION_SIZE) then
-        begin
-        fSelectionMap.Triangles[2 * (SELECTION_SIZE * j + i) + 0] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * j + i, (SELECTION_SIZE + 1) * (j + 1) + i, (SELECTION_SIZE + 1) * (j + 1) + (i + 1));
-        fSelectionMap.Triangles[2 * (SELECTION_SIZE * j + i) + 1] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * (j + 1) + i, (SELECTION_SIZE + 1) * (j + 1) + (i + 1), (SELECTION_SIZE + 1) * j + i + 1 );
-        end;
+  for j := 0 to SELECTION_SIZE - 1 do
+    for i := 0 to SELECTION_SIZE - 1 do
+      begin
+      fSelectionMap.Triangles[fSelectionMap.TriangleCount] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * j + i, (SELECTION_SIZE + 1) * j + i + 1, (SELECTION_SIZE + 1) * (j + 1) + i);
+      fSelectionMap.Triangles[fSelectionMap.TriangleCount] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * (j + 1) + (i + 1), (SELECTION_SIZE + 1) * j + i + 1, (SELECTION_SIZE + 1) * (j + 1) + i);
       end;
   fTerrainSelectionEngine := TSelectionEngine.Create;
   fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, 'GUIActions.terrain_edit.marks.move');

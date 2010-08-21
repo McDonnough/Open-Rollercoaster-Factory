@@ -63,7 +63,7 @@ vec4 fetchBumpColor(int id) {
       bumpColors[id] = bumpColors[i];
       return bumpColors[i];
     }
-  bumpColors[id] = texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[id].xy + vec2(0.0, 0.5));
+  bumpColors[id] = texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[id].xy * vec2(0.98, 0.98) + vec2(0.01, 0.51));
   return bumpColors[id];
 }
 

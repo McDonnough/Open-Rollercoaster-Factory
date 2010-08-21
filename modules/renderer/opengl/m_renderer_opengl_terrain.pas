@@ -107,9 +107,6 @@ begin
         begin
         fWorking := true;
         fCanWork := false;
-        for i := 0 to Park.pTerrain.SizeX do
-          for j := 0 to Park.pTerrain.SizeY do
-            CheckWaterLevel(i, j);
         for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
           for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
             RecalcBoundingSpheres(i, j);
@@ -511,6 +508,9 @@ begin
     for i := 0 to k - 1 do
       UpdateVertex(Integer((Data + 8 * i + 4)^), Integer((Data + 8 * i + 8)^));
     EndUpdate;
+    for i := 0 to Park.pTerrain.SizeX do
+      for j := 0 to Park.pTerrain.SizeY do
+        CheckWaterLevel(i, j);
     if Event <> 'TTerrain.ChangedTexmap' then
       fCanWork := true;
     end;

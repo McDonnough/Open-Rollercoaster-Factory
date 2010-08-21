@@ -15,6 +15,7 @@ type
       fFrustum: TFrustum;
       fDistPixel: Array[0..3] of GLFloat;
       fInterface: TRendererOpenGLInterface;
+      fLightManager: TLightManager;
       RenderEffectManager: TRenderEffectManager;
       ResX, ResY: Integer;
     public
@@ -50,6 +51,7 @@ var
   s: AString;
   i: INteger;
 begin
+  fLightManager := TLightManager.Create;
   RCamera := TRCamera.Create;
   RTerrain := TRTerrain.Create;
   RSky := TRSky.Create;
@@ -66,6 +68,7 @@ begin
   RTerrain.Unload;
   RTerrain.Free;
   RCamera.Free;
+  fLightManager.Free;
 end;
 
 procedure TModuleRendererOpenGL.RenderParts;
@@ -246,6 +249,12 @@ begin
 
   // Preparation
   RSky.Advance;
+  RSky.CameraLight.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X;
+  RSky.CameraLight.Position.Y := ModuleManager.ModCamera.ActiveCamera.Position.Y + 5;
+  RSky.CameraLight.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
+  RSky.CameraLight.Position.W := 10;
+  RSky.CameraLight.Color := Vector(1, 1, 1, 1);
+//  RSky.CameraLight.Bind(1);
 
   // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';

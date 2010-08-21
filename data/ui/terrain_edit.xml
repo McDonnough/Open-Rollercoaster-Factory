@@ -22,8 +22,8 @@
         <button left="368" top="48" height="32" width="100">Set</button>
       </label>
       <label left="758" width="734" height="80" top="0">
-        <iconbutton left="8" top="8" icon="terrain-setwater.tga" />
-        <iconbutton left="80" top="8" icon="waterfall.tga" />
+        <iconbutton left="8" top="8" icon="terrain-setwater.tga" name="terrain_edit.water_set" onclick="terrain_edit.marks.add" />
+        <iconbutton left="80" top="8" icon="waterfall.tga" name="terrain_edit.waterfall" onclick="terrain_edit.marks.add" />
       </label>
     </label>
   </label>

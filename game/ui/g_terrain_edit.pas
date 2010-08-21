@@ -15,6 +15,7 @@ type
       fTerrainSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
     public
+      procedure SetWater(Event: String; Data, Result: Pointer);
       procedure Modify(Event: String; Data, Result: Pointer);
       procedure FixMarks(Event: String; Data, Result: Pointer);
       procedure MoveMark(Event: String; Data, Result: Pointer);
@@ -34,6 +35,11 @@ uses
 
 const
   SELECTION_SIZE = 100;
+
+procedure TGameTerrainEdit.SetWater(Event: String; Data, Result: Pointer);
+begin
+  Park.pTerrain.FillWithWater(fSelectionObject^.IntersectionPoint.X, fSelectionObject^.IntersectionPoint.Z, fSelectionObject^.IntersectionPoint.Y + 0.1);
+end;
 
 procedure TGameTerrainEdit.Modify(Event: String; Data, Result: Pointer);
 begin
@@ -65,7 +71,10 @@ end;
 
 procedure TGameTerrainEdit.MoveMark(Event: String; Data, Result: Pointer);
 begin
-  Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5);
+  if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.add_marks')) then
+    Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5)
+  else
+    Park.pTerrain.CurrMark := Vector(5 * TSelectableObject(Data^).IntersectionPoint.X / 5, 5 * TSelectableObject(Data^).IntersectionPoint.Z / 5);
   if (Park.pTerrain.Marks.Height > 0) and (MarksFixed) then
     begin
     if abs(Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.X) < abs(Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.Y) then
@@ -132,11 +141,12 @@ procedure TGameTerrainEdit.MarksChange(Event: String; Data, Result: Pointer);
 begin
   if Pointer(MarkMode) = Data then
     Data := nil;
-  if MarkMode <> nil then
+  if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.add_marks')) then
     MarkMode.Left := 678;
   Park.pTerrain.CurrMark := Vector(-1, -1);
   EventManager.RemoveCallback(@UpdateTerrainSelectionMap);
   EventManager.RemoveCallback(@CreateNewMark);
+  EventManager.RemoveCallback(@SetWater);
   if Data = Pointer(fWindow.GetChildByName('terrain_edit.add_marks')) then
     begin
     Park.SelectionEngine := fTerrainSelectionEngine;
@@ -144,6 +154,13 @@ begin
     EventManager.AddCallback('BasicComponent.OnClick', @CreateNewMark);
     MarkMode := TIconifiedButton(Data);
     MarkMode.Left := 678 + 16;
+    end
+  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.water_set')) then
+    begin
+    Park.SelectionEngine := fTerrainSelectionEngine;
+    EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
+    EventManager.AddCallback('BasicComponent.OnClick', @SetWater);
+    MarkMode := TIconifiedButton(Data);
     end
   else
     begin
@@ -203,6 +220,10 @@ destructor TGameTerrainEdit.Free;
 begin
   fTerrainSelectionEngine.Free;
   fSelectionMap.Free;
+  EventManager.RemoveCallback(@FixMarks);
+  EventManager.RemoveCallback(@MoveMark);
+  EventManager.RemoveCallback(@CreateNewMark);
+  EventManager.RemoveCallback(@Modify);
   EventManager.RemoveCallback(@changeTab);
   EventManager.RemoveCallback(@OnClose);
   EventManager.RemoveCallback(@MarksChange);

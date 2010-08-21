@@ -112,12 +112,18 @@ procedure TLightManager.AddLight(Event: String; Data, Result: Pointer);
 begin
   setLength(fRegisteredLights, length(fRegisteredLights) + 1);
   fRegisteredLights[high(fRegisteredLights)] := TLight(Data);
-  Integer(Result^) := High(fRegisteredLights);
 end;
 
 procedure TLightManager.RemoveLight(Event: String; Data, Result: Pointer);
+var
+  i: Integer;
 begin
-  fRegisteredLights[Integer(Data^)] := nil;
+  for i := 0 to high(fRegisteredLights) do
+    if Pointer(fRegisteredLights[i]) = Data then
+      begin
+      fRegisteredLights[i] := fRegisteredLights[high(fRegisteredLights)];
+      SetLength(fRegisteredLights, length(fRegisteredLights) - 1);
+      end;
 end;
 
 procedure TLightManager.Execute;

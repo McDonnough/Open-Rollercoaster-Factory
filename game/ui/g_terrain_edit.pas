@@ -72,9 +72,15 @@ end;
 procedure TGameTerrainEdit.MoveMark(Event: String; Data, Result: Pointer);
 begin
   if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.add_marks')) then
-    Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5)
+    begin
+    Park.pTerrain.MarkMode := 0;
+    Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5);
+    end
   else
+    begin
+    Park.pTerrain.MarkMode := 1;
     Park.pTerrain.CurrMark := Vector(5 * TSelectableObject(Data^).IntersectionPoint.X / 5, 5 * TSelectableObject(Data^).IntersectionPoint.Z / 5);
+    end;
   if (Park.pTerrain.Marks.Height > 0) and (MarksFixed) then
     begin
     if abs(Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.X) < abs(Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1] - 5 * Park.pTerrain.CurrMark.Y) then

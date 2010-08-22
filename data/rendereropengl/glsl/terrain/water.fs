@@ -6,6 +6,7 @@ uniform sampler2D ReflectionMap;
 uniform sampler2D RefractionMap;
 uniform sampler2D SunShadowMap;
 uniform vec2 TerrainSize;
+uniform float HeightLineToHighlight;
 
 varying float dist;
 varying float SDist;
@@ -64,4 +65,6 @@ void main(void) {
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);
   gl_FragColor += Specular;
   gl_FragColor.a = 1.0;
+  if (HeightLineToHighlight >= 0)
+    gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
 }

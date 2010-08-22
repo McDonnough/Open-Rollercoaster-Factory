@@ -18,6 +18,7 @@ type
       fLightManager: TLightManager;
       RenderEffectManager: TRenderEffectManager;
       ResX, ResY: Integer;
+      fDistTexture: TTexture;
     public
       fShadowDelay: Single;
       OS, OC: TVector3D;
@@ -27,6 +28,7 @@ type
       RSky: TRSky;
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
+      property DistTexture: TTexture read fDistTexture;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -254,7 +256,7 @@ begin
   RSky.CameraLight.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
   RSky.CameraLight.Position.W := 10;
   RSky.CameraLight.Color := Vector(1, 1, 1, 1);
-//  RSky.CameraLight.Bind(1);
+  RSky.CameraLight.Bind(1);
 
   // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';

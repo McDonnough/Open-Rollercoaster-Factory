@@ -8,6 +8,7 @@ uniform vec2 offset;
 uniform float maxBumpDistance;
 uniform vec2 TerrainSize;
 uniform vec2 PointToHighlight;
+uniform float HeightLineToHighlight;
 
 varying float dist;
 varying float SDist;
@@ -122,4 +123,6 @@ void main(void) {
   gl_FragColor.a = 1.0;
   if (PointToHighlight.x >= 0)
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)));
+  if (HeightLineToHighlight >= 0)
+    gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
 }

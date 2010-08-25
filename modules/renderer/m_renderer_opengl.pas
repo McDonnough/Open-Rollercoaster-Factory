@@ -256,7 +256,7 @@ begin
   RSky.CameraLight.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
   RSky.CameraLight.Position.W := 10;
   RSky.CameraLight.Color := Vector(1, 1, 1, 1);
-  RSky.CameraLight.Bind(1);
+//   RSky.CameraLight.Bind(1);
 
   // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';

@@ -58,6 +58,7 @@ begin
   except
     ModuleManager.ModLog.AddError('Modifying terrain failed (' + TIconifiedButton(Data).Name + ')');
   end;
+  UpdateTerrainSelectionMap('', nil, nil);
 end;
 
 procedure TGameTerrainEdit.FixMarks(Event: String; Data, Result: Pointer);
@@ -145,6 +146,7 @@ end;
 
 procedure TGameTerrainEdit.MarksChange(Event: String; Data, Result: Pointer);
 begin
+  Park.pTerrain.MarkMode := 0;
   if Pointer(MarkMode) = Data then
     Data := nil;
   if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.add_marks')) then
@@ -163,6 +165,7 @@ begin
     end
   else if Data = Pointer(fWindow.GetChildByName('terrain_edit.water_set')) then
     begin
+    OnClose('', nil, nil);
     Park.SelectionEngine := fTerrainSelectionEngine;
     EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
     EventManager.AddCallback('BasicComponent.OnClick', @SetWater);

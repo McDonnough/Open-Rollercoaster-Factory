@@ -45,6 +45,7 @@ type
   TTerrain = class
     protected
       fSizeX, fSizeY: Word;
+      fWaterOnly: Boolean;
       fMap: Array of Array of TTerrainMapPoint;
       fTmpMap: Array of Array of Word;
       fCanAdvance, fAdvancing: Boolean;
@@ -70,6 +71,7 @@ type
       property Collection: TTerrainCollection read fCollection;
       property Marks: TTable read fMarks;
       procedure FillWithWater(X, Y, H: Single);
+      procedure RemoveWater(X, Y: Single; Notify: Boolean = true);
       procedure ChangeCollection(S: String);
       procedure Resize(X, Y: Integer);
       procedure LoadDefaults;
@@ -208,15 +210,16 @@ var
   procedure Add(X, Y: Single);
   begin
     if (X >= 0) and (X < SizeX / 5) and (Y >= 0) and (Y < SizeY / 5) then
-      if Round(256 * WaterMap[X, Y]) <> Round(256 * H) then
+      if Round(10 * WaterMap[X, Y]) <> Round(10 * H) then
         begin
         SetLength(a, Length(a) + 1);
         a[high(a), 0] := X;
         a[high(a), 1] := Y;
-        WaterMap[X, Y] := H;
+        WaterMap[X, Y] := Round(10 * H) / 10;
         end;
   end;
 begin
+  RemoveWater(X, Y, false);
   BeginUpdate;
   setLength(a, 1);
   a[0, 0] := X;
@@ -224,8 +227,8 @@ begin
   i := 0;
   while i <= high(a) do
     begin
-    WaterMap[a[i, 0], a[i, 1]] := H;
-    if Round(256 * HeightMap[a[i, 0], a[i, 1]]) < Round(256 * H) then
+    WaterMap[a[i, 0], a[i, 1]] := Round(10 * H) / 10;
+    if Round(10 * HeightMap[a[i, 0], a[i, 1]]) < Round(10 * H) then
       begin
       Add(a[i, 0] - 0.2, a[i, 1] - 0.2);
       Add(a[i, 0] - 0.2, a[i, 1]      );
@@ -239,6 +242,49 @@ begin
     inc(i);
     end;
   EndUpdate;
+end;
+
+procedure TTerrain.RemoveWater(X, Y: Single; Notify: Boolean = true);
+var
+  a: Array of Array[0..1] of Single;
+  i: integer;
+  H: Single;
+  procedure Add(X, Y: Single);
+  begin
+    if (X >= 0) and (X < SizeX / 5) and (Y >= 0) and (Y < SizeY / 5) then
+      if Round(10 * WaterMap[X, Y]) = Round(10 * H) then
+        begin
+        SetLength(a, Length(a) + 1);
+        a[high(a), 0] := X;
+        a[high(a), 1] := Y;
+        WaterMap[X, Y] := 0;
+        end;
+  end;
+begin
+  H := WaterMap[X, Y];
+  if H = 0 then
+    exit;
+  if Notify then
+    BeginUpdate;
+  setLength(a, 1);
+  a[0, 0] := X;
+  a[0, 1] := Y;
+  i := 0;
+  while i <= high(a) do
+    begin
+    WaterMap[a[i, 0], a[i, 1]] := 0;
+    Add(a[i, 0] - 0.2, a[i, 1] - 0.2);
+    Add(a[i, 0] - 0.2, a[i, 1]      );
+    Add(a[i, 0] - 0.2, a[i, 1] + 0.2);
+    Add(a[i, 0]      , a[i, 1] + 0.2);
+    Add(a[i, 0] + 0.2, a[i, 1] + 0.2);
+    Add(a[i, 0] + 0.2, a[i, 1]      );
+    Add(a[i, 0] + 0.2, a[i, 1] - 0.2);
+    Add(a[i, 0]      , a[i, 1] - 0.2);
+    inc(i);
+    end;
+  if Notify then
+    EndUpdate;
 end;
 
 function TTerrain.GetHeightAtPosition(X, Y: Single): Single;
@@ -262,6 +308,7 @@ begin
   SetLength(fCoordsToUpdate, 2 + length(fCoordsToUpdate));
   fCoordsToUpdate[high(fCoordsToUpdate) - 1] := Round(5 * X);
   fCoordsToUpdate[high(fCoordsToUpdate) - 0] := Round(5 * Y);
+  fWaterOnly := false;
 end;
 
 function TTerrain.GetWaterAtPosition(X, Y: Single): Single;
@@ -270,7 +317,7 @@ var
 begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
-  Result := fMap[fX, fY].Water / 256.0
+  Result := fMap[fX, fY].Water / 256;
 end;
 
 procedure TTerrain.SetWaterAtPosition(X, Y, Height: Single);
@@ -427,12 +474,16 @@ end;
 procedure TTerrain.BeginUpdate;
 begin
   SetLength(fCoordsToUpdate, 1);
+  fWaterOnly := true;
 end;
 
 procedure TTerrain.EndUpdate;
 begin
   fCoordsToUpdate[0] := (Length(fCoordsToUpdate) - 1) div 2;
-  EventManager.CallEvent('TTerrain.Changed', @fCoordsToUpdate[0], nil);
+  if fWaterOnly then
+    EventManager.CallEvent('TTerrain.ChangedWater', @fCoordsToUpdate[0], nil)
+  else
+    EventManager.CallEvent('TTerrain.Changed', @fCoordsToUpdate[0], nil);
 end;
 
 procedure TTerrain.CreateMarkMap;

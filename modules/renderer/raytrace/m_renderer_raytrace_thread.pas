@@ -97,10 +97,10 @@ begin
         sleep(1);
       fWorking := false;
     except
-      ModuleManager.ModLog.AddError('Exception in raytracer thread');
+      ModuleManager.ModLog.AddError('Exception in raytracer thread ' + IntToStr(ID));
     end;
     end;
-  writeln('Hint: Terminated raytracer thread');
+  writeln('Hint: Terminated raytracer thread ', ID);
 end;
 
 constructor TRendererRaytraceThread.Create;

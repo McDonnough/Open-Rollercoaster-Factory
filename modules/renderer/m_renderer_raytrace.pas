@@ -15,6 +15,7 @@ type
       fChunkMap: Array of Integer;
       ResX, ResY: Integer;
       PixelData: Array of DWord;
+      procedure Display(Event: String; Data, Result: Pointer);
     public
       procedure PostInit;
       procedure Sync;
@@ -28,7 +29,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_events;
 
 const
   SAMPLES = 1;
@@ -70,12 +71,14 @@ begin
   fContentTexture := TTexture.Create;
   fContentTexture.CreateNew(20 * Ceil(ResX / 20), 20 * Ceil(ResY / 20), GL_RGBA);
   fContentTexture.SetFilter(GL_NEAREST, GL_NEAREST);
+  EventManager.AddCallback('TPark.Render', @Display);
 end;
 
 procedure TModuleRendererRaytrace.Unload;
 var
   i: Integer;
 begin
+  EventManager.RemoveCallback(@Display);
   fContentTexture.Free;
   Sync;
   for i := 0 to high(fRenderThreads) do
@@ -101,6 +104,10 @@ begin
     fRenderThreads[i].Working := True;
     while not fRenderThreads[i].Working do inc(j);
     end;
+end;
+
+procedure TModuleRendererRaytrace.Display(Event: String; Data, Result: Pointer);
+begin
   Sync;
 
   glMatrixMode(GL_PROJECTION);

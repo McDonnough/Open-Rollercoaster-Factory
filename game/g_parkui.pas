@@ -242,6 +242,11 @@ var
           if FirstChild <> nil then
             Caption := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
+          if GetAttribute('align') = 'center' then
+            Align := LABEL_ALIGN_CENTER
+          else if GetAttribute('align') = 'right' then
+            Align := LABEL_ALIGN_RIGHT;
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @StartDragging;
           OnRelease := @EndDragging;
           end;
@@ -257,6 +262,7 @@ var
           Width := StrToIntWD(GetAttribute('width'), 64);
           Height := StrToIntWD(GetAttribute('height'), 64);
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
           end;
         end
@@ -272,6 +278,7 @@ var
           if FirstChild <> nil then
             Caption := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
           end;
         end
@@ -287,6 +294,7 @@ var
           if FirstChild <> nil then
             Text := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
           end;
         end
@@ -300,6 +308,7 @@ var
           Width := StrToIntWD(GetAttribute('width'), 64);
           Height := StrToIntWD(GetAttribute('height'), 64);
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnChangeTab := @HandleOnChangeTab;
           end;
         end

@@ -31,7 +31,7 @@ type
         *@param The button to apply this to
         *@param The icon texture file name
         *)
-      procedure SetIcon(Button: TIconifiedButton; Icon: String); virtual abstract;
+      procedure SetIcon(Button: TIconifiedButton; var Icon: String); virtual abstract;
     end;
 
 implementation
@@ -56,7 +56,7 @@ end;
 procedure TIconifiedButton.SetIcon(Icon: String);
 begin
   fIcon := Icon;
-  ModuleManager.ModGUIIconifiedButton.SetIcon(Self, Icon);
+  ModuleManager.ModGUIIconifiedButton.SetIcon(Self, fIcon);
 end;
 
 end.

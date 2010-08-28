@@ -14,6 +14,7 @@ varying float dist;
 varying float SDist;
 varying vec4 Vertex;
 varying vec2 fragCoord;
+varying vec4 DVertex;
 
 mat4 TexCoord;
 mat4 texColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
@@ -96,6 +97,7 @@ void main(void) {
   + normalize(cross(vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2)))
   + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, -0.0)))
   + normalize(cross(vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2))));
+  vec3 onormal = normal;
   vec3 bumpNormal = vec3(0.0, 1.0, 0.0);
   vec4 result = gl_TextureMatrix[0] * Vertex;
   result = sqrt(abs(result)) * sign(result);

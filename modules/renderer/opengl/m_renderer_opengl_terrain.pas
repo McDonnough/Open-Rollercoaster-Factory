@@ -278,7 +278,7 @@ begin
     fUpdatePlants := true;
 
   // Render autoplants
-  if fInterface.Options.Items['terrain:autoplants'] <> 'off' then
+  if (fInterface.Options.Items['terrain:autoplants'] <> 'off') and (fInterface.Options.Items['all:transparent'] <> 'off') then
     begin
     glDisable(GL_CULL_FACE);
     glColor4f(1, 1, 1, 1);
@@ -298,7 +298,6 @@ begin
         Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
         if fUpdatePlants then
           begin
-          fUpdatePlants := false;
           fAPVBOs[i].Bind;
           for j := 0 to high(fAPPositions[i]) * fFrameCount div AUTOPLANT_UPDATE_FRAMES do
             begin
@@ -338,7 +337,9 @@ begin
         end;
     fAPShader.Unbind;
     glEnable(GL_CULL_FACE);
+    fUpdatePlants := false;
     end;
+
   glUseProgram(0);
 
   // Render marks - WILL BE REPLACED
@@ -558,9 +559,16 @@ begin
       for j := 0 to high(fWaterLayerFBOs[i].Blocks) do
         setLength(fWaterLayerFBOs[i].Blocks[j], Park.pTerrain.SizeX div 128);
       end;
-    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-        RecalcBoundingSpheres(i, j);
+    StartUpdate;
+      for i := 0 to Park.pTerrain.SizeX - 1 do
+        for j := 0 to Park.pTerrain.SizeY - 1 do
+          UpdateVertex(I, J);
+    EndUpdate;
+
+    fCheckWater := true;
+    fCheckBBoxes := true;
+
+    fCanWork := true;
     end;
   if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap') or (Event = 'TTerrain.ChangedWater')) then
     begin
@@ -577,22 +585,6 @@ begin
       fCheckWater := true;
       fCanWork := true;
       end;
-    end;
-  if (Event = 'TTerrain.ChangedAll') then
-    begin
-    Sync;
-    writeln('Copying entire terrain to VRam');
-    StartUpdate;
-    for i := 0 to Park.pTerrain.SizeX do
-      for j := 0 to Park.pTerrain.SizeY do
-        UpdateVertex(i, j);
-    EndUpdate;
-    for i := 0 to Park.pTerrain.SizeX do
-      for j := 0 to Park.pTerrain.SizeY do
-        CheckWaterLevel(i, j);
-    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-        RecalcBoundingSpheres(i, j);
     end;
 end;
 
@@ -724,7 +716,6 @@ begin
     EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedTexmap', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedWater', @ApplyChanges);
-    EventManager.AddCallback('TTerrain.ChangedAll', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
   except
     ModuleManager.ModLog.AddError('Failed to create terrain renderer in OpenGL rendering module: Internal error');

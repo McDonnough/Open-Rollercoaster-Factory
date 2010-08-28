@@ -15,6 +15,11 @@ type
       fTerrainSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
     public
+      procedure SetSize(Event: String; Data, Result: Pointer);
+      procedure Resized(Event: String; Data, Result: Pointer);
+      procedure PickHeight(Event: String; Data, Result: Pointer);
+      procedure CollectionChanged(Event: String; Data, Result: Pointer);
+      procedure SetTexture(Event: String; Data, Result: Pointer);
       procedure SetWater(Event: String; Data, Result: Pointer);
       procedure Modify(Event: String; Data, Result: Pointer);
       procedure FixMarks(Event: String; Data, Result: Pointer);
@@ -36,6 +41,97 @@ uses
 const
   SELECTION_SIZE = 100;
 
+procedure TGameTerrainEdit.SetSize(Event: String; Data, Result: Pointer);
+var
+  DX, DY: Integer;
+begin
+  DX := Park.pTerrain.SizeX;
+  DY := Park.pTerrain.SizeY;
+  if Data = Pointer(fWindow.GetChildByName('terrain_edit.grow.x')) then
+    inc(DX, 128)
+  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.grow.y')) then
+    inc(DY, 128)
+  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.shrink.x')) then
+    dec(DX, 128)
+  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.shrink.y')) then
+    dec(DY, 128);
+  if (DX > 0) and (DY > 0) and (DX <= 8192) and (DY <= 8192) then
+    Park.pTerrain.Resize(DX, DY);
+end;
+
+procedure TGameTerrainEdit.Resized(Event: String; Data, Result: Pointer);
+begin
+  TLabel(fWindow.GetChildByName('terrain_edit.sizex')).Caption := IntToStr(Park.pTerrain.SizeX);
+  TLabel(fWindow.GetChildByName('terrain_edit.sizey')).Caption := IntToStr(Park.pTerrain.SizeY);
+end;
+
+procedure TGameTerrainEdit.PickHeight(Event: String; Data, Result: Pointer);
+begin
+  if Park.pTerrain.Marks.Height > 0 then
+    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(0.1 * Round(10 * Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1], 0.2 * Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1]]));
+end;
+
+procedure TGameTerrainEdit.CollectionChanged(Event: String; Data, Result: Pointer);
+  function CreateImage(OX, OY: Single): String;
+  var
+    i, j: Integer;
+    X, Y: Integer;
+    H: Integer;
+    DX, DY: Integer;
+    D: DWord;
+  begin
+    X := Round(Park.pTerrain.Collection.Texture.Width * OX);
+    Y := Round(Park.pTerrain.Collection.Texture.Height * OY);
+    H := Park.pTerrain.Collection.Texture.Height div 2;
+    DX := 4;
+    DY := 4;
+    Result := 'RGBA:';
+    Result := Result + IntToHex(48, 4);
+    Result := Result + IntToHex(48, 4);
+    Park.pTerrain.Collection.Texture.Bind(0);
+    for j := 0 to 47 do
+      for i := 0 to 47 do
+        begin
+        D := Park.pTerrain.Collection.Texture.Pixels[X + DX * i, Y + DY * j];
+        Result := Result + IntToHex((D shr 16) and $FF, 2);
+        Result := Result + IntToHex((D shr 8) and $FF, 2);
+        Result := Result + IntToHex(D and $FF, 2);
+        Result := Result + IntToHex(Round((D shr 24) and $FF * Clamp(6 - 0.25 * (VecLength(Vector(i, j) - 24)), 0, 1)), 2);
+        end;
+    Park.pTerrain.Collection.Texture.UnBind;
+  end;
+begin
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_1')).Icon := CreateImage(0, 0);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_2')).Icon := CreateImage(0.25, 0);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_3')).Icon := CreateImage(0.5, 0);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_4')).Icon := CreateImage(0.75, 0);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_5')).Icon := CreateImage(0, 0.25);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_6')).Icon := CreateImage(0.25, 0.25);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_7')).Icon := CreateImage(0.5, 0.25);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_8')).Icon := CreateImage(0.75, 0.25);
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_1')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_1')).Icon;
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_2')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_2')).Icon;
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_3')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_3')).Icon;
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_4')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_4')).Icon;
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_5')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_5')).Icon;
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_6')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_6')).Icon;
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_7')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_7')).Icon;
+  TIconifiedButton(fWindow.GetChildByName('terrain_edit.small_texture_8')).Icon := TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_8')).Icon;
+end;
+
+procedure TGameTerrainEdit.SetTexture(Event: String; Data, Result: Pointer);
+var
+  i: Integer;
+begin
+  MarksChange('', nil, nil);
+  for i := 1 to 8 do
+    if Data = Pointer(fWindow.GetChildByName('terrain_edit.texture_' + IntToStr(i))) then
+      begin
+      Park.pTerrain.SetTexture(i - 1);
+      exit;
+      end;
+end;
+
 procedure TGameTerrainEdit.SetWater(Event: String; Data, Result: Pointer);
 begin
   Park.pTerrain.FillWithWater(fSelectionObject^.IntersectionPoint.X, fSelectionObject^.IntersectionPoint.Z, fSelectionObject^.IntersectionPoint.Y + 0.1);
@@ -54,11 +150,13 @@ begin
     else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_raise')) then
       Park.pTerrain.RaiseTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
     else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_lower')) then
-      Park.pTerrain.LowerTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text));
+      Park.pTerrain.LowerTo(StrToFloat(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text))
+    else if Data = Pointer(fWindow.GetChildByName('terrain_edit.modify_smooth')) then
+      Park.pTerrain.Smooth;
   except
     ModuleManager.ModLog.AddError('Modifying terrain failed (' + TIconifiedButton(Data).Name + ')');
   end;
-  UpdateTerrainSelectionMap('', nil, nil);
+  UpdateTerrainSelectionMap(Event, nil, nil);
 end;
 
 procedure TGameTerrainEdit.FixMarks(Event: String; Data, Result: Pointer);
@@ -133,7 +231,7 @@ var
   i, j: Integer;
 begin
   fTmpCameraOffset := VecRound(ModuleManager.ModCamera.ActiveCamera.Position * 5) / 5;
-  if fTmpCameraOffset = fCameraOffset then
+  if (fTmpCameraOffset = fCameraOffset) and (Event <> 'GUIActions.terrain_edit.texture.set') then
     exit;
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
@@ -209,6 +307,12 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.modify.setfix', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.raise', @Modify);
   EventManager.AddCallback('GUIActions.terrain_edit.modify.lower', @Modify);
+  EventManager.AddCallback('GUIActions.terrain_edit.modify.smooth', @Modify);
+  EventManager.AddCallback('GUIActions.terrain_edit.texture.set', @SetTexture);
+  EventManager.AddCallback('GUIActions.terrain_edit.pick_height', @PickHeight);
+  EventManager.AddCallback('GUIActions.terrain_edit.resize', @SetSize);
+  EventManager.AddCallback('TTerrain.ChangedCollection', @CollectionChanged);
+  EventManager.AddCallback('TTerrain.Resize', @Resized);
 
   fCameraOffset := Vector(0, 0, 0);
   fSelectionMap := TMesh.Create;
@@ -223,12 +327,20 @@ begin
       end;
   fTerrainSelectionEngine := TSelectionEngine.Create;
   fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, 'GUIActions.terrain_edit.marks.move');
+
+  CollectionChanged('', nil, nil);
+  Resized('', nil, nil);
 end;
 
 destructor TGameTerrainEdit.Free;
 begin
   fTerrainSelectionEngine.Free;
   fSelectionMap.Free;
+  EventManager.RemoveCallback(@SetSize);
+  EventManager.RemoveCallback(@Resized);
+  EventManager.RemoveCallback(@PickHeight);
+  EventManager.RemoveCallback(@SetTexture);
+  EventManager.RemoveCallback(@CollectionChanged);
   EventManager.RemoveCallback(@FixMarks);
   EventManager.RemoveCallback(@MoveMark);
   EventManager.RemoveCallback(@CreateNewMark);

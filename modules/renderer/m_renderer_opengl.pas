@@ -165,9 +165,13 @@ begin
     glColorMask(false, false, false, true);
     glDisable(GL_BLEND);
     glClear(GL_DEPTH_BUFFER_BIT);
-    fInterface.Options.Items['shader:mode'] := 'transform:depth';
-    RenderParts;
-    fInterface.Options.Items['shader:mode'] := 'normal:normal';
+    fInterface.PushOptions;
+      fInterface.Options.Items['terrain:autoplants'] := 'off';
+      fInterface.Options.Items['all:transparent'] := 'off';
+      fInterface.Options.Items['shader:mode'] := 'transform:depth';
+      fInterface.Options.Items['sky:rendering'] := 'off';
+      RenderParts;
+    fInterface.PopOptions;
     glColorMask(CR, CG, CB, true);
     fInterface.PopOptions;
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Unbind;

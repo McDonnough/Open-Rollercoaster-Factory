@@ -221,7 +221,9 @@ begin
   FormatLength := 4;
   if (fTexRefs[Texture].InputFormat = GL_RGB) or (fTexRefs[Texture].InputFormat = GL_BGR) then
     FormatLength := 3;
-  Result := DWord(Pointer(PtrUInt(@fTexRefs[Texture].Data[FormatLength * (fTexRefs[Texture].Width * Y + X)]))^);
+  Result := $00000000;
+  if (X < fTexRefs[Texture].Width) and (X >= 0) and (Y < fTexRefs[Texture].Height) and (Y >= 0) then
+    Result := DWord(Pointer(PtrUInt(@fTexRefs[Texture].Data[FormatLength * (fTexRefs[Texture].Width * Y + X)]))^);
   if FormatLength = 3 then
     Result := Result and $00FFFFFF;
 end;

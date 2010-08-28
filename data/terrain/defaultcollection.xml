@@ -12,11 +12,11 @@
 				<particles exist="0" />
 			</material>
 			<material texture="1">
-				<autoplants exist="1" resource:id="1" count="1" />
+				<autoplants exist="1" resource:id="1" count="1.2" />
 				<particles exist="0" />
 			</material>
 			<material texture="2">
-				<autoplants exist="1" resource:id="1" count="0.5" />
+				<autoplants exist="1" resource:id="1" count="0.4" />
 				<particles exist="0" />
 			</material>
 			<material texture="3">

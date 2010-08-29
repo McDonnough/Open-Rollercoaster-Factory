@@ -66,7 +66,6 @@ void main(void) {
   AddLight(5);
   AddLight(6);
   AddLight(7);
-  AddLight(8);
   gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
   gl_FragColor += RefractColor * MirrorFactor;
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);

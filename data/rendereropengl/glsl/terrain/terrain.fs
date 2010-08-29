@@ -127,7 +127,6 @@ void main(void) {
   AddLight(5);
   AddLight(6);
   AddLight(7);
-  AddLight(8);
   gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (Diffuse + Ambient);
   gl_FragColor.a = 1.0;
   if (PointToHighlight.x >= 0)

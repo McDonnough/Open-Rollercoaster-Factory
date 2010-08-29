@@ -39,7 +39,6 @@ void main(void) {
   AddLight(5);
   AddLight(6);
   AddLight(7);
-  AddLight(8);
   gl_FragColor.rgb *= (Diffuse + Ambient).rgb;
   gl_FragColor.a *= 1.2 * clamp(0.2 * (20 - dist), 0.0, 1.0);
 }

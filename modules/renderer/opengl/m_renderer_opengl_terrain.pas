@@ -24,7 +24,8 @@ type
       fCanWork, fWorking: Boolean;
       fCheckBBoxes, fCheckWater: Boolean;
       fUpdatePlants: Boolean;
-      fFineVBO, fGoodVBO, fRawVBO, fWaterVBO: TVBO;
+      fForcedHeightLine: Single;
+      fFineVBO, fGoodVBO, fRawVBO, fWaterVBO, fBorderVBO: TVBO;
       fAPVBOs: Array[0..7] of TVBO;
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
@@ -48,10 +49,12 @@ type
       fWaterLayerFBOs: Array of TWaterLayerFBO;
       procedure Render(Event: String; Data, Result: Pointer);
       procedure RecreateWaterVBO;
+      procedure RecreateBorderVBO;
       procedure CheckWaterLayerVisibility;
       procedure RenderWaterSurfaces;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
+      procedure SetHeightline(Event: String; Data, Result: Pointer);
       procedure Unload;
       constructor Create;
     end;
@@ -59,7 +62,7 @@ type
 implementation
 
 uses
-  g_park, u_events, m_varlist, u_files, u_graphics, main, u_functions;
+  g_park, u_events, m_varlist, u_files, u_graphics, main, u_functions, g_parkui;
 
 constructor TWaterLayerFBO.Create;
 var
@@ -149,6 +152,69 @@ begin
   writeln('Hint: Terminated terrain renderer thread');
 end;
 
+procedure TRTerrain.RecreateBorderVBO;
+  function GetFX(Size, i, j: Integer): Single;
+  begin
+    Result := Mix(0, (i - (Size div 2)) / (Size div 2), J / 10);
+    Result := 5000 * Result * Abs(Result);
+    Result := 0;
+  end;
+var
+  i, j, n, s: Integer;
+  vc: Integer;
+begin
+  if fBorderVBO <> nil then
+    fBorderVBO.Free;
+  vc := 4 * ((Park.pTerrain.SizeX div 4) * 20 + (Park.pTerrain.SizeY div 4) * 20 + 4 * 10 * 4 + 4);
+  fBorderVBO := TVBO.Create(vc, GL_T2F_V3F, GL_QUADS);
+  fBorderVBO.Bind;
+  n := 0;
+  s := (Park.pTerrain.SizeX div 4);
+  for i := 0 to s - 1 do
+    for j := 0 to 9 do
+      begin
+      fBorderVBO.TexCoords[n + 0] := Vector(GetFX(s, i + 0, j + 0), 0); fBorderVBO.Vertices[n + 0] := Vector(0.8 * (i + 0), 0, -500 * (j + 0));
+      fBorderVBO.TexCoords[n + 1] := Vector(GetFX(s, i + 1, j + 0), 0); fBorderVBO.Vertices[n + 1] := Vector(0.8 * (i + 1), 0, -500 * (j + 0));
+      fBorderVBO.TexCoords[n + 2] := Vector(GetFX(s, i + 1, j + 1), 0); fBorderVBO.Vertices[n + 2] := Vector(0.8 * (i + 1), 0, -500 * (j + 1));
+      fBorderVBO.TexCoords[n + 3] := Vector(GetFX(s, i + 0, j + 1), 0); fBorderVBO.Vertices[n + 3] := Vector(0.8 * (i + 0), 0, -500 * (j + 1));
+      inc(n, 4);
+      fBorderVBO.TexCoords[n + 0] := Vector(GetFX(s, i + 0, j + 1), 0); fBorderVBO.Vertices[n + 0] := Vector(0.8 * (i + 0), 0, 0.2 * Park.pTerrain.SizeY + 10 * (j + 1));
+      fBorderVBO.TexCoords[n + 1] := Vector(GetFX(s, i + 1, j + 1), 0); fBorderVBO.Vertices[n + 1] := Vector(0.8 * (i + 1), 0, 0.2 * Park.pTerrain.SizeY + 10 * (j + 1));
+      fBorderVBO.TexCoords[n + 2] := Vector(GetFX(s, i + 1, j + 0), 0); fBorderVBO.Vertices[n + 2] := Vector(0.8 * (i + 1), 0, 0.2 * Park.pTerrain.SizeY + 10 * (j + 0));
+      fBorderVBO.TexCoords[n + 3] := Vector(GetFX(s, i + 0, j + 0), 0); fBorderVBO.Vertices[n + 3] := Vector(0.8 * (i + 0), 0, 0.2 * Park.pTerrain.SizeY + 10 * (j + 0));
+      inc(n, 4);
+      end;
+  s := (Park.pTerrain.SizeY div 4);
+  for i := 0 to s - 1 do
+    for j := 0 to 9 do
+      begin
+      fBorderVBO.TexCoords[n + 3] := Vector(0, GetFX(s, i + 0, j + 0)); fBorderVBO.Vertices[n + 3] := Vector(-500 * (j + 0), 0.0, 0.8 * (i + 0));
+      fBorderVBO.TexCoords[n + 2] := Vector(0, GetFX(s, i + 1, j + 0)); fBorderVBO.Vertices[n + 2] := Vector(-500 * (j + 0), 0.1, 0.8 * (i + 1));
+      fBorderVBO.TexCoords[n + 1] := Vector(0, GetFX(s, i + 1, j + 1)); fBorderVBO.Vertices[n + 1] := Vector(-500 * (j + 1), 1.1, 0.8 * (i + 1));
+      fBorderVBO.TexCoords[n + 0] := Vector(0, GetFX(s, i + 0, j + 1)); fBorderVBO.Vertices[n + 0] := Vector(-500 * (j + 1), 1.0, 0.8 * (i + 0));
+      inc(n, 4);
+      fBorderVBO.TexCoords[n + 3] := Vector(0, GetFX(s, i + 0, j + 1)); fBorderVBO.Vertices[n + 3] := Vector(0.2 * Park.pTerrain.SizeX + 500 * (j + 1), 1.0, 0.8 * (i + 0));
+      fBorderVBO.TexCoords[n + 2] := Vector(0, GetFX(s, i + 1, j + 1)); fBorderVBO.Vertices[n + 2] := Vector(0.2 * Park.pTerrain.SizeX + 500 * (j + 1), 1.1, 0.8 * (i + 1));
+      fBorderVBO.TexCoords[n + 1] := Vector(0, GetFX(s, i + 1, j + 0)); fBorderVBO.Vertices[n + 1] := Vector(0.2 * Park.pTerrain.SizeX + 500 * (j + 0), 0.1, 0.8 * (i + 1));
+      fBorderVBO.TexCoords[n + 0] := Vector(0, GetFX(s, i + 0, j + 0)); fBorderVBO.Vertices[n + 0] := Vector(0.2 * Park.pTerrain.SizeX + 500 * (j + 0), 0.0, 0.8 * (i + 0));
+      inc(n, 4);
+      end;
+  while n < vc do
+    begin
+    fBorderVBO.Vertices[n + 0] := Vector(-10000, -10000, -10000) + n;
+    fBorderVBO.Vertices[n + 1] := Vector(-10001, -10000, -10000) + n;
+    fBorderVBO.Vertices[n + 2] := Vector(-10001, -10000, -10001) + n;
+    fBorderVBO.Vertices[n + 3] := Vector(-10000, -10000, -10001) + n;
+    inc(n, 4);
+    end;
+  fBorderVBO.UnBind;
+end;
+
+procedure TRTerrain.SetHeightline(Event: String; Data, Result: Pointer);
+begin
+  fForcedHeightLine := Single(Data^);
+end;
+
 procedure TRTerrain.RecreateWaterVBO;
 var
   i, j: Integer;
@@ -187,12 +253,16 @@ var
           if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
             begin
             fBoundShader.UniformI('LOD', 1);
+            fGoodVBO.Bind;
             fGoodVBO.Render;
+            fGoodVBO.Unbind;
             end
           else
             begin
             fBoundShader.UniformI('LOD', 0);
+            fRawVBO.Bind;
             fRawVBO.Render;
+            fRawVBO.Unbind;
             end;
           end;
     except
@@ -238,7 +308,7 @@ begin
     if (Park.pTerrain.MarkMode = 1) then
       fBoundShader.UniformF('HeightLineToHighlight', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
     else
-      fBoundShader.UniformF('HeightLineToHighlight', -1);
+      fBoundShader.UniformF('HeightLineToHighlight', fForcedHeightLine);
     end;
   fBoundShader.Bind;
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
@@ -271,6 +341,12 @@ begin
     fFineVBO.Render;
     fFineVBO.Unbind;
     end;
+  fBoundShader.UniformF('VOffset', 0, 0);
+  fBoundShader.UniformI('LOD', 3);
+//   fBorderVBO.Bind;
+//   fBorderVBO.Render;
+//   fBorderVBO.UnBind;
+
   fBoundShader.Unbind;
   Park.pTerrain.Collection.Texture.UnBind;
 
@@ -565,6 +641,8 @@ begin
           UpdateVertex(I, J);
     EndUpdate;
 
+    RecreateBorderVBO;
+
     fCheckWater := true;
     fCheckBBoxes := true;
 
@@ -623,7 +701,9 @@ begin
   inherited Create(false);
   fFrameCount := 0;
   fWaterVBO := nil;
+  fBorderVBO := nil;
   try
+    fForcedHeightLine := 0;
     writeln('Initializing terrain renderer');
     fHeightMap := nil;
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
@@ -700,14 +780,14 @@ begin
         fGoodVBO.Vertices[4 * (32 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fGoodVBO.Unbind;
-    fRawVBO := TVBO.Create(8 * 8 * 4, GL_V3F, GL_QUADS);
-    for i := 0 to 7 do
-      for j := 0 to 7 do
+    fRawVBO := TVBO.Create(16 * 16 * 4, GL_V3F, GL_QUADS);
+    for i := 0 to 15 do
+      for j := 0 to 15 do
         begin
-        fRawVBO.Vertices[4 * (8 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
-        fRawVBO.Vertices[4 * (8 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
-        fRawVBO.Vertices[4 * (8 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
-        fRawVBO.Vertices[4 * (8 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
+        fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
+        fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.1, 0.2 * j);
+        fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(0.2 * i + 0.2, 1.1, 0.2 * j + 0.2);
+        fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(0.2 * i, 1.0, 0.2 * j + 0.2);
         end;
     fRawVBO.Unbind;
     for i := 0 to high(fAPVBOs) do
@@ -717,6 +797,7 @@ begin
     EventManager.AddCallback('TTerrain.ChangedTexmap', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedWater', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
+    EventManager.AddCallback('TTerrain.ApplyForcedHeightLine', @SetHeightline);
   except
     ModuleManager.ModLog.AddError('Failed to create terrain renderer in OpenGL rendering module: Internal error');
   end;
@@ -748,6 +829,8 @@ begin
   fWaterShaderTransformSunShadow.Free;
   fWaterBumpmap.Free;
   fAPShader.Free;
+  if fBorderVBO <> nil then
+    fBorderVBO.Free;
   if fWaterVBO <> nil then
     fWaterVBO.Free;
   if fHeightMap <> nil then

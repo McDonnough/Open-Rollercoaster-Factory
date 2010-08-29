@@ -21,6 +21,11 @@ void main(void) {
   Vertex.xz *= pow(4.0, 2.0 - LOD);
   Vertex.xz += VOffset;
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));
+  gl_TexCoord[1] = vec4(0.0, 0.0, 0.0, 0.0);
+/*  if (LOD == 3) {
+    gl_TexCoord[1] = gl_MultiTexCoord0;
+    Vertex.xz += gl_TexCoord[1].xy;
+  }*/
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   dist = distance(gl_LightSource[0].position, Vertex);
   gl_Position = gl_TextureMatrix[0] * Vertex;

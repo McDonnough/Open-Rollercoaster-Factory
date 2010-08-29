@@ -100,18 +100,27 @@ var
   i: integer;
   ResX, ResY: Integer;
   Container: TGUIComponent;
+  fOldHoverComponent: TGUIComponent;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBasicComponent.Width := ResX;
   fBasicComponent.Height := ResY;
+
+  fOldHoverComponent := fHoverComponent;
 
   fHoverComponent := fBasicComponent;
   SendSignals(fBasicComponent);
 
   if fHoverComponent <> nil then
     begin
-    if fHoverComponent.OnHover <> nil then
-      fHoverComponent.OnHover(fHoverComponent);
+    if fOldHoverComponent <> fHoverComponent then
+      begin
+      if fOldHoverComponent <> nil then
+        if fOldHoverComponent.OnLeave <> nil then
+          fOldHoverComponent.OnLeave(fOldHoverComponent);
+      if fHoverComponent.OnHover <> nil then
+        fHoverComponent.OnHover(fHoverComponent);
+      end;
     if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) or ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
       begin
       if (not fClicking) and (fHoverComponent.OnClick <> nil) then

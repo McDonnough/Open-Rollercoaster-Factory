@@ -15,7 +15,7 @@ type
       function ColorFromRay(Ray: TRay): TVector4D;
     public
       ID: Integer;
-      ChunkCount, ResX, ResY: Integer;
+      ChunkCount, ResX, ResY, Samples: Integer;
       ChunkMap, PixelMap: Pointer;
       property Working: Boolean read fWorking write fCanWork;
       constructor Create;
@@ -25,29 +25,35 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, m_renderer_raytrace_sky, math;
 
 function TRendererRaytraceThread.ColorFromRay(Ray: TRay): TVector4D;
 var
   i: Integer;
 begin
   Result := Vector(0, 0, 0, 1);
-  if (Ray[0] + Ray[1] * 1000).Y > 0 then
-    Result := Vector(Ray[1].X, 1 - Ray[1].Y, Ray[1].Z, 1.0);
+  Result := RTSkyColor(Ray);
 end;
 
 function TRendererRaytraceThread.GetColorAtPixel(i, j: Integer): DWord;
 var
   Ray: TRay;
   Color: TVector4D;
+  a, b: Integer;
 begin
-  Ray[0] := ModuleManager.ModCamera.ActiveCamera.Position;
-  Ray[1] := Vector(1000 * (-ResX + 2 * i) / ResX, 1000 * (-ResY + 2 * j) / ResY, 1000);
-  Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.Z, Ray[1], Vector(0, 0, 1));
-  Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.X, Ray[1], Vector(1, 0, 0));
-  Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.Y, Ray[1], Vector(0, 1, 0));
-  Ray[1] := normalize(Ray[1]);
-  Color := ColorFromRay(Ray);
+  Color := Vector(0, 0, 0, 0);
+  for a := 0 to Samples - 1 do
+    for b := 0 to Samples - 1 do
+      begin
+      Ray[0] := ModuleManager.ModCamera.ActiveCamera.Position;
+      Ray[1] := Vector(1000 * ((-ResX + 2 * (i + a / Samples)) / ResX), 1000 * ((-ResY + 2 * (j + b / Samples)) / ResX), 1000);
+      Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.Z, Ray[1], Vector(0, 0, 1));
+      Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.X, Ray[1], Vector(1, 0, 0));
+      Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.Y, Ray[1], Vector(0, 1, 0));
+      Ray[1] := normalize(Ray[1]);
+      Color := Color + ColorFromRay(Ray);
+      end;
+  Color := Color / Samples / Samples;
   Result := Round(255 * Clamp(Color.X, 0, 1));
   Result := Result or (Round(255 * Clamp(Color.Y, 0, 1))) shl 8;
   Result := Result or (Round(255 * Clamp(Color.Z, 0, 1))) shl 16;

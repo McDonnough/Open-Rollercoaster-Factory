@@ -197,6 +197,7 @@ end;
 constructor TREMotionBlur.Create;
 begin
   EventManager.AddCallback('TModuleRenderer.PostRender', @Self.Apply);
+  glClearAccum(0.0, 0.0, 0.0, 0.0);
   glClear(GL_ACCUM_BUFFER_BIT);
 end;
 

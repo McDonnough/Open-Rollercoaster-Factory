@@ -39,7 +39,12 @@ type
       procedure StartDragging(Sender: TGUIComponent);
       procedure EndDragging(Sender: TGUIComponent);
       function AddCallbackArray(A: TDOMElement): Integer;
-      procedure HandleOnclick(Sender: TGUIComponent);
+      procedure HandleOnClick(Sender: TGUIComponent);
+      procedure HandleOnRelease(Sender: TGUIComponent);
+      procedure HandleOnKeyDown(Sender: TGUIComponent; Key: Integer);
+      procedure HandleOnKeyUp(Sender: TGUIComponent; Key: Integer);
+      procedure HandleOnHover(Sender: TGUIComponent);
+      procedure HandleOnLeave(Sender: TGUIComponent);
       procedure HandleOnChangeTab(Sender: TGUIComponent);
       procedure BringButtonToFront(Sender: TGUIComponent);
     public
@@ -106,6 +111,36 @@ procedure TXMLUIWindow.HandleOnclick(Sender: TGUIComponent);
 begin
   if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
     EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnClick, Sender, nil);
+end;
+
+procedure TXMLUIWindow.HandleOnRelease(Sender: TGUIComponent);
+begin
+  if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
+    EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnRelease, Sender, nil);
+end;
+
+procedure TXMLUIWindow.HandleOnHover(Sender: TGUIComponent);
+begin
+  if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
+    EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnHover, Sender, nil);
+end;
+
+procedure TXMLUIWindow.HandleOnLeave(Sender: TGUIComponent);
+begin
+  if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
+    EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnLeave, Sender, nil);
+end;
+
+procedure TXMLUIWindow.HandleOnKeyUp(Sender: TGUIComponent; Key: Integer);
+begin
+  if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
+    EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnKeyUp, Sender, @Key);
+end;
+
+procedure TXMLUIWindow.HandleOnKeyDown(Sender: TGUIComponent; Key: Integer);
+begin
+  if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
+    EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnKeyDown, Sender, @Key);
 end;
 
 procedure TXMLUIWindow.HandleOnChangeTab(Sender: TGUIComponent);
@@ -264,6 +299,11 @@ var
           Tag := AddCallbackArray(TDOMElement(DE));
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
+          OnRelease := @HandleOnrelease;
+          OnHover := @HandleOnHover;
+          OnLeave := @HandleOnLeave;
+          OnKeyUp := @HandleOnKeyUp;
+          OnKeyDown := @HandleOnKeyDown;
           end;
         end
       else if NodeName = 'button' then
@@ -280,6 +320,11 @@ var
           Tag := AddCallbackArray(TDOMElement(DE));
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
+          OnRelease := @HandleOnrelease;
+          OnHover := @HandleOnHover;
+          OnLeave := @HandleOnLeave;
+          OnKeyUp := @HandleOnKeyUp;
+          OnKeyDown := @HandleOnKeyDown;
           end;
         end
       else if NodeName = 'edit' then
@@ -296,6 +341,9 @@ var
           Tag := AddCallbackArray(TDOMElement(DE));
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
+          OnRelease := @HandleOnrelease;
+          OnHover := @HandleOnHover;
+          OnLeave := @HandleOnLeave;
           end;
         end
       else if NodeName = 'tabbar' then

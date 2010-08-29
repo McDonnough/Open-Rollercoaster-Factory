@@ -19,6 +19,7 @@ type
       RenderEffectManager: TRenderEffectManager;
       ResX, ResY: Integer;
       fDistTexture: TTexture;
+      fSunShadowOpenAngle: Single;
     public
       fShadowDelay: Single;
       OS, OC: TVector3D;
@@ -193,7 +194,7 @@ begin
   OC := ModuleManager.ModCamera.ActiveCamera.Position;
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
-  gluPerspective(2, 1, 0.5, 20000);
+  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
   gluLookAt(OS.X, OS.Y, OS.Z,
@@ -207,7 +208,7 @@ begin
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity;
-  gluPerspective(2, 1, 0.5, 20000);
+  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
   gluLookAt(OS.X, OS.Y, OS.Z,
             Round(OC.X), Round(OC.Y), Round(OC.Z),
             0, 1, 0);
@@ -273,7 +274,7 @@ begin
 
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity;
-  gluPerspective(2, 1, 0.5, 20000);
+  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
   gluLookAt(OS.X, OS.Y, OS.Z,
             Round(OC.X), Round(OC.Y), Round(OC.Z),
             0, 1, 0);
@@ -339,6 +340,7 @@ end;
 
 constructor TModuleRendererOpenGL.Create;
 begin
+  fSunShadowOpenAngle := 1;
   fModName := 'RendererGL';
   fModType := 'Renderer';
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);

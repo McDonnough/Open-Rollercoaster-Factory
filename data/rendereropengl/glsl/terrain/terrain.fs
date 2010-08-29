@@ -100,7 +100,7 @@ void main(void) {
   vec3 onormal = normal;
   vec3 bumpNormal = vec3(0.0, 1.0, 0.0);
   vec4 result = gl_TextureMatrix[0] * Vertex;
-  result = sqrt(abs(result)) * sign(result);
+//   result = sqrt(abs(result)) * sign(result);
   if (dist < maxBumpDistance) {
     fetchBumpColor(0);
     fetchBumpColor(1);
@@ -121,10 +121,18 @@ void main(void) {
   Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
   Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
   AddLight(1);
+  AddLight(2);
+  AddLight(3);
+  AddLight(4);
+  AddLight(5);
+  AddLight(6);
+  AddLight(7);
+  AddLight(8);
   gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (Diffuse + Ambient);
   gl_FragColor.a = 1.0;
   if (PointToHighlight.x >= 0)
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)));
   if (HeightLineToHighlight >= 0)
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
+  gl_FragColor = mix(gl_FragColor, Diffuse, pow(dist / 5000.0, 2.0));
 }

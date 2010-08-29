@@ -10,11 +10,11 @@ uniform vec2 TerrainSize;
 uniform vec2 PointToHighlight;
 uniform float HeightLineToHighlight;
 
+varying float dist;
+varying float SDist;
 varying vec4 Vertex;
 varying vec2 fragCoord;
 varying vec4 DVertex;
-varying float dist;
-varying float SDist;
 
 mat4 TexCoord;
 mat4 texColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
@@ -53,11 +53,10 @@ vec4 processTexCoord(float texID) {
 }
 
 float fetchHeightAtOffset(vec2 O) {
-  vec2 OVertex = Vertex.xz - gl_TexCoord[1].xy;
   return mix(
-          mix(texture2D(HeightMap, 5.0 * (OVertex.xy + O + vec2(0.0, 0.0)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (OVertex.xy + O + vec2(0.2, 0.0)) / TerrainSize).a, fpart(5.0 * OVertex.x)),
-          mix(texture2D(HeightMap, 5.0 * (OVertex.xy + O + vec2(0.0, 0.2)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (OVertex.xy + O + vec2(0.2, 0.2)) / TerrainSize).a, fpart(5.0 * OVertex.x)),
-          fpart(5.0 * OVertex.y)) * 256.0;
+          mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.0)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.0)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
+          mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.2)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.2)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
+          fpart(5.0 * Vertex.z)) * 256.0;
 }
 
 vec4 fetchTextureColor(int id) {
@@ -81,7 +80,7 @@ vec4 fetchBumpColor(int id) {
 }
 
 void main(void) {
-  if ((clamp(Vertex.xz, offset + 0.8, offset + 50.4) == Vertex.xz) && (LOD != 2))
+  if ((clamp(Vertex.xz, offset + 0.8, offset + 50.4) == Vertex.xz) && (LOD < 2))
     discard;
   TexCoord = mat4(
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),

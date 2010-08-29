@@ -16,9 +16,9 @@ type
     OnExpire: String;
     end;
 
-  TParkUI = class;
+  TXMLUIManager = class;
 
-  TParkUIWindow = class
+  TXMLUIWindow = class
     protected
       fWindow: TWindow;
       fButton: TIconifiedButton;
@@ -26,7 +26,7 @@ type
       fExpanded: Boolean;
       fWidth, fHeight, fLeft, fTop: Single;
       fBtnLeft, fBtnTop: Single;
-      fParkUI: TParkUI;
+      fParkUI: TXMLUIManager;
       fCallbackArrays: Array of TCallbackArray;
       procedure Toggle(Sender: TGUIComponent);
       procedure SetWidth(A: Single);
@@ -53,21 +53,24 @@ type
       property Expanded: Boolean read fExpanded;
       procedure Show;
       procedure Hide;
-      constructor Create(Resource: String; ParkUI: TParkUI);
+      constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
     end;
 
-  TParkUI = class
+  TXMLUIManager = class
     protected
-      fDragging: TParkUIWindow;
+      fDragging: TXMLUIWindow;
       fDragStartLeft, fDragStartTop, fMouseOfsX, fMouseOfsY: Integer;
-      procedure SetDragging(A: TParkUIWindow);
+      procedure SetDragging(A: TXMLUIWindow);
     public
-      property Dragging: TParkUIWindow read fDragging write setDragging;
+      property Dragging: TXMLUIWindow read fDragging write setDragging;
       procedure Drag;
+    end;
+
+    TParkUI = class(TXMLUIManager)
       constructor Create;
       destructor Free;
-    end;
+      end;
 
 implementation
 
@@ -84,7 +87,7 @@ type
 var
   WindowList: TParkUIWindowList;
 
-function TParkUIWindow.AddCallbackArray(A: TDOMElement): Integer;
+function TXMLUIWindow.AddCallbackArray(A: TDOMElement): Integer;
 begin
   SetLength(fCallbackArrays, length(fCallbackArrays) + 1);
   Result := Length(fCallbackArrays);
@@ -99,19 +102,19 @@ begin
   fCallbackArrays[Result - 1].OnChangeTab := A.GetAttribute('onchangetab');
 end;
 
-procedure TParkUIWindow.HandleOnclick(Sender: TGUIComponent);
+procedure TXMLUIWindow.HandleOnclick(Sender: TGUIComponent);
 begin
   if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
     EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnClick, Sender, nil);
 end;
 
-procedure TParkUIWindow.HandleOnChangeTab(Sender: TGUIComponent);
+procedure TXMLUIWindow.HandleOnChangeTab(Sender: TGUIComponent);
 begin
   if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
     EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnChangeTab, Sender, nil);
 end;
 
-procedure TParkUIWindow.Toggle(Sender: TGUIComponent);
+procedure TXMLUIWindow.Toggle(Sender: TGUIComponent);
 begin
   if Expanded then
     begin
@@ -127,21 +130,21 @@ begin
     end;
 end;
 
-procedure TParkUIWindow.SetWidth(A: Single);
+procedure TXMLUIWindow.SetWidth(A: Single);
 begin
   fWidth := A;
   if (not fMoving) and (fExpanded) then
     fWindow.Width := A;
 end;
 
-procedure TParkUIWindow.SetHeight(A: Single);
+procedure TXMLUIWindow.SetHeight(A: Single);
 begin
   fHeight := A;
   if (not fMoving) and (fExpanded) then
     fWindow.Height := A;
 end;
 
-procedure TParkUIWindow.SetLeft(A: Single);
+procedure TXMLUIWindow.SetLeft(A: Single);
 begin
   fLeft := A;
   if fExpanded then
@@ -151,7 +154,7 @@ begin
     end;
 end;
 
-procedure TParkUIWindow.SetTop(A: Single);
+procedure TXMLUIWindow.SetTop(A: Single);
 begin
   fTop := A;
   if fExpanded then
@@ -161,7 +164,7 @@ begin
     end;
 end;
 
-procedure TParkUIWindow.SetBtnLeft(A: Single);
+procedure TXMLUIWindow.SetBtnLeft(A: Single);
 begin
   fBtnLeft := A;
   if not fExpanded then
@@ -171,7 +174,7 @@ begin
     end;
 end;
 
-procedure TParkUIWindow.SetBtnTop(A: Single);
+procedure TXMLUIWindow.SetBtnTop(A: Single);
 begin
   fBtnTop := A;
   if not fExpanded then
@@ -181,7 +184,7 @@ begin
     end;
 end;
 
-procedure TParkUIWindow.Show;
+procedure TXMLUIWindow.Show;
 begin
   ModuleManager.ModGUI.BasicComponent.BringToFront(fWindow);
   fExpanded := true;
@@ -196,7 +199,7 @@ begin
   fButton.Height := 64;
 end;
 
-procedure TParkUIWindow.Hide;
+procedure TXMLUIWindow.Hide;
 begin
   fExpanded := false;
   fWindow.Width := 0;
@@ -210,7 +213,7 @@ begin
   fButton.Height := 48;
 end;
 
-procedure TParkUIWindow.ReadFromXML(Resource: String);
+procedure TXMLUIWindow.ReadFromXML(Resource: String);
 var
   XMLFile: TDOMDocument;
   a: TDOMNodeList;
@@ -239,6 +242,11 @@ var
           if FirstChild <> nil then
             Caption := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
+          if GetAttribute('align') = 'center' then
+            Align := LABEL_ALIGN_CENTER
+          else if GetAttribute('align') = 'right' then
+            Align := LABEL_ALIGN_RIGHT;
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @StartDragging;
           OnRelease := @EndDragging;
           end;
@@ -254,6 +262,7 @@ var
           Width := StrToIntWD(GetAttribute('width'), 64);
           Height := StrToIntWD(GetAttribute('height'), 64);
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
           end;
         end
@@ -269,6 +278,7 @@ var
           if FirstChild <> nil then
             Caption := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
           end;
         end
@@ -284,6 +294,7 @@ var
           if FirstChild <> nil then
             Text := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
           end;
         end
@@ -297,6 +308,7 @@ var
           Width := StrToIntWD(GetAttribute('width'), 64);
           Height := StrToIntWD(GetAttribute('height'), 64);
           Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnChangeTab := @HandleOnChangeTab;
           end;
         end
@@ -360,7 +372,7 @@ begin
   XMLFile.Free;
 end;
 
-constructor TParkUIWindow.Create(Resource: String; ParkUI: TParkUI);
+constructor TXMLUIWindow.Create(Resource: String; ParkUI: TXMLUIManager);
 begin
   fParkUI := ParkUI;
   fWindow := TWindow.Create(nil);
@@ -388,37 +400,28 @@ begin
   ReadFromXML(Resource);
 end;
 
-procedure TParkUIWindow.BringButtonToFront(Sender: TGUIComponent);
+procedure TXMLUIWindow.BringButtonToFront(Sender: TGUIComponent);
 begin
   ModuleManager.ModGUI.BasicComponent.BringToFront(fButton);
 end;
 
-procedure TParkUIWindow.StartDragging(Sender: TGUIComponent);
+procedure TXMLUIWindow.StartDragging(Sender: TGUIComponent);
 begin
   fParkUI.Dragging := self;
 end;
 
-procedure TParkUIWindow.EndDragging(Sender: TGUIComponent);
+procedure TXMLUIWindow.EndDragging(Sender: TGUIComponent);
 begin
   fParkUI.Dragging := nil;
 end;
 
-destructor TParkUIWindow.Free;
+destructor TXMLUIWindow.Free;
 begin
   fWindow.Free;
   fButton.Free;
 end;
 
-constructor TParkUI.Create;
-var
-  ResX, ResY: Integer;
-begin
-  WindowList.fLeaveWindow := TGameLeave.Create('ui/leave.xml', self);
-  WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
-  WindowList.fGameTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
-end;
-
-procedure TParkUI.SetDragging(A: TParkUIWindow);
+procedure TXMLUIManager.SetDragging(A: TXMLUIWindow);
 begin
   fDragging := A;
   if A = nil then
@@ -429,13 +432,22 @@ begin
   fMouseOfsY := ModuleManager.ModInputHandler.MouseY;
 end;
 
-procedure TParkUI.Drag;
+procedure TXMLUIManager.Drag;
 begin
   if Dragging <> nil then
     begin
     Dragging.Left := fDragStartLeft + ModuleManager.ModInputHandler.MouseX - fMouseOfsX;
     Dragging.Top := fDragStartTop + ModuleManager.ModInputHandler.MouseY - fMouseOfsY;
     end;
+end;
+
+constructor TParkUI.Create;
+var
+  ResX, ResY: Integer;
+begin
+  WindowList.fLeaveWindow := TGameLeave.Create('ui/leave.xml', self);
+  WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
+  WindowList.fGameTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
 end;
 
 destructor TParkUI.Free;

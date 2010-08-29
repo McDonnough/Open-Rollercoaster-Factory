@@ -73,6 +73,8 @@ procedure GetFilesInDirectory(Directory: string; const Mask: string; List: TStri
 function StrToIntWD(A: String; Default: Integer): Integer;
 function StrToFloatWD(A: String; Default: Single): Single;
 
+function HexToInt(A: String): Integer;
+
 implementation
 
 uses
@@ -256,6 +258,22 @@ begin
   except
     Result := Default;
   end;
+end;
+
+function HexToInt(A: String): Integer;
+var
+  i: integer;
+begin
+  Result := 0;
+  for i := 1 to Length(A) do
+    begin
+    Result := Result * 16;
+    case A[i] of
+      '0'..'9': Result := Result + Ord(A[i]) - Ord('0');
+      'A'..'F': Result := Result + Ord(A[i]) - Ord('A') + 10;
+      'a'..'f': Result := Result + Ord(A[i]) - Ord('a') + 10;
+      end;
+    end;
 end;
 
 end.

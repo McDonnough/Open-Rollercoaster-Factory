@@ -13,12 +13,20 @@ type
       RenderEffects: Array of TRenderCallback;
       fMouseDistance: Single;
       fSelectionRay, fSelectionStart: TVector3D;
-      fDistTexture: TTexture;
     public
       property SelectionRay: TVector3D read fSelectionRay;
       property SelectionStart: TVector3D read fSelectionStart;
       property MouseDistance: Single read fMouseDistance;
-      property DistTexture: TTexture read fDistTexture;
+
+      (**
+        * Loads textures etc
+        *)
+      procedure PostInit; virtual abstract;
+
+      (**
+        * Frees textures etc
+        *)
+      procedure Unload; virtual abstract;
 
       (**
         * Renders the whole scene

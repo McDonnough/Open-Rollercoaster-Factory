@@ -10,6 +10,8 @@ type
   TWaterLayerFBO = class
     public
       Height: Single;
+      Deletable: Boolean;
+      Check: Boolean;
       Query: TOcclusionQuery;
       RefractionFBO, ReflectionFBO: TFBO;
       Blocks: Array of Array of Boolean;
@@ -20,6 +22,7 @@ type
   TRTerrain = class(TThread)
     protected
       fCanWork, fWorking: Boolean;
+      fCheckBBoxes, fCheckWater: Boolean;
       fUpdatePlants: Boolean;
       fFineVBO, fGoodVBO, fRawVBO, fWaterVBO: TVBO;
       fAPVBOs: Array[0..7] of TVBO;
@@ -77,6 +80,9 @@ begin
   setLength(Blocks, Park.pTerrain.SizeX div 128);
   for i := 0 to high(Blocks) do
     setLength(Blocks[i], Park.pTerrain.SizeY div 128);
+
+  Check := false;
+  Deletable := false;
 end;
 
 destructor TWaterLayerFBO.Free;
@@ -96,7 +102,20 @@ end;
 
 procedure TRTerrain.Execute;
 var
-  i, j: Integer;
+  i, j, l: Integer;
+  function Check(ID: Integer): Boolean;
+  var
+    i, j: Integer;
+  begin
+    fWaterLayerFBOs[ID].Check := False;
+    for i := 0 to Park.pTerrain.SizeX - 1 do
+      for j := 0 to Park.pTerrain.SizeY - 1 do
+        begin
+        if Round(10 * fWaterLayerFBOs[ID].Height) = Round(10 * Park.pTerrain.WaterMap[I / 5, J / 5]) then
+          exit(false);
+        end;
+    Result := true;
+  end;
 begin
   fCanWork := false;
   fWorking := false;
@@ -107,12 +126,18 @@ begin
         begin
         fWorking := true;
         fCanWork := false;
-        for i := 0 to Park.pTerrain.SizeX do
-          for j := 0 to Park.pTerrain.SizeY do
-            CheckWaterLevel(i, j);
-        for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-          for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-            RecalcBoundingSpheres(i, j);
+        if fCheckWater then
+          for l := 0 to high(fWaterLayerFBOs) do
+            begin
+            if fWaterLayerFBOs[l].Check then
+              fWaterLayerFBOs[l].Deletable := Check(L);
+            end;
+        if fCheckBBoxes then
+          for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
+            for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
+              RecalcBoundingSpheres(i, j);
+        fCheckWater := false;
+        fCheckBBoxes := false;
         end
       else
         sleep(1);
@@ -183,6 +208,17 @@ var
 const
   AUTOPLANT_UPDATE_FRAMES = 10;
 begin
+  if not fWorking then
+    for i := 0 to high(fWaterLayerFBOs) do
+      if i > high(fWaterLayerFBOs) then
+        exit
+      else
+        if fWaterLayerFBOs[i].Deletable then
+          begin
+          fWaterLayerFBOs[i].Free;
+          fWaterLayerFBOs[i] := fWaterLayerFBOs[high(fWaterLayerFBOs)];
+          SetLength(fWaterLayerFBOs, length(fWaterLayerFBOs) - 1);
+          end;
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
@@ -195,10 +231,14 @@ begin
     fBoundShader := fShaderTransformSunShadow
   else
     begin
-    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
+    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
       fBoundShader.UniformF('PointToHighlight', Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
     else
       fBoundShader.UniformF('PointToHighlight', -1, -1);
+    if (Park.pTerrain.MarkMode = 1) then
+      fBoundShader.UniformF('HeightLineToHighlight', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
+    else
+      fBoundShader.UniformF('HeightLineToHighlight', -1);
     end;
   fBoundShader.Bind;
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
@@ -238,7 +278,7 @@ begin
     fUpdatePlants := true;
 
   // Render autoplants
-  if fInterface.Options.Items['terrain:autoplants'] <> 'off' then
+  if (fInterface.Options.Items['terrain:autoplants'] <> 'off') and (fInterface.Options.Items['all:transparent'] <> 'off') then
     begin
     glDisable(GL_CULL_FACE);
     glColor4f(1, 1, 1, 1);
@@ -258,7 +298,6 @@ begin
         Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
         if fUpdatePlants then
           begin
-          fUpdatePlants := false;
           fAPVBOs[i].Bind;
           for j := 0 to high(fAPPositions[i]) * fFrameCount div AUTOPLANT_UPDATE_FRAMES do
             begin
@@ -298,7 +337,9 @@ begin
         end;
     fAPShader.Unbind;
     glEnable(GL_CULL_FACE);
+    fUpdatePlants := false;
     end;
+
   glUseProgram(0);
 
   // Render marks - WILL BE REPLACED
@@ -315,21 +356,28 @@ begin
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
       end;
     if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
-      begin
-      glColor4f(1, 0, 0, 1.0);
-      glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
-      glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
-      glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
-      glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
-      end;
+      if Park.pTerrain.MarkMode = 0 then
+        begin
+        glColor4f(1, 0, 0, 1.0);
+        glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
+        glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y - 0.1);
+        glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
+        glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y + 0.1);
+        end
+      else
+        begin
+        glColor4f(1, 0, 0, 1.0);
+        glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10, Park.pTerrain.CurrMark.Y - 0.1);
+        glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10, Park.pTerrain.CurrMark.Y - 0.1);
+        glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10, Park.pTerrain.CurrMark.Y + 0.1);
+        glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10, Park.pTerrain.CurrMark.Y + 0.1);
+        end;
   glEnd;
 
   glBegin(GL_LINE_LOOP);
     glColor4f(1, 1, 1, 1);
     for i := 0 to Park.pTerrain.Marks.Height - 1 do
-      begin
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i], 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i]);
-      end;
     if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
       glVertex3f(Park.pTerrain.CurrMark.X, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y);
   glEnd;
@@ -346,6 +394,8 @@ begin
   fHeightMap.Textures[0].Bind(0);
   for i := 0 to high(fWaterLayerFBOs) do
     begin
+    if fWaterLayerFBOs[i].Deletable then
+      continue;
     glTexCoord3f(0, 0, fWaterLayerFBOs[i].Height);
     fWaterLayerFBOs[i].Query.StartCounter;
     glBegin(GL_QUADS);
@@ -441,8 +491,17 @@ begin
   if Park.pTerrain.WaterMap[X / 5, Y / 5] = 0 then
     exit;
   for i := 0 to high(fWaterLayerFBOs) do
-    if fWaterLayerFBOs[i].Height = Park.pTerrain.WaterMap[X / 5, Y / 5] then
+    if Round(10 * fWaterLayerFBOs[i].Height) = Round(10 * Park.pTerrain.WaterMap[X / 5, Y / 5]) then
       exit;
+  for i := 0 to high(fWaterLayerFBOs) do
+    fWaterLayerFBOs[i].Check := true;
+  for i := 0 to high(fWaterLayerFBOs) do
+    if fWaterLayerFBOs[i].Deletable then
+      begin
+      fWaterLayerFBOs[i].Deletable := false;
+      fWaterLayerFBOs[i].Height := Park.pTerrain.WaterMap[X / 5, Y / 5];
+      exit;
+      end;
   setLength(fWaterLayerFBOs, length(fWaterLayerFBOs) + 1);
   fWaterLayerFBOs[high(fWaterLayerFBOs)] := TWaterLayerFBO.Create;
   fWaterLayerFBOs[high(fWaterLayerFBOs)].Height := Park.pTerrain.WaterMap[X / 5, Y / 5];
@@ -500,35 +559,32 @@ begin
       for j := 0 to high(fWaterLayerFBOs[i].Blocks) do
         setLength(fWaterLayerFBOs[i].Blocks[j], Park.pTerrain.SizeX div 128);
       end;
-    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-        RecalcBoundingSpheres(i, j);
+    StartUpdate;
+      for i := 0 to Park.pTerrain.SizeX - 1 do
+        for j := 0 to Park.pTerrain.SizeY - 1 do
+          UpdateVertex(I, J);
+    EndUpdate;
+
+    fCheckWater := true;
+    fCheckBBoxes := true;
+
+    fCanWork := true;
     end;
-  if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap')) then
+  if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap') or (Event = 'TTerrain.ChangedWater')) then
     begin
     k := Integer(Data^);
     StartUpdate;
     for i := 0 to k - 1 do
       UpdateVertex(Integer((Data + 8 * i + 4)^), Integer((Data + 8 * i + 8)^));
     EndUpdate;
+    for i := 0 to k - 1 do
+      CheckWaterLevel(Integer((Data + 8 * i + 4)^), Integer((Data + 8 * i + 8)^));
     if Event <> 'TTerrain.ChangedTexmap' then
+      begin
+      fCheckBBoxes := Event <> 'TTerrain.ChangedWater';
+      fCheckWater := true;
       fCanWork := true;
-    end;
-  if (Event = 'TTerrain.ChangedAll') then
-    begin
-    Sync;
-    writeln('Copying entire terrain to VRam');
-    StartUpdate;
-    for i := 0 to Park.pTerrain.SizeX do
-      for j := 0 to Park.pTerrain.SizeY do
-        UpdateVertex(i, j);
-    EndUpdate;
-    for i := 0 to Park.pTerrain.SizeX do
-      for j := 0 to Park.pTerrain.SizeY do
-        CheckWaterLevel(i, j);
-    for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
-      for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
-        RecalcBoundingSpheres(i, j);
+      end;
     end;
 end;
 
@@ -659,7 +715,7 @@ begin
     EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
     EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedTexmap', @ApplyChanges);
-    EventManager.AddCallback('TTerrain.ChangedAll', @ApplyChanges);
+    EventManager.AddCallback('TTerrain.ChangedWater', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
   except
     ModuleManager.ModLog.AddError('Failed to create terrain renderer in OpenGL rendering module: Internal error');

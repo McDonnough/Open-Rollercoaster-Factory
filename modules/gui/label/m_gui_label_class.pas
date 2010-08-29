@@ -12,6 +12,7 @@ type
     public
       Caption: String;
       Size: Integer;
+      Align: Integer;
       procedure Render;
       constructor Create(mParent: TGUIComponent);
     end;
@@ -24,6 +25,11 @@ type
         *)
       procedure Render(Lbl: TLabel); virtual abstract;
     end;
+
+const
+  LABEL_ALIGN_LEFT = 0;
+  LABEL_ALIGN_CENTER = 1;
+  LABEL_ALIGN_RIGHT = 2;
 
 implementation
 
@@ -40,6 +46,7 @@ begin
   inherited Create(mParent, CLabel);
   Size := 12;
   Caption := '';
+  Align := LABEL_ALIGN_LEFT;
 end;
 
 end.

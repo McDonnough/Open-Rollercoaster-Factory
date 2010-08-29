@@ -14,7 +14,7 @@ type
       function FindIconByName(s: String): TTexture;
     public
       procedure Render(Button: TIconifiedButton);
-      procedure SetIcon(Button: TIconifiedButton; Icon: String);
+      procedure SetIcon(Button: TIconifiedButton; var Icon: String);
       constructor Create;
       destructor Free;
       procedure CheckModConf;
@@ -23,7 +23,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_functions;
 
 function TModuleGUIIconifiedButtonDefault.FindIconByName(s: String): TTexture;
 var
@@ -92,14 +92,38 @@ begin
   glDisable(GL_BLEND);
 end;
 
-procedure TModuleGUIIconifiedButtonDefault.SetIcon(Button: TIconifiedButton; Icon: String);
+procedure TModuleGUIIconifiedButtonDefault.SetIcon(Button: TIconifiedButton; var Icon: String);
+var
+  Data: Array of Byte;
+  w, h: Word;
+  i: Integer;
 begin
-  if FindIconByName(Icon) = nil then
+  if Icon = '' then
+    exit;
+  if SubString(Icon, 1, 5) <> 'RGBA:' then
     begin
+    if FindIconByName(Icon) = nil then
+      begin
+      setLength(fIcons, length(fIcons) + 1);
+      fIcons[high(fIcons)] := TTexture.Create;
+      fIcons[high(fIcons)].FromFile('guiicons/' + Icon);
+      setLength(fIconNames, length(fIcons));
+      fIconNames[high(fIconNames)] := Icon;
+      end;
+    end
+  else
+    begin
+    w := HexToInt(SubString(Icon, 6, 4));
+    h := HexToInt(SubString(Icon, 10, 4));
+    SetLength(Data, w * h * 4);
+    for i := 0 to high(Data) do
+      Data[i] := HexToInt(Icon[14 + 2 * i] + Icon[15 + 2 * i]);
     setLength(fIcons, length(fIcons) + 1);
     fIcons[high(fIcons)] := TTexture.Create;
-    fIcons[high(fIcons)].FromFile('guiicons/' + Icon);
+    fIcons[high(fIcons)].CreateNew(w, h, GL_RGBA);
+    fIcons[high(fIcons)].Fill(@Data[0], GL_RGBA);
     setLength(fIconNames, length(fIcons));
+    Icon := 'CUST_ICON:' + IntToStr(high(fIcons));
     fIconNames[high(fIconNames)] := Icon;
     end;
 end;

@@ -129,6 +129,6 @@ Almost as easy as the Linux way:
 
 ###   WINDOWS   ###
 
- * Create a directory 'config' in the root directory
+ * Create a directory 'config' in the game's root directory
  * Run orcf.exe
 

@@ -15,8 +15,10 @@ type
       fFrustum: TFrustum;
       fDistPixel: Array[0..3] of GLFloat;
       fInterface: TRendererOpenGLInterface;
+      fLightManager: TLightManager;
       RenderEffectManager: TRenderEffectManager;
       ResX, ResY: Integer;
+      fDistTexture: TTexture;
     public
       fShadowDelay: Single;
       OS, OC: TVector3D;
@@ -26,6 +28,7 @@ type
       RSky: TRSky;
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
+      property DistTexture: TTexture read fDistTexture;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -50,6 +53,7 @@ var
   s: AString;
   i: INteger;
 begin
+  fLightManager := TLightManager.Create;
   RCamera := TRCamera.Create;
   RTerrain := TRTerrain.Create;
   RSky := TRSky.Create;
@@ -66,6 +70,7 @@ begin
   RTerrain.Unload;
   RTerrain.Free;
   RCamera.Free;
+  fLightManager.Free;
 end;
 
 procedure TModuleRendererOpenGL.RenderParts;
@@ -160,9 +165,13 @@ begin
     glColorMask(false, false, false, true);
     glDisable(GL_BLEND);
     glClear(GL_DEPTH_BUFFER_BIT);
-    fInterface.Options.Items['shader:mode'] := 'transform:depth';
-    RenderParts;
-    fInterface.Options.Items['shader:mode'] := 'normal:normal';
+    fInterface.PushOptions;
+      fInterface.Options.Items['terrain:autoplants'] := 'off';
+      fInterface.Options.Items['all:transparent'] := 'off';
+      fInterface.Options.Items['shader:mode'] := 'transform:depth';
+      fInterface.Options.Items['sky:rendering'] := 'off';
+      RenderParts;
+    fInterface.PopOptions;
     glColorMask(CR, CG, CB, true);
     fInterface.PopOptions;
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Unbind;
@@ -246,6 +255,12 @@ begin
 
   // Preparation
   RSky.Advance;
+  RSky.CameraLight.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X;
+  RSky.CameraLight.Position.Y := ModuleManager.ModCamera.ActiveCamera.Position.Y + 5;
+  RSky.CameraLight.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
+  RSky.CameraLight.Position.W := 10;
+  RSky.CameraLight.Color := Vector(1, 1, 1, 1);
+//   RSky.CameraLight.Bind(1);
 
   // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';

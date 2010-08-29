@@ -45,8 +45,8 @@ type
   TTerrain = class
     protected
       fSizeX, fSizeY: Word;
+      fWaterOnly: Boolean;
       fMap: Array of Array of TTerrainMapPoint;
-      fTmpMap: Array of Array of Word;
       fCanAdvance, fAdvancing: Boolean;
       fCollection: TTerrainCollection;
       fCoordsToUpdate: Array of Integer;
@@ -59,8 +59,10 @@ type
       function GetTextureAtPosition(X, Y: Single): Byte;
       procedure SetTextureAtPosition(X, Y: Single; Tex: Byte);
       function CreateRaiseLowerMap: Integer;
+      procedure InternalSmooth;
     public
       CurrMark: TVector2D;
+      MarkMode: Integer;
       property SizeX: Word read fSizeX;
       property SizeY: Word read fSizeY;
       property HeightMap[X: Single; Y: Single]: Single read GetHeightAtPosition write SetHeightAtPosition;
@@ -68,6 +70,8 @@ type
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
       property Collection: TTerrainCollection read fCollection;
       property Marks: TTable read fMarks;
+      procedure FillWithWater(X, Y, H: Single; Notify: Boolean = true);
+      procedure RemoveWater(X, Y: Single; Notify: Boolean = true);
       procedure ChangeCollection(S: String);
       procedure Resize(X, Y: Integer);
       procedure LoadDefaults;
@@ -77,6 +81,7 @@ type
       procedure SetTo(Height: Single);
       procedure SetToMin(Height: Single);
       procedure SetToMax(Height: Single);
+      procedure SetTexture(T: Integer);
       procedure RaiseTo(Height: Single = -1);
       procedure LowerTo(Height: Single = -1);
       procedure Smooth;
@@ -199,6 +204,90 @@ end;
 
 
 
+procedure TTerrain.FillWithWater(X, Y, H: Single; Notify: Boolean = true);
+var
+  a: Array of Array[0..1] of Single;
+  i: integer;
+  procedure Add(X, Y: Single);
+  begin
+    if (X >= 0) and (X < SizeX / 5) and (Y >= 0) and (Y < SizeY / 5) then
+      if Round(10 * WaterMap[X, Y]) <> Round(10 * H) then
+        begin
+        SetLength(a, Length(a) + 1);
+        a[high(a), 0] := X;
+        a[high(a), 1] := Y;
+        WaterMap[X, Y] := Round(10 * H) / 10;
+        end;
+  end;
+begin
+  RemoveWater(X, Y, false);
+  BeginUpdate;
+  setLength(a, 1);
+  a[0, 0] := X;
+  a[0, 1] := Y;
+  i := 0;
+  while i <= high(a) do
+    begin
+    WaterMap[a[i, 0], a[i, 1]] := Round(10 * H) / 10;
+    if Round(10 * HeightMap[a[i, 0], a[i, 1]]) < Round(10 * H) then
+      begin
+      Add(a[i, 0] - 0.2, a[i, 1] - 0.2);
+      Add(a[i, 0] - 0.2, a[i, 1]      );
+      Add(a[i, 0] - 0.2, a[i, 1] + 0.2);
+      Add(a[i, 0]      , a[i, 1] + 0.2);
+      Add(a[i, 0] + 0.2, a[i, 1] + 0.2);
+      Add(a[i, 0] + 0.2, a[i, 1]      );
+      Add(a[i, 0] + 0.2, a[i, 1] - 0.2);
+      Add(a[i, 0]      , a[i, 1] - 0.2);
+      end;
+    inc(i);
+    end;
+  EndUpdate;
+end;
+
+procedure TTerrain.RemoveWater(X, Y: Single; Notify: Boolean = true);
+var
+  a: Array of Array[0..1] of Single;
+  i: integer;
+  H: Single;
+  procedure Add(X, Y: Single);
+  begin
+    if (X >= 0) and (X < SizeX / 5) and (Y >= 0) and (Y < SizeY / 5) then
+      if Round(10 * WaterMap[X, Y]) = Round(10 * H) then
+        begin
+        SetLength(a, Length(a) + 1);
+        a[high(a), 0] := X;
+        a[high(a), 1] := Y;
+        WaterMap[X, Y] := 0;
+        end;
+  end;
+begin
+  H := WaterMap[X, Y];
+  if H = 0 then
+    exit;
+  if Notify then
+    BeginUpdate;
+  setLength(a, 1);
+  a[0, 0] := X;
+  a[0, 1] := Y;
+  i := 0;
+  while i <= high(a) do
+    begin
+    WaterMap[a[i, 0], a[i, 1]] := 0;
+    Add(a[i, 0] - 0.2, a[i, 1] - 0.2);
+    Add(a[i, 0] - 0.2, a[i, 1]      );
+    Add(a[i, 0] - 0.2, a[i, 1] + 0.2);
+    Add(a[i, 0]      , a[i, 1] + 0.2);
+    Add(a[i, 0] + 0.2, a[i, 1] + 0.2);
+    Add(a[i, 0] + 0.2, a[i, 1]      );
+    Add(a[i, 0] + 0.2, a[i, 1] - 0.2);
+    Add(a[i, 0]      , a[i, 1] - 0.2);
+    inc(i);
+    end;
+  if Notify then
+    EndUpdate;
+end;
+
 function TTerrain.GetHeightAtPosition(X, Y: Single): Single;
 var
   fX1, fX2, fY1, fY2: Word;
@@ -217,20 +306,21 @@ begin
   fX := Round(Clamp(5 * X, 0, fSizeX - 1));
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Height := Round(256 * Height);
+  if fMap[fX, fY].Height >= fMap[fX, fY].Water then
+    WaterMap[fX, fY] := 0;
   SetLength(fCoordsToUpdate, 2 + length(fCoordsToUpdate));
   fCoordsToUpdate[high(fCoordsToUpdate) - 1] := Round(5 * X);
   fCoordsToUpdate[high(fCoordsToUpdate) - 0] := Round(5 * Y);
+  fWaterOnly := false;
 end;
 
 function TTerrain.GetWaterAtPosition(X, Y: Single): Single;
 var
-  fX1, fX2, fY1, fY2: Word;
+  fX, fY: Word;
 begin
-  fX1 := Floor(Clamp(5 * X, 0, fSizeX - 1));
-  fX2 := Ceil(Clamp(5 * X, 0, fSizeX - 1));
-  fY1 := Floor(Clamp(5 * Y, 0, fSizeY - 1));
-  fY2 := Ceil(Clamp(5 * Y, 0, fSizeY - 1));
-  Result := Mix(Mix(fMap[fX1, fY1].Water, fMap[fX2, fY1].Water, fPart(5 * X)), Mix(fMap[fX1, fY2].Water, fMap[fX2, fY2].Water, fPart(5 * X)), fPart(5 * Y)) / 256;
+  fX := Round(Clamp(5 * X, 0, fSizeX - 1));
+  fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
+  Result := fMap[fX, fY].Water / 256;
 end;
 
 procedure TTerrain.SetWaterAtPosition(X, Y, Height: Single);
@@ -272,31 +362,30 @@ end;
 procedure TTerrain.Resize(X, Y: Integer);
 var
   i, j: Integer;
+  oSizeX, oSizeY: Integer;
 begin
   fCanAdvance := false;
   while fAdvancing do
     sleep(1);
   SetLength(fMap, X);
-  SetLength(fTmpMap, X);
+  oSizeX := fSizeX;
+  oSizeY := fSizeY;
+  fSizeX := X;
+  fSizeY := Y;
   for i := 0 to high(fMap) do
-    begin
     SetLength(fMap[i], Y);
-    SetLength(fTmpMap[i], Y);
+  for i := 0 to high(fMap) do
     for j := 0 to high(fMap[i]) do
-      if (i >= fSizeX) or (j >= fSizeY) then
+      if (i >= oSizeX) or (j >= oSizeY) then
         with fMap[i, j] do
           begin
-          Height := 1024;
+          Height := 16384;
           Water := 0;
           Texture := 0;
           end;
-    end;
-  fSizeX := X;
-  fSizeY := Y;
-  EventManager.CallEvent('TTerrain.Resize', @X, nil);
-  EventManager.CallEvent('TTerrain.Changed', nil, nil);
   fCanAdvance := true;
   fMarkMap.Resize(X, Y);
+  EventManager.CallEvent('TTerrain.Resize', @X, nil);
 end;
 
 procedure TTerrain.LoadDefaults;
@@ -324,44 +413,6 @@ var
     dec(sdc);
   end;
 
-  procedure FillWithWater(X, Y, H: Word);
-  var
-    a: Array of Array[0..1] of Word;
-    i: integer;
-    procedure Add(X, Y: Word);
-    begin
-      if (X >= 0) and (X < SizeX) and (Y >= 0) and (Y < SizeY) then
-        if fMap[X, Y].Water <> H then
-          begin
-          SetLength(a, Length(a) + 1);
-          a[high(a), 0] := X;
-          a[high(a), 1] := Y;
-          fMap[X, Y].Water := H;
-          end;
-    end;
-  begin
-    setLength(a, 1);
-    a[0, 0] := X;
-    a[0, 1] := Y;
-    i := 0;
-    while i <= high(a) do
-      begin
-      fMap[a[i, 0], a[i, 1]].Water := H;
-      if fMap[a[i, 0], a[i, 1]].Height < H then
-        begin
-        Add(a[i, 0] - 1, a[i, 1] - 1);
-        Add(a[i, 0] - 1, a[i, 1]    );
-        Add(a[i, 0] - 1, a[i, 1] + 1);
-        Add(a[i, 0]    , a[i, 1] + 1);
-        Add(a[i, 0] + 1, a[i, 1] + 1);
-        Add(a[i, 0] + 1, a[i, 1]    );
-        Add(a[i, 0] + 1, a[i, 1] - 1);
-        Add(a[i, 0]    , a[i, 1] - 1);
-        end;
-      inc(i);
-      end;
-  end;
-
   procedure MakeMountain(X, Y, Radius: Word; Height: Single);
   var
     i, j: Integer;
@@ -379,8 +430,8 @@ begin
   fSizeX := 0;
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
-//  Resize(512, 512);
-  Resize(2048, 2048);
+  Resize(1024, 1024);
+{  Resize(2048, 2048);
   fMap[0, 0].Height := 20000;
   fMap[SizeX - 1, 0].Height := 20000;
   fMap[0, SizeY - 1].Height := 20000;
@@ -388,8 +439,8 @@ begin
   Subdivide(0, 0, SizeX, SizeY);
   MakeMountain(512, 512, 384, 38000 / 256);
   MakeMountain(512, 512, 128, 30000 / 256);
-  FillWithWater(0, 0, 28000);
-  FillWithWater(512, 512, 32000);
+  FillWithWater(0 / 5, 0 / 5, 28000 / 256);
+  FillWithWater(512 / 5, 512 / 5, 32000 / 256);
   for i := 1 to SizeX - 2 do
     for j := 1 to SizeY - 2 do
       fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height
@@ -410,8 +461,8 @@ begin
         fMap[i, j].Texture := 5;
       if fMap[i, j].Height < fMap[i, j].Water then
         fMap[i, j].Texture := 3;
-      end;
-  EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
+      end;}
+//   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;
 
 procedure TTerrain.ChangeCollection(S: String);
@@ -425,12 +476,16 @@ end;
 procedure TTerrain.BeginUpdate;
 begin
   SetLength(fCoordsToUpdate, 1);
+  fWaterOnly := true;
 end;
 
 procedure TTerrain.EndUpdate;
 begin
   fCoordsToUpdate[0] := (Length(fCoordsToUpdate) - 1) div 2;
-  EventManager.CallEvent('TTerrain.Changed', @fCoordsToUpdate[0], nil);
+  if fWaterOnly then
+    EventManager.CallEvent('TTerrain.ChangedWater', @fCoordsToUpdate[0], nil)
+  else
+    EventManager.CallEvent('TTerrain.Changed', @fCoordsToUpdate[0], nil);
 end;
 
 procedure TTerrain.CreateMarkMap;
@@ -520,6 +575,9 @@ procedure TTerrain.CreateMarkMap;
       MakeLine(Marks.Value[0, i], Marks.Value[1, i], Marks.Value[0, i + 1], Marks.Value[1, i + 1]);
     MakeLine(Marks.Value[0, Marks.Height - 1], Marks.Value[1, Marks.Height - 1], Marks.Value[0, 0], Marks.Value[1, 0]);
     FillField(MinX, MinY);
+    FillField(MinX, MaxY);
+    FillField(MaxX, MinY);
+    FillField(MaxX, MaxY);
     for i := MinX to MaxX do
       for j := MinY to MaxY do
         if fMarkMap.Value[I, J] <= 50 then
@@ -569,6 +627,16 @@ begin
   EndUpdate;
 end;
 
+procedure TTerrain.SetTexture(T: Integer);
+var
+  i, j: Integer;
+begin
+  for i := MinX to MaxX do
+    for j := MinY to MaxY do
+      if fMarkMap.Value[I, J] > 0 then
+        TexMap[i / 5, j / 5] := T;
+end;
+
 procedure TTerrain.RaiseTo(Height: Single = -1);
 var
   M: Integer;
@@ -580,9 +648,9 @@ begin
     for j := MinY to MaxY do
       if (fMarkMap.Value[I, J] > 0) and (HeightMap[i / 5, j / 5] < Height) then
         HeightMap[i / 5, j / 5] := Mix(HeightMap[i / 5, j / 5], Height, fMarkMap.Value[I, J] / M);
-  Smooth;
-  Smooth;
-  Smooth;
+  InternalSmooth;
+  InternalSmooth;
+  InternalSmooth;
   EndUpdate;
 end;
 
@@ -597,28 +665,28 @@ begin
     for j := MinY to MaxY do
       if (fMarkMap.Value[I, J] > 0) and (HeightMap[i / 5, j / 5] > Height) then
         HeightMap[i / 5, j / 5] := Mix(HeightMap[i / 5, j / 5], Height, fMarkMap.Value[I, J] / M);
-  Smooth;
-  Smooth;
-  Smooth;
+  InternalSmooth;
+  InternalSmooth;
+  InternalSmooth;
   EndUpdate;
 end;
 
-procedure TTerrain.Smooth;
+procedure TTerrain.InternalSmooth;
 var
   i, j: Integer;
 begin
   for i := MinX + 1 to MaxX - 1 do
     for j := MinY + 1 to MaxY - 1 do
       if (fMarkMap.Value[I, J] > 0) then
-        fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height
-                           + 0.125 * fMap[i + 1, j + 0].Height
-                           + 0.125 * fMap[i + 0, j + 1].Height
-                           + 0.125 * fMap[i - 1, j + 0].Height
-                           + 0.125 * fMap[i + 0, j - 1].Height
-                           + 0.050 * fMap[i + 1, j + 1].Height
-                           + 0.050 * fMap[i - 1, j + 1].Height
-                           + 0.050 * fMap[i - 1, j - 1].Height
-                           + 0.050 * fMap[i + 1, j - 1].Height);
+        fMap[i, j].Height := Round((fMap[i + 0, j + 0].Height
+                                  + fMap[i + 1, j + 0].Height
+                                  + fMap[i + 0, j + 1].Height
+                                  + fMap[i - 1, j + 0].Height
+                                  + fMap[i + 0, j - 1].Height
+                                  + fMap[i + 1, j + 1].Height
+                                  + fMap[i - 1, j + 1].Height
+                                  + fMap[i - 1, j - 1].Height
+                                  + fMap[i + 1, j - 1].Height) / 9);
 end;
 
 function TTerrain.CreateRaiseLowerMap: Integer;
@@ -667,6 +735,42 @@ begin
     end;
 end;
 
+procedure TTerrain.Smooth;
+var
+  i, j: Integer;
+begin
+  BeginUpdate;
+  for i := MinX + 2 to MaxX - 2 do
+    for j := MinY + 2 to MaxY - 2 do
+      if (fMarkMap.Value[I, J] > 0) then
+        HeightMap[i / 5, j / 5] := (HeightMap[(i + 0) / 5, (j + 0) / 5]
+                                  + HeightMap[(i + 1) / 5, (j + 0) / 5]
+                                  + HeightMap[(i + 0) / 5, (j + 1) / 5]
+                                  + HeightMap[(i - 1) / 5, (j + 0) / 5]
+                                  + HeightMap[(i + 0) / 5, (j - 1) / 5]
+                                  + HeightMap[(i + 1) / 5, (j + 1) / 5]
+                                  + HeightMap[(i - 1) / 5, (j + 1) / 5]
+                                  + HeightMap[(i - 1) / 5, (j - 1) / 5]
+                                  + HeightMap[(i + 1) / 5, (j - 1) / 5]
+                                  + HeightMap[(i + 2) / 5, (j - 2) / 5]
+                                  + HeightMap[(i + 1) / 5, (j - 2) / 5]
+                                  + HeightMap[(i + 0) / 5, (j - 2) / 5]
+                                  + HeightMap[(i - 1) / 5, (j - 2) / 5]
+                                  + HeightMap[(i - 2) / 5, (j - 2) / 5]
+                                  + HeightMap[(i - 2) / 5, (j - 1) / 5]
+                                  + HeightMap[(i - 2) / 5, (j + 0) / 5]
+                                  + HeightMap[(i - 2) / 5, (j + 1) / 5]
+                                  + HeightMap[(i - 2) / 5, (j + 2) / 5]
+                                  + HeightMap[(i - 1) / 5, (j + 2) / 5]
+                                  + HeightMap[(i + 0) / 5, (j + 2) / 5]
+                                  + HeightMap[(i + 1) / 5, (j + 2) / 5]
+                                  + HeightMap[(i + 2) / 5, (j + 2) / 5]
+                                  + HeightMap[(i + 2) / 5, (j + 1) / 5]
+                                  + HeightMap[(i + 2) / 5, (j + 0) / 5]
+                                  + HeightMap[(i + 2) / 5, (j - 1) / 5]) / 25;
+  EndUpdate;
+end;
+
 constructor TTerrain.Create;
 begin
   try
@@ -676,6 +780,7 @@ begin
     fMarks := TTable.Create;
     fMarkMap := TTable.Create;
     CurrMark := Vector(-1, -1);
+    MarkMode := 0;
   except
     ModuleManager.ModLog.AddError('Could not create terrain: Internal error');
   end;

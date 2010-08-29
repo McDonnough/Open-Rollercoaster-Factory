@@ -6,10 +6,10 @@ uses
   SysUtils, Classes, g_parkui;
 
 type
-  TGameInfo = class(TParkUIWindow)
+  TGameInfo = class(TXMLUIWindow)
     public
       procedure changeTab(Event: String; Data, Result: Pointer);
-      constructor Create(Resource: String; ParkUI: TParkUI);
+      constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
     end;
 
@@ -23,7 +23,7 @@ begin
   TLabel(fWindow.GetChildByName('info.tab.container')).Left := -600 * TTabBar(fWindow.GetChildByName('info.tabbar')).SelectedTab;
 end;
 
-constructor TGameInfo.Create(Resource: String; ParkUI: TParkUI);
+constructor TGameInfo.Create(Resource: String; ParkUI: TXMLUIManager);
 begin
   inherited Create(Resource, ParkUI);
   EventManager.AddCallback('GUIActions.info.changeTab', @changeTab);

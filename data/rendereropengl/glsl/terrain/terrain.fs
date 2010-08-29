@@ -8,15 +8,27 @@ uniform vec2 offset;
 uniform float maxBumpDistance;
 uniform vec2 TerrainSize;
 uniform vec2 PointToHighlight;
+uniform float HeightLineToHighlight;
 
 varying float dist;
 varying float SDist;
 varying vec4 Vertex;
 varying vec2 fragCoord;
+varying vec4 DVertex;
 
 mat4 TexCoord;
 mat4 texColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
 mat4 bumpColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+
+vec4 Diffuse = vec4(0.0, 0.0, 0.0, 1.0);
+vec4 Ambient = vec4(0.0, 0.0, 0.0, 1.0);
+vec3 normal = vec3(0.0, 1.0, 0.0);
+
+void AddLight(int ID) {
+  vec3 DistVector = gl_LightSource[ID].position.xyz - Vertex.xyz;
+  float lnrDistVector = max(0.5, DistVector.x * DistVector.x + DistVector.y * DistVector.y + DistVector.z * DistVector.z);
+  Diffuse += gl_LightSource[ID].diffuse * gl_LightSource[ID].diffuse.a * dot(normal, normalize(DistVector)) * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector;
+}
 
 float fpart(float a) {
   return a - floor(a);
@@ -80,11 +92,12 @@ void main(void) {
   fetchTextureColor(2);
   fetchTextureColor(3);
   float VY = fetchHeightAtOffset(vec2(0.0, 0.0));
-  vec3 normal = normalize(
+  normal = normalize(
     normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2), vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0)))
   + normalize(cross(vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2)))
   + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, -0.0)))
   + normalize(cross(vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2))));
+  vec3 onormal = normal;
   vec3 bumpNormal = vec3(0.0, 1.0, 0.0);
   vec4 result = gl_TextureMatrix[0] * Vertex;
   result = sqrt(abs(result)) * sign(result);
@@ -99,15 +112,19 @@ void main(void) {
     vec3 bitangent = normalize(cross(normal, tangent));
     normal = mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((maxBumpDistance - dist) / (maxBumpDistance / 2.0), 0.0, 1.0));
   }
+  normal = normalize(normal);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   if (length(result.xy / result.w) < 1.0)
     SunShadow = texture2D(SunShadowMap, 0.5 + 0.5 * result.xy / result.w);
   if (SunShadow.a + 0.1 >= SDist)
     SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  vec4 Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
-  vec4 Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
+  Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
+  Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
+  AddLight(1);
   gl_FragColor = mix(mix(texColors[0], texColors[1], fpart(Vertex.x * 5.0)), mix(texColors[2], texColors[3], fpart(Vertex.x * 5.0)), fpart(Vertex.z * 5.0)) * (Diffuse + Ambient);
   gl_FragColor.a = 1.0;
   if (PointToHighlight.x >= 0)
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)));
+  if (HeightLineToHighlight >= 0)
+    gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
 }

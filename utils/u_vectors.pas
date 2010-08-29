@@ -24,6 +24,9 @@ type
 
   TMatrix = Array[0..15] of Single;
 
+  TMatrix3D = Array[0..2] of TVector3D;
+  TMatrix4D = Array[0..3] of TVector4D;
+
 function Vector(X, Y: Single): TVector2D;
 function Vector(X, Y, Z: Single): TVector3D;
 function Vector(X, Y, Z, W: Single): TVector4D;
@@ -96,6 +99,15 @@ function Normalize(A: TVector4D): TVector4D;
 
 function Vec4toVec3(A: TVector4D): TVector3D;
 function Vec3toVec2(A: TVector3D): TVector2D;
+
+
+function Matrix3D(A, B, C: TVector3D): TMatrix3D;
+function Matrix4D(A, B, C, D: TVector4D): TMatrix4D;
+
+operator * (A: TVector3D; B: TMatrix3D): TVector3D;
+operator * (A: TVector4D; B: TMatrix4D): TVector4D;
+
+function Rotate(Deg: Single; AVector, Axis: TVector3D): TVector3D;
 
 implementation
 
@@ -396,16 +408,19 @@ end;
 
 function Normalize(A: TVector2D): TVector2D;
 begin
+  if VecLength(A) = 0 then exit(A);
   Result := A / VecLength(A);
 end;
 
 function Normalize(A: TVector3D): TVector3D;
 begin
+  if VecLength(A) = 0 then exit(A);
   Result := A / VecLength(A);
 end;
 
 function Normalize(A: TVector4D): TVector4D;
 begin
+  if VecLength(A) = 0 then exit(A);
   Result := A / VecLength(A);
 end;
 
@@ -435,5 +450,49 @@ begin
   Result := Vector(A.X, A.Y) / A.Z;
 end;
 
+
+function Matrix3D(A, B, C: TVector3D): TMatrix3D;
+begin
+  Result[0] := A;
+  Result[1] := B;
+  Result[2] := C;
+end;
+
+function Matrix4D(A, B, C, D: TVector4D): TMatrix4D;
+begin
+  Result[0] := A;
+  Result[1] := B;
+  Result[2] := C;
+  Result[3] := D;
+end;
+
+
+operator * (A: TVector3D; B: TMatrix3D): TVector3D;
+begin
+  Result.X := B[0].X * A.X + B[0].Y * A.Y + B[0].Z * A.Z;
+  Result.Y := B[1].X * A.X + B[1].Y * A.Y + B[1].Z * A.Z;
+  Result.Z := B[2].X * A.X + B[2].Y * A.Y + B[2].Z * A.Z;
+end;
+
+operator * (A: TVector4D; B: TMatrix4D): TVector4D;
+begin
+  Result.X := B[0].X * A.X + B[0].Y * A.Y + B[0].Z * A.Z + B[0].W * A.W;
+  Result.Y := B[1].X * A.X + B[1].Y * A.Y + B[1].Z * A.Z + B[1].W * A.W;
+  Result.Z := B[2].X * A.X + B[2].Y * A.Y + B[2].Z * A.Z + B[2].W * A.W;
+  Result.W := B[3].X * A.X + B[3].Y * A.Y + B[3].Z * A.Z + B[3].W * A.W;
+end;
+
+
+function Rotate(Deg: Single; AVector, Axis: TVector3D): TVector3D;
+var
+  c, s: Single;
+begin
+  Axis := Normalize(Axis);
+  C := Cos(DegToRad(Deg));
+  S := Sin(DegToRad(Deg));
+  Result := AVector * Matrix3D(Vector(Axis.X * Axis.X * (1 - C) + C, Axis.X * Axis.Y * (1 - C) - Axis.Z * s, Axis.X * Axis.Z * (1 - C) + Axis.Y * s),
+                               Vector(Axis.Y * Axis.X * (1 - C) + Axis.Z * S, Axis.Y * Axis.Y * (1 - C) + C, Axis.Y * Axis.Z * (1 - C) - Axis.X * s),
+                               Vector(Axis.X * Axis.Z * (1 - C) - Axis.Y * S, Axis.Y * Axis.Z * (1 - C) + Axis.X * s, Axis.Z * Axis.Z * (1 - C) + C));
+end;
 
 end.

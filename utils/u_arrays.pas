@@ -49,6 +49,7 @@ type
       function HasRow(Items: TRow): Integer;
       function HasCol(Items: TRow): Integer;
       function GetPart(OfsX, OfsY, W, H: Integer): TTable;
+      procedure FastCopy(D: Pointer); // WARNING: NOT FAILSAFE
       destructor Free;
     end;
 
@@ -377,6 +378,18 @@ begin
   Result := TTable.Create;
   for i := 0 to W - 1 do
     Result.InsertCol(i, GetCol(OfsX + i).Extract(OfsY, Height));
+end;
+
+procedure TTable.FastCopy(D: Pointer); // WARNING: NOT FAILSAFE
+var
+  i, j: Integer;
+begin
+  for j := 0 to Height - 1 do
+    for i := 0 to Width - 1 do
+      begin
+      Integer(D^) := fData[i, j];
+      inc(D, SizeOf(Integer));
+      end;
 end;
 
 destructor TTable.Free;

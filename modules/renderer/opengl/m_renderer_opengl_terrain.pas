@@ -39,7 +39,7 @@ type
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
       fPrevPos: TVector2D;
-      fHeightMap: TFBO;
+      fHeightMap: TTexture;
       fFrameCount: Byte;
       RenderStep: Single;
       procedure Sync;
@@ -306,7 +306,7 @@ begin
   glDisable(GL_BLEND);
   fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
   fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
-  fHeightMap.Textures[0].Bind(1);
+  fHeightMap.Bind(1);
   Park.pTerrain.Collection.Texture.Bind(0);
   fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
@@ -490,7 +490,7 @@ var
 begin
   glDisable(GL_CULL_FACE);
   fWaterShaderTransformDepth.Bind;
-  fHeightMap.Textures[0].Bind(0);
+  fHeightMap.Bind(0);
   for i := 0 to high(fWaterLayerFBOs) do
     begin
     if fWaterLayerFBOs[i].Deletable then
@@ -505,7 +505,7 @@ begin
     glEnd;
     fWaterLayerFBOs[i].Query.EndCounter;
     end;
-  fHeightMap.Textures[0].Unbind;
+  fHeightMap.Unbind;
   fWaterShaderTransformDepth.Unbind;
   glEnable(GL_CULL_FACE);
 end;
@@ -535,7 +535,7 @@ begin
     fWaterLayerFBOs[k].ReflectionFBO.Textures[0].Bind(1);
     fWaterLayerFBOs[k].RefractionFBO.Textures[0].Bind(2);
     fWaterBumpmap.Bind(3);
-    fHeightMap.Textures[0].Bind(0);
+    fHeightMap.Bind(0);
     glTexCoord3f(fWaterBumpmapOffset.X, fWaterBumpmapOffset.Y, fWaterLayerFBOs[k].Height);
     fWaterVBO.Bind;
     fWaterVBO.Render;
@@ -612,7 +612,7 @@ var
   Pixel: TVector4D;
   procedure StartUpdate;
   begin
-    fHeightMap.Textures[0].Bind(0);
+    fHeightMap.Bind(0);
   end;
 
   procedure UpdateVertex(X, Y: Word);
@@ -623,7 +623,7 @@ var
 
   procedure EndUpdate;
   begin
-    fHeightMap.Textures[0].Unbind;
+    fHeightMap.Unbind;
   end;
 begin
   if Event = 'TTerrain.Resize' then
@@ -639,9 +639,11 @@ begin
     fAPShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     if fHeightMap <> nil then
       fHeightMap.Free;
-    fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY, true);
-    fHeightMap.AddTexture(GL_RGBA16F, GL_NEAREST, GL_NEAREST);
-    fHeightMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fHeightMap := TTexture.Create;
+    fHeightMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGBA16F);
+//     fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY, true);
+    fHeightMap.SetFilter(GL_NEAREST, GL_NEAREST);
+    fHeightMap.SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
     SetLength(fAvgHeight, Park.pTerrain.SizeX div 128);
     SetLength(fHeightRanges, Park.pTerrain.SizeX div 128);

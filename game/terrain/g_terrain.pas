@@ -325,7 +325,7 @@ begin
   fY := Round(Clamp(5 * Y, 0, fSizeY - 1));
   fMap[fX, fY].Height := Round(256 * Height);
   if fMap[fX, fY].Height >= fMap[fX, fY].Water then
-    WaterMap[fX, fY] := 0;
+    fMap[fX, fY].Water := 0;
   SetLength(fCoordsToUpdate, 2 + length(fCoordsToUpdate));
   fCoordsToUpdate[high(fCoordsToUpdate) - 1] := Round(5 * X);
   fCoordsToUpdate[high(fCoordsToUpdate) - 0] := Round(5 * Y);

@@ -610,6 +610,7 @@ procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
   i, j, k, l: Integer;
   Pixel: TVector4D;
+  hd: Boolean;
   procedure StartUpdate;
   begin
     fHeightMap.Bind(0);
@@ -617,9 +618,16 @@ var
 
   procedure UpdateVertex(X, Y: Word);
   begin
-    writeln('Updating ', X, ' ', Y);
     Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
+  end;
+
+  procedure UpdateVertexSD(X, Y: Word);
+  begin
+    if (x mod 4 <> 0) or (y mod 4 = 0) then exit;
+    writeln('Updating ', X, ' ', Y);
+    Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, X div 4, Y div 4, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
 
   procedure EndUpdate;
@@ -627,6 +635,7 @@ var
     fHeightMap.Unbind;
   end;
 begin
+  hd := fInterface.Options.Items['terrain:hd'] <> 'off';
   if Event = 'TTerrain.Resize' then
     begin
     Sync;
@@ -641,8 +650,10 @@ begin
     if fHeightMap <> nil then
       fHeightMap.Free;
     fHeightMap := TTexture.Create;
-    fHeightMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGBA16F);
-//     fHeightMap := TFBO.Create(Park.pTerrain.SizeX, Park.pTerrain.SizeY, true);
+    if hd then
+      fHeightMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGBA16F)
+    else
+      fHeightMap.CreateNew(Park.pTerrain.SizeX div 4, Park.pTerrain.SizeY div 4, GL_RGBA16F);
     fHeightMap.SetFilter(GL_NEAREST, GL_NEAREST);
     fHeightMap.SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
@@ -662,9 +673,16 @@ begin
         setLength(fWaterLayerFBOs[i].Blocks[j], Park.pTerrain.SizeX div 128);
       end;
     StartUpdate;
+    if hd then
+      begin
       for i := 0 to Park.pTerrain.SizeX - 1 do
         for j := 0 to Park.pTerrain.SizeY - 1 do
           UpdateVertex(I, J);
+      end
+    else
+      for i := 0 to Park.pTerrain.SizeX - 1 do
+        for j := 0 to Park.pTerrain.SizeY - 1 do
+          UpdateVertexSD(I, J);
     EndUpdate;
 
     RecreateBorderVBO;
@@ -678,11 +696,17 @@ begin
     begin
     k := Integer(Data^);
     StartUpdate;
-    for i := 0 to k - 1 do
-      UpdateVertex(Integer((Data + 8 * i + 4)^), Integer((Data + 8 * i + 8)^));
+    if hd then
+      begin
+      for i := 0 to k - 1 do
+        UpdateVertex(Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^), Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
+      end
+    else
+      for i := 0 to k - 1 do
+        UpdateVertexSD(Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^), Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
     EndUpdate;
     for i := 0 to k - 1 do
-      CheckWaterLevel(Integer((Data + 8 * i + 4)^), Integer((Data + 8 * i + 8)^));
+      CheckWaterLevel(Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^), Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
     if Event <> 'TTerrain.ChangedTexmap' then
       begin
       fCheckBBoxes := Event <> 'TTerrain.ChangedWater';

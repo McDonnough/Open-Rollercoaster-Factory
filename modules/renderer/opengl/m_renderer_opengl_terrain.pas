@@ -23,6 +23,7 @@ type
     protected
       fForcedHeightLine: Single;
       fCanWork, fWorking: Boolean;
+      fTerrainEditorIsOpen: Boolean;
       fCheckBBoxes, fCheckWater: Boolean;
       fUpdatePlants: Boolean;
       fFineVBO, fGoodVBO, fRawVBO, fWaterVBO, fBorderVBO: TVBO;
@@ -47,6 +48,7 @@ type
       procedure CheckWaterLevel(X, Y: Word);
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
+      procedure ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
       procedure Render(Event: String; Data, Result: Pointer);
       procedure RecreateWaterVBO;
@@ -150,6 +152,11 @@ begin
     end;
     end;
   writeln('Hint: Terminated terrain renderer thread');
+end;
+
+procedure TRTerrain.ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
+begin
+  fTerrainEditorIsOpen := not fTerrainEditorIsOpen;
 end;
 
 procedure TRTerrain.SetHeightLine(Event: String; Data, Result: Pointer);
@@ -316,6 +323,16 @@ begin
       fBoundShader.UniformF('HeightLineToHighlight', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
     else
       fBoundShader.UniformF('HeightLineToHighlight', fForcedHeightLine);
+    if fTerrainEditorIsOpen then
+      begin
+      fBoundShader.UniformF('Min', 0, 0);
+      fBoundShader.UniformF('Max', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+      end
+    else
+      begin
+      fBoundShader.UniformF('Min', -10000, -10000);
+      fBoundShader.UniformF('Max', 10000, 10000);
+      end;
     end;
   fBoundShader.Bind;
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
@@ -705,6 +722,7 @@ var
   TexFormat, CompressedTexFormat: GLEnum;
 begin
   inherited Create(false);
+  fTerrainEditorIsOpen := false;
   fForcedHeightLine := -1;
   fFrameCount := 0;
   fWaterVBO := nil;
@@ -799,6 +817,8 @@ begin
     for i := 0 to high(fAPVBOs) do
       fAPVBOs[i] := nil;
     EventManager.AddCallback('TTerrain.ApplyForcedHeightLine', @SetHeightLine);
+    EventManager.AddCallback('GUIActions.terrain_edit.open', @ChangeTerrainEditorState);
+    EventManager.AddCallback('GUIActions.terrain_edit.close', @ChangeTerrainEditorState);
     EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
     EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
     EventManager.AddCallback('TTerrain.ChangedTexmap', @ApplyChanges);
@@ -821,6 +841,7 @@ begin
       fAPVBOs[i].Free;
   for i := 0 to high(fWaterLayerFBOs) do
     fWaterLayerFBOs[i].Free;
+  EventManager.RemoveCallback(@ChangeTerrainEditorState);
   EventManager.RemoveCallback(@SetHeightLine);
   EventManager.RemoveCallback(@ApplyChanges);
   EventManager.RemoveCallback(@UpdateCollection);

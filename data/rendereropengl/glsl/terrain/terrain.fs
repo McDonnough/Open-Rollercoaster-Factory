@@ -9,6 +9,8 @@ uniform float maxBumpDistance;
 uniform vec2 TerrainSize;
 uniform vec2 PointToHighlight;
 uniform float HeightLineToHighlight;
+uniform vec2 Min;
+uniform vec2 Max;
 
 varying float dist;
 varying float SDist;
@@ -39,12 +41,12 @@ vec2 trunc(vec2 a) {
 }
 
 vec2 getRightTexCoord(float fac) {
-  vec2 result = clamp(trunc(gl_TexCoord[0].xy * 4.0 * fac), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0;
+  vec2 result = clamp(trunc(gl_TexCoord[0].xy * 2.0 * fac), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0;
   vec2 iparts = gl_TexCoord[0].xy * 4.0 * fac - trunc(gl_TexCoord[0].xy * 4.0 * fac);
-  if (fpart(iparts.x / 2.0) > 0.4)
+/*  if (fpart(iparts.x / 2.0) > 0.4)
     result.x = 0.25 - result.x;
   if (fpart(iparts.y / 2.0) > 0.4)
-    result.y = 0.25 - result.y;
+    result.y = 0.25 - result.y;*/
   return result;
 }
 
@@ -133,5 +135,7 @@ void main(void) {
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)));
   if (HeightLineToHighlight >= 0)
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
+  if (clamp(Vertex.xz, Min, Max) != Vertex.xz)
+    gl_FragColor.rgb *= 0.5;
   gl_FragColor = mix(gl_FragColor, Diffuse, pow(dist / 5000.0, 2.0));
 }

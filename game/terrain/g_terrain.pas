@@ -158,7 +158,7 @@ begin
         fTexture.CreateNew(Temptex.Width, Temptex.Height, CompressedTexFormat);
         fTexture.setClamp(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
         gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
-        fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+        fTexture.SetFilter(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_LINEAR);
         end;
       end;
     e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('materials'))[0]);

@@ -33,6 +33,12 @@ void main(void) {
   Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0)) * max(0.0, dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
   Ambient = gl_LightSource[0].ambient;
   AddLight(1);
+  AddLight(2);
+  AddLight(3);
+  AddLight(4);
+  AddLight(5);
+  AddLight(6);
+  AddLight(7);
   gl_FragColor.rgb *= (Diffuse + Ambient).rgb;
   gl_FragColor.a *= 1.2 * clamp(0.2 * (20 - dist), 0.0, 1.0);
 }

@@ -70,6 +70,7 @@ type
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
       property Collection: TTerrainCollection read fCollection;
       property Marks: TTable read fMarks;
+      procedure AutoTexture(Tex, Mode: Integer; V: Single);
       procedure FillWithWater(X, Y, H: Single; Notify: Boolean = true);
       procedure RemoveWater(X, Y: Single; Notify: Boolean = true);
       procedure ChangeCollection(S: String);
@@ -157,7 +158,7 @@ begin
         fTexture.CreateNew(Temptex.Width, Temptex.Height, CompressedTexFormat);
         fTexture.setClamp(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
         gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
-        fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+        fTexture.SetFilter(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_LINEAR);
         end;
       end;
     e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('materials'))[0]);
@@ -203,6 +204,23 @@ begin
 end;
 
 
+procedure TTerrain.AutoTexture(Tex, Mode: Integer; V: Single);
+var
+  i, j: Integer;
+begin
+  for i := MinX to MaxX do
+    for j := MinY to MaxY do
+      if (fMarkMap.Value[I, J] > 0) then
+        case Mode of
+          0: if HeightMap[I / 5, J / 5] <= V then TexMap[I / 5, J / 5] := Tex;
+          1: if HeightMap[I / 5, J / 5] >= V then TexMap[I / 5, J / 5] := Tex;
+          2: if (abs((HeightMap[i / 5, j / 5] - HeightMap[(i - 1) / 5, (j) / 5]) / 0.2) > V)
+             or (abs((HeightMap[i / 5, j / 5] - HeightMap[(i - 1) / 5, (j - 1) / 5]) / 0.282) > V)
+             or (abs((HeightMap[i / 5, j / 5] - HeightMap[(i) / 5, (j - 1) / 5]) / 0.2) > V) then
+               TexMap[I / 5, J / 5] := Tex;
+          end;
+
+end;
 
 procedure TTerrain.FillWithWater(X, Y, H: Single; Notify: Boolean = true);
 var
@@ -561,11 +579,17 @@ procedure TTerrain.CreateMarkMap;
         A.Length = 0;
       a.Free;
     end;
+  var
+    RMaxX, RMaxY, RMinX, RMinY: Integer;
   begin
-    MinX := Max(0, fMarks.GetCol(0).Min - 2);
-    MinY := Max(0, fMarks.GetCol(1).Min - 2);
-    MaxX := Min(SizeX - 1, fMarks.GetCol(0).Max + 2);
-    MaxY := Min(SizeY - 1, fMarks.GetCol(1).Max + 2);
+    RMinX := fMarks.GetCol(0).Min - 2;
+    RMinY := fMarks.GetCol(1).Min - 2;
+    RMaxX := fMarks.GetCol(0).Max + 2;
+    RMaxY := fMarks.GetCol(1).Max + 2;
+    MinX := Max(0, RMinX);
+    MinY := Max(0, RMinY);
+    MaxX := Min(SizeX - 1, RMaxX);
+    MaxY := Min(SizeY - 1, RMaxY);
     if Marks.Height < 3 then
       exit;
     for i := MinX to MaxX do
@@ -574,10 +598,14 @@ procedure TTerrain.CreateMarkMap;
     for i := 0 to Marks.Height - 2 do
       MakeLine(Marks.Value[0, i], Marks.Value[1, i], Marks.Value[0, i + 1], Marks.Value[1, i + 1]);
     MakeLine(Marks.Value[0, Marks.Height - 1], Marks.Value[1, Marks.Height - 1], Marks.Value[0, 0], Marks.Value[1, 0]);
-    FillField(MinX, MinY);
-    FillField(MinX, MaxY);
-    FillField(MaxX, MinY);
-    FillField(MaxX, MaxY);
+    if (MinX = RMinX) and (MinY = RMinY) then
+      FillField(MinX, MinY);
+    if (MinX = RMinX) and (MaxY = RMaxY) then
+      FillField(MinX, MaxY);
+    if (MaxX = RMaxX) and (MinY = RMinY) then
+      FillField(MaxX, MinY);
+    if (MaxX = RMaxX) and (MaxY = RMaxY) then
+      FillField(MaxX, MaxY);
     for i := MinX to MaxX do
       for j := MinY to MaxY do
         if fMarkMap.Value[I, J] <= 50 then
@@ -586,6 +614,28 @@ procedure TTerrain.CreateMarkMap;
     for i := MinX to MaxX do
       for j := MinY to MaxY do
         fMarkMap.Value[i, j] := 100 - fMarkMap.Value[i, j];
+    for i := MinX to MaxX do
+      begin
+      if fMarkMap.Value[i, 2] > 0 then
+        fMarkMap.Value[i, 1] := fMarkMap.Value[i, 2];
+      if fMarkMap.Value[i, 1] > 0 then
+        fMarkMap.Value[i, 0] := fMarkMap.Value[i, 1];
+      if fMarkMap.Value[i, SizeY - 3] > 0 then
+        fMarkMap.Value[i, SizeY - 2] := fMarkMap.Value[i, SizeY - 3];
+      if fMarkMap.Value[i, SizeY - 2] > 0 then
+        fMarkMap.Value[i, SizeY - 1] := fMarkMap.Value[i, SizeY - 2];
+      end;
+    for i := MinY to MaxY do
+      begin
+      if fMarkMap.Value[2, i] > 0 then
+        fMarkMap.Value[1, i] := fMarkMap.Value[2, i];
+      if fMarkMap.Value[1, i] > 0 then
+        fMarkMap.Value[0, i] := fMarkMap.Value[1, i];
+      if fMarkMap.Value[SizeX - 3, i] > 0 then
+        fMarkMap.Value[SizeX - 2, i] := fMarkMap.Value[SizeX - 3, i];
+      if fMarkMap.Value[SizeX - 2, i] > 0 then
+        fMarkMap.Value[SizeX - 1, i] := fMarkMap.Value[SizeX - 2, i];
+      end;
   end;
 begin
   CreatedField(0, 0);
@@ -740,8 +790,8 @@ var
   i, j: Integer;
 begin
   BeginUpdate;
-  for i := MinX + 2 to MaxX - 2 do
-    for j := MinY + 2 to MaxY - 2 do
+  for i := MinX to MaxX do
+    for j := MinY to MaxY do
       if (fMarkMap.Value[I, J] > 0) then
         HeightMap[i / 5, j / 5] := (HeightMap[(i + 0) / 5, (j + 0) / 5]
                                   + HeightMap[(i + 1) / 5, (j + 0) / 5]

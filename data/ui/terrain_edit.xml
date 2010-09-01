@@ -14,13 +14,16 @@
     <label left="0" top="0" height="80" width="3000" name="terrain_edit.tab.container">
       <label left="8" width="734" height="80" top="0">
         <iconbutton left="0" top="8" icon="terrain-raise.tga" name="terrain_edit.modify_raise" onclick="terrain_edit.modify.raise" />
-        <iconbutton left="72" top="8" icon="terrain-lower.tga" name="terrain_edit.modify_lower" onclick="terrain_edit.modify.lower" />
-        <iconbutton left="144" top="8" icon="terrain-maximum.tga" name="terrain_edit.modify_maximum" onclick="terrain_edit.modify.maximum" />
-        <iconbutton left="216" top="8" icon="terrain-minimum.tga" name="terrain_edit.modify_minimum" onclick="terrain_edit.modify.minimum" />
-        <iconbutton left="288" top="8" icon="terrain-setfix.tga" name="terrain_edit.modify_setfix" onclick="terrain_edit.modify.setfix" />
-        <iconbutton left="360" top="8" icon="terrain-smooth.tga" name="terrain_edit.modify_smooth" onclick="terrain_edit.modify.smooth" />
-        <edit left="432" top="8" height="32" width="60" name="terrain_edit.selected_height">0</edit>
-        <button left="432" top="40" height="32" width="60" onclick="terrain_edit.pick_height">Pick</button>
+        <iconbutton left="64" top="8" icon="terrain-lower.tga" name="terrain_edit.modify_lower" onclick="terrain_edit.modify.lower" />
+        <iconbutton left="128" top="8" icon="terrain-maximum.tga" name="terrain_edit.modify_maximum" onclick="terrain_edit.modify.maximum" />
+        <iconbutton left="192" top="8" icon="terrain-minimum.tga" name="terrain_edit.modify_minimum" onclick="terrain_edit.modify.minimum" />
+        <iconbutton left="256" top="8" icon="terrain-setfix.tga" name="terrain_edit.modify_setfix" onclick="terrain_edit.modify.setfix" />
+        <iconbutton left="320" top="8" icon="terrain-smooth.tga" name="terrain_edit.modify_smooth" onclick="terrain_edit.modify.smooth" />
+        <edit left="392" top="8" height="32" width="54" name="terrain_edit.selected_height" onhover="terrain_edit.createheightline" onleave="terrain_edit.removeheightline">64</edit>
+        <iconbutton left="448" top="12" width="24" height="24" icon="go-up.tga" name="terrain_edit.height.raise" onclick="terrain_edit.modifyheight" onhover="terrain_edit.createheightline" onleave="terrain_edit.removeheightline" />
+        <iconbutton left="472" top="12" width="24" height="24" icon="go-down.tga" name="terrain_edit.height.lower" onclick="terrain_edit.modifyheight" onhover="terrain_edit.createheightline" onleave="terrain_edit.removeheightline" />
+        <button left="392" top="40" height="32" width="54" onclick="terrain_edit.pick_height">Mark</button>
+        <button left="448" top="40" height="32" width="54" name="terrain_edit.select_height" onclick="terrain_edit.marks.add">Pick</button>
         <label left="568" top="16" height="16" width="8" align="center">x</label>
         <label left="508" top="16" height="16" width="60" align="center" name="terrain_edit.sizex">1024</label>
         <iconbutton left="508" top="32" width="32" height="32" icon="list-add.tga" name="terrain_edit.grow.x" onclick="terrain_edit.resize" />
@@ -31,27 +34,32 @@
       </label>
       <label left="758" width="734" height="80" top="0">
         <iconbutton left="0" top="8" icon="terrain-setwater.tga" name="terrain_edit.water_set" onclick="terrain_edit.marks.add" />
-        <iconbutton left="72" top="8" icon="waterfall.tga" name="terrain_edit.waterfall" onclick="terrain_edit.marks.add" />
+        <iconbutton left="64" top="8" icon="terrain-deletewater.tga" name="terrain_edit.water_set" onclick="terrain_edit.marks.add" />
+        <iconbutton left="128" top="8" icon="waterfall.tga" name="terrain_edit.waterfall" onclick="terrain_edit.marks.add" />
       </label>
       <label left="1508" width="734" height="80" top="0">
         <iconbutton left="0" top="8" name="terrain_edit.texture_1" onclick="terrain_edit.texture.set" />
-        <iconbutton left="72" top="8" name="terrain_edit.texture_2" onclick="terrain_edit.texture.set" />
-        <iconbutton left="144" top="8" name="terrain_edit.texture_3" onclick="terrain_edit.texture.set" />
-        <iconbutton left="216" top="8" name="terrain_edit.texture_4" onclick="terrain_edit.texture.set" />
-        <iconbutton left="288" top="8" name="terrain_edit.texture_5" onclick="terrain_edit.texture.set" />
-        <iconbutton left="360" top="8" name="terrain_edit.texture_6" onclick="terrain_edit.texture.set" />
-        <iconbutton left="432" top="8" name="terrain_edit.texture_7" onclick="terrain_edit.texture.set" />
-        <iconbutton left="504" top="8" name="terrain_edit.texture_8" onclick="terrain_edit.texture.set" />
+        <iconbutton left="64" top="8" name="terrain_edit.texture_2" onclick="terrain_edit.texture.set" />
+        <iconbutton left="128" top="8" name="terrain_edit.texture_3" onclick="terrain_edit.texture.set" />
+        <iconbutton left="192" top="8" name="terrain_edit.texture_4" onclick="terrain_edit.texture.set" />
+        <iconbutton left="256" top="8" name="terrain_edit.texture_5" onclick="terrain_edit.texture.set" />
+        <iconbutton left="320" top="8" name="terrain_edit.texture_6" onclick="terrain_edit.texture.set" />
+        <iconbutton left="384" top="8" name="terrain_edit.texture_7" onclick="terrain_edit.texture.set" />
+        <iconbutton left="448" top="8" name="terrain_edit.texture_8" onclick="terrain_edit.texture.set" />
       </label>
       <label left="2258" width="734" height="80" top="0">
-        <iconbutton left="0" top="48" width="32" height="32" name="terrain_edit.small_texture_1" onclick="terrain_edit.auto.texture.set" />
-        <iconbutton left="32" top="48" width="32" height="32" name="terrain_edit.small_texture_2" onclick="terrain_edit.auto.texture.set" />
-        <iconbutton left="64" top="48" width="32" height="32" name="terrain_edit.small_texture_3" onclick="terrain_edit.auto.texture.set" />
-        <iconbutton left="96" top="48" width="32" height="32" name="terrain_edit.small_texture_4" onclick="terrain_edit.auto.texture.set" />
-        <iconbutton left="128" top="48" width="32" height="32" name="terrain_edit.small_texture_5" onclick="terrain_edit.auto.texture.set" />
-        <iconbutton left="160" top="48" width="32" height="32" name="terrain_edit.small_texture_6" onclick="terrain_edit.auto.texture.set" />
-        <iconbutton left="192" top="48" width="32" height="32" name="terrain_edit.small_texture_7" onclick="terrain_edit.auto.texture.set" />
-        <iconbutton left="224" top="48" width="32" height="32" name="terrain_edit.small_texture_8" onclick="terrain_edit.auto.texture.set" />
+        <button top="8" left="0" width="120" height="32" name="terrain_edit.autotex.lower" onclick="terrain_edit.autotex.changemode">Lower than..</button>
+        <button alpha="0.5" top="8" left="120" width="120" height="32" name="terrain_edit.autotex.higher" onclick="terrain_edit.autotex.changemode">Higher than..</button>
+        <button alpha="0.5" top="8" left="240" width="120" height="32" name="terrain_edit.autotex.steeper" onclick="terrain_edit.autotex.changemode">Steeper than..</button>
+        <edit top="48" left="256" width="104" height="32" name="terrain_edit.autotex.value">64</edit>
+        <iconbutton left="0" top="48" width="32" height="32" name="terrain_edit.small_texture_1" onclick="terrain_edit.autotex.set" />
+        <iconbutton left="32" top="48" width="32" height="32" name="terrain_edit.small_texture_2" onclick="terrain_edit.autotex.set" />
+        <iconbutton left="64" top="48" width="32" height="32" name="terrain_edit.small_texture_3" onclick="terrain_edit.autotex.set" />
+        <iconbutton left="96" top="48" width="32" height="32" name="terrain_edit.small_texture_4" onclick="terrain_edit.autotex.set" />
+        <iconbutton left="128" top="48" width="32" height="32" name="terrain_edit.small_texture_5" onclick="terrain_edit.autotex.set" />
+        <iconbutton left="160" top="48" width="32" height="32" name="terrain_edit.small_texture_6" onclick="terrain_edit.autotex.set" />
+        <iconbutton left="192" top="48" width="32" height="32" name="terrain_edit.small_texture_7" onclick="terrain_edit.autotex.set" />
+        <iconbutton left="224" top="48" width="32" height="32" name="terrain_edit.small_texture_8" onclick="terrain_edit.autotex.set" />
       </label>
     </label>
   </label>

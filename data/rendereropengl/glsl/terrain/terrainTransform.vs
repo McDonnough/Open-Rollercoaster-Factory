@@ -15,9 +15,11 @@ float fetchHeightAtOffset(vec2 O) {
   return texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;
 }
 
+const vec4 LODMap = vec4(8.0, 4.0, 1.0, 1.0);
+
 void main(void) {
   Vertex = gl_Vertex;
-  Vertex.xz *= pow(4.0, 2.0 - LOD);
+  Vertex.xz *= LODMap[LOD];
   Vertex.xz += VOffset;
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);

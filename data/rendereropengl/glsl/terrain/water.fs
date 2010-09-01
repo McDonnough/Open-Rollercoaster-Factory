@@ -42,10 +42,10 @@ void main(void) {
   float terrainHeight = fetchHeight(3);
   vec4 Position = gl_ModelViewProjectionMatrix * Vertex;
   vec2 RealPosition = 0.5 + 0.5 * (Position.xy / Position.w);
-  normal = normalize((-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 30.0 + gl_TexCoord[0].xy).rbg) - (-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 15.0 + 0.5 * gl_TexCoord[0].yx).rbg) + vec3(0.0, 1.0, 0.0));
+  normal = normalize((-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 15.0 + gl_TexCoord[0].xy).rbg) - (-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 7.5 + 0.5 * gl_TexCoord[0].yx).rbg) + vec3(0.0, 1.0, 0.0));
   vec2 reflectionOffset = normal.xz / 10.0;
   vec4 result = gl_TextureMatrix[0] * Vertex;
-  result = sqrt(abs(result)) * sign(result);
+//   result = sqrt(abs(result)) * sign(result);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   if (length(result.xy / result.w) < 1.0)
     SunShadow = texture2D(SunShadowMap, 0.5 + 0.5 * result.xy / result.w);
@@ -60,6 +60,12 @@ void main(void) {
   RefractColor.a = Vertex.y - texture2D(RefractionMap, RealPosition).a;
   RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * pow((1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0)), 2.0);
   AddLight(1);
+  AddLight(2);
+  AddLight(3);
+  AddLight(4);
+  AddLight(5);
+  AddLight(6);
+  AddLight(7);
   gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
   gl_FragColor += RefractColor * MirrorFactor;
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);

@@ -11,7 +11,6 @@ type
     protected
       fRenderThreads: Array of TRendererRaytraceThread;
       fContentTexture: TTexture;
-      fAAShader: TShader;
       fChunkMap: Array of Integer;
       ResX, ResY: Integer;
       PixelData: Array of DWord;
@@ -31,9 +30,6 @@ implementation
 uses
   m_varlist, u_events;
 
-const
-  SAMPLES = 1;
-
 procedure TModuleRendererRaytrace.Sync;
 var
   i: Integer;
@@ -48,13 +44,6 @@ var
   i: Integer;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
-  fAAShader := TShader.Create('rendererraytrace/glsl/aa.vs', 'rendererraytrace/glsl/aa.fs');
-  fAAShader.UniformI('Size', ResX, ResY);
-  fAAShader.UniformI('Samples', SAMPLES);
-  fAAShader.UniformI('Image', 0);
-  fAAShader.Unbind;
-  ResX := ResX * SAMPLES;
-  ResY := ResY * SAMPLES;
   SetLength(fChunkMap, Ceil(ResX / 20) * Ceil(ResY / 20));
   SetLength(PixelData, 20 * 20 * length(fChunkMap));
   SetLength(fRenderThreads, StrToIntWD(GetConfVal('threads'), 2));
@@ -67,6 +56,7 @@ begin
     fRenderThreads[i].PixelMap := @PixelData[0];
     fRenderThreads[i].ResX := 20 * Ceil(ResX / 20);
     fRenderThreads[i].ResY := 20 * Ceil(ResY / 20);
+    fRenderThreads[i].Samples := StrToIntWD(GetConfVal('samples'), 1);
     end;
   fContentTexture := TTexture.Create;
   fContentTexture.CreateNew(20 * Ceil(ResX / 20), 20 * Ceil(ResY / 20), GL_RGBA);
@@ -87,7 +77,6 @@ begin
     fRenderThreads[i].Free;
     end;
   SetLength(fRenderThreads, 0);
-  fAAShader.Free;
 end;
 
 procedure TModuleRendererRaytrace.RenderScene;
@@ -122,16 +111,12 @@ begin
 
   glDisable(GL_ALPHA_TEST);
 
-  fAAShader.Bind;
-
   glBegin(GL_QUADS);
-    glVertex3f(-1, -1, -1);
-    glVertex3f( 1, -1, -1);
-    glVertex3f( 1,  1, -1);
-    glVertex3f(-1,  1, -1);
+    glTexCoord2f(0, 0); glVertex3f(-1, -1, -1);
+    glTexCoord2f(1, 0); glVertex3f( 1, -1, -1);
+    glTexCoord2f(1, 1); glVertex3f( 1,  1, -1);
+    glTexCoord2f(0, 1); glVertex3f(-1,  1, -1);
   glEnd;
-
-  fAAShader.UnBind;
 
   glDisable(GL_BLEND);
   glEnable(GL_ALPHA_TEST);
@@ -146,13 +131,14 @@ procedure TModuleRendererRaytrace.CheckModConf;
 begin
   fModName := 'RendererRT';
   fModType := 'Renderer';
-  if GetConfVal('used') = '' then
+  if GetConfVal('used') <> '1' then
     begin
     SetConfVal('used', '1');
     SetConfVal('depthoffield', '1');
     SetConfVal('globallight', '1');
     SetConfVal('3dmode', '0');
     SetConfVal('threads', '2');
+    SetConfVal('samples', '1');
     end;
 end;
 

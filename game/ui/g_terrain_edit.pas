@@ -3,7 +3,8 @@ unit g_terrain_edit;
 interface
 
 uses
-  SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors, u_arrays;
+  SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors, u_arrays, u_functions, math,
+  m_gui_button_class;
 
 type
   TGameTerrainEdit = class(TXMLUIWindow)
@@ -14,7 +15,12 @@ type
       fSelectionObject: PSelectableObject;
       fTerrainSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
+      fAutoTexMode: TButton;
     public
+      procedure SetAutotex(Event: String; Data, Result: Pointer);
+      procedure ChangeAutotexMode(Event: String; Data, Result: Pointer);
+      procedure ModifyHeight(Event: String; Data, Result: Pointer);
+      procedure HeightLine(Event: String; Data, Result: Pointer);
       procedure SetSize(Event: String; Data, Result: Pointer);
       procedure Resized(Event: String; Data, Result: Pointer);
       procedure PickHeight(Event: String; Data, Result: Pointer);
@@ -40,6 +46,52 @@ uses
 
 const
   SELECTION_SIZE = 100;
+
+procedure TGameTerrainEdit.SetAutotex(Event: String; Data, Result: Pointer);
+var
+  Mode, i: Integer;
+begin
+  Mode := 0;
+  if fAutoTexMode = TButton(fWindow.GetChildByName('terrain_edit.autotex.higher')) then Mode := 1
+  else if fAutoTexMode = TButton(fWindow.GetChildByName('terrain_edit.autotex.steeper')) then Mode := 2;
+  for i := 1 to 8 do
+    if Data = Pointer(fWindow.GetChildByName('terrain_edit.small_texture_' + IntToStr(i))) then
+      begin
+      Park.pTerrain.AutoTexture(i - 1, mode, StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.autotex.value')).Text, -1));
+      exit;
+      end;
+end;
+
+procedure TGameTerrainEdit.ChangeAutotexMode(Event: String; Data, Result: Pointer);
+begin
+  if fAutoTexMode <> nil then
+    fAutoTexMode.Alpha := 0.5;
+  TButton(Data).Alpha := 1;
+  fAutoTexMode := TButton(Data);
+end;
+
+procedure TGameTerrainEdit.ModifyHeight(Event: String; Data, Result: Pointer);
+begin
+  if Data = Pointer(fWindow.GetChildByName('terrain_edit.height.raise')) then
+    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(Min(StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, 0) + 1, 255.0))
+  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.height.lower')) then
+    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(Max(StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, 0) - 1, 0.0))
+  else if Event = 'BasicComponent.OnClick' then
+    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(0.1 * Round(10 * fSelectionObject^.IntersectionPoint.Y));
+  TEdit(fWindow.GetChildByName('terrain_edit.autotex.value')).Text := TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text;
+  HeightLine('GUIActions.terrain_edit.createheightline', nil, nil);
+end;
+
+procedure TGameTerrainEdit.HeightLine(Event: String; Data, Result: Pointer);
+var
+  fForcedHeightLine: Single;
+begin
+  if Event = 'GUIActions.terrain_edit.createheightline' then
+    fForcedHeightLine := StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, -1)
+  else
+    fForcedHeightLine := -1;
+  EventManager.CallEvent('TTerrain.ApplyForcedHeightLine', @fForcedHeightLine, nil);
+end;
 
 procedure TGameTerrainEdit.SetSize(Event: String; Data, Result: Pointer);
 var
@@ -68,7 +120,10 @@ end;
 procedure TGameTerrainEdit.PickHeight(Event: String; Data, Result: Pointer);
 begin
   if Park.pTerrain.Marks.Height > 0 then
+    begin
     TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(0.1 * Round(10 * Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, Park.pTerrain.Marks.Height - 1], 0.2 * Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1]]));
+    TEdit(fWindow.GetChildByName('terrain_edit.autotex.value')).Text := TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text;
+    end;
 end;
 
 procedure TGameTerrainEdit.CollectionChanged(Event: String; Data, Result: Pointer);
@@ -175,6 +230,8 @@ begin
     Park.pTerrain.MarkMode := 0;
     Park.pTerrain.CurrMark := Vector(Round(5 * TSelectableObject(Data^).IntersectionPoint.X) / 5, Round(5 * TSelectableObject(Data^).IntersectionPoint.Z) / 5);
     end
+  else if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.select_height')) then
+    EventManager.CallEvent('TTerrain.ApplyForcedHeightLine', @(TSelectableObject(Data^).IntersectionPoint.Y), nil)
   else
     begin
     Park.pTerrain.MarkMode := 1;
@@ -231,7 +288,7 @@ var
   i, j: Integer;
 begin
   fTmpCameraOffset := VecRound(ModuleManager.ModCamera.ActiveCamera.Position * 5) / 5;
-  if (fTmpCameraOffset = fCameraOffset) and (Event <> 'GUIActions.terrain_edit.texture.set') then
+  if (fTmpCameraOffset = fCameraOffset) and (Event = 'GUIActions.terrain_edit.texture.set') then
     exit;
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
@@ -249,10 +306,12 @@ begin
     Data := nil;
   if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.add_marks')) then
     MarkMode.Left := 678;
+  HeightLine('', nil, nil);
   Park.pTerrain.CurrMark := Vector(-1, -1);
   EventManager.RemoveCallback(@UpdateTerrainSelectionMap);
   EventManager.RemoveCallback(@CreateNewMark);
   EventManager.RemoveCallback(@SetWater);
+  EventManager.RemoveCallback('BasicComponent.OnClick', @ModifyHeight);
   if Data = Pointer(fWindow.GetChildByName('terrain_edit.add_marks')) then
     begin
     Park.SelectionEngine := fTerrainSelectionEngine;
@@ -267,6 +326,14 @@ begin
     Park.SelectionEngine := fTerrainSelectionEngine;
     EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
     EventManager.AddCallback('BasicComponent.OnClick', @SetWater);
+    MarkMode := TIconifiedButton(Data);
+    end
+  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.select_height')) then
+    begin
+    OnClose('', nil, nil);
+    Park.SelectionEngine := fTerrainSelectionEngine;
+    EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
+    EventManager.AddCallback('BasicComponent.OnClick', @ModifyHeight);
     MarkMode := TIconifiedButton(Data);
     end
   else
@@ -311,6 +378,11 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.texture.set', @SetTexture);
   EventManager.AddCallback('GUIActions.terrain_edit.pick_height', @PickHeight);
   EventManager.AddCallback('GUIActions.terrain_edit.resize', @SetSize);
+  EventManager.AddCallback('GUIActions.terrain_edit.createheightline', @HeightLine);
+  EventManager.AddCallback('GUIActions.terrain_edit.removeheightline', @HeightLine);
+  EventManager.AddCallback('GUIActions.terrain_edit.modifyheight', @ModifyHeight);
+  EventManager.AddCallback('GUIActions.terrain_edit.autotex.changemode', @ChangeAutotexMode);
+  EventManager.AddCallback('GUIActions.terrain_edit.autotex.set', @SetAutoTex);
   EventManager.AddCallback('TTerrain.ChangedCollection', @CollectionChanged);
   EventManager.AddCallback('TTerrain.Resize', @Resized);
 
@@ -328,14 +400,21 @@ begin
   fTerrainSelectionEngine := TSelectionEngine.Create;
   fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, 'GUIActions.terrain_edit.marks.move');
 
+  fAutoTexMode := nil;
+
   CollectionChanged('', nil, nil);
   Resized('', nil, nil);
+  ChangeAutotexMode('', fWindow.GetChildByName('terrain_edit.autotex.lower'), nil);
 end;
 
 destructor TGameTerrainEdit.Free;
 begin
   fTerrainSelectionEngine.Free;
   fSelectionMap.Free;
+  EventManager.RemoveCallback(@SetAutoTex);
+  EventManager.RemoveCallback(@ChangeAutotexMode);
+  EventManager.RemoveCallback(@ModifyHeight);
+  EventManager.RemoveCallback(@HeightLine);
   EventManager.RemoveCallback(@SetSize);
   EventManager.RemoveCallback(@Resized);
   EventManager.RemoveCallback(@PickHeight);

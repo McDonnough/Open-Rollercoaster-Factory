@@ -10,21 +10,15 @@ uniform int LOD;
 varying float dist;
 varying vec4 Vertex;
 
-float rhf = 0.0;
-
 float fetchHeightAtOffset(vec2 O) {
   vec2 TexCoord = 5.0 * (Vertex.xz + O + vec2(0.1, 0.1));
-  float result = texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;
-/*  if (LOD == 3)
-    result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf))));*/
-  return result;
+  return texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;
 }
 
 const vec4 LODMap = vec4(8.0, 4.0, 1.0, 1.0);
 
 void main(void) {
   Vertex = gl_Vertex;
-  rhf = Vertex.y;
   Vertex.xz *= LODMap[LOD];
   Vertex.xz += VOffset;
   Vertex.y = fetchHeightAtOffset(vec2(0.0, 0.0));

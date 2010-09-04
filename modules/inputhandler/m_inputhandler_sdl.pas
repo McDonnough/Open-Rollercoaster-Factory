@@ -38,6 +38,9 @@ begin
   SDL_GetMouseState(fMouseX, fMouseY);
   QuitRequest := false;
 
+  fMouseButtons[MOUSE_WHEEL_UP] := false;
+  fMouseButtons[MOUSE_WHEEL_DOWN] := false;
+
   while SDL_PollEvent(@event) = 1 do
     case event.type_ of
       SDL_QUITEV:
@@ -47,7 +50,8 @@ begin
         fMouseButtons[Event.Button.Button] := true;
 
       SDL_MOUSEBUTTONUP:
-        fMouseButtons[Event.Button.Button] := false;
+        if Event.Button.Button <= 3 then
+          fMouseButtons[Event.Button.Button] := false;
 
       SDL_KEYDOWN:
         fKeys[Event.Key.Keysym.Sym] := true;

@@ -7,36 +7,23 @@
     <tab>License</tab>
   </tabbar>
   <label left="0" top="40" height="356" width="1800" name="info.tab.container">
-    <label left="16" top="8" size="24">ORCF development tree</label>
-    <label left="16" top="32" size="16">
-ORCF - The Open RollerCoaster Factory - is a simulation game
-similar to the RollerCoaster Tycoon series, but not focussing
-on economic strategies. It is more for people who want to create
-a good-looking theme park.
+    <label left="16" top="8" size="24" width="568">ORCF development tree</label>
+    <label left="16" top="32" size="16" width="568">
+ORCF - The Open RollerCoaster Factory - is a simulation game similar to the RollerCoaster Tycoon series, but not focussing on economic strategies. It is more for people who want to create a good-looking theme park.
 
-It is very easy to create and use custom scenery and rides because
-it's simply wanted. You can download content from
-http://insert-some-link-here.org/orcf/
+It is very easy to create and use custom scenery and rides because it's simply wanted. You can download content from http://insert-some-link-here.org/orcf/
     </label>
-    <label left="616" top="8" size="16">
+    <label left="616" top="8" size="16" width="568">
 Philip Rebohle ("ThunderGod") - Initiator, Programming
 Moritz Irgendwas ("BlackMambaFan") - Programming
     </label>
-    <label left="616" top="320" size="24">THANK YOU!</label>
-    <label left="1216" top="8" size="16">
-The contents of this file are used with permission, subject to
-the Mozilla Public License Version 1.1 (the "License"); you may
-not use this file except in compliance with the License. You may
-obtain a copy of the License at
-http://www.mozilla.org/MPL/MPL-1.1.html
+    <label left="616" top="320" size="24" width="568">THANK YOU!</label>
+    <label left="1216" top="8" size="16" width="568">
+The contents of this file are used with permission, subject to the Mozilla Public License Version 1.1 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/MPL-1.1.html
 
-Software distributed under the License is distributed on an
-"AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-implied. See the License for the specific language governing
-rights and limitations under the License.
+Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the specific language governing rights and limitations under the License.
 
-Most icons (still) come from the Oxygen project and can be downloaded
-at http://www.kde-look.org
+Most icons (still) come from the Oxygen project and can be downloaded at http://www.kde-look.org
     </label>
   </label>
 </window>

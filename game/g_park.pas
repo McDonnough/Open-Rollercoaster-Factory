@@ -3,12 +3,12 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf;
 
 type
   TPark = class
     protected
-      fFile: TDOMDocument;
+      fFile: TOCFFile;
       fParkLoader: TParkLoader;
       fInited, fPostLoading: Boolean;
       fCanRender: Boolean;
@@ -27,7 +27,7 @@ type
 
       property CanRender: Boolean read fCanRender;
       property ParkLoader: TParkLoader read fParkLoader;
-      property OCFFile: TDOMDocument read fFile;
+      property OCFFile: TOCFFile read fFile;
       property SelectionEngine: TSelectionEngine read fSelectionEngine write setSelectionEngine;
       property NormalSelectionEngine: TSelectionEngine read fNormalSelectionEngine;
 
@@ -87,7 +87,7 @@ begin
 
   fInited := false;
 
-  fFile := ModuleManager.ModOCFManager.LoadOCFFile(FileName);
+  fFile := TOCFFile.Create(FileName);
 
   ModuleManager.ModLoadScreen.Progress := 5;
   fNormalSelectionEngine := TSelectionEngine.Create;
@@ -187,6 +187,7 @@ begin
   pSky.Free;
   pTerrain.Free;
   fParkUI.Free;
+  fFile.Free;
 end;
 
 end.

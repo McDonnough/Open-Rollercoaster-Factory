@@ -46,12 +46,14 @@
         <iconbutton left="320" top="8" name="terrain_edit.texture_6" onclick="terrain_edit.texture.set" />
         <iconbutton left="384" top="8" name="terrain_edit.texture_7" onclick="terrain_edit.texture.set" />
         <iconbutton left="448" top="8" name="terrain_edit.texture_8" onclick="terrain_edit.texture.set" />
+        <button left="512" top="8" height="32" width="120" onclick="terrain_edit.load_texture">Load new...</button>
+        <label left="512" top="40" height="32" size="16" width="120">Default texture collection</label>
       </label>
       <label left="2258" width="734" height="80" top="0">
         <button top="8" left="0" width="120" height="32" name="terrain_edit.autotex.lower" onclick="terrain_edit.autotex.changemode">Lower than..</button>
         <button alpha="0.5" top="8" left="120" width="120" height="32" name="terrain_edit.autotex.higher" onclick="terrain_edit.autotex.changemode">Higher than..</button>
         <button alpha="0.5" top="8" left="240" width="120" height="32" name="terrain_edit.autotex.steeper" onclick="terrain_edit.autotex.changemode">Steeper than..</button>
-        <edit top="48" left="256" width="104" height="32" name="terrain_edit.autotex.value">64</edit>
+        <edit top="48" left="256" width="104" height="32" name="terrain_edit.autotex.value" onhover="terrain_edit.autotex.createheightline" onleave="terrain_edit.removeheightline">64</edit>
         <iconbutton left="0" top="48" width="32" height="32" name="terrain_edit.small_texture_1" onclick="terrain_edit.autotex.set" />
         <iconbutton left="32" top="48" width="32" height="32" name="terrain_edit.small_texture_2" onclick="terrain_edit.autotex.set" />
         <iconbutton left="64" top="48" width="32" height="32" name="terrain_edit.small_texture_3" onclick="terrain_edit.autotex.set" />

@@ -56,6 +56,12 @@ function StrPos(s: String; c: Char; Ofs: Integer = 1): Integer;
   *)
 function WordCount(s: String): Integer;
 
+(** Get all directories in one directory
+  *@param Directory to search im
+  *@param The list to write strings to
+  *)
+procedure GetDirectoriesInDirectory(Directory: String; List: TStringList);
+
 (** Get all files in one directory with subdirectories
   *@param Directory to search im
   *@param File mask
@@ -74,6 +80,7 @@ function StrToIntWD(A: String; Default: Integer): Integer;
 function StrToFloatWD(A: String; Default: Single): Single;
 
 function HexToInt(A: String): Integer;
+
 
 implementation
 
@@ -137,6 +144,8 @@ function SubString(s: String; Start, Len: Integer): String;
 var
   i: integer;
 begin
+  if (Len <= 0) or (Start > Length(S)) then
+    exit('');
   setLength(Result, Len);
   if Start < 0 then
     Start := length(s) + Start;
@@ -198,6 +207,26 @@ begin
         end;
 end;
 
+procedure GetDirectoriesInDirectory(Directory: String; List: TStringList);
+var
+  SR: TSearchRec;
+begin
+  if Directory[Length(Directory)] <> '/' then
+    Directory := Directory + '/';
+  Directory := ModuleManager.ModPathes.Convert(Directory);
+  if FindFirst(Directory + '*', faDirectory, SR) = 0 then
+    try
+      repeat
+      if (SR.Name <> '.') and (DirectoryExists(Directory + SR.Name)) then
+        List.Add(Directory + SR.Name)
+      until FindNext(SR) <> 0;
+    finally
+      FindClose(SR);
+    end;
+  if List.Count = 0 then
+    List.Add(Directory + '..');
+end;
+
 procedure GetFilesInDirectory(Directory: string; const Mask: string; List: TStringList; WithSubDirs, ClearList: Boolean);
 
   procedure ScanDir(Directory: string);
@@ -205,13 +234,14 @@ procedure GetFilesInDirectory(Directory: string; const Mask: string; List: TStri
     SR: TSearchRec;
   begin
     Directory := ModuleManager.ModPathes.Convert(Directory);
-    if FindFirst(Directory + Mask, faAnyFile and not faDirectory, SR) = 0 then try
-      repeat
-        List.Add(Directory + SR.Name)
-      until FindNext(SR) <> 0;
-    finally
-      FindClose(SR);
-    end;
+    if FindFirst(Directory + Mask, faAnyFile and not faDirectory, SR) = 0 then
+      try
+        repeat
+          List.Add(Directory + SR.Name)
+        until FindNext(SR) <> 0;
+      finally
+        FindClose(SR);
+      end;
 
     if WithSubDirs then begin
       if FindFirst(Directory + '*', faAnyFile, SR) = 0 then try

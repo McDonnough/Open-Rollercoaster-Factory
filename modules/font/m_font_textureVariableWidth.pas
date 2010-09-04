@@ -34,7 +34,7 @@ type
 implementation
 
 uses
-  m_varlist, u_files, u_dom, u_functions;
+  m_varlist, u_files, u_dom, u_functions, u_arrays;
 
 procedure TModuleFontTextureVariableWidth.GetLetterWidth(Tex: Integer);
 var
@@ -133,6 +133,7 @@ end;
 function TModuleFontTextureVariableWidth.CalculateTextWidth(text: String; Size: Integer): Integer;
 var
   i, BoundTexture: integer;
+  a: TRow;
 begin
   Result := 0;
   BoundTexture := 0;
@@ -142,14 +143,18 @@ begin
       fTextures[i].Texture.Bind(0);
       BoundTexture := i;
       end;
+  A := TRow.Create;
   for i := 1 to Length(Text) do
     case Text[i] of
       #9: Result := Round(Result + 2.4 * Size);
-      #10: continue;
+      #10: begin A.Insert(0, Result); Result := 0; end;
       #0: break;
       #32: Result := Round(Result + Size / 3);
       else Result := Round(Result + (fLetterSpacing * Size / 32) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
       end;
+  A.Insert(0, Result);
+  Result := A.Max;
+  A.Free;
 end;
 
 function TModuleFontTextureVariableWidth.ConvertText(Input: String): String;

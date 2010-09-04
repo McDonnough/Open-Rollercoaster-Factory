@@ -3,7 +3,7 @@ unit g_loader_ocf;
 interface
 
 uses
-  SysUtils, Classes, u_dom, u_xml, u_files;
+  SysUtils, Classes, u_dom, u_xml, u_files, u_graphics;
 
 type
   TOCFBinarySection = class
@@ -33,14 +33,24 @@ type
       fXMLSection: TOCFXMLSection;
       fBinarySections: Array of TOCFBinarySection;
       fFName: String;
+      fPreview: TTexImage;
+      fOCFType, fDescription, fOCFName: String;
       function GetBinarySection(I: Integer): TOCFBinarySection;
       function GetResource(I: Integer): TOCFResource;
+      function GetDescription: String;
+      function GetName: String;
+      function GetOCFType: String;
+      function GetPreview: TTexImage;
     public
       Flags: QWord;
       property Filename: String read fFName;
       property XML: TOCFXMLSection read fXMLSection;
       property Bin[i: Integer]: TOCFBinarySection read GetBinarySection;
       property Resources[i: Integer]: TOCFResource read GetResource;
+      property Description: String read getDescription;
+      property Name: String read getName;
+      property OCFType: String read getOCFType;
+      property Preview: TTexImage read getPreview;
       procedure AddBinarySection(A: TOCFBinarySection);
       procedure SaveTo(FName: String);
       constructor Create(FName: String);
@@ -102,6 +112,50 @@ begin
   fDocument.Free;
 end;
 
+function TOCFFile.GetPreview: TTexImage;
+var
+  ResourceCount: Integer;
+begin
+  if fPreview.BPP <> 0 then
+    exit(fPreview);
+  Result.BPP := 0;
+  if GetOCFType = 'terraincollection' then
+    begin
+    ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
+    Result := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
+    end;
+  fPreview := Result;
+end;
+
+function TOCFFile.GetDescription: String;
+begin
+  if fDescription <> '' then
+    exit(fDescription);
+  Result := '';
+
+  Result := Result + #10 + 'By ' + TDOMElement(fXMLSection.Document.FirstChild).GetAttribute('author');
+  fDescription := Result;
+end;
+
+function TOCFFile.GetName: String;
+begin
+  if fOCFName <> '' then
+    exit(fOCFName);
+  Result := 'No name';
+  if GetOCFType = 'terraincollection' then
+    Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('texturecollection')[0]).GetAttribute('name');
+  fOCFName := Result;
+end;
+
+function TOCFFile.GetOCFType: String;
+begin
+  if fOCFType <> '' then
+    exit(fOCFType);
+  Result := TDOMElement(fXMLSection.Document.FirstChild).GetAttribute('type');
+  if Result = '' then
+    Result := 'undefined';
+  fOCFType := Result;
+end;
 
 function TOCFFile.GetBinarySection(I: Integer): TOCFBinarySection;
 begin
@@ -170,6 +224,10 @@ var
   S: String;
   i: Integer;
 begin
+  fOCFName := '';
+  fOCFType := '';
+  fDescription := '';
+  fPreview.BPP := 0;
   fFName := '';
   if FName <> '' then
     fFName := GetFirstExistingFilename(FName);

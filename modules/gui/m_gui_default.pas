@@ -89,6 +89,8 @@ procedure TModuleGUIDefault.CallSignals;
   var
     i: integer;
   begin
+    if Component = nil then
+      exit;
     if (ModuleManager.ModInputHandler.MouseX >= Component.MinX) and (ModuleManager.ModInputHandler.MouseX <= Component.MaxX)
     and (ModuleManager.ModInputHandler.MouseY >= Component.MinY)  and (ModuleManager.ModInputHandler.MouseY <=  Component.MaxY) then
       fHoverComponent := Component;

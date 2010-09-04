@@ -5,7 +5,7 @@ unit main;
 interface
 
 uses
-  Classes, SysUtils, m_gui_label_class, m_gui_window_class;
+  Classes, SysUtils, m_gui_label_class, m_gui_window_class, u_dialogs;
 
 type
   TRenderState = (rsMainMenu, rsLoadPark, rsGame, rsHelp, rsSettings);
@@ -112,10 +112,12 @@ var
   ParkFileName: String;
 begin
   FPSDisplay.SetTime;
+  ModuleManager.ModMainMenu.NewFrame;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModInputHandler.UpdateData;
   ModuleManager.ModGLMng.SetUpScreen;
   ModuleManager.ModGUI.CallSignals;
+  DialogManager.Drag;
 
   case RenderState of
     rsMainMenu:
@@ -128,6 +130,10 @@ begin
           Park := TPark.Create(ModuleManager.ModPathes.DataPath + 'parks/default/sandbox.ocf');
           end;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;
+        MMVAL_LOADGAME:
+          begin
+          DialogManager.FileOpenDialog.Show;
+          end;
         end;
       end;
     rsGame: Park.Render;

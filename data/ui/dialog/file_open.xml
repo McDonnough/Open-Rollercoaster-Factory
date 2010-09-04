@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window name="dialogs.file-open" width="700" height="500" left="50" top="50" btnleft="900" btntop="0" icon="document-open-folder.tga">
+  <panel leftspace="0" rightspace="0" bottomspace="0" topspace="0" />
+</window>

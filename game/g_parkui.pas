@@ -381,6 +381,11 @@ var
   end;
 begin
   writeln('Loading GUI file ' + Resource);
+  if GetFirstExistingFileName(Resource) = '' then
+    begin
+    ModuleManager.ModLog.AddError('UI resource ' + Resource + ' not found');
+    exit;
+    end;
   XMLFile := LoadXMLFile(GetFirstExistingFileName(Resource));
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   try

@@ -13,7 +13,6 @@ type
       property Value: Integer read fValue;
       procedure Render; virtual abstract;
       procedure Setup; virtual abstract;
-      procedure NewFrame;
     end;
 
 const
@@ -25,9 +24,6 @@ const
 
 implementation
 
-procedure TModuleMainMenuClass.NewFrame;
-begin
-  fValue := 0;
-end;
+
 
 end.

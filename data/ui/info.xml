@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window name="info" width="600" height="400" left="100" top="100" btnleft="710" btntop="438" icon="dialog-information.tga">
+<window width="600" height="400" left="100" top="100" btnleft="710" btntop="438" icon="dialog-information.tga">
   <panel leftspace="0" rightspace="0" bottomspace="0" topspace="32" />
   <tabbar left="40" top="8" width="450" height="32" onchangetab="info.changeTab" name="info.tabbar">
     <tab>Program</tab>

@@ -106,6 +106,7 @@ procedure TRE3DAnaglyph.Apply(Event: String; Param, Result: Pointer);
 begin
   fInterface.Options.Items['terrain:occlusionquery'] := 'off';
 
+  ModuleManager.ModRenderer.Render(0, -1);
   glColorMask(true, false, false, true);
   ModuleManager.ModRenderer.CR := True;
   ModuleManager.ModRenderer.CG := False;

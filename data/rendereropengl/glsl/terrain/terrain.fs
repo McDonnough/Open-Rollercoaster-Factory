@@ -11,12 +11,14 @@ uniform vec2 PointToHighlight;
 uniform float HeightLineToHighlight;
 uniform vec2 Min;
 uniform vec2 Max;
+uniform float NFactor;
 
-varying float dist;
-varying float SDist;
+// varying float dist;
+// varying float SDist;
 varying vec4 Vertex;
 varying vec2 fragCoord;
 varying vec4 DVertex;
+varying float rhf;
 
 mat4 TexCoord;
 mat4 texColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
@@ -43,10 +45,6 @@ vec2 trunc(vec2 a) {
 vec2 getRightTexCoord(float fac) {
   vec2 result = clamp(trunc(gl_TexCoord[0].xy * 2.0 * fac), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0;
   vec2 iparts = gl_TexCoord[0].xy * 4.0 * fac - trunc(gl_TexCoord[0].xy * 4.0 * fac);
-/*  if (fpart(iparts.x / 2.0) > 0.4)
-    result.x = 0.25 - result.x;
-  if (fpart(iparts.y / 2.0) > 0.4)
-    result.y = 0.25 - result.y;*/
   return result;
 }
 
@@ -55,10 +53,13 @@ vec4 processTexCoord(float texID) {
 }
 
 float fetchHeightAtOffset(vec2 O) {
-  return mix(
+  float result = mix(
           mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.0)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.0)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
           mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.2)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.2)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
           fpart(5.0 * Vertex.z)) * 256.0;
+  if (LOD == 3)
+    result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf))));
+  return result;
 }
 
 vec4 fetchTextureColor(int id) {
@@ -84,6 +85,9 @@ vec4 fetchBumpColor(int id) {
 void main(void) {
   if ((clamp(Vertex.xz, offset + 0.8, offset + 50.4) == Vertex.xz) && (LOD != 2))
     discard;
+  float dist = length(gl_ModelViewMatrix * Vertex);
+  float SDist = distance(gl_LightSource[0].position, Vertex);
+
   TexCoord = mat4(
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(1.0, 0.0)) / TerrainSize).r * 8.0),
@@ -95,10 +99,13 @@ void main(void) {
   fetchTextureColor(3);
   float VY = fetchHeightAtOffset(vec2(0.0, 0.0));
   normal = normalize(
-    normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2), vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0)))
-  + normalize(cross(vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2)) - VY, -0.2)))
-  + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(vec2(+ 0.2, + 0.0)) - VY, -0.0)))
-  + normalize(cross(vec3(-0.2, fetchHeightAtOffset(vec2(- 0.2, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2)) - VY, +0.2))));
+    normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2 * NFactor)) - VY, -0.2 * NFactor), vec3(-0.2 * NFactor, fetchHeightAtOffset(vec2(- 0.2 * NFactor, + 0.0)) - VY, +0.0)))
+  + normalize(cross(vec3(+0.2 * NFactor, fetchHeightAtOffset(vec2(+ 0.2 * NFactor, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2 * NFactor)) - VY, -0.2 * NFactor)))
+  + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2 * NFactor)) - VY, +0.2 * NFactor), vec3(+0.2 * NFactor, fetchHeightAtOffset(vec2(+ 0.2 * NFactor, + 0.0)) - VY, -0.0)))
+  + normalize(cross(vec3(-0.2 * NFactor, fetchHeightAtOffset(vec2(- 0.2 * NFactor, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2 * NFactor)) - VY, +0.2 * NFactor))));
+  normal.y *= NFactor;
+  if (LOD == 3)
+    normal.xz *= pow(1.0 - rhf, 5.0);
   vec3 onormal = normal;
   vec3 bumpNormal = vec3(0.0, 1.0, 0.0);
   vec4 result = gl_TextureMatrix[0] * Vertex;
@@ -137,5 +144,5 @@ void main(void) {
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
   if (clamp(Vertex.xz, Min, Max) != Vertex.xz)
     gl_FragColor.rgb *= 0.5;
-  gl_FragColor = mix(gl_FragColor, Diffuse, pow(dist / 5000.0, 2.0));
+  gl_FragColor = mix(gl_FragColor, vec4(gl_FragColor.xyz, 0.0), pow(dist / 3000.0, 2.0));
 }

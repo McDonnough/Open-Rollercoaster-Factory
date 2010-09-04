@@ -137,6 +137,8 @@ function SubString(s: String; Start, Len: Integer): String;
 var
   i: integer;
 begin
+  if (Len <= 0) or (Start > Length(S)) then
+    exit('');
   setLength(Result, Len);
   if Start < 0 then
     Start := length(s) + Start;

@@ -60,6 +60,11 @@ begin
     glVertex3f( 5000,    0,  5000);
     glVertex3f( 5000, 2500,  5000);
     glVertex3f( 5000, 2500, -5000);
+
+    glVertex3f(-5000,    0, -5000);
+    glVertex3f(-5000,    0,  5000);
+    glVertex3f( 5000,    0,  5000);
+    glVertex3f( 5000,    0, -5000);
   glEnd;
   glDepthMask(true);
   fShader.Unbind;

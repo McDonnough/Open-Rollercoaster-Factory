@@ -73,9 +73,9 @@ end;
 procedure TGameTerrainEdit.ModifyHeight(Event: String; Data, Result: Pointer);
 begin
   if Data = Pointer(fWindow.GetChildByName('terrain_edit.height.raise')) then
-    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(Min(StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, 0) + 1, 255.0))
+    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(0.1 * Round(10 * Min(StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, 0) + 1, 255.0)))
   else if Data = Pointer(fWindow.GetChildByName('terrain_edit.height.lower')) then
-    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(Max(StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, 0) - 1, 0.0))
+    TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(0.1 * Round(10 * Max(StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, 0) - 1, 0.0)))
   else if Event = 'BasicComponent.OnClick' then
     TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text := FloatToStr(0.1 * Round(10 * fSelectionObject^.IntersectionPoint.Y));
   TEdit(fWindow.GetChildByName('terrain_edit.autotex.value')).Text := TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text;
@@ -87,6 +87,8 @@ var
   fForcedHeightLine: Single;
 begin
   if Event = 'GUIActions.terrain_edit.createheightline' then
+    fForcedHeightLine := StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, -1)
+  else if Event = 'GUIActions.terrain_edit.autotex.createheightline' then
     fForcedHeightLine := StrToFloatWD(TEdit(fWindow.GetChildByName('terrain_edit.selected_height')).Text, -1)
   else
     fForcedHeightLine := -1;
@@ -305,7 +307,9 @@ begin
   if Pointer(MarkMode) = Data then
     Data := nil;
   if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.add_marks')) then
-    MarkMode.Left := 678;
+    MarkMode.Left := 678
+  else if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.water_set')) then
+    MarkMode.Top := 8;
   HeightLine('', nil, nil);
   Park.pTerrain.CurrMark := Vector(-1, -1);
   EventManager.RemoveCallback(@UpdateTerrainSelectionMap);
@@ -327,6 +331,7 @@ begin
     EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
     EventManager.AddCallback('BasicComponent.OnClick', @SetWater);
     MarkMode := TIconifiedButton(Data);
+    MarkMode.Top := 0;
     end
   else if Data = Pointer(fWindow.GetChildByName('terrain_edit.select_height')) then
     begin
@@ -381,6 +386,7 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.createheightline', @HeightLine);
   EventManager.AddCallback('GUIActions.terrain_edit.removeheightline', @HeightLine);
   EventManager.AddCallback('GUIActions.terrain_edit.modifyheight', @ModifyHeight);
+  EventManager.AddCallback('GUIActions.terrain_edit.autotex.createheightline', @HeightLine);
   EventManager.AddCallback('GUIActions.terrain_edit.autotex.changemode', @ChangeAutotexMode);
   EventManager.AddCallback('GUIActions.terrain_edit.autotex.set', @SetAutoTex);
   EventManager.AddCallback('TTerrain.ChangedCollection', @CollectionChanged);

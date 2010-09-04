@@ -23,7 +23,7 @@ implementation
 
 uses
   m_gui_window_class, m_gui_label_class, m_gui_progressbar_class, m_varlist, m_inputhandler_class, m_gui_button_class, m_gui_iconifiedbutton_class,
-  m_gui_edit_class, m_gui_timer_class, m_gui_tabbar_class;
+  m_gui_edit_class, m_gui_timer_class, m_gui_tabbar_class, m_gui_scrollbox_class, m_gui_image_class;
 
 procedure TModuleGUIDefault.Render;
 var
@@ -47,7 +47,9 @@ var
       CButton: TButton(Component).Render;
       CIconifiedButton: TIconifiedButton(Component).Render;
       CEdit: TEdit(Component).Render;
+      CScrollBox: TScrollBox(Component).Render;
       CTimer: TTimer(Component).Render;
+      CImage: TImage(Component).Render;
     else
       Component.Render;
       end;
@@ -91,8 +93,13 @@ procedure TModuleGUIDefault.CallSignals;
   begin
     if (ModuleManager.ModInputHandler.MouseX >= Component.MinX) and (ModuleManager.ModInputHandler.MouseX <= Component.MaxX)
     and (ModuleManager.ModInputHandler.MouseY >= Component.MinY)  and (ModuleManager.ModInputHandler.MouseY <=  Component.MaxY) then
+      begin
       fHoverComponent := Component;
-
+      if fHoverComponent.ComponentType = CScrollBox then
+        if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN]) then
+          if TScrollBox(fHoverComponent).OnScroll <> nil then
+            TScrollBox(fHoverComponent).OnScroll(fHoverComponent);
+      end;
     for i := 0 to high(Component.Children) do
       SendSignals(Component.ChildrenRightOrder[i]);
   end;
@@ -121,7 +128,7 @@ begin
       if fHoverComponent.OnHover <> nil then
         fHoverComponent.OnHover(fHoverComponent);
       end;
-    if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) or ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
+    if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT]) then
       begin
       if (not fClicking) and (fHoverComponent.OnClick <> nil) then
         begin

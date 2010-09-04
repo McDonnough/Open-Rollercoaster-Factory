@@ -5,7 +5,7 @@ unit m_gui_label_class;
 interface
 
 uses
-  Classes, SysUtils, m_module, m_gui_class;
+  Classes, SysUtils, m_module, m_gui_class, u_vectors;
 
 type
   TLabel = class(TGUIComponent)
@@ -13,6 +13,7 @@ type
       Caption: String;
       Size: Integer;
       Align: Integer;
+      Color: TVector4D;
       procedure Render;
       constructor Create(mParent: TGUIComponent);
     end;
@@ -47,6 +48,7 @@ begin
   Size := 12;
   Caption := '';
   Align := LABEL_ALIGN_LEFT;
+  Color := Vector(1, 1, 1, 0);
 end;
 
 end.

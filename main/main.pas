@@ -35,7 +35,7 @@ procedure ChangeRenderState(New: TRenderState);
 implementation
 
 uses
-  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math;
+  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs;
 
 procedure TFPSDisplay.SetTime;
 begin
@@ -85,6 +85,7 @@ begin
   ModuleManager.ModLoadScreen.SetVisibility(false);
   if New = rsMainMenu then
     begin
+    TFileDialog.Create(true, '', 'Testdialog');
     ModuleManager.ModMainMenu.Setup;
     if Park <> nil then
       begin
@@ -116,6 +117,7 @@ begin
   ModuleManager.ModInputHandler.UpdateData;
   ModuleManager.ModGLMng.SetUpScreen;
   ModuleManager.ModGUI.CallSignals;
+  ModuleManager.ModOCFManager.CheckLoaded;
 
   case RenderState of
     rsMainMenu:

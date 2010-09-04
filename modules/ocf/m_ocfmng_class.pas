@@ -11,9 +11,15 @@ type
       (**
         * Return an OCF file object
         *@param File name to load
-        *@param Reset if you do not want the references to be automatically loaded
+        *@param Event to be called when the file has finished loading
+        *@param Data that is passed to the "result" parameter of the callback handler
         *)
-      function LoadOCFFile(FileName: String): TDOMDocument; virtual abstract;
+      procedure RequestOCFFile(FileName, Event: String; AdditionalData: Pointer); virtual abstract;
+
+      (**
+        * Call events for loaded files
+        *)
+      procedure CheckLoaded; virtual abstract;
     end;
 
 implementation

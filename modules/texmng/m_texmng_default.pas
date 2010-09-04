@@ -231,7 +231,7 @@ end;
 procedure TModuleTextureManagerDefault.SetPixel(Texture: Integer; X, Y: Integer; Color: DWord);
 begin
   DWord(Pointer(PtrUInt(@fTexRefs[Texture].Data[4 * (fTexRefs[Texture].Width * Y + X)]))^) := Color;
-  FillTexture(Texture, @fTexRefs[Texture].Data[0], GL_BGRA);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_BGRA, @Color);
 end;
 
 function TModuleTextureManagerDefault.GetRealTexID(Tex: Integer): GLUInt;

@@ -24,7 +24,9 @@ interface
       fModGUI: TModuleGUI;
       fModGUIWindow: TModuleGUIWindow;
       fModGUILabel: TModuleGUILabel;
+      fModGUIImage: TModuleGUIImage;
       fModGUITabBar: TModuleGUITabBar;
+      fModGUIScrollBox: TModuleGUIScrollBox;
       fModGUIProgressBar: TModuleGUIProgressBar;
       fModGUIButton: TModuleGUIButton;
       fModGUIIconifiedButton: TModuleGUIIconifiedButton;
@@ -49,7 +51,9 @@ interface
       property ModGUI: TModuleGUI read fModGUI;
       property ModGUIWindow: TModuleGUIWindow read fModGUIWindow;
       property ModGUILabel: TModuleGUILabel read fModGUILabel;
+      property ModGUIImage: TModuleGUIImage read fModGUIImage;
       property ModGUITabBar: TModuleGUITabBar read fModGUITabBar;
+      property ModGUIScrollBox: TModuleGUIScrollBox read fModGUIScrollBox;
       property ModGUIProgressBar: TModuleGUIProgressBar read fModGUIProgressBar;
       property ModGUIButton: TModuleGUIButton read fModGUIButton;
       property ModGUIIconifiedButton: TModuleGUIIconifiedButton read fModGUIIconifiedButton;
@@ -117,8 +121,14 @@ begin
   fModGUILabel := TModuleGUILabel.Create;
   fModGUILabel.CheckModConf;
 
+  fModGUIImage := TModuleGUIImage.Create;
+  fModGUIImage.CheckModConf;
+
   fModGUITabBar := TModuleGUITabBar.Create;
   fModGUITabBar.CheckModConf;
+
+  fModGUIScrollBox := TModuleGUIScrollBox.Create;
+  fModGUIScrollBox.CheckModConf;
 
   fModGUIProgressBar := TModuleGUIProgressBar.Create;
   fModGUIProgressBar.CheckModConf;
@@ -163,7 +173,9 @@ begin
   fModGUIIconifiedButton.Free;
   fModGUIButton.Free;
   fModGUIProgressBar.Free;
+  fModGUIImage.Free;
   fModGUILabel.Free;
+  fModGUIScrollBox.Free;
   fModGUITabBar.Free;
   fModGUIWindow.Free;
   fModGUI.Free;

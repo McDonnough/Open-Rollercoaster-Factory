@@ -97,6 +97,7 @@ var
   i: integer;
 begin
   Result := Source;
+  Exit;
   if fLang = 'en' then
     exit;
   for i := 0 to high(fStrings) do

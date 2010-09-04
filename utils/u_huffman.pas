@@ -200,6 +200,7 @@ var
   TmpCode: THuffmanCode;
   CodeGroup: Word;
   CodeSubgroup: Word;
+  MinLength: Integer;
 
   function Decode(Code: DWord; Length: Byte): Integer;
   begin
@@ -214,11 +215,13 @@ begin
   BitCount := DWord(StreamPos^); Inc(StreamPos, 4);
   SetLength(Result.Data, DWord(StreamPos^)); Inc(StreamPos, 4);
   CodeCount := Word(StreamPos^); Inc(StreamPos, 2);
+  MinLength := 1024;
   for i := 0 to CodeCount - 1 do
     begin
     TmpCode.Value := Byte(StreamPos^); Inc(StreamPos);
     TmpCode.Length := Byte(StreamPos^); Inc(StreamPos);
     TmpCode.Code := DWord(StreamPos^); Inc(StreamPos, 4);
+    MinLength := Min(MinLength, TmpCode.Length);
     CodeGroup := (TmpCode.Code shr 16);
     CodeSubgroup := TmpCode.Code and $FFFF;
     SetLength(Codes[CodeGroup], Max(Length(Codes[CodeGroup]), CodeSubGroup + 1));
@@ -231,16 +234,20 @@ begin
   CurrDestByte := 0;
   while BitCount > CurrBit do
     begin
-    if GetBit(CurrBit mod 32, CurrByte) <> 0 then
-      CurrCode := SetBit(BitOffset, CurrCode);
-    LastByte := Decode(CurrCode, BitOffset + 1);
+    if CurrByte and (1 shl (CurrBit mod 32)) <> 0 then
+      CurrCode := CurrCode or (1 shl BitOffset);
+    LastByte := -1;
     inc(BitOffset);
-    if LastByte <> -1 then
+    if BitOffset >= MinLength then
       begin
-      Result.Data[CurrDestByte] := LastByte;
-      inc(CurrDestByte);
-      CurrCode := 0;
-      BitOffset := 0;
+      LastByte := Decode(CurrCode, BitOffset);
+      if LastByte <> -1 then
+        begin
+        Result.Data[CurrDestByte] := LastByte;
+        inc(CurrDestByte);
+        CurrCode := 0;
+        BitOffset := 0;
+        end;
       end;
 
     inc(CurrBit);

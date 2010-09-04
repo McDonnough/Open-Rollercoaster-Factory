@@ -144,22 +144,12 @@ begin
       end;
   for i := 1 to Length(Text) do
     case Text[i] of
-<<<<<<< HEAD
-      #9: width := width + 4 * 0.8 * Size;
-      #0: break;
-      #32: begin width := width + Size / 3; end;
-    else
-      width := width + round(fLetterPositions[Ord(Text[i])].width * widthFac) + fLetterSpacing;
-      end;
-  result := round(width);
-=======
       #9: Result := Round(Result + 2.4 * Size);
       #10: continue;
       #0: break;
       #32: Result := Round(Result + Size / 3);
       else Result := Round(Result + (fLetterSpacing * Size / 32) + fTextures[BoundTexture].LetterPositions[Ord(Text[i])].Width * Size / (fTextures[BoundTexture].Texture.Width / 16));
       end;
->>>>>>> 2b1c79fdfce5687b102d0317ae29915293d8bcb9
 end;
 
 function TModuleFontTextureVariableWidth.ConvertText(Input: String): String;

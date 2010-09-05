@@ -653,7 +653,7 @@ begin
       end;
   setLength(fWaterLayerFBOs, length(fWaterLayerFBOs) + 1);
   fWaterLayerFBOs[high(fWaterLayerFBOs)] := TWaterLayerFBO.Create;
-  fWaterLayerFBOs[high(fWaterLayerFBOs)].Height := Park.pTerrain.WaterMap[X / 5, Y / 5];
+  fWaterLayerFBOs[high(fWaterLayerFBOs)].Height := Round(10 * Park.pTerrain.WaterMap[X / 5, Y / 5]) / 10;
 end;
 
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
@@ -700,7 +700,7 @@ begin
       fHeightMap.Free;
     fHeightMap := TTexture.Create;
     if hd then
-      fHeightMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGBA16F)
+      fHeightMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGBA32F)
     else
       fHeightMap.CreateNew(Park.pTerrain.SizeX div 4, Park.pTerrain.SizeY div 4, GL_RGBA16F);
     fHeightMap.SetFilter(GL_NEAREST, GL_NEAREST);

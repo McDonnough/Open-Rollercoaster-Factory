@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window width="300" height="112" left="250" top="200" btnleft="700" btntop="488" icon="leave.tga">
+<window width="300" height="112" left="250" top="200" btnleft="700" btntop="488" icon="leave.tga" name="leave">
   <panel leftspace="0" rightspace="0" bottomspace="56" topspace="0" />
   <label left="48" top="16" size="24" width="200">Really quit?</label>
-  <iconbutton left="16" top="48" icon="dialog-ok-apply.tga" onclick="doQuit" />
-  <iconbutton left="88" top="48" icon="dialog-cancel.tga" onclick="doNotQuit" />
-  <iconbutton left="160" top="42" icon="document-save-as.tga" onclick="saveGame" />
-  <iconbutton left="230" top="30" icon="document-new.tga" onclick="newGame" />
+  <iconbutton left="16" top="48" icon="dialog-ok-apply.tga" onclick="leave.doQuit" />
+  <iconbutton left="88" top="48" icon="dialog-cancel.tga" onclick="leave.doNotQuit" />
+  <iconbutton left="160" top="42" icon="document-save-as.tga" onclick="leave.saveGame" />
+  <iconbutton left="230" top="30" icon="document-new.tga" onclick="leave.newGame" />
 </window>

@@ -61,7 +61,7 @@ end;
 
 procedure TGameTerrainEdit.LoadTextureDialog(Event: String; Data, Result: Pointer);
 begin
-  fFileDialog := TFileDialog.Create(true, 'Change terrain texture collection', '');
+  fFileDialog := TFileDialog.Create(true, '', 'Change terrain texture collection');
   EventManager.AddCallback('TFileDialog.Selected', @LoadTexture);
   EventManager.AddCallback('TFileDialog.Aborted', @LoadTexture);
 end;
@@ -210,7 +210,7 @@ end;
 
 procedure TGameTerrainEdit.SetWater(Event: String; Data, Result: Pointer);
 begin
-  Park.pTerrain.FillWithWater(fSelectionObject^.IntersectionPoint.X, fSelectionObject^.IntersectionPoint.Z, fSelectionObject^.IntersectionPoint.Y + 0.1);
+  Park.pTerrain.FillWithWater(fSelectionObject^.IntersectionPoint.X, fSelectionObject^.IntersectionPoint.Z, Ceil(10 * (fSelectionObject^.IntersectionPoint.Y + 0.1)) / 10);
 end;
 
 procedure TGameTerrainEdit.Modify(Event: String; Data, Result: Pointer);

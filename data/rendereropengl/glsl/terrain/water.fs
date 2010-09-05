@@ -8,7 +8,7 @@ uniform sampler2D SunShadowMap;
 uniform vec2 TerrainSize;
 uniform float HeightLineToHighlight;
 
-varying float SDist;
+// varying float SDist;
 varying vec4 Vertex;
 varying vec4 v;
 
@@ -38,6 +38,7 @@ void main(void) {
   float h = fetchHeight(1);
   if (h < Vertex.y - 0.01 || h > Vertex.y + 0.01)
     discard;
+  float SDist = distance(gl_LightSource[0].position, Vertex);
   float dist = length(v);
   float terrainHeight = fetchHeight(3);
   vec4 Position = gl_ModelViewProjectionMatrix * Vertex;

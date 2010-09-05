@@ -3,7 +3,7 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, g_loader_park, u_dom, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf;
+  SysUtils, Classes, g_terrain, g_camera, g_loader_park, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml;
 
 type
   TPark = class
@@ -24,6 +24,8 @@ type
       pSky: TSky;
       pMainCamera: TCamera;
       pCameras: Array of TCamera;
+
+      fName, fAuthor: String;
 
       property CanRender: Boolean read fCanRender;
       property ParkLoader: TParkLoader read fParkLoader;
@@ -50,6 +52,11 @@ type
         * Methods of post-initialization
         *)
       procedure ContinueLoading;
+
+      (**
+        * Save file
+        *)
+      procedure SaveTo(F: String);
 
       (**
         * Load a park
@@ -82,6 +89,9 @@ end;
 
 constructor TPark.Create(FileName: String);
 begin
+  fAuthor := '';
+  fName := '';
+
   fTimeUntilInvisible := 120;
   fCanRender := false;
 
@@ -186,6 +196,22 @@ begin
   if fPostLoading then
     ContinueLoading;
   EventManager.CallEvent('TPark.Render', nil, nil);
+end;
+
+procedure TPark.SaveTo(F: String);
+begin
+  if fFile <> nil then
+    fFile.Free;
+  fFile := TOCFFile.Create('');
+
+  // Create content of fFile
+  with fFile.XML.Document do
+    begin
+    TDOMElement(FirstChild).SetAttribute('type', 'savedgame');
+    TDOMElement(FirstChild).SetAttribute('author', fAuthor);
+    end;
+
+  fFile.SaveTo(F);
 end;
 
 destructor TPark.Free;

@@ -231,39 +231,39 @@ end;
 
 procedure TTerrain.FillWithWater(X, Y, H: Single; Notify: Boolean = true);
 var
-  a: Array of Array[0..1] of Single;
+  a: Array of Array[0..1] of Integer;
   i: integer;
-  procedure Add(X, Y: Single);
+  procedure Add(X, Y: Integer);
   begin
-    if (X >= 0) and (X < SizeX / 5) and (Y >= 0) and (Y < SizeY / 5) then
-      if Round(10 * WaterMap[X, Y]) <> Round(10 * H) then
+    if (X >= 0) and (X < SizeX) and (Y >= 0) and (Y < SizeY) then
+      if Round(10 * WaterMap[X / 5, Y / 5]) <> Round(10 * H) then
         begin
         SetLength(a, Length(a) + 1);
         a[high(a), 0] := X;
         a[high(a), 1] := Y;
-        WaterMap[X, Y] := Round(10 * H) / 10;
+        WaterMap[X / 5, Y / 5] := Round(10 * H) / 10;
         end;
   end;
 begin
   RemoveWater(X, Y, false);
   BeginUpdate;
   setLength(a, 1);
-  a[0, 0] := X;
-  a[0, 1] := Y;
+  a[0, 0] := Round(5 * X);
+  a[0, 1] := Round(5 * Y);
   i := 0;
   while i <= high(a) do
     begin
-    WaterMap[a[i, 0], a[i, 1]] := Round(10 * H) / 10;
-    if Round(10 * HeightMap[a[i, 0], a[i, 1]]) < Round(10 * H) then
+    WaterMap[a[i, 0] / 5, a[i, 1] / 5] := Round(10 * H) / 10;
+    if Round(10 * HeightMap[a[i, 0] / 5, a[i, 1] / 5]) < Round(10 * H) then
       begin
-      Add(a[i, 0] - 0.2, a[i, 1] - 0.2);
-      Add(a[i, 0] - 0.2, a[i, 1]      );
-      Add(a[i, 0] - 0.2, a[i, 1] + 0.2);
-      Add(a[i, 0]      , a[i, 1] + 0.2);
-      Add(a[i, 0] + 0.2, a[i, 1] + 0.2);
-      Add(a[i, 0] + 0.2, a[i, 1]      );
-      Add(a[i, 0] + 0.2, a[i, 1] - 0.2);
-      Add(a[i, 0]      , a[i, 1] - 0.2);
+      Add(a[i, 0] - 1, a[i, 1] - 1);
+      Add(a[i, 0] - 1, a[i, 1]    );
+      Add(a[i, 0] - 1, a[i, 1] + 1);
+      Add(a[i, 0]    , a[i, 1] + 1);
+      Add(a[i, 0] + 1, a[i, 1] + 1);
+      Add(a[i, 0] + 1, a[i, 1]    );
+      Add(a[i, 0] + 1, a[i, 1] - 1);
+      Add(a[i, 0]    , a[i, 1] - 1);
       end;
     inc(i);
     end;
@@ -272,18 +272,18 @@ end;
 
 procedure TTerrain.RemoveWater(X, Y: Single; Notify: Boolean = true);
 var
-  a: Array of Array[0..1] of Single;
+  a: Array of Array[0..1] of Integer;
   i: integer;
   H: Single;
-  procedure Add(X, Y: Single);
+  procedure Add(X, Y: Integer);
   begin
-    if (X >= 0) and (X < SizeX / 5) and (Y >= 0) and (Y < SizeY / 5) then
-      if Round(10 * WaterMap[X, Y]) = Round(10 * H) then
+    if (X >= 0) and (X < SizeX) and (Y >= 0) and (Y < SizeY) then
+      if Round(10 * WaterMap[X / 5, Y / 5]) = Round(10 * H) then
         begin
         SetLength(a, Length(a) + 1);
         a[high(a), 0] := X;
         a[high(a), 1] := Y;
-        WaterMap[X, Y] := 0;
+        WaterMap[X / 5, Y / 5] := 0;
         end;
   end;
 begin
@@ -293,20 +293,20 @@ begin
   if Notify then
     BeginUpdate;
   setLength(a, 1);
-  a[0, 0] := X;
-  a[0, 1] := Y;
+  a[0, 0] := Round(5 * X);
+  a[0, 1] := Round(5 * Y);
   i := 0;
   while i <= high(a) do
     begin
-    WaterMap[a[i, 0], a[i, 1]] := 0;
-    Add(a[i, 0] - 0.2, a[i, 1] - 0.2);
-    Add(a[i, 0] - 0.2, a[i, 1]      );
-    Add(a[i, 0] - 0.2, a[i, 1] + 0.2);
-    Add(a[i, 0]      , a[i, 1] + 0.2);
-    Add(a[i, 0] + 0.2, a[i, 1] + 0.2);
-    Add(a[i, 0] + 0.2, a[i, 1]      );
-    Add(a[i, 0] + 0.2, a[i, 1] - 0.2);
-    Add(a[i, 0]      , a[i, 1] - 0.2);
+    WaterMap[a[i, 0] / 5, a[i, 1] / 5] := 0;
+    Add(a[i, 0] - 1, a[i, 1] - 1);
+    Add(a[i, 0] - 1, a[i, 1]    );
+    Add(a[i, 0] - 1, a[i, 1] + 1);
+    Add(a[i, 0]    , a[i, 1] + 1);
+    Add(a[i, 0] + 1, a[i, 1] + 1);
+    Add(a[i, 0] + 1, a[i, 1]    );
+    Add(a[i, 0] + 1, a[i, 1] - 1);
+    Add(a[i, 0]    , a[i, 1] - 1);
     inc(i);
     end;
   if Notify then

@@ -61,13 +61,7 @@ float fetchHeightAtOffset(vec2 O) {
 }
 
 vec4 fetchTextureColor(int id) {
-  texColors[id] = texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[id].xy);
   return texColors[id];
-}
-
-vec4 fetchBumpColor(int id) {
-  bumpColors[id] = texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[id].xy + vec2(0.0, 0.5));
-  return bumpColors[id];
 }
 
 void main(void) {
@@ -80,10 +74,11 @@ void main(void) {
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(1.0, 0.0)) / TerrainSize).r * 8.0),
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 1.0)) / TerrainSize).r * 8.0),
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(1.0, 1.0)) / TerrainSize).r * 8.0));
-  fetchTextureColor(0);
-  fetchTextureColor(1);
-  fetchTextureColor(2);
-  fetchTextureColor(3);
+  texColors = mat4(
+    texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[0].xy).rgba,
+    texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[1].xy).rgba,
+    texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[2].xy).rgba,
+    texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[3].xy).rgba);
   float VY = fetchHeightAtOffset(vec2(0.0, 0.0));
   normal = normalize(
     normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, - 0.2 * NFactor)) - VY, -0.2 * NFactor), vec3(-0.2 * NFactor, fetchHeightAtOffset(vec2(- 0.2 * NFactor, + 0.0)) - VY, +0.0)))
@@ -97,10 +92,11 @@ void main(void) {
   vec4 result = gl_TextureMatrix[0] * Vertex;
 //   result = sqrt(abs(result)) * sign(result);
   if (dist < maxBumpDistance) {
-    fetchBumpColor(0);
-    fetchBumpColor(1);
-    fetchBumpColor(2);
-    fetchBumpColor(3);
+    bumpColors = mat4(
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[1].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[2].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[3].xy + vec2(0.0, 0.5)).rgba);
     bumpNormal = normalize(2.0 * mix(mix(bumpColors[0], bumpColors[1], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), mix(bumpColors[2], bumpColors[3], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), fpart(Vertex.z / (3.2 / pow(4, float(LOD))))).rbg - 1.0);
     float angle = acos(normal.x);
     vec3 tangent = normalize(vec3(sin(angle), sin(angle - 1.5705), 0.0));

@@ -7,7 +7,6 @@ uniform vec2 offset;
 uniform vec2 VOffset;
 uniform int LOD;
 
-varying float dist;
 varying float SDist;
 varying vec4 Vertex;
 varying vec4 DVertex;
@@ -17,8 +16,7 @@ varying float rhf;
 float fetchHeightAtOffset(vec2 O) {
   vec2 TexCoord = 5.0 * (Vertex.xz + O + vec2(0.1, 0.1));
   float result = texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;
-  if (LOD == 3)
-    result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf))));
+  result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * pow(1.0 - rhf, 5.0))));
   return result;
 }
 
@@ -33,5 +31,6 @@ void main(void) {
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;
   DVertex = gl_ClipVertex;
+  SDist = distance(gl_LightSource[0].position, Vertex);
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;
 }

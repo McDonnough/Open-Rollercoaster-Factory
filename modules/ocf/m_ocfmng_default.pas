@@ -27,6 +27,8 @@ type
       fEvents: Array of String;
       fLoaded: Array of Boolean;
       fAdditionalData: Array of Pointer;
+      function FileCount: Integer;
+      function LoadedFiles: Integer;
       procedure RequestOCFFile(FileName, Event: String; AdditionalData: Pointer);
       procedure CheckLoaded;
       procedure CheckModConf;
@@ -37,7 +39,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events;
+  m_varlist, u_events, u_files;
 
 procedure TOCFManagerWorkingThread.Execute;
 var
@@ -67,6 +69,16 @@ begin
     sleep(10);
 end;
 
+function TModuleOCFManagerDefault.FileCount: Integer;
+begin
+  Result := length(fLoaded);
+end;
+
+function TModuleOCFManagerDefault.LoadedFiles: Integer;
+begin
+  Result := fSignalCounter;
+end;
+
 function TModuleOCFManagerDefault.AlreadyLoaded(FileName: String): Integer;
 begin
   for Result := 0 to high(fFileNames) do
@@ -82,6 +94,7 @@ procedure TModuleOCFManagerDefault.RequestOCFFile(FileName, Event: String; Addit
 var
   i: Integer;
 begin
+  FileName := GetFirstExistingFileName(FileName);
   i := AlreadyLoaded(FileName);
   if i > -1 then
     EventManager.CallEvent(Event, fOCFFiles[i], AdditionalData)

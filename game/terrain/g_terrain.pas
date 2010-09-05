@@ -38,7 +38,7 @@ type
       Materials: Array[0..7] of TTerrainMaterial;
       property Name: String read fName;
       property Texture: TTexture read fTexture;
-      constructor Create(FileName: String);
+      constructor Create(fOCF: TOCFFile);
       destructor Free;
     end;
 
@@ -70,6 +70,7 @@ type
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
       property Collection: TTerrainCollection read fCollection;
       property Marks: TTable read fMarks;
+      procedure LoadedCollection(Event: String; Data, Result: Pointer);
       procedure AutoTexture(Tex, Mode: Integer; V: Single);
       procedure FillWithWater(X, Y, H: Single; Notify: Boolean = true);
       procedure RemoveWater(X, Y: Single; Notify: Boolean = true);
@@ -98,10 +99,9 @@ uses
 type
   EInvalidFormat = class(Exception);
 
-constructor TTerrainCollection.Create(FileName: String);
+constructor TTerrainCollection.Create(fOCF: TOCFFile);
 var
   i: Integer;
-  fOCF: TOCFFile;
   e: TDOMElement;
   l, m: TDOMNodeList;
   tempTex: TTexImage;
@@ -139,7 +139,6 @@ var
 begin
   try
     fTexture := TTexture.Create;
-    fOCF := TOCFFile.Create(FileName);
     e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('texturecollection'))[0]);
     with TDOMElement((e.GetElementsByTagName('texture'))[0]) do
       begin
@@ -186,7 +185,6 @@ begin
           end;
         end;
       end;
-    fOCF.Free;
   except
     on EInvalidFormat do ModuleManager.ModLog.AddError('Failed to create terrain collection: Invalid stream format');
     else
@@ -201,6 +199,15 @@ begin
   for i := 0 to high(fAutoplantTextures) do
     fAutoplantTextures[i].Free;
   fTexture.Free;
+end;
+
+
+procedure TTerrain.LoadedCollection(Event: String; Data, Result: Pointer);
+begin
+  if fCollection <> nil then
+    fCollection.Free;
+  fCollection := TTerrainCollection.Create(TOCFFile(Data));
+  EventManager.CallEvent('TTerrain.ChangedCollection', nil, nil);
 end;
 
 
@@ -485,10 +492,7 @@ end;
 
 procedure TTerrain.ChangeCollection(S: String);
 begin
-  if fCollection <> nil then
-    fCollection.Free;
-  fCollection := TTerrainCollection.Create(S);
-  EventManager.CallEvent('TTerrain.ChangedCollection', nil, nil);
+  ModuleManager.ModOCFManager.RequestOCFFile(S, 'TTerrain.CollectionLoaded', nil);
 end;
 
 procedure TTerrain.BeginUpdate;
@@ -831,6 +835,7 @@ begin
     fMarkMap := TTable.Create;
     CurrMark := Vector(-1, -1);
     MarkMode := 0;
+    EventManager.AddCallback('TTerrain.CollectionLoaded', @LoadedCollection);
   except
     ModuleManager.ModLog.AddError('Could not create terrain: Internal error');
   end;
@@ -838,6 +843,7 @@ end;
 
 destructor TTerrain.Free;
 begin
+  EventManager.RemoveCallback(@LoadedCollection);
   if fCollection <> nil then
     fCollection.Free;
   fMarkMap.Free;

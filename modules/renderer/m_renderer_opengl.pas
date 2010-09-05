@@ -35,7 +35,7 @@ type
       procedure RenderScene;
       procedure CheckModConf;
       procedure RenderShadows;
-      procedure RenderParts;
+      procedure RenderParts(Solid, Transparent: Boolean);
       procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
       constructor Create;
       destructor Free;
@@ -74,12 +74,17 @@ begin
   fLightManager.Free;
 end;
 
-procedure TModuleRendererOpenGL.RenderParts;
+procedure TModuleRendererOpenGL.RenderParts(Solid, Transparent: Boolean);
 begin
-  RSky.Render('', nil, nil);
-  RTerrain.Render('', nil, nil);
-// Does NOT work yet:
-//   EventManager.CallEvent('TPark.RenderParts', nil, nil);
+  if Solid then
+    begin
+    RSky.Render('', nil, nil);
+    RTerrain.Render('', nil, nil);
+    end;
+  if Transparent then
+    begin
+    RTerrain.RenderAutoplants('', nil, nil);
+    end;
   fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
 end;
 
@@ -111,13 +116,12 @@ begin
   fInterface.PushOptions;
   glPushMatrix;
     fInterface.Options.Items['terrain:autoplants'] := 'off';
-    fInterface.Options.Items['all:transparent'] := 'off';
     fInterface.Options.Items['shader:mode'] := 'transform:depth';
     fInterface.Options.Items['sky:rendering'] := 'off';
 
     RTerrain.RenderWaterSurfaces;
     glClear(GL_DEPTH_BUFFER_BIT);
-    RenderParts;
+    RenderParts(true, false);
     RTerrain.CheckWaterLayerVisibility;
   glPopMatrix;
   fInterface.PopOptions;
@@ -153,7 +157,7 @@ begin
     glTranslatef(0, -RTerrain.fWaterLayerFBOs[i].Height, 0);
     fFrustum.Calculate;
     glFrontFace(GL_CW);
-    RenderParts;
+    RenderParts(true, true);
     glFrontFace(GL_CCW);
     glPopMatrix;
     RTerrain.fWaterLayerFBOs[i].ReflectionFBO.Unbind;
@@ -167,16 +171,15 @@ begin
     glPopMatrix;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     fFrustum.Calculate;
-    RenderParts;
+    RenderParts(true, true);
     glColorMask(false, false, false, true);
     glDisable(GL_BLEND);
     glClear(GL_DEPTH_BUFFER_BIT);
     fInterface.PushOptions;
       fInterface.Options.Items['terrain:autoplants'] := 'off';
-      fInterface.Options.Items['all:transparent'] := 'off';
       fInterface.Options.Items['shader:mode'] := 'transform:depth';
       fInterface.Options.Items['sky:rendering'] := 'off';
-      RenderParts;
+      RenderParts(true, false);
     fInterface.PopOptions;
     glColorMask(CR, CG, CB, true);
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Unbind;
@@ -185,11 +188,12 @@ begin
   fInterface.PopOptions;
 
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  RenderParts(true, false);
   RTerrain.RenderWaterSurfaces;
+  RenderParts(false, true);
 
   fInterface.Options.Items['all:above'] := '0';
   fInterface.Options.Items['all:below'] := '256';
-  RenderParts;
 end;
 
 procedure TModuleRendererOpenGL.RenderShadows;
@@ -220,7 +224,7 @@ begin
   fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
-  RenderParts;
+  RenderParts(true, true);
 
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
   fInterface.PopOptions;

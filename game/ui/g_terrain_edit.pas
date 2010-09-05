@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors, u_arrays, u_functions, math,
-  m_gui_button_class;
+  m_gui_button_class, u_dialogs;
 
 type
   TGameTerrainEdit = class(TXMLUIWindow)
@@ -16,7 +16,10 @@ type
       fTerrainSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
       fAutoTexMode: TButton;
+      fFileDialog: TFileDialog;
     public
+      procedure LoadTexture(Event: String; Data, Result: Pointer);
+      procedure LoadTextureDialog(Event: String; Data, Result: Pointer);
       procedure SetAutotex(Event: String; Data, Result: Pointer);
       procedure ChangeAutotexMode(Event: String; Data, Result: Pointer);
       procedure ModifyHeight(Event: String; Data, Result: Pointer);
@@ -46,6 +49,22 @@ uses
 
 const
   SELECTION_SIZE = 100;
+
+procedure TGameTerrainEdit.LoadTexture(Event: String; Data, Result: Pointer);
+begin
+  if Event = 'TFileDialog.Selected' then
+    Park.pTerrain.ChangeCollection(String(Data^));
+  EventManager.RemoveCallback(@LoadTexture);
+  fFileDialog.Free;
+  fFileDialog := nil;
+end;
+
+procedure TGameTerrainEdit.LoadTextureDialog(Event: String; Data, Result: Pointer);
+begin
+  fFileDialog := TFileDialog.Create(true, 'Change terrain texture collection', '');
+  EventManager.AddCallback('TFileDialog.Selected', @LoadTexture);
+  EventManager.AddCallback('TFileDialog.Aborted', @LoadTexture);
+end;
 
 procedure TGameTerrainEdit.SetAutotex(Event: String; Data, Result: Pointer);
 var
@@ -389,6 +408,7 @@ begin
   EventManager.AddCallback('GUIActions.terrain_edit.autotex.createheightline', @HeightLine);
   EventManager.AddCallback('GUIActions.terrain_edit.autotex.changemode', @ChangeAutotexMode);
   EventManager.AddCallback('GUIActions.terrain_edit.autotex.set', @SetAutoTex);
+  EventManager.AddCallback('GUIActions.terrain_edit.load_texture', @LoadTextureDialog);
   EventManager.AddCallback('TTerrain.ChangedCollection', @CollectionChanged);
   EventManager.AddCallback('TTerrain.Resize', @Resized);
 
@@ -408,6 +428,8 @@ begin
 
   fAutoTexMode := nil;
 
+  fFileDialog := nil;
+
   CollectionChanged('', nil, nil);
   Resized('', nil, nil);
   ChangeAutotexMode('', fWindow.GetChildByName('terrain_edit.autotex.lower'), nil);
@@ -417,6 +439,10 @@ destructor TGameTerrainEdit.Free;
 begin
   fTerrainSelectionEngine.Free;
   fSelectionMap.Free;
+  if fFileDialog <> nil then
+    fFileDialog.Free;
+  EventManager.RemoveCallback(@LoadTexture);
+  EventManager.RemoveCallback(@LoadTextureDialog);
   EventManager.RemoveCallback(@SetAutoTex);
   EventManager.RemoveCallback(@ChangeAutotexMode);
   EventManager.RemoveCallback(@ModifyHeight);

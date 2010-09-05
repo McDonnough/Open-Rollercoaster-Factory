@@ -138,7 +138,7 @@ begin
     Park.ParkLoader.Run;
 
   ModuleManager.ModGUI.Render;
-  sleep(Max(1, 19 - Round(FPSDisplay.MS)));
+  sleep(Max(1, 10 - Round(FPSDisplay.MS)));
   ModuleManager.ModGLContext.SwapBuffers;
 
   if ModuleManager.ModInputHandler.QuitRequest then

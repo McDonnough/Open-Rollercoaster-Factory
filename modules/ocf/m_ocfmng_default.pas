@@ -39,7 +39,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events;
+  m_varlist, u_events, u_files;
 
 procedure TOCFManagerWorkingThread.Execute;
 var
@@ -94,6 +94,7 @@ procedure TModuleOCFManagerDefault.RequestOCFFile(FileName, Event: String; Addit
 var
   i: Integer;
 begin
+  FileName := GetFirstExistingFileName(FileName);
   i := AlreadyLoaded(FileName);
   if i > -1 then
     EventManager.CallEvent(Event, fOCFFiles[i], AdditionalData)

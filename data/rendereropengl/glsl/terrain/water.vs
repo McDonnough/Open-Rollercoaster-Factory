@@ -3,8 +3,7 @@
 uniform sampler2D HeightMap;
 uniform vec2 TerrainSize;
 
-/*varying float dist;
-varying float SDist;*/
+varying float SDist;
 varying vec4 Vertex;
 varying vec4 v;
 
@@ -13,5 +12,6 @@ void main(void) {
   Vertex = gl_Vertex;
   Vertex.y = gl_TexCoord[0].z;
   v = gl_ModelViewMatrix * Vertex;
+  SDist = distance(gl_LightSource[0].position, Vertex);
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;
 }

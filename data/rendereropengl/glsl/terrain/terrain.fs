@@ -13,8 +13,7 @@ uniform vec2 Min;
 uniform vec2 Max;
 uniform float NFactor;
 
-// varying float dist;
-// varying float SDist;
+varying float SDist;
 varying vec4 Vertex;
 varying vec2 fragCoord;
 varying vec4 DVertex;
@@ -57,27 +56,16 @@ float fetchHeightAtOffset(vec2 O) {
           mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.0)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.0)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
           mix(texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.0, 0.2)) / TerrainSize).a, texture2D(HeightMap, 5.0 * (Vertex.xz + O + vec2(0.2, 0.2)) / TerrainSize).a, fpart(5.0 * Vertex.x)),
           fpart(5.0 * Vertex.z)) * 256.0;
-  if (LOD == 3)
-    result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf))));
+  result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * pow(1.0 - rhf, 5.0))));
   return result;
 }
 
 vec4 fetchTextureColor(int id) {
-  for (int i = 0; i < id; i++)
-    if (TexCoord[i] == TexCoord[id]) {
-      texColors[id] = texColors[i];
-      return texColors[i];
-    }
   texColors[id] = texture2D(TerrainTexture, getRightTexCoord(1.0 / 512.0) + TexCoord[id].xy);
   return texColors[id];
 }
 
 vec4 fetchBumpColor(int id) {
-  for (int i = 0; i < id; i++)
-    if (TexCoord[i] == TexCoord[id]) {
-      bumpColors[id] = bumpColors[i];
-      return bumpColors[i];
-    }
   bumpColors[id] = texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[id].xy + vec2(0.0, 0.5));
   return bumpColors[id];
 }
@@ -85,8 +73,7 @@ vec4 fetchBumpColor(int id) {
 void main(void) {
   if ((clamp(Vertex.xz, offset + 0.8, offset + 50.4) == Vertex.xz) && (LOD != 2))
     discard;
-  float dist = length(gl_ModelViewMatrix * Vertex);
-  float SDist = distance(gl_LightSource[0].position, Vertex);
+  float dist = length(DVertex);
 
   TexCoord = mat4(
     processTexCoord(texture2D(HeightMap, (5.0 * Vertex.xz + vec2(0.0, 0.0)) / TerrainSize).r * 8.0),
@@ -104,8 +91,7 @@ void main(void) {
   + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2 * NFactor)) - VY, +0.2 * NFactor), vec3(+0.2 * NFactor, fetchHeightAtOffset(vec2(+ 0.2 * NFactor, + 0.0)) - VY, -0.0)))
   + normalize(cross(vec3(-0.2 * NFactor, fetchHeightAtOffset(vec2(- 0.2 * NFactor, + 0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+ 0.0, + 0.2 * NFactor)) - VY, +0.2 * NFactor))));
   normal.y *= NFactor;
-  if (LOD == 3)
-    normal.xz *= pow(1.0 - rhf, 5.0);
+  normal.xz *= pow(1.0 - rhf, 5.0);
   vec3 onormal = normal;
   vec3 bumpNormal = vec3(0.0, 1.0, 0.0);
   vec4 result = gl_TextureMatrix[0] * Vertex;

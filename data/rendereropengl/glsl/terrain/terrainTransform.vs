@@ -15,8 +15,7 @@ float rhf;
 float fetchHeightAtOffset(vec2 O) {
   vec2 TexCoord = 5.0 * (Vertex.xz + O + vec2(0.1, 0.1));
   float result = texture2D(HeightMap, TexCoord / TerrainSize).a * 256.0;
-  if (LOD == 3)
-    result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf) * (1.0 - rhf))));
+  result = mix(64.0, result, (0.5 - 0.5 * cos(3.141 * pow(1.0 - rhf, 5.0))));
   return result;
 }
 

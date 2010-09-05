@@ -73,5 +73,5 @@ void main(void) {
   gl_FragColor += Specular;
   if (HeightLineToHighlight >= 0)
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), 0.5 * min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
-  gl_FragColor.a = clamp(Vertex.y - terrainHeight, 0.0, 1.0);
+  gl_FragColor.a = 4.0 * clamp(Vertex.y - terrainHeight, 0.0, 0.25);
 }

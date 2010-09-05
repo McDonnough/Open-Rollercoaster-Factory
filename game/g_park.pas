@@ -69,7 +69,7 @@ var
 implementation
 
 uses
-  Main, m_varlist, u_events;
+  Main, m_varlist, u_events, math;
 
 procedure TPark.SetSelectionEngine(E: TSelectionEngine);
 begin
@@ -102,7 +102,7 @@ begin
   case fLoadState of
     0:
       begin
-      ModuleManager.ModLoadScreen.Progress := 90;
+      ModuleManager.ModLoadScreen.Progress := 10;
       ModuleManager.ModLoadScreen.Text := 'Preparing terrain';
       end;
     1:
@@ -112,17 +112,27 @@ begin
       end;
     2:
       begin
+      ModuleManager.ModLoadScreen.Progress := Round(10 + 88 * (ModuleManager.ModOCFManager.LoadedFiles / Max(1, ModuleManager.ModOCFManager.FileCount)));
+      ModuleManager.ModLoadScreen.Text := 'Loading resource ' + IntToStr(ModuleManager.ModOCFManager.LoadedFiles + 1) + '/' + IntToStr(ModuleManager.ModOCFManager.FileCount);
+      if ModuleManager.ModOCFManager.LoadedFiles < ModuleManager.ModOCFManager.FileCount then
+        dec(fLoadState);
+      end;
+    3:
+      begin
+      end;
+    4:
+      begin
       ModuleManager.ModLoadScreen.Progress := 98;
       ModuleManager.ModLoadScreen.Text := 'Creating sky';
       end;
-    3: pSky := TSky.Create;
-    4:
+    5: pSky := TSky.Create;
+    6:
       begin
       ModuleManager.ModLoadScreen.Progress := 99;
       ModuleManager.ModLoadScreen.Text := 'Loading user interface files';
       end;
-    5: fParkUI := TParkUI.Create;
-    6:
+    7: fParkUI := TParkUI.Create;
+    8:
       begin
       ModuleManager.ModLoadScreen.Progress := 100;
       ModuleManager.ModLoadScreen.Text := 'Preparing for gameplay';

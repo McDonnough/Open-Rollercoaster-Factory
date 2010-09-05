@@ -97,7 +97,7 @@ begin
 
   fTitle := TLabel.Create(fWindow);
   fTitle.Left := 8;
-  fTitle.Top := 8;
+  fTitle.Top := 4;
   fTitle.Width := 284;
   fTitle.Height := 24;
   fTitle.Size := 24;
@@ -166,7 +166,7 @@ begin
 
   fTitle := TLabel.Create(fWindow);
   fTitle.Left := 8;
-  fTitle.Top := 8;
+  fTitle.Top := 4;
   fTitle.Width := 284;
   fTitle.Height := 24;
   fTitle.Size := 24;
@@ -259,6 +259,8 @@ begin
     if not fRO then
       begin
       fFileName := fDirectory + SaveName.Text;
+      if lowercase(ExtractFileName(fFileName)) <> '.ocf' then
+        fFileName := fFileName + '.ocf';
       if DirectoryExists(fFileName) then
         fOKD := TOKDialog.Create('Filename is a directory.', 'dialog-error.tga')
       else if FileExists(fFileName) then
@@ -461,7 +463,7 @@ begin
   OpenSave.Left := 600;
   OpenSave.Width := 48;
   OpenSave.Height := 48;
-  OpenSave.Top := 344;
+  OpenSave.Top := 352;
   OpenSave.OnClick := @CallEvent;
   if ReadOnly then
     OpenSave.Icon := 'document-open.tga'
@@ -480,7 +482,7 @@ begin
   Abort.Left := 644;
   Abort.Width := 48;
   Abort.Height := 48;
-  Abort.Top := 344;
+  Abort.Top := 352;
   Abort.OnClick := @CallEvent;
   Abort.Icon := 'dialog-cancel.tga';
 

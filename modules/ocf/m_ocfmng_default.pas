@@ -27,6 +27,8 @@ type
       fEvents: Array of String;
       fLoaded: Array of Boolean;
       fAdditionalData: Array of Pointer;
+      function FileCount: Integer;
+      function LoadedFiles: Integer;
       procedure RequestOCFFile(FileName, Event: String; AdditionalData: Pointer);
       procedure CheckLoaded;
       procedure CheckModConf;
@@ -65,6 +67,16 @@ begin
   fCanWork := false;
   while fWorking do
     sleep(10);
+end;
+
+function TModuleOCFManagerDefault.FileCount: Integer;
+begin
+  Result := length(fLoaded);
+end;
+
+function TModuleOCFManagerDefault.LoadedFiles: Integer;
+begin
+  Result := fSignalCounter;
 end;
 
 function TModuleOCFManagerDefault.AlreadyLoaded(FileName: String): Integer;

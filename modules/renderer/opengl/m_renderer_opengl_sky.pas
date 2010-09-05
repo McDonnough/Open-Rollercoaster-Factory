@@ -23,7 +23,7 @@ type
 implementation
 
 uses
-  g_park, m_varlist, m_renderer_opengl;
+  g_park, m_varlist, m_renderer_opengl, u_functions;
 
 procedure TRSky.Render(Event: String; Data, Result: Pointer);
 begin
@@ -61,10 +61,13 @@ begin
     glVertex3f( 5000, 2500,  5000);
     glVertex3f( 5000, 2500, -5000);
 
-    glVertex3f(-5000,    0, -5000);
-    glVertex3f(-5000,    0,  5000);
-    glVertex3f( 5000,    0,  5000);
-    glVertex3f( 5000,    0, -5000);
+    if StrToIntWD(fInterface.Options.Items['all:above'], 0) = 0 then
+      begin
+      glVertex3f(-5000,    0, -5000);
+      glVertex3f(-5000,    0,  5000);
+      glVertex3f( 5000,    0,  5000);
+      glVertex3f( 5000,    0, -5000);
+      end;
   glEnd;
   glDepthMask(true);
   fShader.Unbind;

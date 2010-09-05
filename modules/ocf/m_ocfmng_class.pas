@@ -20,6 +20,16 @@ type
         * Call events for loaded files
         *)
       procedure CheckLoaded; virtual abstract;
+
+      (**
+        * Get the number of files that have to be loaded
+        *)
+      function FileCount: Integer; virtual abstract;
+
+      (**
+        * Get the number of files that have already been loaded
+        *)
+      function LoadedFiles: Integer; virtual abstract;
     end;
 
 implementation

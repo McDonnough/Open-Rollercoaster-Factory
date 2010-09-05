@@ -134,6 +134,7 @@ begin
   if EyeFocus < 0 then
     exit;
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  fInterface.PushOptions;
   for i := 0 to high(RTerrain.fWaterLayerFBOs) do
     begin
     if RTerrain.fWaterLayerFBOs[i].Query.Result = 0 then
@@ -161,7 +162,6 @@ begin
     fInterface.Options.Items['all:below'] := FloatToStr(RTerrain.fWaterLayerFBOs[i].Height);
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Bind;
     glPushMatrix;
-    fInterface.PushOptions;
     glTranslatef(0, RTerrain.fWaterLayerFBOs[i].Height, 0);
     glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
     glPopMatrix;
@@ -179,10 +179,10 @@ begin
       RenderParts;
     fInterface.PopOptions;
     glColorMask(CR, CG, CB, true);
-    fInterface.PopOptions;
     RTerrain.fWaterLayerFBOs[i].RefractionFBO.Unbind;
     glDisable(GL_CLIP_PLANE0);
     end;
+  fInterface.PopOptions;
 
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   RTerrain.RenderWaterSurfaces;

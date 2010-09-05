@@ -44,6 +44,7 @@ destructor TImage.Free;
 begin
   if (FreeTextureOnDestroy) and (Tex <> nil) then
     Tex.Free;
+  inherited Free;
 end;
 
 end.

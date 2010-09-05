@@ -98,7 +98,7 @@ type
 implementation
 
 uses
-  m_varlist, math, u_math, main, u_events;
+  m_varlist, math, u_math, main, u_events, m_gui_image_class;
 
 procedure TModuleGUIClass.BasicComponentOnClick(Sender: TGUIComponent);
 begin
@@ -303,7 +303,11 @@ end;
 destructor TGUIComponent.Free;
 begin
   while high(fChildren) >= 0 do
-    fChildren[0].Free;
+    case fChildren[0].ComponentType of
+      CImage: TImage(fChildren[0]).Free;
+    else
+      fChildren[0].Free;
+    end;
   if fParent <> nil then
     fParent.RemoveChild(Self);
 end;

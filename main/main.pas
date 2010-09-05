@@ -85,7 +85,7 @@ begin
   ModuleManager.ModLoadScreen.SetVisibility(false);
   if New = rsMainMenu then
     begin
-    TFileDialog.Create(true, '', 'Testdialog');
+    TFileDialog.Create(false, '', 'Testdialog');
     ModuleManager.ModMainMenu.Setup;
     if Park <> nil then
       begin

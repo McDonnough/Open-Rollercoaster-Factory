@@ -118,7 +118,6 @@ var
 begin
   if fPreview.BPP <> 0 then
     exit(fPreview);
-  Result.BPP := 0;
   if GetOCFType = 'terraincollection' then
     begin
     ResourceCount := high(XML.Document.GetElementsByTagName('resource'));

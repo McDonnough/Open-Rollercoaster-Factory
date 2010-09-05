@@ -14,8 +14,33 @@ type
     Preview: TImage;
     end;
 
+  TOKDialog = class
+    protected
+      fBGLabel, fText, fTitle: TLabel;
+      fWindow: TWindow;
+      fBtnOK: TButton;
+      fIcon: TImage;
+      procedure CallSignals(Sender: TGUIComponent);
+    public
+      constructor Create(Message, Icon: String);
+      destructor Free;
+    end;
+
+  TYesNoDialog = class
+    protected
+      fBGLabel, fText, fTitle: TLabel;
+      fWindow: TWindow;
+      fBtnYes, fBtnNo: TButton;
+      fIcon: TImage;
+      procedure CallSignals(Sender: TGUIComponent);
+    public
+      constructor Create(Message, Icon: String);
+      destructor Free;
+    end;
+
   TFileDialog = class
     protected
+      fRO: Boolean;
       FileArea, DirArea: TScrollBox;
       fDirList, fFileList: TStringList;
       Files: Array of TDialogFileUI;
@@ -24,10 +49,14 @@ type
       Window: TWindow;
       Dirs: Array of TButton;
       fDirectory, fFileName: String;
+      SaveName: TEdit;
+      fOKD: TOKDialog;
+      fYND: TYesNoDialog;
       procedure CallEvent(Sender: TGUIComponent);
       procedure UpdateFileList(Sender: TGUIComponent);
       procedure SelectFile(Sender: TGUIComponent);
       procedure OCFFileLoaded(Event: String; Data, Result: Pointer);
+      procedure FreeDialogs(Event: String; Data, Result: Pointer);
     public
       property Directory: String read fDirectory;
       property FileName: String read fFileName;
@@ -39,6 +68,149 @@ implementation
 
 uses
   m_varlist, u_files, u_functions, g_loader_ocf;
+
+procedure TOKDialog.CallSignals(Sender: TGUIComponent);
+begin
+  EventManager.CallEvent('TOKDialog.OK', self, nil);
+end;
+
+constructor TOKDialog.Create(Message, Icon: String);
+var
+  ResX, ResY: Integer;
+begin
+  ModuleManager.ModGlContext.GetResolution(ResX, ResY);
+
+  fBGLabel := TLabel.Create(nil);
+  fBGLabel.Left := 0;
+  fBGLabel.Top := 0;
+  fBGLabel.Height := ResY;
+  fBGLabel.Width := ResX;
+
+  fWindow := TWindow.Create(fBGLabel);
+  fWindow.Width := 300;
+  fWindow.Height := 128;
+  fWindow.Top := 0.5 * (ResY - 128);
+  fWindow.Left := 0.5 * (ResX - 300);
+  fWindow.OfsY2 := 32;
+  fWindow.OfsY1 := 24;
+  fWindow.OfsX1 := 56;
+
+  fTitle := TLabel.Create(fWindow);
+  fTitle.Left := 8;
+  fTitle.Top := 8;
+  fTitle.Width := 284;
+  fTitle.Height := 24;
+  fTitle.Size := 24;
+  fTitle.Caption := 'Message';
+
+  fIcon := TImage.Create(fWindow);
+  fIcon.Left := 8;
+  fIcon.Top := 32;
+  fIcon.Width := 48;
+  fIcon.Height := 48;
+  fIcon.Tex := TTexture.Create;
+  fIcon.Tex.FromFile('guiicons/' + Icon);
+  fIcon.FreeTextureOnDestroy := true;
+
+  fText := TLabel.Create(fWindow);
+  fText.Left := 72;
+  fText.Width := 204;
+  fText.Top := 32;
+  fText.Height := 48;
+  fText.Size := 16;
+  fText.Caption := Message;
+
+  fBtnOK := TButton.Create(fWindow);
+  fBtnOK.Left := 107;
+  fBtnOK.Width := 94;
+  fBtnOK.Height := 32;
+  fBtnOK.Top := 92;
+  fBtnOK.Caption := 'OK';
+  fBtnOK.OnClick := @CallSignals;
+end;
+
+destructor TOKDialog.Free;
+begin
+  fBGLabel.Free;
+end;
+
+
+procedure TYesNoDialog.CallSignals(Sender: TGUIComponent);
+begin
+  if Sender = fBtnNo then
+    EventManager.CallEvent('TYesNoDialog.No', self, nil)
+  else if Sender = fBtnYes then
+    EventManager.CallEvent('TYesNoDialog.Yes', self, nil);
+end;
+
+constructor TYesNoDialog.Create(Message, Icon: String);
+var
+  ResX, ResY: Integer;
+begin
+  ModuleManager.ModGlContext.GetResolution(ResX, ResY);
+
+  fBGLabel := TLabel.Create(nil);
+  fBGLabel.Left := 0;
+  fBGLabel.Top := 0;
+  fBGLabel.Height := ResY;
+  fBGLabel.Width := ResX;
+
+  fWindow := TWindow.Create(fBGLabel);
+  fWindow.Width := 300;
+  fWindow.Height := 128;
+  fWindow.Top := 0.5 * (ResY - 128);
+  fWindow.Left := 0.5 * (ResX - 300);
+  fWindow.OfsY2 := 32;
+  fWindow.OfsY1 := 24;
+  fWindow.OfsX1 := 56;
+
+  fTitle := TLabel.Create(fWindow);
+  fTitle.Left := 8;
+  fTitle.Top := 8;
+  fTitle.Width := 284;
+  fTitle.Height := 24;
+  fTitle.Size := 24;
+  fTitle.Caption := 'Question';
+
+  fIcon := TImage.Create(fWindow);
+  fIcon.Left := 8;
+  fIcon.Top := 32;
+  fIcon.Width := 48;
+  fIcon.Height := 48;
+  fIcon.Tex := TTexture.Create;
+  fIcon.Tex.FromFile('guiicons/' + Icon);
+  fIcon.FreeTextureOnDestroy := true;
+
+  fText := TLabel.Create(fWindow);
+  fText.Left := 72;
+  fText.Width := 204;
+  fText.Top := 32;
+  fText.Height := 48;
+  fText.Size := 16;
+  fText.Caption := Message;
+
+  fBtnYes := TButton.Create(fWindow);
+  fBtnYes.Left := 54 + 28;
+  fBtnYes.Width := 94;
+  fBtnYes.Height := 32;
+  fBtnYes.Top := 92;
+  fBtnYes.Caption := 'Yes';
+  fBtnYes.OnClick := @CallSignals;
+
+  fBtnNo := TButton.Create(fWindow);
+  fBtnNo.Left := 152 + 28;
+  fBtnNo.Width := 94;
+  fBtnNo.Height := 32;
+  fBtnNo.Top := 92;
+  fBtnNo.Caption := 'No';
+  fBtnNo.OnClick := @CallSignals;
+end;
+
+destructor TYesNoDialog.Free;
+begin
+  fBGLabel.Free;
+end;
+
 
 procedure TFileDialog.OCFFileLoaded(Event: String; Data, Result: Pointer);
 var
@@ -60,22 +232,48 @@ begin
       AR := TOCFFile(Data).Preview.Width / TOCFFile(Data).Preview.Height;
       if AR > 1 then
         begin
-        Files[Integer(Result^)].Preview.Height := Files[Integer(Result^)].Preview.Height / AR;
-        Files[Integer(Result^)].Preview.Top := 0.5 * (96 - Files[Integer(Result^)].Preview.Height / AR);
+        Files[Integer(Result^)].Preview.Height := 96 / AR;
+        Files[Integer(Result^)].Preview.Top := 0.5 * (96 - 96 / AR);
         end
       else if AR < 1 then
         begin
-        Files[Integer(Result^)].Preview.Width := Files[Integer(Result^)].Preview.Width * AR;
-        Files[Integer(Result^)].Preview.Left := 0.5 * (96 - Files[Integer(Result^)].Preview.Width * AR);
+        Files[Integer(Result^)].Preview.Width := 96 * AR;
+        Files[Integer(Result^)].Preview.Left := 0.5 * (96 - 96 * AR);
         end;
       end;
     end;
 end;
 
+procedure TFileDialog.FreeDialogs(Event: String; Data, Result: Pointer);
+begin
+  if fOKD <> nil then begin fOKD.Free; fOKD := nil; end;
+  if fYND <> nil then begin fYND.Free; fYND := nil; end;
+  if Event = 'TYesNoDialog.Yes' then
+    EventManager.CallEvent('TFileDialog.Selected', @fFileName, nil);
+end;
+
 procedure TFileDialog.CallEvent(Sender: TGUIComponent);
 begin
   if Sender = OpenSave then
-    EventManager.CallEvent('TFileDialog.Selected', @fFileName, nil)
+    begin
+    if not fRO then
+      begin
+      fFileName := fDirectory + SaveName.Text;
+      if DirectoryExists(fFileName) then
+        fOKD := TOKDialog.Create('Filename is a directory.', 'dialog-error.tga')
+      else if FileExists(fFileName) then
+        fYND := TYesNoDialog.Create('File does already exist. Overwrite?', 'dialog-warning.tga')
+      else
+        EventManager.CallEvent('TFileDialog.Selected', @fFileName, nil);
+      end
+    else
+      begin
+      if (not(FileExists(fFileName))) or (DirectoryExists(fFileName)) then
+        fOKD := TOKDialog.Create('File does not exist', 'dialog-error.tga')
+      else
+        EventManager.CallEvent('TFileDialog.Selected', @fFileName, nil);
+      end;
+    end
   else if Sender = Abort then
     EventManager.CallEvent('TFileDialog.Aborted', @fFileName, nil);
 end;
@@ -168,23 +366,27 @@ begin
         Description.Width := 396;
         Description.Caption := '[Waiting]';
 
-        Select := TIconifiedButton.Create(BG);
-        Select.Width := 32;
-        Select.Height := 32;
-        Select.Left := 468;
-        Select.Top := 64;
-        Select.Icon := 'dialog-ok-apply.tga';
-        Select.Tag := i;
-        Select.OnClick := @SelectFile;
+        if fRO then
+          begin
+          Select := TIconifiedButton.Create(BG);
+          Select.Width := 32;
+          Select.Height := 32;
+          Select.Left := 468;
+          Select.Top := 64;
+          Select.Icon := 'dialog-ok-apply.tga';
+          Select.Tag := i;
+          Select.OnClick := @SelectFile;
+          end;
 
         Preview := TImage.Create(BG);
         Preview.Left := 0;
         Preview.Top := 0;
         Preview.Width := 96;
         Preview.Height := 96;
+        Preview.Tag := i;
         Preview.FreeTextureOnDestroy := true;
 
-        ModuleManager.ModOCFManager.RequestOCFFile(fFileList.Strings[i], 'TFileOpenDialog.LoadedOCFFile', @Select.Tag);
+        ModuleManager.ModOCFManager.RequestOCFFile(fFileList.Strings[i], 'TFileOpenDialog.LoadedOCFFile', @Preview.Tag);
         end;
   except
     ModuleManager.ModLog.AddError('Cannot change directory from ' + fDirectory);
@@ -197,11 +399,16 @@ constructor TFileDialog.Create(ReadOnly: Boolean; InitialDirectory, TitleString:
 var
   ResX, ResY: Integer;
 begin
+  ModuleManager.ModGlContext.GetResolution(ResX, ResY);
+
+  fRO := ReadOnly;
+
   InitialDirectory := GetFirstExistingFileName(InitialDirectory);
   if InitialDirectory = '' then
     InitialDirectory := ModuleManager.ModPathes.PersonalDataPath;
 
-  ModuleManager.ModGlContext.GetResolution(ResX, ResY);
+  fOKD := nil;
+  fYND := nil;
 
   bgLabel := TLabel.Create(nil);
   bgLabel.Left := 0;
@@ -259,7 +466,15 @@ begin
   if ReadOnly then
     OpenSave.Icon := 'document-open.tga'
   else
+    begin
     OpenSave.Icon := 'document-save.tga';
+    SaveName := TEdit.Create(Window);
+    SaveName.Left := 450;
+    SaveName.Top := 368;
+    SaveName.Height := 32;
+    SaveName.Width := 150;
+    SaveName.Text := '.ocf';
+    end;
 
   Abort := TIconifiedButton.Create(Window);
   Abort.Left := 644;
@@ -270,6 +485,9 @@ begin
   Abort.Icon := 'dialog-cancel.tga';
 
   EventManager.AddCallback('TFileOpenDialog.LoadedOCFFile', @OCFFileLoaded);
+  EventManager.AddCallback('TOKDialog.OK', @FreeDialogs);
+  EventManager.AddCallback('TYesNoDialog.Yes', @FreeDialogs);
+  EventManager.AddCallback('TYesNoDialog.No', @FreeDialogs);
 
   fDirectory := InitialDirectory;
   fFileName := '';
@@ -282,6 +500,7 @@ end;
 destructor TFileDialog.Free;
 begin
   EventManager.RemoveCallback(@OCFFileLoaded);
+  EventManager.RemoveCallback(@FreeDialogs);
   fDirList.Free;
   fFileList.Free;
   bgLabel.Free;

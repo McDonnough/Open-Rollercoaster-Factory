@@ -93,10 +93,10 @@ void main(void) {
 //   result = sqrt(abs(result)) * sign(result);
   if (dist < maxBumpDistance) {
     bumpColors = mat4(
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[0].xy + vec2(0.0, 0.5)).rgba,
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[1].xy + vec2(0.0, 0.5)).rgba,
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[2].xy + vec2(0.0, 0.5)).rgba,
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[3].xy + vec2(0.0, 0.5)).rgba);
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[1].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[2].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[3].xy + vec2(0.0, 0.5)).rgba);
     bumpNormal = normalize(2.0 * mix(mix(bumpColors[0], bumpColors[1], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), mix(bumpColors[2], bumpColors[3], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), fpart(Vertex.z / (3.2 / pow(4, float(LOD))))).rbg - 1.0);
     float angle = acos(normal.x);
     vec3 tangent = normalize(vec3(sin(angle), sin(angle - 1.5705), 0.0));

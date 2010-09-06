@@ -60,7 +60,6 @@ begin
     fWorking := false;
     sleep(100);
     end;
-  writeln('Hint: Terminated OCF loader thread');
 end;
 
 procedure TOCFManagerWorkingThread.Sync;

@@ -23,6 +23,7 @@ type
     public
       fShadowDelay: Single;
       OS, OC: TVector3D;
+      ShadowQuadCoords: Array[0..3] of TVector3D;
       CR, CG, CB: Boolean;
       RCamera: TRCamera;
       RTerrain: TRTerrain;
@@ -30,6 +31,8 @@ type
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
       property DistTexture: TTexture read fDistTexture;
+      function GetRay(X, Y: Single): TVector3D;
+      procedure GetSelectionRay;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -197,11 +200,49 @@ begin
 end;
 
 procedure TModuleRendererOpenGL.RenderShadows;
+var
+  i: Integer;
+  tmp: TVector3D;
+  ShadowQuadDirs: Array[0..3] of TVector3D;
 begin
   with ModuleManager.ModRenderer.RSky.Sun.Position do
     OS := Vector(X, Y, Z);
   OC := ModuleManager.ModCamera.ActiveCamera.Position;
-  glMatrixMode(GL_PROJECTION);
+  ShadowQuadCoords[0] := Vector(0, 0, 7); ShadowQuadDirs[0] := Cross(Vector(0, 1, 0), GetRay(-1, -1) * Vector(1, 0, 1));
+  ShadowQuadCoords[1] := Vector(204.8, 0, 19); ShadowQuadDirs[1] := Cross(Vector(0, 1, 0), GetRay( 1, -1) * Vector(1, 0, 1));
+  ShadowQuadCoords[2] := Vector(204.8, 0, 204.8); ShadowQuadDirs[2] := GetRay( 1,  1);
+  ShadowQuadCoords[3] := Vector(-21, 0, 204.8); ShadowQuadDirs[3] := GetRay(-1,  1);
+
+  for i := 0 to 3 do
+    ShadowQuadDirs[i] := ShadowQuadDirs[i] / max(0.001, abs(ShadowQuadDirs[i].Y));
+
+  for i := 0 to 3 do
+    begin
+    if ShadowQuadDirs[i].Y >= 0 then
+      ShadowQuadDirs[i].Y := -ShadowQuadDirs[i].Y;
+    end;
+
+{  if VecLengthNoRoot(ShadowQuadCoords[0] - ShadowQuadCoords[1]) > VecLengthNoRoot(ShadowQuadCoords[2] - ShadowQuadCoords[3]) then
+    for i := 0 to 1 do
+      begin
+      tmp := ShadowQuadCoords[0 + i];
+      ShadowQuadCoords[0 + i] := ShadowQuadCoords[2 + i];
+      ShadowQuadCoords[2 + i] := tmp;
+      end;
+}
+  glDisable(GL_BLEND);
+  fInterface.PushOptions;
+  fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
+  fInterface.Options.Items['terrain:autoplants'] := 'off';
+  fInterface.Options.Items['sky:rendering'] := 'on';
+  fInterface.Options.Items['all:frustumcull'] := 'off';
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Bind;
+  RenderParts(true, true);
+  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
+  fInterface.PopOptions;
+
+{  glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
   gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
   glMatrixMode(GL_MODELVIEW);
@@ -227,34 +268,42 @@ begin
   RenderParts(true, true);
 
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
-  fInterface.PopOptions;
+  fInterface.PopOptions;}
+
+end;
+
+function TModuleRendererOpenGL.GetRay(X, Y: Single): TVector3D;
+var
+  pmatrix: TMatrix;
+  VecToFront, VecLeft, VecUp: TVector3d;
+begin
+  glGetFloatv(GL_PROJECTION_MATRIX, @pmatrix[0]);
+
+  with ModuleManager.ModCamera do
+    VecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                  -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                  -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+  VecLeft := Normal(VecToFront, Vector(0, 1, 0));
+  VecUp := Normal(VecLeft, VecToFront);
+  Result := normalize(VecToFront + VecUp * (Y / pMatrix[5]) + VecLeft * (X / pMatrix[0]));
+end;
+
+procedure TModuleRendererOpenGL.GetSelectionRay;
+var
+  MX, MY: Single;
+begin
+  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+
+  MX := 2 * (ModuleManager.ModInputHandler.MouseX / ResX) - 1;
+  MY := -2 * (ModuleManager.ModInputHandler.MouseY / ResY) + 1;
+
+  fSelectionRay := GetRay(MX, MY);
 end;
 
 procedure TModuleRendererOpenGL.RenderScene;
 var
   i: Integer;
 
-  procedure GetSelectionRay;
-  var
-    pmatrix: TMatrix;
-    MX, MY: Single;
-    VecToFront, VecLeft, VecUp: TVector3d;
-  begin
-    fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-
-    glGetFloatv(GL_PROJECTION_MATRIX, @pmatrix[0]);
-
-    MX := 2 * (ModuleManager.ModInputHandler.MouseX / ResX) - 1;
-    MY := -2 * (ModuleManager.ModInputHandler.MouseY / ResY) + 1;
-
-    with ModuleManager.ModCamera do
-      VecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
-                                    -Sin(DegToRad(ActiveCamera.Rotation.X)),
-                                    -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
-    VecLeft := Normal(VecToFront, Vector(0, 1, 0));
-    VecUp := Normal(VecLeft, VecToFront);
-    fSelectionRay := normalize(VecToFront + VecUp * (MY / pMatrix[5]) + VecLeft * (MX / pMatrix[0]));
-  end;
 begin
   CR := true;
   CG := true;
@@ -281,14 +330,7 @@ begin
 
   glDisable(GL_BLEND);
 
-  glMatrixMode(GL_TEXTURE);
-  glLoadIdentity;
-  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
-  gluLookAt(OS.X, OS.Y, OS.Z,
-            Round(OC.X), Round(OC.Y), Round(OC.Z),
-            0, 1, 0);
-
-  if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
+ if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
     RenderShadows;
   fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
 

@@ -13,11 +13,11 @@ uniform vec2 Min;
 uniform vec2 Max;
 uniform float NFactor;
 
-varying float SDist;
 varying vec4 Vertex;
 varying vec2 fragCoord;
 varying vec4 DVertex;
 varying float rhf;
+varying float SDist;
 
 mat4 TexCoord;
 mat4 texColors = mat4(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
@@ -89,14 +89,12 @@ void main(void) {
   normal.xz *= pow(1.0 - rhf, 5.0);
   vec3 onormal = normal;
   vec3 bumpNormal = vec3(0.0, 1.0, 0.0);
-  vec4 result = gl_TextureMatrix[0] * Vertex;
-//   result = sqrt(abs(result)) * sign(result);
   if (dist < maxBumpDistance) {
     bumpColors = mat4(
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy + vec2(0.0, 0.5)).rgba,
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[1].xy + vec2(0.0, 0.5)).rgba,
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[2].xy + vec2(0.0, 0.5)).rgba,
-      texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[3].xy + vec2(0.0, 0.5)).rgba);
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[0].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[1].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[2].xy + vec2(0.0, 0.5)).rgba,
+      texture2D(TerrainTexture, getRightTexCoord(1.0 / 64.0) + TexCoord[3].xy + vec2(0.0, 0.5)).rgba);
     bumpNormal = normalize(2.0 * mix(mix(bumpColors[0], bumpColors[1], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), mix(bumpColors[2], bumpColors[3], fpart(Vertex.x / (3.2 / pow(4, float(LOD))))), fpart(Vertex.z / (3.2 / pow(4, float(LOD))))).rbg - 1.0);
     float angle = acos(normal.x);
     vec3 tangent = normalize(vec3(sin(angle), sin(angle - 1.5705), 0.0));
@@ -105,8 +103,7 @@ void main(void) {
   }
   normal = normalize(normal);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  if (length(result.xy / result.w) < 1.0)
-    SunShadow = texture2D(SunShadowMap, 0.5 + 0.5 * result.xy / result.w);
+  SunShadow = texture2D(SunShadowMap, gl_TexCoord[7].xy);
   if (SunShadow.a + 0.1 >= SDist)
     SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
@@ -127,4 +124,8 @@ void main(void) {
   if (clamp(Vertex.xz, Min, Max) != Vertex.xz)
     gl_FragColor.rgb *= 0.5;
   gl_FragColor = mix(gl_FragColor, vec4(gl_FragColor.xyz, 0.0), pow(dist / 3000.0, 2.0));
+  gl_FragColor.rgb = vec3(0.0, 0.0, 0.0);
+  if (SunShadow.a != 0.0)
+    gl_FragColor.r = (SDist - SunShadow.a) / 10.0;
+//   gl_FragColor.rg = gl_TexCoord[7].xy;
 }

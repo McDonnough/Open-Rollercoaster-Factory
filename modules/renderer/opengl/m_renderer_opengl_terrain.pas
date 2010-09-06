@@ -353,6 +353,10 @@ begin
       fBoundShader.UniformF('Max', 10000, 10000);
       end;
     end;
+  fBoundShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuadCoords[0].X, ModuleManager.ModRenderer.ShadowQuadCoords[0].Z);
+  fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuadCoords[1].X, ModuleManager.ModRenderer.ShadowQuadCoords[1].Z);
+  fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuadCoords[2].X, ModuleManager.ModRenderer.ShadowQuadCoords[2].Z);
+  fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuadCoords[3].X, ModuleManager.ModRenderer.ShadowQuadCoords[3].Z);
   fBoundShader.Bind;
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     begin
@@ -810,7 +814,7 @@ begin
     fShader.UniformI('TerrainTexture', 0);
     fShader.UniformI('HeightMap', 1);
     fShader.UniformI('SunShadowMap', 7);
-    fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 60));
+    fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 40));
     fWaterShader := TShader.Create('rendereropengl/glsl/terrain/water.vs', 'rendereropengl/glsl/terrain/water.fs');
     fWaterShader.UniformI('HeightMap', 0);
     fWaterShader.UniformI('ReflectionMap', 1);

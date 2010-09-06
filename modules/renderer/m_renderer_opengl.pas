@@ -198,6 +198,7 @@ end;
 
 procedure TModuleRendererOpenGL.RenderShadows;
 begin
+  fSunShadowOpenAngle := 0.7 + 0.6 * abs(1.0 - sin(DegToRad(ModuleManager.ModCamera.ActiveCamera.Rotation.X)));
   with ModuleManager.ModRenderer.RSky.Sun.Position do
     OS := Vector(X, Y, Z);
   OC := ModuleManager.ModCamera.ActiveCamera.Position;

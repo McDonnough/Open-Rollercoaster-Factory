@@ -134,9 +134,6 @@ begin
     rsGame: Park.Render;
     end;
 
-  if Park <> nil then
-    Park.ParkLoader.Run;
-
   ModuleManager.ModGUI.Render;
   sleep(Max(1, 10 - Round(FPSDisplay.MS)));
   ModuleManager.ModGLContext.SwapBuffers;

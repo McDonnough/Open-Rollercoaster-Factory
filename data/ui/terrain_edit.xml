@@ -34,7 +34,7 @@
       </label>
       <label left="758" width="734" height="80" top="0">
         <iconbutton left="0" top="8" icon="terrain-setwater.tga" name="terrain_edit.water_set" onclick="terrain_edit.marks.add" />
-        <iconbutton left="64" top="8" icon="terrain-deletewater.tga" name="terrain_edit.water_set" onclick="terrain_edit.marks.add" />
+        <iconbutton left="64" top="8" icon="terrain-deletewater.tga" name="terrain_edit.water_delete" onclick="terrain_edit.marks.add" />
         <iconbutton left="128" top="8" icon="waterfall.tga" name="terrain_edit.waterfall" onclick="terrain_edit.marks.add" />
       </label>
       <label left="1508" width="734" height="80" top="0">

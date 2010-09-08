@@ -70,6 +70,8 @@ type
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
       property Collection: TTerrainCollection read fCollection;
       property Marks: TTable read fMarks;
+      function CreateOCFSection: TOCFBinarySection;
+      procedure ReadFromOCFSection(A: TOCFBinarySection);
       procedure LoadedCollection(Event: String; Data, Result: Pointer);
       procedure AutoTexture(Tex, Mode: Integer; V: Single);
       procedure FillWithWater(X, Y, H: Single; Notify: Boolean = true);
@@ -202,6 +204,56 @@ begin
   fTexture.Free;
 end;
 
+
+function TTerrain.CreateOCFSection: TOCFBinarySection;
+var
+  i, j: Integer;
+  P: Pointer;
+  fTerrainData: Array of Byte;
+begin
+  SetLength(fTerrainData, 4 { SizeX, SizeY } + SizeX * SizeY * (2 { Vertex } + 2 { Water }  + 1 { Material & Flags }));
+  P := @fTerrainData[0];
+  Word(P^) := SizeX;
+  inc(p, 2);
+  Word(P^) := SizeY;
+  inc(p, 2);
+  for i := 0 to SizeX - 1 do
+    for j := 0 to SizeY - 1 do
+      begin
+      Word(P^) := fMap[i, j].Height;
+      inc(P, 2);
+      Word(P^) := fMap[i, j].Water;
+      inc(P, 2);
+      Byte(P^) := fMap[i, j].Texture;
+      inc(P);
+      end;
+  Result := TOCFBinarySection.Create;
+  Result.Append(@fTerrainData[0], length(fTerrainData));
+end;
+
+procedure TTerrain.ReadFromOCFSection(A: TOCFBinarySection);
+var
+  P: Pointer;
+  i, j: Integer;
+begin
+  fSizeX := 0;
+  fSizeY := 0;
+  P := @A.Stream.Data[0];
+  Resize(Word(P^), Word((P + 2)^));
+  inc(p, 4);
+  BeginUpdate;
+  for i := 0 to SizeX - 1 do
+    for j := 0 to SizeY - 1 do
+      begin
+      fMap[i, j].Height := Word(P^); inc(P, 2);
+      fMap[i, j].Water := Word(P^); inc(P, 2);
+      fMap[i, j].Texture := Byte(P^); inc(P);
+      SetLength(fCoordsToUpdate, 2 + length(fCoordsToUpdate));
+      fCoordsToUpdate[high(fCoordsToUpdate) - 1] := i;
+      fCoordsToUpdate[high(fCoordsToUpdate) - 0] := j;
+      end;
+  EndUpdate;
+end;
 
 procedure TTerrain.LoadedCollection(Event: String; Data, Result: Pointer);
 begin
@@ -417,78 +469,11 @@ end;
 procedure TTerrain.LoadDefaults;
 var
   i, j: Integer;
-  sdc: Integer;
-  procedure subdivide(X1, Y1, X2, Y2: Integer);
-  var
-    i, fX2, fY2: Integer;
-  begin
-    if (X1 = X2 - 1) or (Y1 = Y2 - 1) then
-      exit;
-    fX2 := Round(Min(X2, SizeX - 1));
-    fY2 := Round(Min(Y2, SizeY - 1));
-    fMap[(X1 + X2) div 2, Y1].Height := Round(Mix(fMap[X1, Y1].Height, fMap[fX2, Y1].Height, 0.5));
-    fMap[(X1 + X2) div 2, fY2].Height := Round(Mix(fMap[X1, fY2].Height, fMap[fX2, fY2].Height, 0.5));
-    fMap[X1, (Y1 + Y2) div 2].Height := Round(Mix(fMap[X1, Y1].Height, fMap[X1, fY2].Height, 0.5));
-    fMap[fX2, (Y1 + Y2) div 2].Height := Round(Mix(fMap[fX2, Y1].Height, fMap[fX2, fY2].Height, 0.5));
-    fMap[(X1 + X2) div 2, (Y1 + Y2) div 2].Height := Round(Mix(Mix(fMap[X1, Y1].Height, fMap[fX2, Y1].Height, 0.5), Mix(fMap[X1, fY2].Height, fMap[fX2, fY2].Height, 0.5), 0.5) + ((10000 * sqrt(random) - 5000) * (fSizeX + fSizeY) / 1024) * 2 / (2 ** sdc));
-    inc(sdc);
-    subdivide(X1, Y1, (X1 + X2) div 2, (Y1 + Y2) div 2);
-    subdivide((X1 + X2) div 2, Y1, X2, (Y1 + Y2) div 2);
-    subdivide((X1 + X2) div 2, (Y1 + Y2) div 2, X2, Y2);
-    subdivide(X1, (Y1 + Y2) div 2, (X1 + X2) div 2, Y2);
-    dec(sdc);
-  end;
-
-  procedure MakeMountain(X, Y, Radius: Word; Height: Single);
-  var
-    i, j: Integer;
-  begin
-    for i := -Radius to Radius do
-      for j := -Radius to Radius do
-        begin
-        if i * i + j * j > Radius * Radius then
-          continue;
-        fMap[X + i, Y + j].Height := Round(Mix(fMap[X + i, Y + j].Height, 256 * Height, (0.5 + 0.5 * Cos(i / Radius * 3.141592)) * (0.5 + 0.5 * Cos(j / Radius * 3.141592))));
-        end;
-  end;
 begin
-  sdc := 0;
   fSizeX := 0;
   fSizeY := 0;
   ChangeCollection('terrain/defaultcollection.ocf');
   Resize(1024, 1024);
-{  Resize(2048, 2048);
-  fMap[0, 0].Height := 20000;
-  fMap[SizeX - 1, 0].Height := 20000;
-  fMap[0, SizeY - 1].Height := 20000;
-  fMap[SizeX - 1, SizeY - 1].Height := 20000;
-  Subdivide(0, 0, SizeX, SizeY);
-  MakeMountain(512, 512, 384, 38000 / 256);
-  MakeMountain(512, 512, 128, 30000 / 256);
-  FillWithWater(0 / 5, 0 / 5, 28000 / 256);
-  FillWithWater(512 / 5, 512 / 5, 32000 / 256);
-  for i := 1 to SizeX - 2 do
-    for j := 1 to SizeY - 2 do
-      fMap[i, j].Height := Round(0.3 * fMap[i + 0, j + 0].Height
-                         + 0.125 * fMap[i + 1, j + 0].Height
-                         + 0.125 * fMap[i + 0, j + 1].Height
-                         + 0.125 * fMap[i - 1, j + 0].Height
-                         + 0.125 * fMap[i + 0, j - 1].Height
-                         + 0.050 * fMap[i + 1, j + 1].Height
-                         + 0.050 * fMap[i - 1, j + 1].Height
-                         + 0.050 * fMap[i - 1, j - 1].Height
-                         + 0.050 * fMap[i + 1, j - 1].Height);
-  for i := 1 to SizeX - 1 do
-    for j := 1 to SizeY - 1 do
-      begin
-      if (abs((fMap[i, j].Height - fMap[i - 1, j].Height) / 0.2) > 200)
-      or (abs((fMap[i, j].Height - fMap[i - 1, j - 1].Height) / 0.282) > 200)
-      or (abs((fMap[i, j].Height - fMap[i, j - 1].Height) / 0.2) > 200) then
-        fMap[i, j].Texture := 5;
-      if fMap[i, j].Height < fMap[i, j].Water then
-        fMap[i, j].Texture := 3;
-      end;}
-//   EventManager.CallEvent('TTerrain.ChangedAll', nil, nil);
 end;
 
 procedure TTerrain.ChangeCollection(S: String);

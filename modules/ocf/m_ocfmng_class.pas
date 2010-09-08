@@ -30,6 +30,11 @@ type
         * Get the number of files that have already been loaded
         *)
       function LoadedFiles: Integer; virtual abstract;
+
+      (**
+        * Reload a (changed) OCF file
+        *)
+      procedure ReloadOCFFile(FileName, Event: String; AdditionalData: Pointer); virtual abstract;
     end;
 
 implementation

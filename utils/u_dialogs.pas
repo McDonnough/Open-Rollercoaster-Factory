@@ -285,7 +285,10 @@ end;
 procedure TFileDialog.SelectFile(Sender: TGUIComponent);
 begin
   fFileName := fFileList.Strings[Sender.Tag];
-  Name.Caption := 'Selected file: ' + fFileName;
+  if fRO then
+    Name.Caption := 'Selected file: ' + fFileName
+  else
+    SaveName.Text := ExtractFileName(fFileName);
 end;
 
 procedure TFileDialog.UpdateFileList(Sender: TGUIComponent);
@@ -370,17 +373,14 @@ begin
         Description.Width := 396;
         Description.Caption := '[Waiting]';
 
-        if fRO then
-          begin
-          Select := TIconifiedButton.Create(BG);
-          Select.Width := 32;
-          Select.Height := 32;
-          Select.Left := 468;
-          Select.Top := 64;
-          Select.Icon := 'dialog-ok-apply.tga';
-          Select.Tag := i;
-          Select.OnClick := @SelectFile;
-          end;
+        Select := TIconifiedButton.Create(BG);
+        Select.Width := 32;
+        Select.Height := 32;
+        Select.Left := 468;
+        Select.Top := 64;
+        Select.Icon := 'dialog-ok-apply.tga';
+        Select.Tag := i;
+        Select.OnClick := @SelectFile;
 
         Preview := TImage.Create(BG);
         Preview.Left := 0;

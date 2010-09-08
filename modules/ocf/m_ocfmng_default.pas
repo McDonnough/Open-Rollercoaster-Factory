@@ -30,6 +30,7 @@ type
       function FileCount: Integer;
       function LoadedFiles: Integer;
       procedure RequestOCFFile(FileName, Event: String; AdditionalData: Pointer);
+      procedure ReloadOCFFile(FileName, Event: String; AdditionalData: Pointer);
       procedure CheckLoaded;
       procedure CheckModConf;
       constructor Create;
@@ -113,6 +114,24 @@ begin
     fOCFFiles[high(fOCFFiles)] := nil;
     fLoaded[high(fLoaded)] := false;
     end;
+end;
+
+procedure TModuleOCFManager.ReloadOCFFile(FileName, Event: String; AdditionalData: Pointer);
+var
+  i: Integer;
+begin
+  FileName := GetFirstExistingFileName(FileName);
+  i := AlreadyLoaded(FileName);
+  if i > -1 then
+    begin
+    fFileNames[i] := '';
+    fLoaded[i] := false;
+    fEvents[i] := '';
+    fOCFFiles[i].Free;
+    fOCFFiles[i] := nil;
+    fAdditionalData[i] := nil;
+    end;
+  RequestOCFFile(FileName, Event, AdditionalData);
 end;
 
 procedure TModuleOCFManagerDefault.CheckLoaded;

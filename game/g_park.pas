@@ -54,7 +54,7 @@ type
       (**
         * Initialize the "real" loading
         *)
-      procedure StartLoading(Event: String; Data, Result: nil);
+      procedure StartLoading(Event: String; Data, Result: Pointer);
 
       (**
         * Load a park
@@ -87,7 +87,7 @@ end;
 
 constructor TPark.Create(FileName: String);
 begin
-  EventManager.AddEvent('TPark.ParkFileLoaded', @StartLoading);
+  EventManager.AddCallback('TPark.ParkFileLoaded', @StartLoading);
 
   fAuthor := '';
   fName := '';
@@ -98,12 +98,10 @@ begin
   fFile := nil;
 
   fPostLoading := false;
-  if GetFirstExistingFile(FileName) then
+  if (FileExists(GetFirstExistingFileName(FileName))) and not (DirectoryExists(GetFirstExistingFileName(FileName))) then
     ModuleManager.ModOCFManager.RequestOCFFile(FileName, 'TPark.ParkFileLoaded', nil)
   else
     fPostLoading := true;
-
-  fFile := TOCFFile.Create(FileName);
 
   ModuleManager.ModLoadScreen.Progress := 5;
   fNormalSelectionEngine := TSelectionEngine.Create;
@@ -135,7 +133,16 @@ begin
     103:
       begin
       pTerrain := TTerrain.Create;
-      pTerrain.LoadDefaults;
+      if fFile = nil then
+        pTerrain.LoadDefaults
+      else
+        begin
+        with TDOMElement(fFile.XML.Document.GetElementsByTagName('terrain')[0]) do
+          begin
+          pTerrain.ChangeCollection(GetAttribute('collection'));
+          pTerrain.ReadFromOCFSection(fFile.Bin[fFile.Resources[StrToInt(GetAttribute('resource:id'))].Section]);
+          end;
+        end;
       end;
     104:
       begin
@@ -199,16 +206,13 @@ end;
 
 procedure TPark.SaveTo(F: String);
 var
-  fTerrainSection: TOCFBinarySection;
-  fTerrainData: Array of Byte;
   i, j: Integer;
   tmpW: Word;
   tmpB: Byte;
   P: Pointer;
+  fTmpFile: TOCFFile;
 begin
-  if fFile <> nil then
-    fFile.Free;
-  fFile := TOCFFile.Create('');
+  fTmpFile := TOCFFile.Create('');
 
   if fAuthor = '' then
     fAuthor := 'unknown author';
@@ -217,8 +221,8 @@ begin
   if fDescription = '' then
     fDescription := 'No description';
 
-  // Create content of fFile
-  with fFile.XML.Document do
+  // Create content of fTmpFile
+  with fTmpFile.XML.Document do
     begin
     TDOMElement(FirstChild).SetAttribute('type', 'savedgame');
     TDOMElement(FirstChild).SetAttribute('author', fAuthor);
@@ -238,29 +242,17 @@ begin
     TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('collection', SystemIndependentFileName(pTerrain.Collection.Name));
     end;
 
-  SetLength(fTerrainData, pTerrain.SizeX * pTerrain.SizeY * (2 { Vertex } + 2 { Water }  + 1 { Material & Flags }));
-  P := @fTerrainData[0];
-  for i := 0 to pTerrain.SizeX - 1 do
-    for j := 0 to pTerrain.SizeY - 1 do
-      begin
-      Word(P^) := Round(256 * pTerrain.HeightMap[i / 5, j / 5]);
-      inc(P, 2);
-      Word(P^) := Round(256 * pTerrain.WaterMap[i / 5, j / 5]);
-      inc(P, 2);
-      Byte(P^) := Round(256 * pTerrain.TexMap[i / 5, j / 5]);
-      inc(P);
-      end;
+  fTmpFile.AddBinarySection(pTerrain.CreateOCFSection);
 
+  fTmpFile.SaveTo(F);
+  fTmpFile.Free;
 
-  fTerrainSection := TOCFBinarySection.Create;
-  fTerrainSection.Append(@fTerrainData[0], length(fTerrainData));
-  fFile.AddBinarySection(fTerrainSection);
-
-  fFile.SaveTo(F);
+  ModuleManager.ModOCFManager.ReloadOCFFile(F, 'null', nil);
 end;
 
-procedure TPark.StartLoading(Event: String; Data, Result: nil);
+procedure TPark.StartLoading(Event: String; Data, Result: Pointer);
 begin
+  fFile := TOCFFile(Data);
   fPostLoading := true;
 end;
 
@@ -272,8 +264,6 @@ begin
   pSky.Free;
   pTerrain.Free;
   fParkUI.Free;
-  if fFile <> nil then
-    fFile.Free;
 end;
 
 end.

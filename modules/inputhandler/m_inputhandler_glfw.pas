@@ -9,6 +9,8 @@ uses
 
 type
   TModuleInputHandlerGLFW = class(TModuleInputHandlerClass)
+    protected
+      mouseWheelPosition: integer;
     public
       constructor Create;
       procedure CheckModConf;
@@ -38,6 +40,13 @@ begin
   fMouseButtons[MOUSE_LEFT] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) <> 0;
   fMouseButtons[MOUSE_MIDDLE] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_MIDDLE) <> 0;
   fMouseButtons[MOUSE_RIGHT] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT) <> 0;
+  
+  fMouseButtons[MOUSE_WHEEL_UP] := false;
+  fMouseButtons[MOUSE_WHEEL_DOWN] := false; 
+  fMouseButtons[MOUSE_WHEEL_UP] := glfwGetMouseWheel > mouseWheelPosition;
+  fMouseButtons[MOUSE_WHEEL_DOWN] := glfwGetMouseWheel < mouseWheelPosition;
+  mouseWheelPosition := glfwGetMouseWheel;
+  
   //General characters
   fKeys[K_a] := glfwGetKey(ord('A')) <> 0;
   fKeys[K_b] := glfwGetKey(ord('B')) <> 0;

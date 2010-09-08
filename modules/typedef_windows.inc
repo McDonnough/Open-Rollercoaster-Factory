@@ -23,6 +23,8 @@ uses
   m_ocfmng_default,
   m_renderer_opengl,
   m_camera_default,
+  m_gui_image_default,
+  m_gui_scrollbox_default,
   SysUtils,
   Classes;
 type
@@ -50,3 +52,5 @@ type
   TModuleOCFManager = TModuleOCFManagerDefault;
   TModuleRenderer = TModuleRendererOpenGL;
   TModuleCamera = TModuleCameraDefault;
+  TModuleGUIImage = TModuleGUIImageDefault;
+  TModuleGUIScrollBox = TModuleGUIScrollBoxDefault;

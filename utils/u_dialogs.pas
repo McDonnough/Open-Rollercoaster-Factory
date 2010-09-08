@@ -350,7 +350,7 @@ begin
     for i := 0 to high(Files) do
       with Files[i] do
         begin
-        BG := TLabel.Create(FileArea);
+        BG := TLabel.Create(FileArea.Surface);
         BG.Top := 96 * i;
         BG.Left := 0;
         BG.Width := 500;

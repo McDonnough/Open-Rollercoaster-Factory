@@ -24,6 +24,8 @@ type
       property ConfigPath: String read fConfigPath;
       /// Path to personal data
       property PersonalDataPath: String read fPersonalDataPath;
+      /// Delimiter
+      property Delimiter: Char read fDelimiter;
 
       (** Init pathes
         *@return true on success, false otherwise

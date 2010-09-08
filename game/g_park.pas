@@ -23,7 +23,7 @@ type
       pMainCamera: TCamera;
       pCameras: Array of TCamera;
 
-      fName, fAuthor: String;
+      fName, fAuthor, fDescription: String;
 
       property CanRender: Boolean read fCanRender;
       property OCFFile: TOCFFile read fFile;
@@ -69,7 +69,7 @@ var
 implementation
 
 uses
-  Main, m_varlist, u_events, math;
+  Main, m_varlist, u_events, math, u_files;
 
 procedure TPark.SetSelectionEngine(E: TSelectionEngine);
 begin
@@ -84,6 +84,7 @@ constructor TPark.Create(FileName: String);
 begin
   fAuthor := '';
   fName := '';
+  fDescription := '';
 
   fCanRender := false;
 
@@ -103,7 +104,7 @@ begin
     0:
       begin
       ModuleManager.ModLoadScreen.Progress := 0;
-      ModuleManager.ModLoadScreen.Text := 'Initializing';
+      ModuleManager.ModLoadScreen.Text := 'Loading park file';
       end;
     100:
       begin
@@ -183,17 +184,63 @@ begin
 end;
 
 procedure TPark.SaveTo(F: String);
+var
+  fTerrainSection: TOCFBinarySection;
+  fTerrainData: Array of Byte;
+  i, j: Integer;
+  tmpW: Word;
+  tmpB: Byte;
+  P: Pointer;
 begin
   if fFile <> nil then
     fFile.Free;
   fFile := TOCFFile.Create('');
+
+  if fAuthor = '' then
+    fAuthor := 'unknown author';
+  if fName = '' then
+    fName := 'Unnamed Park';
+  if fDescription = '' then
+    fDescription := 'No description';
 
   // Create content of fFile
   with fFile.XML.Document do
     begin
     TDOMElement(FirstChild).SetAttribute('type', 'savedgame');
     TDOMElement(FirstChild).SetAttribute('author', fAuthor);
+    TDOMElement(FirstChild).AppendChild(CreateElement('resources'));
+    TDOMElement(FirstChild.LastChild).AppendChild(CreateElement('resource'));
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:id', '0');
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:section', '0');
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:format', 'terrain.rawdata');
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:version', '1.0');
+    TDOMElement(FirstChild).AppendChild(CreateElement('park'));
+    TDOMElement(FirstChild.LastChild).SetAttribute('resource:version', '1.0');
+    TDOMElement(FirstChild.LastChild).SetAttribute('name', fName);
+    TDOMElement(FirstChild.LastChild).AppendChild(CreateElement('description'));
+    TDOMElement(FirstChild.LastChild.LastChild).AppendChild(CreateTextNode(fDescription));
+    TDOMElement(FirstChild.LastChild).AppendChild(CreateElement('terrain'));
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:id', '0');
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('collection', SystemIndependentFileName(pTerrain.Collection.Name));
     end;
+
+  SetLength(fTerrainData, pTerrain.SizeX * pTerrain.SizeY * (2 { Vertex } + 2 { Water }  + 1 { Material & Flags }));
+  P := @fTerrainData[0];
+  for i := 0 to pTerrain.SizeX - 1 do
+    for j := 0 to pTerrain.SizeY - 1 do
+      begin
+      Word(P^) := Round(256 * pTerrain.HeightMap[i / 5, j / 5]);
+      inc(P, 2);
+      Word(P^) := Round(256 * pTerrain.WaterMap[i / 5, j / 5]);
+      inc(P, 2);
+      Byte(P^) := Round(256 * pTerrain.TexMap[i / 5, j / 5]);
+      inc(P);
+      end;
+
+
+  fTerrainSection := TOCFBinarySection.Create;
+  fTerrainSection.Append(@fTerrainData[0], length(fTerrainData));
+  fFile.AddBinarySection(fTerrainSection);
 
   fFile.SaveTo(F);
 end;
@@ -206,7 +253,8 @@ begin
   pSky.Free;
   pTerrain.Free;
   fParkUI.Free;
-  fFile.Free;
+  if fFile <> nil then
+    fFile.Free;
 end;
 
 end.

@@ -228,7 +228,9 @@ var
       DOM_ELEMENT_NODE:
         begin
         r := f.FirstChild;
-        if (r <> nil) and (r = f.LastChild) and (r.NodeType = DOM_TEXT_NODE) then
+        if r = nil then
+          Result := Result + s + '<' + f.NodeName + getAttributes(f) + ' />' + #10
+        else if (r <> nil) and (r = f.LastChild) and (r.NodeType = DOM_TEXT_NODE) then
           Result := Result + s + '<' + f.NodeName + getAttributes(f) + '>' + r.NodeValue + '</' + f.NodeName + '>' + #10
         else
           begin

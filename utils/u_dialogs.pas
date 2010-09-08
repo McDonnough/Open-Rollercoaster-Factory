@@ -258,8 +258,10 @@ begin
     begin
     if not fRO then
       begin
+      if fDirectory[length(fDirectory)] <> ModuleManager.ModPathes.Delimiter then
+        fDirectory := fDirectory + ModuleManager.ModPathes.Delimiter;
       fFileName := fDirectory + SaveName.Text;
-      if lowercase(ExtractFileName(fFileName)) <> '.ocf' then
+      if lowercase(ExtractFileExt(fFileName)) <> '.ocf' then
         fFileName := fFileName + '.ocf';
       if DirectoryExists(fFileName) then
         fOKD := TOKDialog.Create('Filename is a directory.', 'dialog-error.tga')
@@ -475,7 +477,6 @@ begin
     SaveName.Top := 368;
     SaveName.Height := 32;
     SaveName.Width := 150;
-    SaveName.Text := '.ocf';
     end;
 
   Abort := TIconifiedButton.Create(Window);

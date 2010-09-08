@@ -137,6 +137,7 @@ var
     fAutoplantTextures[high(fAutoplantTextures)] := Result;
   end;
 begin
+  fName := fOCF.FileName;
   try
     fTexture := TTexture.Create;
     e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('texturecollection'))[0]);

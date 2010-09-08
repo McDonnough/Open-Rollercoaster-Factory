@@ -103,7 +103,7 @@ end;
 constructor TOCFXMLSection.Create(S: String);
 begin
   if S = '' then
-    S := '<?xml version="1.0" encoding="UTF-8"?><ocf version="1.0"></ocf>';
+    S := '<?xml version="1.0" encoding="UTF-8"?><ocf resource:version="1.0"></ocf>';
   fDocument := DOMFromXML(S);
 end;
 
@@ -131,7 +131,12 @@ begin
   if fDescription <> '' then
     exit(fDescription);
   Result := '';
-
+  try
+    if GetOCFType = 'savedgame' then
+      Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('description')[0]).FirstChild.NodeValue;
+  except
+    ModuleManager.ModLog.AddError('Error loading description of an OCF file: Internal error');
+  end;
   Result := Result + #10 + 'By ' + TDOMElement(fXMLSection.Document.FirstChild).GetAttribute('author');
   fDescription := Result;
 end;
@@ -142,7 +147,9 @@ begin
     exit(fOCFName);
   Result := 'No name';
   if GetOCFType = 'terraincollection' then
-    Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('texturecollection')[0]).GetAttribute('name');
+    Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('texturecollection')[0]).GetAttribute('name')
+  else if GetOCFType = 'savedgame' then
+    Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('park')[0]).GetAttribute('name');
   fOCFName := Result;
 end;
 
@@ -174,10 +181,13 @@ begin
     S := XMLFromDOM(fXMLSection.Document);
     with TFileStream.Create(FName, fmOpenWrite or fmCreate) do
       begin
-      tmpDW := $DEA7450D; write(tmpDW, 4);
+      tmpDW := $DEA7450D;
+      write(tmpDW, 4);
       write(Flags, 8);
-      tmpDW := length(s); write(tmpDW, 4);
-      tmpDW := length(fBinarySections); write(tmpDW, 4);
+      tmpDW := length(s);
+      write(tmpDW, 4);
+      tmpDW := length(fBinarySections);
+      write(tmpDW, 4);
       for i := 0 to high(fBinarySections) do
         begin
         fBinarySections[i].Stream := HuffmanEncode(fBinarySections[i].Stream);

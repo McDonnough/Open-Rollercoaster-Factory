@@ -35,7 +35,35 @@ procedure ChangeRenderState(New: TRenderState);
 implementation
 
 uses
-  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs;
+  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events;
+
+type
+  TParkLoadDialog = class
+    fLoadDialog: TFileDialog;
+    procedure FileLoaded(Event: String; Data, Result: Pointer);
+    constructor Create;
+    end;
+
+var
+  ParkLoadDialog: TParkLoadDialog = nil;
+  ParkFileName: String = '';
+
+procedure TParkLoadDialog.FileLoaded(Event: String; Data, Result: Pointer);
+begin
+  if Event = 'TFileDialog.Selected' then
+    ParkFileName := String(Data^);
+  fLoadDialog.Free;
+  fLoadDialog := nil;
+  EventManager.RemoveCallback(@FileLoaded);
+end;
+
+constructor TParkLoadDialog.Create;
+begin
+  fLoadDialog := TFileDialog.Create(true, 'saved', 'Load park');
+  EventManager.AddCallback('TFileDialog.Selected', @FileLoaded);
+  EventManager.AddCallback('TFileDialog.Aborted', @FileLoaded);
+end;
+
 
 procedure TFPSDisplay.SetTime;
 begin
@@ -96,6 +124,7 @@ begin
     ModuleManager.ModMainMenu.Hide;
   case New of
     rsGame:
+      begin
       with ModuleManager.ModLoadScreen do
         begin
         Progress := 0;
@@ -103,13 +132,13 @@ begin
         Text := 'Initializing';
         SetVisibility(True);
         end;
+      end;
     end;
 end;
 
 procedure MainLoop; cdecl;
 var
   ResX, ResY: Integer;
-  ParkFileName: String;
 begin
   FPSDisplay.SetTime;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
@@ -126,16 +155,28 @@ begin
         MMVAL_STARTGAME:
           begin
           ChangeRenderState(rsGame);
-          Park := TPark.Create(ModuleManager.ModPathes.DataPath + 'parks/default/sandbox.ocf');
+          Park := TPark.Create('');
           end;
+        MMVAL_LOADGAME:
+          if ParkLoadDialog = nil then
+            ParkLoadDialog := TParkLoadDialog.Create
+          else if ParkLoadDialog.fLoadDialog = nil then
+            begin
+            ParkLoadDialog.Free;
+            ParkLoadDialog := nil;
+            if ParkFileName <> '' then
+              begin
+              ChangeRenderState(rsGame);
+              Park := TPark.Create(ParkFileName);
+              end;
+            ParkFileName := '';
+            ModuleManager.ModMainMenu.Reset;
+            end;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;
         end;
       end;
     rsGame: Park.Render;
     end;
-
-  if Park <> nil then
-    Park.ParkLoader.Run;
 
   ModuleManager.ModGUI.Render;
   sleep(Max(1, 10 - Round(FPSDisplay.MS)));

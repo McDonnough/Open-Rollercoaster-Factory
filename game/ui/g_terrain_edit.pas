@@ -30,6 +30,7 @@ type
       procedure CollectionChanged(Event: String; Data, Result: Pointer);
       procedure SetTexture(Event: String; Data, Result: Pointer);
       procedure SetWater(Event: String; Data, Result: Pointer);
+      procedure DeleteWater(Event: String; Data, Result: Pointer);
       procedure Modify(Event: String; Data, Result: Pointer);
       procedure FixMarks(Event: String; Data, Result: Pointer);
       procedure MoveMark(Event: String; Data, Result: Pointer);
@@ -213,6 +214,11 @@ begin
   Park.pTerrain.FillWithWater(fSelectionObject^.IntersectionPoint.X, fSelectionObject^.IntersectionPoint.Z, Ceil(10 * (fSelectionObject^.IntersectionPoint.Y + 0.1)) / 10);
 end;
 
+procedure TGameTerrainEdit.DeleteWater(Event: String; Data, Result: Pointer);
+begin
+  Park.pTerrain.RemoveWater(fSelectionObject^.IntersectionPoint.X, fSelectionObject^.IntersectionPoint.Z);
+end;
+
 procedure TGameTerrainEdit.Modify(Event: String; Data, Result: Pointer);
 begin
   MarksChange('', nil, nil);
@@ -328,6 +334,8 @@ begin
   if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.add_marks')) then
     MarkMode.Left := 678
   else if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.water_set')) then
+    MarkMode.Top := 8
+  else if MarkMode = TIconifiedButton(fWindow.GetChildByName('terrain_edit.water_delete')) then
     MarkMode.Top := 8;
   HeightLine('', nil, nil);
   Park.pTerrain.CurrMark := Vector(-1, -1);
@@ -349,6 +357,15 @@ begin
     Park.SelectionEngine := fTerrainSelectionEngine;
     EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
     EventManager.AddCallback('BasicComponent.OnClick', @SetWater);
+    MarkMode := TIconifiedButton(Data);
+    MarkMode.Top := 0;
+    end
+  else if Data = Pointer(fWindow.GetChildByName('terrain_edit.water_delete')) then
+    begin
+    OnClose('', nil, nil);
+    Park.SelectionEngine := fTerrainSelectionEngine;
+    EventManager.AddCallback('TPark.Render', @UpdateTerrainSelectionMap);
+    EventManager.AddCallback('BasicComponent.OnClick', @DeleteWater);
     MarkMode := TIconifiedButton(Data);
     MarkMode.Top := 0;
     end

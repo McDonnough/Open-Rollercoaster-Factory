@@ -12,20 +12,30 @@ type
     end;
 
 function GetFirstExistingFilename(FileName: String): String;
+function SystemIndependentFileName(FileName: String): String;
 function ByteStreamFromFile(FileName: String): TByteStream;
 procedure ByteStreamToFile(FileName: String; Stream: TByteStream);
 
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_functions;
+
+function SystemIndependentFileName(FileName: String): String;
+begin
+  Result := FileName;
+  if GetFirstExistingFilename(SubString(FileName, length(ModuleManager.ModPathes.PersonalDataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.PersonalDataPath))) = FileName then
+    exit(SubString(FileName, length(ModuleManager.ModPathes.PersonalDataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.PersonalDataPath)))
+  else if GetFirstExistingFilename(SubString(FileName, length(ModuleManager.ModPathes.DataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.DataPath))) = FileName then
+    exit(SubString(FileName, length(ModuleManager.ModPathes.DataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.DataPath)));
+end;
 
 function GetFirstExistingFilename(FileName: String): String;
 begin
   if ModuleManager = nil then // Independent mode
     exit(FileName);
   Result := '';
-  FileName := ModuleManager.ModPathes.Convert(FileName);
+  FileName := ModuleManager.ModPathes.Convert(ModuleManager.ModPathes.ConvertToUnix(FileName));
   if FileExists(FileName) then
     Exit(FileName)
   else if FileExists(ModuleManager.ModPathes.PersonalDataPath + FileName) then

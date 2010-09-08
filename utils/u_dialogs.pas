@@ -258,8 +258,10 @@ begin
     begin
     if not fRO then
       begin
+      if fDirectory[length(fDirectory)] <> ModuleManager.ModPathes.Delimiter then
+        fDirectory := fDirectory + ModuleManager.ModPathes.Delimiter;
       fFileName := fDirectory + SaveName.Text;
-      if lowercase(ExtractFileName(fFileName)) <> '.ocf' then
+      if lowercase(ExtractFileExt(fFileName)) <> '.ocf' then
         fFileName := fFileName + '.ocf';
       if DirectoryExists(fFileName) then
         fOKD := TOKDialog.Create('Filename is a directory.', 'dialog-error.tga')
@@ -283,7 +285,10 @@ end;
 procedure TFileDialog.SelectFile(Sender: TGUIComponent);
 begin
   fFileName := fFileList.Strings[Sender.Tag];
-  Name.Caption := 'Selected file: ' + fFileName;
+  if fRO then
+    Name.Caption := 'Selected file: ' + fFileName
+  else
+    SaveName.Text := ExtractFileName(fFileName);
 end;
 
 procedure TFileDialog.UpdateFileList(Sender: TGUIComponent);
@@ -345,7 +350,7 @@ begin
     for i := 0 to high(Files) do
       with Files[i] do
         begin
-        BG := TLabel.Create(FileArea);
+        BG := TLabel.Create(FileArea.Surface);
         BG.Top := 96 * i;
         BG.Left := 0;
         BG.Width := 500;
@@ -368,17 +373,14 @@ begin
         Description.Width := 396;
         Description.Caption := '[Waiting]';
 
-        if fRO then
-          begin
-          Select := TIconifiedButton.Create(BG);
-          Select.Width := 32;
-          Select.Height := 32;
-          Select.Left := 468;
-          Select.Top := 64;
-          Select.Icon := 'dialog-ok-apply.tga';
-          Select.Tag := i;
-          Select.OnClick := @SelectFile;
-          end;
+        Select := TIconifiedButton.Create(BG);
+        Select.Width := 32;
+        Select.Height := 32;
+        Select.Left := 468;
+        Select.Top := 64;
+        Select.Icon := 'dialog-ok-apply.tga';
+        Select.Tag := i;
+        Select.OnClick := @SelectFile;
 
         Preview := TImage.Create(BG);
         Preview.Left := 0;
@@ -475,7 +477,6 @@ begin
     SaveName.Top := 368;
     SaveName.Height := 32;
     SaveName.Width := 150;
-    SaveName.Text := '.ocf';
     end;
 
   Abort := TIconifiedButton.Create(Window);

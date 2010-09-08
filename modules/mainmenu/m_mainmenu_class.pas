@@ -13,6 +13,7 @@ type
       property Value: Integer read fValue;
       procedure Render; virtual abstract;
       procedure Setup; virtual abstract;
+      procedure Reset;
     end;
 
 const
@@ -24,6 +25,10 @@ const
 
 implementation
 
+procedure TModuleMainMenuClass.Reset;
+begin
+  fValue := 0;
+end;
 
 
 end.

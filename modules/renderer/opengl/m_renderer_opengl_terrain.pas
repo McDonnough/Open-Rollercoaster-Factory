@@ -810,7 +810,7 @@ begin
     fShader.UniformI('TerrainTexture', 0);
     fShader.UniformI('HeightMap', 1);
     fShader.UniformI('SunShadowMap', 7);
-    fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 60));
+    fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 50));
     fWaterShader := TShader.Create('rendereropengl/glsl/terrain/water.vs', 'rendereropengl/glsl/terrain/water.fs');
     fWaterShader.UniformI('HeightMap', 0);
     fWaterShader.UniformI('ReflectionMap', 1);

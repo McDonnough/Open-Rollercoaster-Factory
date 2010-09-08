@@ -1,5 +1,9 @@
 uses
+<<<<<<< HEAD
+  m_pathes_windows,
+=======
   m_pathes_Windows,
+>>>>>>> 2b1c79fdfce5687b102d0317ae29915293d8bcb9
   m_moduleconfig_xml,
   m_log_file,
   m_language_textfile,

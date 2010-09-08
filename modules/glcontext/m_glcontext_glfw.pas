@@ -36,7 +36,7 @@ begin
   fModName := 'GLContextGLFW';
   fModType := 'GLContext';
   CheckModConf;
-  
+
   //Init GLFW
   glfwInit;
   glfwSwapInterval(0);
@@ -48,7 +48,7 @@ begin
       Exit;
     end;
   end
-  else 
+  else
   begin
     if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 0, 24, 0, GLFW_WINDOW) <> 1 then
     begin
@@ -60,7 +60,7 @@ end;
 
 destructor TModuleGLContextGLFW.Free;
 begin
-  glfwCloseWindow;  
+  glfwCloseWindow;
 end;
 
 procedure TModuleGLContextGLFW.CheckModConf;
@@ -87,7 +87,7 @@ end;
 
 procedure TModuleGLContextGLFW.SwapBuffers;
 begin
-  glfwSwapBuffers;  
+  glfwSwapBuffers;
 end;
 
 procedure TModuleGLContextGLFW.StartMainLoop;
@@ -106,7 +106,7 @@ begin
   InitOpenGL;
   ReadOpenGLCore;
   ReadExtensions;
-  ReadImplementationProperties;  
+  ReadImplementationProperties;
 end;
 
 function TModuleGLContextGLFW.SetResolution(ResX, ResY: Integer): Boolean;
@@ -143,7 +143,7 @@ begin
       Exit;
     end;
     SetConfVal('Fullscreen', '0');
-  end;      
+  end;
 end;
 
 end.

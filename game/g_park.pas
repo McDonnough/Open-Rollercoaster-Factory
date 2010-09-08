@@ -52,6 +52,11 @@ type
       procedure SaveTo(F: String);
 
       (**
+        * Initialize the "real" loading
+        *)
+      procedure StartLoading(Event: String; Data, Result: nil);
+
+      (**
         * Load a park
         *@param File to load
         *)
@@ -82,11 +87,21 @@ end;
 
 constructor TPark.Create(FileName: String);
 begin
+  EventManager.AddEvent('TPark.ParkFileLoaded', @StartLoading);
+
   fAuthor := '';
   fName := '';
   fDescription := '';
 
   fCanRender := false;
+
+  fFile := nil;
+
+  fPostLoading := false;
+  if GetFirstExistingFile(FileName) then
+    ModuleManager.ModOCFManager.RequestOCFFile(FileName, 'TPark.ParkFileLoaded', nil)
+  else
+    fPostLoading := true;
 
   fFile := TOCFFile.Create(FileName);
 
@@ -94,7 +109,6 @@ begin
   fNormalSelectionEngine := TSelectionEngine.Create;
   fSelectionEngine := fNormalSelectionEngine;
 
-  fPostLoading := true;
   fLoadState := 0;
 end;
 
@@ -243,6 +257,11 @@ begin
   fFile.AddBinarySection(fTerrainSection);
 
   fFile.SaveTo(F);
+end;
+
+procedure TPark.StartLoading(Event: String; Data, Result: nil);
+begin
+  fPostLoading := true;
 end;
 
 destructor TPark.Free;

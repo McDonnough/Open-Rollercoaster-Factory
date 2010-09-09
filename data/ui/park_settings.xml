@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window width="400" height="250" left="250" top="175" btnleft="722" btntop="338" icon="configure.tga" name="park_settings">
+  <panel leftspace="0" rightspace="0" bottomspace="0" topspace="32" />
+  <tabbar left="40" top="8" width="352" height="32" onchangetab="park_settings.changeTab" name="park_settings.tabbar">
+    <tab>General</tab>
+    <tab>Time settings</tab>
+  </tabbar>
+  <label width="384" top="40" height="202" left="8">
+    <label width="384" left="0" top="0" height="202" name="park_settings.tab.container">
+      <label width="384" left="0" top="0" height="202">
+        <label left="8" top="8" height="16" width="100" size="16">Park name:</label>
+        <label left="8" top="40" height="16" width="100" size="16">Description:</label>
+        <label left="8" top="72" height="16" width="100" size="16">Author:</label>
+        <edit left="108" top="0" height="32" width="276" name="park_settings.name" onedit="park_settings.change_name">Unnamed park</edit>
+        <edit left="108" top="32" height="32" width="276" name="park_settings.description" onedit="park_settings.change_description">No description</edit>
+        <edit left="108" top="64" height="32" width="276" name="park_settings.author" onedit="park_settings.change_author">Unknown author</edit>
+      </label>
+    </label>
+  </label>
+</window>

@@ -702,7 +702,7 @@ begin
     if hd then
       fHeightMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGBA32F)
     else
-      fHeightMap.CreateNew(Park.pTerrain.SizeX div 4, Park.pTerrain.SizeY div 4, GL_RGBA16F);
+      fHeightMap.CreateNew(Park.pTerrain.SizeX div 4, Park.pTerrain.SizeY div 4, GL_RGBA32F);
     fHeightMap.SetFilter(GL_NEAREST, GL_NEAREST);
     fHeightMap.SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;

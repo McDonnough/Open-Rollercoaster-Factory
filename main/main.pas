@@ -50,11 +50,11 @@ var
 
 procedure TParkLoadDialog.FileLoaded(Event: String; Data, Result: Pointer);
 begin
+  EventManager.RemoveCallback(@FileLoaded);
   if Event = 'TFileDialog.Selected' then
     ParkFileName := String(Data^);
   fLoadDialog.Free;
   fLoadDialog := nil;
-  EventManager.RemoveCallback(@FileLoaded);
 end;
 
 constructor TParkLoadDialog.Create;
@@ -63,6 +63,7 @@ begin
   EventManager.AddCallback('TFileDialog.Selected', @FileLoaded);
   EventManager.AddCallback('TFileDialog.Aborted', @FileLoaded);
 end;
+
 
 
 procedure TFPSDisplay.SetTime;

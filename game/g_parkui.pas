@@ -40,6 +40,7 @@ type
       procedure EndDragging(Sender: TGUIComponent);
       function AddCallbackArray(A: TDOMElement): Integer;
       procedure HandleOnClick(Sender: TGUIComponent);
+      procedure HandleOnEdit(Sender: TGUIComponent);
       procedure HandleOnRelease(Sender: TGUIComponent);
       procedure HandleOnKeyDown(Sender: TGUIComponent; Key: Integer);
       procedure HandleOnKeyUp(Sender: TGUIComponent; Key: Integer);
@@ -80,13 +81,14 @@ type
 implementation
 
 uses
-  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit;
+  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings;
 
 type
   TParkUIWindowList = record
+    fParkSettings: TGameParkSettings;
     fLeaveWindow: TGameLeave;
     fInfoWindow: TGameInfo;
-    fGameTerrainEdit: TGameTerrainEdit;
+    fTerrainEdit: TGameTerrainEdit;
     end;
 
 var
@@ -111,6 +113,12 @@ procedure TXMLUIWindow.HandleOnclick(Sender: TGUIComponent);
 begin
   if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
     EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnClick, Sender, nil);
+end;
+
+procedure TXMLUIWindow.HandleOnEdit(Sender: TGUIComponent);
+begin
+  if (Sender.Tag > 0) and (Sender.Tag <= Length(fCallbackArrays)) then
+    EventManager.CallEvent('GUIActions.' + fCallbackArrays[Sender.Tag - 1].OnEdit, Sender, nil);
 end;
 
 procedure TXMLUIWindow.HandleOnRelease(Sender: TGUIComponent);
@@ -341,6 +349,7 @@ var
           Tag := AddCallbackArray(TDOMElement(DE));
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
+          OnChange := @HandleOnedit;
           OnRelease := @HandleOnrelease;
           OnHover := @HandleOnHover;
           OnLeave := @HandleOnLeave;
@@ -495,14 +504,16 @@ var
 begin
   WindowList.fLeaveWindow := TGameLeave.Create('ui/leave.xml', self);
   WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
-  WindowList.fGameTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
+  WindowList.fTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
+  WindowList.fParkSettings := TGameParkSettings.Create('ui/park_settings.xml', self);
 end;
 
 destructor TParkUI.Free;
 begin
   WindowList.fLeaveWindow.Free;
   WindowList.fInfoWindow.Free;
-  WindowList.fGameTerrainEdit.Free;
+  WindowList.fTerrainEdit.Free;
+  WindowList.fParkSettings.Free;
 end;
 
 end.

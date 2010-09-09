@@ -215,7 +215,7 @@ begin
   fTmpFile := TOCFFile.Create('');
 
   if fAuthor = '' then
-    fAuthor := 'unknown author';
+    fAuthor := 'Unknown author';
   if fName = '' then
     fName := 'Unnamed Park';
   if fDescription = '' then
@@ -252,12 +252,18 @@ end;
 
 procedure TPark.StartLoading(Event: String; Data, Result: Pointer);
 begin
+  EventManager.RemoveCallback(@StartLoading);
   fFile := TOCFFile(Data);
+  fDescription := TDOMElement(fFile.XML.Document.GetElementsByTagName('description')[0]).FirstChild.NodeValue;
+  fName := TDOMElement(fFile.XML.Document.GetElementsByTagName('park')[0]).GetAttribute('name');
+  fAuthor := TDOMElement(fFile.XML.Document.FirstChild).GetAttribute('author');
+
   fPostLoading := true;
 end;
 
 destructor TPark.Free;
 begin
+  EventManager.RemoveCallback(@StartLoading);
   ModuleManager.ModRenderer.Unload;
   fNormalSelectionEngine.Free;
   fSelectionEngine := nil;

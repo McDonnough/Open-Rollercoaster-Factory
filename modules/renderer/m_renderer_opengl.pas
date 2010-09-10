@@ -7,7 +7,7 @@ uses
   m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
   m_shdmng_class, m_renderer_opengl_plugins, u_functions, m_renderer_opengl_frustum,
   m_renderer_opengl_interface, m_renderer_opengl_lights, m_renderer_opengl_sky,
-  m_renderer_opengl_classes, u_geometry;
+  m_renderer_opengl_classes, m_renderer_opengl_objects, u_geometry;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
@@ -26,6 +26,7 @@ type
       CR, CG, CB: Boolean;
       RCamera: TRCamera;
       RTerrain: TRTerrain;
+      RObjects: TRObjects;
       RSky: TRSky;
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
@@ -57,6 +58,7 @@ begin
   fLightManager := TLightManager.Create;
   RCamera := TRCamera.Create;
   RTerrain := TRTerrain.Create;
+  RObjects := TRObjects.Create;
   RSky := TRSky.Create;
   RenderEffectManager := TRenderEffectManager.Create;
   s := Explode(',', GetConfVal('effects'));
@@ -68,6 +70,7 @@ procedure TModuleRendererOpenGL.Unload;
 begin
   RenderEffectManager.Free;
   RSky.Free;
+  RObjects.Free;
   RTerrain.Unload;
   RTerrain.Free;
   RCamera.Free;
@@ -80,6 +83,7 @@ begin
     begin
     RSky.Render('', nil, nil);
     RTerrain.Render('', nil, nil);
+    RObjects.Render('', nil, nil);
     end;
   if Transparent then
     begin

@@ -16,7 +16,7 @@ type
         *@param fragment shader file name
         *@return shader ID
         *)
-      function LoadShader(VSFile, FSFile: String): Integer; virtual abstract;
+      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0): Integer; virtual abstract;
 
       (**
         * Bind shader
@@ -44,6 +44,7 @@ type
       procedure Uniformi(VName: String; v0, v1: GLint); virtual abstract;
       procedure Uniformi(VName: String; v0, v1, v2: GLint); virtual abstract;
       procedure Uniformi(VName: String; v0, v1, v2, v3: GLint); virtual abstract;
+      procedure UniformMatrix(VName: String; V: Pointer); virtual abstract;
     end;
 
   TShader = class
@@ -81,9 +82,17 @@ type
       procedure UniformF(VName: String; V1, V2, V3, V4: GLFloat);
 
       (**
+        * Set a matrix uniform variable
+        *@param variable name
+        *@param Location of the first element of the matrix
+        *)
+      procedure UniformMatrix3D(VName: String; V: Pointer);
+      procedure UniformMatrix4D(VName: String; V: Pointer);
+
+      (**
         * Load a shader from files
         *)
-      constructor Create(VSFile, FSFile: String);
+      constructor Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0);
 
       (**
         * Destroy shader
@@ -154,11 +163,25 @@ begin
   ModuleManager.ModShdMng.Uniformf(VName, V1, V2, V3, V4);
 end;
 
-constructor TShader.Create(VSFile, FSFile: String);
+procedure TShader.UniformMatrix3D(VName: String; V: Pointer);
+begin
+  Bind;
+  ModuleManager.ModShdMng.UniformMatrix3D(VName, V);
+end;
+
+procedure TShader.UniformMatrix4D(VName: String; V: Pointer);
+begin
+  Bind;
+  ModuleManager.ModShdMng.UniformMatrix4D(VName, V);
+end;
+
+constructor TShader.Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0);
 begin
   VSFile := GetFirstExistingFilename(VSFile);
   FSFile := GetFirstExistingFilename(FSFile);
-  fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile))
+  if GSFile <> '' then
+    GSFile := GetFirstExistingFilename(GSFile);
+  fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile), ModuleManager.ModPathes.Convert(GSFile), VerticesOut)
 end;
 
 destructor TShader.Free;

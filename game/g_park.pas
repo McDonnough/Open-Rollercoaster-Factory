@@ -3,7 +3,8 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml;
+  SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml,
+  g_object_base;
 
 type
   TPark = class

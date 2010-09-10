@@ -31,6 +31,16 @@ function Vector(X, Y: Single): TVector2D;
 function Vector(X, Y, Z: Single): TVector3D;
 function Vector(X, Y, Z, W: Single): TVector4D;
 
+function Vector(XY: TVector2D; Z: Single): TVector3D;
+function Vector(XY: TVector2D; Z, W: Single): TVector4D;
+function Vector(X: Single; YZ: TVector2D): TVector3D;
+function Vector(X: Single; YZ: TVector2D; W: Single): TVector4D;
+function Vector(X, Y: Single; ZW: TVector2D): TVector4D;
+function Vector(XY, ZW: TVector2D): TVector4D;
+function Vector(XYZ: TVector3D; W: Single): TVector4D;
+function Vector(X: Single; YZW: TVector3D): TVector4D;
+
+
 operator + (A, B: TVector2D): TVector2D;
 operator + (A, B: TVector3D): TVector3D;
 operator + (A, B: TVector4D): TVector4D;
@@ -106,8 +116,21 @@ function Matrix4D(A, B, C, D: TVector4D): TMatrix4D;
 
 operator * (A: TVector3D; B: TMatrix3D): TVector3D;
 operator * (A: TVector4D; B: TMatrix4D): TVector4D;
+operator * (A, B: TMatrix3D): TMatrix3D;
+operator * (A, B: TMatrix4D): TMatrix4D;
 
 function Rotate(Deg: Single; AVector, Axis: TVector3D): TVector3D;
+function RotateMatrix(Deg: Single; Axis: TVector3D): TMatrix3D;
+
+function Identity3D: TMatrix3D;
+function Identity4D: TMatrix4D;
+
+function Vector2D(A: TVector3D): TVector2D;
+function Vector2D(A: TVector4D): TVector2D;
+function Vector3D(A: TVector4D): TVector3D;
+
+procedure MakeOGLCompatibleMatrix(A: TMatrix3D; B: Pointer);
+procedure MakeOGLCompatibleMatrix(A: TMatrix4D; B: Pointer);
 
 implementation
 
@@ -371,6 +394,45 @@ begin
   Result.W := W;
 end;
 
+function Vector(XY: TVector2D; Z: Single): TVector3D;
+begin
+  Result := Vector(XY.X, XY.Y, Z);
+end;
+
+function Vector(XY: TVector2D; Z, W: Single): TVector4D;
+begin
+  Result := Vector(XY.X, XY.Y, Z, W);
+end;
+
+function Vector(X: Single; YZ: TVector2D): TVector3D;
+begin
+  Result := Vector(X, YZ.X, YZ.Y);
+end;
+
+function Vector(X: Single; YZ: TVector2D; W: Single): TVector4D;
+begin
+  Result := Vector(X, YZ.X, YZ.Y, W);
+end;
+
+function Vector(X, Y: Single; ZW: TVector2D): TVector4D;
+begin
+  Result := Vector(X, Y, ZW.X, ZW.Y);
+end;
+
+function Vector(XY, ZW: TVector2D): TVector4D;
+begin
+  Result := Vector(XY.X, XY.Y, ZW.X, ZW.Y);
+end;
+
+function Vector(XYZ: TVector3D; W: Single): TVector4D;
+begin
+  Result := Vector(XYZ.X, XYZ.Y, XYZ.Z, W);
+end;
+
+function Vector(X: Single; YZW: TVector3D): TVector4D;
+begin
+  Result := Vector(X, YZW.X, YZW.Y, YZW.Z);
+end;
 
 function VecLength(A: TVector2D): Single;
 begin
@@ -482,6 +544,20 @@ begin
   Result.W := B[3].X * A.X + B[3].Y * A.Y + B[3].Z * A.Z + B[3].W * A.W;
 end;
 
+operator * (A, B: TMatrix3D): TMatrix3D;
+begin
+  Result[0] := Vector(A[0].X * B[0].X + A[0].Y * B[1].X + A[0].Z * B[2].X, A[0].X * B[0].Y + A[0].Y * B[1].Y + A[0].Z * B[2].Y, A[0].X * B[0].Z + A[0].Y * B[1].Z + A[0].Z * B[2].Z);
+  Result[1] := Vector(A[1].X * B[0].X + A[1].Y * B[1].X + A[1].Z * B[2].X, A[1].X * B[0].Y + A[1].Y * B[1].Y + A[1].Z * B[2].Y, A[1].X * B[0].Z + A[1].Y * B[1].Z + A[1].Z * B[2].Z);
+  Result[2] := Vector(A[2].X * B[0].X + A[2].Y * B[1].X + A[2].Z * B[2].X, A[2].X * B[0].Y + A[2].Y * B[1].Y + A[2].Z * B[2].Y, A[2].X * B[0].Z + A[2].Y * B[1].Z + A[2].Z * B[2].Z);
+end;
+
+operator * (A, B: TMatrix4D): TMatrix4D;
+begin
+  Result[0] := Vector(A[0].X * B[0].X + A[0].Y * B[1].X + A[0].Z * B[2].X + A[0].W * B[3].X, A[0].X * B[0].Y + A[0].Y * B[1].Y + A[0].Z * B[2].Y + A[0].W * B[3].Y, A[0].X * B[0].Z + A[0].Y * B[1].Z + A[0].Z * B[2].Z + A[0].W * B[3].Z, A[0].X * B[0].W + A[0].Y * B[1].W + A[0].Z * B[2].W + A[0].W * B[3].W);
+  Result[1] := Vector(A[1].X * B[0].X + A[1].Y * B[1].X + A[1].Z * B[2].X + A[1].W * B[3].X, A[1].X * B[0].Y + A[1].Y * B[1].Y + A[1].Z * B[2].Y + A[1].W * B[3].Y, A[1].X * B[0].Z + A[1].Y * B[1].Z + A[1].Z * B[2].Z + A[1].W * B[3].Z, A[1].X * B[0].W + A[1].Y * B[1].W + A[1].Z * B[2].W + A[1].W * B[3].W);
+  Result[2] := Vector(A[2].X * B[0].X + A[2].Y * B[1].X + A[2].Z * B[2].X + A[2].W * B[3].X, A[2].X * B[0].Y + A[2].Y * B[1].Y + A[2].Z * B[2].Y + A[2].W * B[3].Y, A[2].X * B[0].Z + A[2].Y * B[1].Z + A[2].Z * B[2].Z + A[2].W * B[3].Z, A[2].X * B[0].W + A[2].Y * B[1].W + A[2].Z * B[2].W + A[2].W * B[3].W);
+  Result[3] := Vector(A[3].X * B[0].X + A[3].Y * B[1].X + A[3].Z * B[2].X + A[3].W * B[3].X, A[3].X * B[0].Y + A[3].Y * B[1].Y + A[3].Z * B[2].Y + A[3].W * B[3].Y, A[3].X * B[0].Z + A[3].Y * B[1].Z + A[3].Z * B[2].Z + A[3].W * B[3].Z, A[3].X * B[0].W + A[3].Y * B[1].W + A[3].Z * B[2].W + A[3].W * B[3].W);
+end;
 
 function Rotate(Deg: Single; AVector, Axis: TVector3D): TVector3D;
 var
@@ -493,6 +569,81 @@ begin
   Result := AVector * Matrix3D(Vector(Axis.X * Axis.X * (1 - C) + C, Axis.X * Axis.Y * (1 - C) - Axis.Z * s, Axis.X * Axis.Z * (1 - C) + Axis.Y * s),
                                Vector(Axis.Y * Axis.X * (1 - C) + Axis.Z * S, Axis.Y * Axis.Y * (1 - C) + C, Axis.Y * Axis.Z * (1 - C) - Axis.X * s),
                                Vector(Axis.X * Axis.Z * (1 - C) - Axis.Y * S, Axis.Y * Axis.Z * (1 - C) + Axis.X * s, Axis.Z * Axis.Z * (1 - C) + C));
+end;
+
+function RotateMatrix(Deg: Single; Axis: TVector3D): TMatrix3D;
+var
+  c, s: Single;
+begin
+  Axis := Normalize(Axis);
+  C := Cos(DegToRad(Deg));
+  S := Sin(DegToRad(Deg));
+  Result := Matrix3D(Vector(Axis.X * Axis.X * (1 - C) + C, Axis.X * Axis.Y * (1 - C) - Axis.Z * s, Axis.X * Axis.Z * (1 - C) + Axis.Y * s),
+                     Vector(Axis.Y * Axis.X * (1 - C) + Axis.Z * S, Axis.Y * Axis.Y * (1 - C) + C, Axis.Y * Axis.Z * (1 - C) - Axis.X * s),
+                     Vector(Axis.X * Axis.Z * (1 - C) - Axis.Y * S, Axis.Y * Axis.Z * (1 - C) + Axis.X * s, Axis.Z * Axis.Z * (1 - C) + C));
+end;
+
+function Identity3D: TMatrix3D;
+begin
+  Result[0] := Vector(1, 0, 0);
+  Result[1] := Vector(0, 1, 0);
+  Result[2] := Vector(0, 0, 1);
+end;
+
+function Identity4D: TMatrix4D;
+begin
+  Result[0] := Vector(1, 0, 0, 0);
+  Result[1] := Vector(0, 1, 0, 0);
+  Result[2] := Vector(0, 0, 1, 0);
+  Result[3] := Vector(0, 0, 0, 1);
+end;
+
+function Vector2D(A: TVector3D): TVector2D;
+begin
+  Result := Vector(A.X, A.Y);
+end;
+
+function Vector2D(A: TVector4D): TVector2D;
+begin
+  Result := Vector(A.X, A.Y);
+end;
+
+function Vector3D(A: TVector4D): TVector3D;
+begin
+  Result := Vector(A.X, A.Y, A.Z);
+end;
+
+procedure MakeOGLCompatibleMatrix(A: TMatrix3D; B: Pointer);
+begin
+  Single(B^) := A[0].X; Inc(B, SizeOf(Single));
+  Single(B^) := A[1].X; Inc(B, SizeOf(Single));
+  Single(B^) := A[2].X; Inc(B, SizeOf(Single));
+  Single(B^) := A[0].Y; Inc(B, SizeOf(Single));
+  Single(B^) := A[1].Y; Inc(B, SizeOf(Single));
+  Single(B^) := A[2].Y; Inc(B, SizeOf(Single));
+  Single(B^) := A[0].Z; Inc(B, SizeOf(Single));
+  Single(B^) := A[1].Z; Inc(B, SizeOf(Single));
+  Single(B^) := A[2].Z; Inc(B, SizeOf(Single));
+end;
+
+procedure MakeOGLCompatibleMatrix(A: TMatrix4D; B: Pointer);
+begin
+  Single(B^) := A[0].X; Inc(B, SizeOf(Single));
+  Single(B^) := A[1].X; Inc(B, SizeOf(Single));
+  Single(B^) := A[2].X; Inc(B, SizeOf(Single));
+  Single(B^) := A[3].X; Inc(B, SizeOf(Single));
+  Single(B^) := A[0].Y; Inc(B, SizeOf(Single));
+  Single(B^) := A[1].Y; Inc(B, SizeOf(Single));
+  Single(B^) := A[2].Y; Inc(B, SizeOf(Single));
+  Single(B^) := A[3].Y; Inc(B, SizeOf(Single));
+  Single(B^) := A[0].Z; Inc(B, SizeOf(Single));
+  Single(B^) := A[1].Z; Inc(B, SizeOf(Single));
+  Single(B^) := A[2].Z; Inc(B, SizeOf(Single));
+  Single(B^) := A[3].Z; Inc(B, SizeOf(Single));
+  Single(B^) := A[0].W; Inc(B, SizeOf(Single));
+  Single(B^) := A[1].W; Inc(B, SizeOf(Single));
+  Single(B^) := A[2].W; Inc(B, SizeOf(Single));
+  Single(B^) := A[3].W; Inc(B, SizeOf(Single));
 end;
 
 end.

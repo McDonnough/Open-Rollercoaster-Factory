@@ -3,7 +3,7 @@ unit u_geometry;
 interface
 
 uses
-  SysUtils, Classes, u_math, u_vectors;
+  SysUtils, Classes, u_math, u_vectors, m_texmng_class;
 
 type
   TTriangle = Array[0..2] of TVector3D;
@@ -13,7 +13,7 @@ type
 
   TMeshVertex = record
     Position, Normal: TVector3D;
-    TexCoord: TVector2D;
+    TexCoord, BumpTexCoord: TVector2D;
     end;
 
   PMeshVertex = ^TMeshVertex;
@@ -30,11 +30,18 @@ type
       function getVCount: Integer;
       function getTCount: Integer;
     public
+      Parent: Pointer;
+      MaxDistance, MinDistance: Single;
+      Color: TVector4D;
+      Texture, BumpMap: TTexture;
+      StaticOffset, Offset: TVector3D;
+      StaticRotationMatrix, RotationMatrix: TMatrix3D;
       property Vertices[i: Integer]: TMeshVertex read getVertex write setVertex;
       property pVertices[i: Integer]: PMeshVertex read getPVertex;
       property Triangles[i: Integer]: TMeshTriangleVertexArray read getTriangle write setTriangle;
       property VertexCount: Integer read getVCount;
       property TriangleCount: Integer read getTCount;
+      constructor Create;
     end;
 
 function MakeRay(A, B: TVector3D): TRay;
@@ -42,12 +49,13 @@ function MakeTriangle(A, B, C: TVector3D): TTriangle;
 function MakeTriangleFromMeshTriangleVertexArray(Mesh: TMesh; A: TMeshTriangleVertexArray): TTriangle;
 function RayTriangleIntersection(Ray: TRay; Tri: TTriangle; var I: TVector3D): Boolean;
 function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
+function MakeExtendedMeshVertex(P, N: TVector3D; T, B: TVector2D): TMeshVertex;
 function MakeTriangleVertexArray(A, B, C: Integer): TMeshTriangleVertexArray;
 
 implementation
 
 uses
-  u_selection;
+  u_selection, u_events;
 
 
 procedure TMesh.setVertex(I: Integer; V: TMeshVertex);
@@ -56,6 +64,7 @@ begin
   if I = VertexCount then
     SetLength(fVertices, I + 1);
   fVertices[i] := V;
+  EventManager.CallEvent('TMesh.ChangedVertex', Self, @I);
 end;
 
 procedure TMesh.setTriangle(I: Integer; V: TMeshTriangleVertexArray);
@@ -64,6 +73,7 @@ begin
   if I = TriangleCount then
     SetLength(fTriangles, I + 1);
   fTriangles[i] := V;
+  EventManager.CallEvent('TMesh.ChangedTriangle', Self, @I);
 end;
 
 function TMesh.getVertex(I: Integer): TMeshVertex;
@@ -100,6 +110,21 @@ begin
   Result := Length(fTriangles);
 end;
 
+constructor TMesh.Create;
+begin
+  Color := Vector(1, 1, 1, 1);
+  MinDistance := 0;
+  MaxDistance := 10000;
+  Texture := nil;
+  BumpMap := nil;
+  Parent := nil;
+  RotationMatrix := Identity3D;
+  Offset := Vector(0, 0, 0);
+  StaticRotationMatrix := Identity3D;
+  StaticOffset := Vector(0, 0, 0);
+end;
+
+
 
 function MakeRay(A, B: TVector3D): TRay;
 begin
@@ -119,6 +144,15 @@ begin
   Result[0] := Mesh.Vertices[A[0]].Position;
   Result[1] := Mesh.Vertices[A[1]].Position;
   Result[2] := Mesh.Vertices[A[2]].Position;
+  Result[0] := Result[0] * Mesh.RotationMatrix;
+  Result[1] := Result[1] * Mesh.RotationMatrix;
+  Result[2] := Result[2] * Mesh.RotationMatrix;
+  Result[0] := Result[0] * Mesh.StaticRotationMatrix;
+  Result[1] := Result[1] * Mesh.StaticRotationMatrix;
+  Result[2] := Result[2] * Mesh.StaticRotationMatrix;
+  Result[0] := Result[0] + Mesh.Offset + Mesh.StaticOffset;
+  Result[1] := Result[1] + Mesh.Offset + Mesh.StaticOffset;
+  Result[2] := Result[2] + Mesh.Offset + Mesh.StaticOffset;
 end;
 
 function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
@@ -126,6 +160,15 @@ begin
   Result.Position := P;
   Result.Normal := N;
   Result.TexCoord := T;
+  Result.BumpTexCoord := T;
+end;
+
+function MakeExtendedMeshVertex(P, N: TVector3D; T, B: TVector2D): TMeshVertex;
+begin
+  Result.Position := P;
+  Result.Normal := N;
+  Result.TexCoord := T;
+  Result.BumpTexCoord := B;
 end;
 
 //

@@ -797,6 +797,7 @@ var
   tempTex: TTexImage;
   TexFormat, CompressedTexFormat: GLEnum;
 begin
+  writeln('Initializing terrain renderer');
   inherited Create(false);
   fTerrainEditorIsOpen := false;
   fForcedHeightLine := -1;
@@ -804,7 +805,6 @@ begin
   fWaterVBO := nil;
   fBorderVBO := nil;
   try
-    writeln('Initializing terrain renderer');
     fHeightMap := nil;
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
     fShader.UniformI('TerrainTexture', 0);

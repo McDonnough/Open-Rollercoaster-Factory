@@ -23,7 +23,7 @@ type
       constructor Create;
       destructor Free;
       procedure CheckModConf;
-      function LoadShader(VSFile, FSFile: String): Integer;
+      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0): Integer;
       procedure BindShader(Shader: Integer);
       procedure DeleteShader(Shader: Integer);
       procedure Uniformf(VName: String; v0: GLfloat);
@@ -34,6 +34,8 @@ type
       procedure Uniformi(VName: String; v0, v1: GLint);
       procedure Uniformi(VName: String; v0, v1, v2: GLint);
       procedure Uniformi(VName: String; v0, v1, v2, v3: GLint);
+      procedure UniformMatrix3D(VName: String; V: Pointer);
+      procedure UniformMatrix4D(VName: String; V: Pointer);
     end;
 
 implementation
@@ -61,7 +63,7 @@ procedure TModuleShaderManagerDefault.CheckModConf;
 begin
 end;
 
-function TModuleShaderManagerDefault.LoadShader(VSFile, FSFile: String): Integer;
+function TModuleShaderManagerDefault.LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0): Integer;
   function glSlang_GetInfoLog(glObject: GLHandle): String;
   var
     blen,slen: GLInt;
@@ -77,15 +79,15 @@ function TModuleShaderManagerDefault.LoadShader(VSFile, FSFile: String): Integer
       end;
   end;
 var
-  FSObject, VSObject: GLHandle;
+  FSObject, VSObject, GSObject: GLHandle;
   str: String;
   s: Integer;
   i: integer;
 begin
-  writeln('Loading Shader ' + VSFile + ', ' + FSFile);
-  if (not FileExists(VSFile)) or (not FileExists(FSFile)) then
+  writeln('Loading Shader ' + VSFile + ', ' + FSFile + ', ' + GSFile);
+  if (not FileExists(VSFile)) or (not FileExists(FSFile)) or ((not FileExists(GSFile)) and (GSFile <> '')) then
     begin
-    ModuleManager.ModLog.AddWarning('Shader files ' + VSFile + ', ' + FSFile + ' do not exist', 'm_shdmng_default', 87);
+    ModuleManager.ModLog.AddWarning('Shader files ' + VSFile + ', ' + FSFile + ', ' + GSFile + ' do not exist', 'm_shdmng_default', 87);
     exit(-1);
     end;
 
@@ -100,6 +102,8 @@ begin
 
   VSObject := glCreateShader(GL_VERTEX_SHADER);
   FSObject := glCreateShader(GL_FRAGMENT_SHADER);
+  if GSFile <> '' then
+    GSObject := glCreateShader(GL_GEOMETRY_SHADER_EXT);
 
   with TFileStream.create(VSFile, fmOpenRead) do
     begin
@@ -119,19 +123,41 @@ begin
     free;
     end;
 
+  if GSFile <> '' then
+    with TFileStream.create(GSFile, fmOpenRead) do
+      begin
+      setlength(str, size);
+      read(str[1], size);
+      s := size;
+      glShaderSource(GSObject, 1, @str, @s);
+      free;
+      end;
+
   glCompileShader(VSObject);
   glCompileShader(FSObject);
+  if GSFile <> '' then
+    glCompileShader(GSObject);
+
   glAttachShader(fShdRef[Result].ID, VSObject);
   glAttachShader(fShdRef[Result].ID, FSObject);
-
-  glDeleteShader(VSObject);
-  glDeleteShader(FSObject);
+  if GSFile <> '' then
+    begin
+    glAttachShader(fShdRef[Result].ID, GSObject);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_VERTICES_OUT_EXT, VerticesOut);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_INPUT_TYPE_EXT, GL_TRIANGLES);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
+    end;
 
   glLinkProgram(fShdRef[Result].ID);
   if glSlang_getInfoLog(fShdRef[Result].ID) <> '' then
-    ModuleManager.ModLog.AddWarning('Shader Info (' + VSFile + ', ' + FSFile + '):' + #10 + glSlang_getInfoLog(fShdRef[Result].ID), 'm_shdmng_default.pas', 97);
+    ModuleManager.ModLog.AddWarning('Shader Info (' + VSFile + ', ' + FSFile + ', ' + GSFile + '):' + #10 + glSlang_getInfoLog(fShdRef[Result].ID), 'm_shdmng_default.pas', 97);
 
   fShdRef[Result].Name := VSFile + ':' + FSFile;
+
+  glDeleteShader(VSObject);
+  glDeleteShader(FSObject);
+  if GSFile <> '' then
+    glDeleteShader(GSObject);
 end;
 
 procedure TModuleShaderManagerDefault.BindShader(Shader: Integer);
@@ -203,6 +229,18 @@ procedure TModuleShaderManagerDefault.Uniformi(VName: String; v0, v1, v2, v3: GL
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
     glUniform4i(glGetUniformLocationARB(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2, v3);
+end;
+
+procedure TModuleShaderManagerDefault.UniformMatrix4D(VName: String; V: Pointer);
+begin
+  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
+    glUniformMatrix4fv(glGetUniformLocationARB(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
+end;
+
+procedure TModuleShaderManagerDefault.UniformMatrix3D(VName: String; V: Pointer);
+begin
+  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
+    glUniformMatrix3fv(glGetUniformLocationARB(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
 end;
 
 end.

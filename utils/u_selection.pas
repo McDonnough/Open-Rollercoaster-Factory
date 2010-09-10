@@ -40,6 +40,7 @@ uses
 procedure TSelectionEngine.Execute;
 var
   i, j: Integer;
+  l: Single;
   Sel: TVector3D;
 begin
   fCanWork := false;
@@ -55,6 +56,9 @@ begin
         for i := 0 to high(fSelectableObjects) do
           begin
           fSelectableObjects[i].Selected := false;
+          l := VecLengthNoRoot(ModuleManager.ModCamera.ActiveCamera.Position - fSelectableObjects[i].Mesh.Offset - fSelectableObjects[i].Mesh.StaticOffset);
+          if (l < fSelectableObjects[i].Mesh.MinDistance * fSelectableObjects[i].Mesh.MinDistance) or (l > fSelectableObjects[i].Mesh.MaxDistance * fSelectableObjects[i].Mesh.MaxDistance) then
+            continue;
           for j := 0 to fSelectableObjects[i].Mesh.TriangleCount - 1 do
             if RayTriangleIntersection(MakeRay(ModuleManager.ModRenderer.SelectionStart, ModuleManager.ModRenderer.SelectionRay), MakeTriangleFromMeshTriangleVertexArray(fSelectableObjects[i].Mesh, fSelectableObjects[i].Mesh.Triangles[j]), fSelectableObjects[i].IntersectionPoint) then
               if MinDist > VecLengthNoRoot(fSelectableObjects[i].IntersectionPoint - ModuleManager.ModRenderer.SelectionStart) then

@@ -91,6 +91,7 @@ end;
 
 constructor TRSky.Create;
 begin
+  writeln('Initializing sky renderer');
   fShader := TShader.Create('rendereropengl/glsl/sky/sky.vs', 'rendereropengl/glsl/sky/sky.fs');
   fSun := TSun.Create;
   fCameraLight := TLight.Create;

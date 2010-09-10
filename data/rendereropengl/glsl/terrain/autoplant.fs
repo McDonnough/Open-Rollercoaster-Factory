@@ -4,6 +4,7 @@ uniform sampler2D HeightMap;
 uniform sampler2D Autoplant;
 uniform sampler2D SunShadowMap;
 uniform vec2 TerrainSize;
+uniform float TexToDo;
 
 varying float dist;
 varying float SDist;
@@ -11,6 +12,7 @@ varying vec4 result;
 varying vec4 Vertex;
 varying vec4 BaseVertex;
 varying vec3 normal;
+varying float Texture;
 
 vec4 Diffuse = vec4(0.0, 0.0, 0.0, 1.0);
 vec4 Ambient = vec4(0.0, 0.0, 0.0, 1.0);
@@ -22,7 +24,7 @@ void AddLight(int ID) {
 }
 
 void main(void) {
-  if (dist > 30.0)
+  if (dist > 30.0 || TexToDo != Texture)
     discard;
   gl_FragColor = texture2D(Autoplant, gl_TexCoord[0].xy);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);

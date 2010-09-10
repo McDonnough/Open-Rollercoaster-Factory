@@ -482,6 +482,7 @@ begin
     for i := 0 to high(fAPVBOs) do
       if fAPVBOs[i] <> nil then
         begin
+        fAPShader.UniformF('TexToDo', i);
         Park.pTerrain.Collection.Materials[i].AutoplantProperties.Texture.Bind(0);
         if fUpdatePlants then
           begin
@@ -785,6 +786,10 @@ begin
         fAPVBOs[i].TexCoords[4 * j + 1] := Vector(0, 0);
         fAPVBOs[i].TexCoords[4 * j + 2] := Vector(1, 0);
         fAPVBOs[i].TexCoords[4 * j + 3] := Vector(1, 1);
+        fAPVBOs[i].Vertices[4 * j + 0] := Vector(0, 0, 0);
+        fAPVBOs[i].Vertices[4 * j + 1] := Vector(0, 0, 0);
+        fAPVBOs[i].Vertices[4 * j + 2] := Vector(0, 0, 0);
+        fAPVBOs[i].Vertices[4 * j + 3] := Vector(0, 0, 0);
         end;
       end
     else

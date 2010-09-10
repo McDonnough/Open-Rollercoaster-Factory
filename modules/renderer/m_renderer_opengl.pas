@@ -43,7 +43,7 @@ type
     end;
 
 const
-  SHADOW_UPDATE_TIME = 100;
+  SHADOW_UPDATE_TIME = 40;
 
 implementation
 

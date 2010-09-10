@@ -32,7 +32,7 @@ type
       fShader, fTransformDepthShader, fSunShadowShader: TShader;
       fShaderTesselation, fTransformDepthShaderTesselation, fSunShadowShaderTesselation: TShader;
       fManagedObjects: Array of TManagedObject;
-
+      a: Integer;
       fTest: TBasicObject;
     public
       procedure AddObject(Event: String; Data, Result: Pointer);
@@ -211,7 +211,12 @@ begin
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fNewBoundShader := fTransformDepthShader
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
-    fNewBoundShader := fSunShadowShader;
+    fNewBoundShader := fSunShadowShader
+  else
+    begin
+    inc(a);
+    fTest.Rotate(RotateMatrix(a, Vector(1, 1, 1)));
+    end;
   if fBoundShader <> fNewBoundShader then
     begin
     fBoundShader := fNewBoundShader;
@@ -269,6 +274,7 @@ begin
     fShader := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs');
     fShader.UniformI('Tex', 0);
     fShader.UniformI('Bump', 1);
+    fShader.UniformI('SunShadowMap', 7);
     fTransformDepthShader := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs');
     fTransformDepthShader.UniformI('Tex', 0);
     fTransformDepthShader.UniformI('Bump', 1);
@@ -278,6 +284,7 @@ begin
     fShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs', 'rendereropengl/glsl/objects/normal.gs');
     fShaderTesselation.UniformI('Tex', 0);
     fShaderTesselation.UniformI('Bump', 1);
+    fShaderTesselation.UniformI('SunShadowMap', 7);
     fTransformDepthShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs', 'rendereropengl/glsl/objects/normal.gs');
     fTransformDepthShaderTesselation.UniformI('Tex', 0);
     fTransformDepthShaderTesselation.UniformI('Bump', 1);

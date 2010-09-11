@@ -11,7 +11,7 @@ float calcBlurFactor(float a) {
 }
 
 void main(void) {
-  vec2 a = texture2D(dist, gl_TexCoord[0].xy).rg * vec2(1024.0, 4.0);
+  vec2 a = texture2D(dist, gl_TexCoord[0].xy).rg * vec2(256.0, 1.0);
   float cdist = a.x + a.y;
   vec2 blurFactor = blurDirection * calcBlurFactor(cdist);
   float AblurFactor = length(blurFactor);

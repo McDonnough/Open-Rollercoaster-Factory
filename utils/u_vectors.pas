@@ -113,6 +113,8 @@ function Vec3toVec2(A: TVector3D): TVector2D;
 
 function Matrix3D(A, B, C: TVector3D): TMatrix3D;
 function Matrix4D(A, B, C, D: TVector4D): TMatrix4D;
+function Matrix4D(A: TMatrix3D): TMatrix4D;
+
 
 operator * (A: TVector3D; B: TMatrix3D): TVector3D;
 operator * (A: TVector4D; B: TMatrix4D): TVector4D;
@@ -121,6 +123,10 @@ operator * (A, B: TMatrix4D): TMatrix4D;
 
 function Rotate(Deg: Single; AVector, Axis: TVector3D): TVector3D;
 function RotateMatrix(Deg: Single; Axis: TVector3D): TMatrix3D;
+
+
+function TranslateMatrix(P: TVector3D): TMatrix4D;
+
 
 function Identity3D: TMatrix3D;
 function Identity4D: TMatrix4D;
@@ -644,6 +650,22 @@ begin
   Single(B^) := A[1].W; Inc(B, SizeOf(Single));
   Single(B^) := A[2].W; Inc(B, SizeOf(Single));
   Single(B^) := A[3].W; Inc(B, SizeOf(Single));
+end;
+
+function Matrix4D(A: TMatrix3D): TMatrix4D;
+begin
+  Result[0] := Vector(A[0], 0);
+  Result[1] := Vector(A[1], 0);
+  Result[2] := Vector(A[2], 0);
+  Result[3] := Vector(0, 0, 0, 1);
+end;
+
+function TranslateMatrix(P: TVector3D): TMatrix4D;
+begin
+  Result := Identity4D;
+  Result[0].W := P.X;
+  Result[1].W := P.Y;
+  Result[2].W := P.Z;
 end;
 
 end.

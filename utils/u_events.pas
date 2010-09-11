@@ -58,6 +58,7 @@ begin
       begin
       setLength(fEvents[i].Callbacks, length(fEvents[i].Callbacks) + 1);
       fEvents[i].Callbacks[high(fEvents[i].Callbacks)] := Callback;
+      exit;
       end;
   setLength(fEvents, length(fEvents) + 1);
   with fEvents[high(fEvents)] do

@@ -46,6 +46,7 @@ end;
 
 destructor TGameParkSettings.Free;
 begin
+  EventManager.RemoveCallback(@ChangeParkData);
   EventManager.RemoveCallback(@ChangeTab);
   inherited Free;
 end;

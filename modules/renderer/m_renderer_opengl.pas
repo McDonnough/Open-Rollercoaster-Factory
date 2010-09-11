@@ -43,7 +43,7 @@ type
     end;
 
 const
-  SHADOW_UPDATE_TIME = 40;
+  SHADOW_UPDATE_TIME = 1;
 
 implementation
 
@@ -83,10 +83,10 @@ begin
     begin
     RSky.Render('', nil, nil);
     RTerrain.Render('', nil, nil);
-    RObjects.Render('', nil, nil);
     end;
   if Transparent then
     begin
+    RObjects.Render('', nil, nil);
     RTerrain.RenderAutoplants('', nil, nil);
     end;
   fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);

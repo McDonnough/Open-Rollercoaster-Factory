@@ -8,7 +8,6 @@ uniform sampler2D SunShadowMap;
 uniform vec2 TerrainSize;
 uniform float HeightLineToHighlight;
 
-// varying float SDist;
 varying vec4 Vertex;
 varying vec4 v;
 
@@ -38,21 +37,19 @@ void main(void) {
   float h = fetchHeight(1);
   if (h < Vertex.y - 0.01 || h > Vertex.y + 0.01)
     discard;
-  float SDist = distance(gl_LightSource[0].position, Vertex);
   float dist = length(v);
   float terrainHeight = fetchHeight(3);
   vec4 Position = gl_ModelViewProjectionMatrix * Vertex;
   vec2 RealPosition = 0.5 + 0.5 * (Position.xy / Position.w);
   normal = normalize((-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 15.0 + gl_TexCoord[0].xy).rbg) - (-1.0 + 2.0 * texture2D(BumpMap, Vertex.xz / 7.5 + 0.5 * gl_TexCoord[0].yx).rbg) + vec3(0.0, 1.0, 0.0));
   vec2 reflectionOffset = normal.xz / 10.0;
-  vec4 result = gl_TextureMatrix[0] * Vertex;
-//   result = sqrt(abs(result)) * sign(result);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  if (length(result.xy / result.w) < 1.0)
-    SunShadow = texture2D(SunShadowMap, 0.5 + 0.5 * result.xy / result.w);
-  if (SunShadow.a + 0.1 >= SDist)
-    SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  vec4 ShadowFactor = 1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0);
+  if (gl_TexCoord[7].xy == clamp(gl_TexCoord[7].xy, vec2(0.0, 0.0), vec2(1.0, 1.0))) {
+    SunShadow = texture2D(SunShadowMap, gl_TexCoord[7].xy);
+    if (SunShadow.a - 0.1 <= Vertex.y)
+      SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
+  }
+  vec4 ShadowFactor = 1.0 - vec4(SunShadow.rgb, 0.0);
   Eye       = normalize(-v.xyz);
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * gl_LightSource[0].position - v).xyz), normalize(gl_NormalMatrix * normal)));
   vec4 Specular = gl_LightSource[0].diffuse * ShadowFactor * pow(max(dot(Reflected, Eye), 0.0), 100.0);

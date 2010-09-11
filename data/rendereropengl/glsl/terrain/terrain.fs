@@ -13,7 +13,6 @@ uniform vec2 Min;
 uniform vec2 Max;
 uniform float NFactor;
 
-varying float SDist;
 varying vec4 Vertex;
 varying vec2 fragCoord;
 varying vec4 DVertex;
@@ -89,8 +88,6 @@ void main(void) {
   normal.xz *= pow(1.0 - rhf, 5.0);
   vec3 onormal = normal;
   vec3 bumpNormal = vec3(0.0, 1.0, 0.0);
-  vec4 result = gl_TextureMatrix[0] * Vertex;
-//   result = sqrt(abs(result)) * sign(result);
   if (dist < maxBumpDistance) {
     bumpColors = mat4(
       texture2D(TerrainTexture, getRightTexCoord(1.0 / 128.0) + TexCoord[0].xy + vec2(0.0, 0.5)).rgba,
@@ -105,11 +102,12 @@ void main(void) {
   }
   normal = normalize(normal);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  if (length(result.xy / result.w) < 1.0)
-    SunShadow = texture2D(SunShadowMap, 0.5 + 0.5 * result.xy / result.w);
-  if (SunShadow.a + 0.1 >= SDist)
-    SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
-  Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb * clamp(SDist - SunShadow.a, 0.0, 1.0), 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
+  if (gl_TexCoord[7].xy == clamp(gl_TexCoord[7].xy, vec2(0.0, 0.0), vec2(1.0, 1.0))) {
+    SunShadow = texture2D(SunShadowMap, gl_TexCoord[7].xy);
+    if (SunShadow.a - 0.1 <= Vertex.y)
+      SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
+  }
+  Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
   Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
   AddLight(1);
   AddLight(2);
@@ -127,4 +125,5 @@ void main(void) {
   if (clamp(Vertex.xz, Min, Max) != Vertex.xz)
     gl_FragColor.rgb *= 0.5;
   gl_FragColor = mix(gl_FragColor, vec4(gl_FragColor.xyz, 0.0), pow(dist / 3000.0, 2.0));
+//   gl_FragColor.rgb = SunShadow.rgb * SunShadow.a / 256.0;
 }

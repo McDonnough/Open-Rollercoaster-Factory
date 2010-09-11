@@ -5,7 +5,6 @@ uniform vec2 TerrainSize;
 uniform float TexToDo;
 
 varying float dist;
-varying float SDist;
 varying vec4 result;
 varying vec4 Vertex;
 varying vec4 BaseVertex;
@@ -14,6 +13,11 @@ varying float Texture;
 
 float fpart(float a) {
   return a - floor(a);
+}
+
+vec4 mapPixelToQuad(vec2 P) {
+  vec2 result = P / 204.8;
+  return vec4(result, 1.0, 1.0);
 }
 
 float fetchHeightAtOffset(vec2 O) {
@@ -35,9 +39,8 @@ void main(void) {
   Vertex.xyz += normal * Vertex.y;
   Vertex.y += VY;
   dist = length(gl_ModelViewMatrix * Vertex);
-  result = gl_TextureMatrix[0] * Vertex;
-//   result = sqrt(abs(result)) * sign(result);
-  SDist = distance(gl_LightSource[0].position, Vertex);
+  vec4 LightVec = Vertex - gl_LightSource[0].position;
+  gl_TexCoord[7] = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);
   gl_TexCoord[0] = gl_MultiTexCoord0;
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;

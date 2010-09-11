@@ -322,7 +322,7 @@ begin
     ModuleManager.ModLog.AddError('Failed to create object renderer in OpenGL rendering module: Internal error');
   end;
   fTest := TBasicObject.Create;
-  fTest.Move(Vector(16, 65, 16));
+  fTest.Move(Vector(160, 70, 160));
   for i := 0 to 1 do
     with fTest.AddMesh do
       begin

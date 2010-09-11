@@ -22,6 +22,7 @@ type
       fSunShadowOpenAngle: Single;
     public
       fShadowDelay: Single;
+      ShadowQuad: Array[0..3] of TVector3D;
       OS, OC: TVector3D;
       CR, CG, CB: Boolean;
       RCamera: TRCamera;
@@ -204,32 +205,35 @@ procedure TModuleRendererOpenGL.RenderShadows;
 begin
   with ModuleManager.ModRenderer.RSky.Sun.Position do
     OS := Vector(X, Y, Z);
+  ShadowQuad[0] := Vector(0, 0, 0);
+  ShadowQuad[1] := Vector(204.8, 0, 0);
+  ShadowQuad[2] := Vector(204.8, 0, 204.8);
+  ShadowQuad[3] := Vector(0, 0, 204.8);
   OC := ModuleManager.ModCamera.ActiveCamera.Position;
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
-  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
-  gluLookAt(OS.X, OS.Y, OS.Z,
-            Round(OC.X), Round(OC.Y), Round(OC.Z),
-            0, 1, 0);
-  fFrustum.Calculate;
-  glLoadIdentity;
+//   glMatrixMode(GL_PROJECTION);
+//   glLoadIdentity;
+//   gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
+//   glMatrixMode(GL_MODELVIEW);
+//   glLoadIdentity;
+//   gluLookAt(OS.X, OS.Y, OS.Z,
+//             Round(OC.X), Round(OC.Y), Round(OC.Z),
+//             0, 1, 0);
+//   fFrustum.Calculate;
+//   glLoadIdentity;
 
   fInterface.PushOptions;
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Bind;
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-  glMatrixMode(GL_TEXTURE);
-  glLoadIdentity;
-  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
-  gluLookAt(OS.X, OS.Y, OS.Z,
-            Round(OC.X), Round(OC.Y), Round(OC.Z),
-            0, 1, 0);
+//   glMatrixMode(GL_TEXTURE);
+//   glLoadIdentity;
+//   gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
+//   gluLookAt(OS.X, OS.Y, OS.Z,
+//             Round(OC.X), Round(OC.Y), Round(OC.Z),
+//             0, 1, 0);
   fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
   RenderParts(true, true);
-
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
   fInterface.PopOptions;
 end;

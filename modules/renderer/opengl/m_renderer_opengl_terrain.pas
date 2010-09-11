@@ -354,6 +354,10 @@ begin
       end;
     end;
   fBoundShader.Bind;
+  fBoundShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
+  fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
+  fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
+  fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     begin
     fBoundShader.UniformF('offset', fFineOffsetX / 5, fFineOffsetY / 5);
@@ -473,6 +477,10 @@ begin
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.2);
     fAPShader.Bind;
+    fAPShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
+    fAPShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
+    fAPShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
+    fAPShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
     if fUpdatePlants then
       begin
       inc(fFrameCount);
@@ -570,6 +578,10 @@ begin
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
     fBoundShader := fWaterShaderTransformSunShadow;
   fBoundShader.Bind;
+  fBoundShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
+  fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
+  fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
+  fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
   if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
     if (Park.pTerrain.MarkMode = 1) then
       fBoundShader.UniformF('HeightLineToHighlight', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)

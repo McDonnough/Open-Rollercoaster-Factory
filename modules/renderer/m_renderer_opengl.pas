@@ -210,16 +210,16 @@ begin
   ShadowQuad[2] := Vector(204.8, 0, 204.8);
   ShadowQuad[3] := Vector(0, 0, 204.8);
   OC := ModuleManager.ModCamera.ActiveCamera.Position;
-//   glMatrixMode(GL_PROJECTION);
-//   glLoadIdentity;
-//   gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
-//   glMatrixMode(GL_MODELVIEW);
-//   glLoadIdentity;
-//   gluLookAt(OS.X, OS.Y, OS.Z,
-//             Round(OC.X), Round(OC.Y), Round(OC.Z),
-//             0, 1, 0);
-//   fFrustum.Calculate;
-//   glLoadIdentity;
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  gluLookAt(OS.X, OS.Y, OS.Z,
+            Round(OC.X), Round(OC.Y), Round(OC.Z),
+            0, 1, 0);
+  fFrustum.Calculate;
+  glLoadIdentity;
 
   fInterface.PushOptions;
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Bind;
@@ -357,7 +357,7 @@ end;
 
 constructor TModuleRendererOpenGL.Create;
 begin
-  fSunShadowOpenAngle := 1;
+  fSunShadowOpenAngle := 3;
   fModName := 'RendererGL';
   fModType := 'Renderer';
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);

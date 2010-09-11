@@ -134,10 +134,11 @@ begin
     fDistTexture.Bind;
     glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, ResX, ResY, 0);
     fDistTexture.UnBind;
+    glReadPixels(ResX div 2, ResY div 2, 1, 1, GL_RGBA, GL_FLOAT, @fDistPixel[0]);
     glReadPixels(ModuleManager.ModInputHandler.MouseX, ResY - ModuleManager.ModInputHandler.MouseY, 1, 1, GL_RGBA, GL_FLOAT, @fDistPixel[0]);
-    fMouseDistance := 256 * fDistPixel[0] + fDistPixel[1];
+    fMouseDistance := 4 * (256 * fDistPixel[0] + fDistPixel[1]);
     if fMouseDistance = 0 then
-      fMouseDistance := 257;
+      fMouseDistance := 1026;
     end;
   if EyeFocus < 0 then
     exit;
@@ -204,7 +205,7 @@ procedure TModuleRendererOpenGL.RenderShadows;
 begin
   with ModuleManager.ModRenderer.RSky.Sun.Position do
     OS := Vector(X, Y, Z);
-  OC := ModuleManager.ModCamera.ActiveCamera.Position;
+  OC := ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
   gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);

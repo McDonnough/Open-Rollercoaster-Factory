@@ -78,7 +78,6 @@ begin
   SDL_GL_SetAttribute(PtrUInt(SDL_GL_BLUE_SIZE), 8);
   SDL_GL_SetAttribute(PtrUInt(SDL_GL_ALPHA_SIZE), 8);
   SDL_GL_SetAttribute(PtrUInt(SDL_GL_BUFFER_SIZE), 32);
-  SDL_GL_SetAttribute(PtrUInt(SDL_GL_STENCIL_SIZE), 8);
   SDL_GL_SetAttribute(PtrUInt(SDL_GL_ACCUM_RED_SIZE), 8);
   SDL_GL_SetAttribute(PtrUInt(SDL_GL_ACCUM_GREEN_SIZE), 8);
   SDL_GL_SetAttribute(PtrUInt(SDL_GL_ACCUM_BLUE_SIZE), 8);

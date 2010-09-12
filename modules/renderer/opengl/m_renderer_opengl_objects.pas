@@ -30,6 +30,7 @@ type
     protected
       fBoundShader: TShader;
       fShader, fTransformDepthShader, fSunShadowShader: TShader;
+      fShaderTesselation, fTransformDepthShaderTesselation, fSunShadowShaderTesselation: TShader;
       fManagedObjects: Array of TManagedObject;
       a: Integer;
       fTest: TBasicObject;
@@ -206,15 +207,22 @@ var
   i: Integer;
   tmpMatrix: TMatrix4D;
   Matrix: Array[0..15] of Single;
-  fNewShader: TShader;
+  fNewShader, fTessShader: TShader;
 begin
   glEnable(GL_ALPHA_TEST);
-  glDisable(GL_CULL_FACE);
+  glEnable(GL_CULL_FACE);
   fNewShader := fShader;
+  fTessShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
-    fNewShader := fTransformDepthShader
+    begin
+    fNewShader := fTransformDepthShader;
+    fTessShader := fTransformDepthShaderTesselation;
+    end
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
-    fNewShader := fSunShadowShader
+    begin
+    fNewShader := fSunShadowShader;
+    fTessShader := fSunShadowShaderTesselation;
+    end
   else
     begin
     glEnable(GL_BLEND);
@@ -224,6 +232,11 @@ begin
     fTest.fMeshes[0].RotationMatrix := (RotateMatrix(-1 * a, Vector(0, 1, 0)));
     fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-1 * a, Vector(0, 1, 0)));
     end;
+  fTessShader.Bind;
+  fTessShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
+  fTessShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
+  fTessShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
+  fTessShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
   fNewShader.Bind;
   fNewShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
   fNewShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
@@ -295,17 +308,28 @@ begin
   writeln('Initializing object renderer');
   try
     fBoundShader := nil;
-    fShader := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs', 'rendereropengl/glsl/shadows/shdGenSun.gs', 4, GL_LINES, GL_TRIANGLE_STRIP);
+    fShader := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs');
     fShader.UniformI('Tex', 0);
     fShader.UniformI('Bump', 1);
     fShader.UniformI('SunShadowMap', 7);
     fTransformDepthShader := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs');
     fTransformDepthShader.UniformI('Tex', 0);
     fTransformDepthShader.UniformI('Bump', 1);
-    fSunShadowShader := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/simple.fs', 'rendereropengl/glsl/shadows/shdGenSun.gs', 4, GL_LINES, GL_TRIANGLE_STRIP);
+    fSunShadowShader := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fSunShadowShader.UniformI('Tex', 0);
     fSunShadowShader.UniformI('ModelTexture', 0);
     fSunShadowShader.UniformI('Bump', 1);
+    fShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
+    fShaderTesselation.UniformI('Tex', 0);
+    fShaderTesselation.UniformI('Bump', 1);
+    fShaderTesselation.UniformI('SunShadowMap', 7);
+    fTransformDepthShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
+    fTransformDepthShaderTesselation.UniformI('Tex', 0);
+    fTransformDepthShaderTesselation.UniformI('Bump', 1);
+    fSunShadowShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
+    fSunShadowShaderTesselation.UniformI('Tex', 0);
+    fSunShadowShaderTesselation.UniformI('ModelTexture', 0);
+    fSunShadowShaderTesselation.UniformI('Bump', 1);
     EventManager.AddCallback('TBasicObject.Created', @AddObject);
     EventManager.AddCallback('TBasicObject.Deleted', @DeleteObject);
     EventManager.AddCallback('TBasicObject.AddedMesh', @AddMesh);
@@ -393,6 +417,9 @@ begin
   fShader.Free;
   fTransformDepthShader.Free;
   fSunShadowShader.Free;
+  fShaderTesselation.Free;
+  fTransformDepthShaderTesselation.Free;
+  fSunShadowShaderTesselation.Free;
 end;
 
 end.

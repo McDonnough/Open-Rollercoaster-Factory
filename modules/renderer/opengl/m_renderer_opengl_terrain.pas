@@ -313,8 +313,6 @@ var
   i, j, k: integer;
   Blocks: Array of Array[0..2] of Integer;
 begin
-  if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
-    exit;
   if not fWorking then
     for i := 0 to high(fWaterLayerFBOs) do
       if i > high(fWaterLayerFBOs) then

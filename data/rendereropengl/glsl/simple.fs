@@ -9,5 +9,4 @@ float fpart(float a) {
 
 void main(void) {
   gl_FragColor = vec4(dist / 256.0, fpart(dist), 1.0, Vertex.y);
-  gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }

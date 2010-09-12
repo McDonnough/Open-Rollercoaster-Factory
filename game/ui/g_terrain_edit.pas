@@ -342,6 +342,7 @@ begin
   EventManager.RemoveCallback(@UpdateTerrainSelectionMap);
   EventManager.RemoveCallback(@CreateNewMark);
   EventManager.RemoveCallback(@SetWater);
+  EventManager.RemoveCallback(@DeleteWater);
   EventManager.RemoveCallback('BasicComponent.OnClick', @ModifyHeight);
   if Data = Pointer(fWindow.GetChildByName('terrain_edit.add_marks')) then
     begin

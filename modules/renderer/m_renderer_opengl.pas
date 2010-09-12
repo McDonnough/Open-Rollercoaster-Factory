@@ -86,10 +86,10 @@ begin
     begin
     RSky.Render('', nil, nil);
     RTerrain.Render('', nil, nil);
+    RObjects.Render('', nil, nil);
     end;
   if Transparent then
     begin
-    RObjects.Render('', nil, nil);
     RTerrain.RenderAutoplants('', nil, nil);
     end;
   fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
@@ -100,6 +100,7 @@ const
   ClipPlane: Array[0..3] of GLDouble = (0, -1, 0, 0);
 var
   i: Integer;
+  a: TVector4D;
 begin
   fInterface.Options.Items['all:above'] := '0';
   fInterface.Options.Items['all:below'] := '256';
@@ -194,10 +195,62 @@ begin
     end;
   fInterface.PopOptions;
 
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  glClearStencil(0);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+
+  fInterface.Options.Items['shader:mode'] := 'normal:normal';
+
+  a := RSky.Sun.Color;
+  RSky.Sun.Color := Vector(0, 0, 0, 1);
+
+//   RenderParts(true, false);
+//   RTerrain.RenderWaterSurfaces;
+//   RenderParts(false, true);
+
+  glDepthMask(false);
+
+//   glDisable(GL_CULL_FACE);
+//   glEnable(GL_STENCIL_TEST);
+//   glEnable(GL_STENCIL_TEST_TWO_SIDE_EXT);
+//
+//   glActiveStencilFaceEXT(GL_BACK);
+//   glStencilOp(GL_KEEP, GL_DECR_WRAP, GL_KEEP);
+//   glStencilMask(255);
+//   glStencilFunc(GL_ALWAYS, 0, 255);
+//
+//   glActiveStencilFaceEXT(GL_FRONT);
+//   glStencilOp(GL_KEEP, GL_INCR_WRAP, GL_KEEP);
+//   glStencilMask(255);
+//   glStencilFunc(GL_ALWAYS, 0, 255);
+
+  fInterface.PushOptions;
+  fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
+  fInterface.Options.Items['sky:rendering'] := 'off';
+  fInterface.Options.Items['terrain:autoplants'] := 'off';
+
+  RenderParts(true, false);
+  glClear(GL_DEPTH_BUFFER_BIT);
+
+  fInterface.PopOptions;
+
+  glDepthMask(true);
+
+  glActiveStencilFaceEXT(GL_BACK);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+  glStencilMask(255);
+  glStencilFunc(GL_EQUAL, 0, 255);
+  glActiveStencilFaceEXT(GL_FRONT);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+  glStencilMask(255);
+  glStencilFunc(GL_EQUAL, 0, 255);
+
+  RSky.Sun.Color := a;
+
   RenderParts(true, false);
   RTerrain.RenderWaterSurfaces;
   RenderParts(false, true);
+
+  glDisable(GL_STENCIL_TEST);
 
   fInterface.Options.Items['all:above'] := '0';
   fInterface.Options.Items['all:below'] := '256';
@@ -393,8 +446,8 @@ begin
 
   glDisable(GL_BLEND);
 
-  if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
-    RenderShadows;
+//   if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
+//     RenderShadows;
   fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
 
   glEnable(GL_BLEND);

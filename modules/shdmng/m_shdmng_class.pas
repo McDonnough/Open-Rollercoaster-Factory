@@ -16,7 +16,7 @@ type
         *@param fragment shader file name
         *@return shader ID
         *)
-      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0): Integer; virtual abstract;
+      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InType: GLEnum = GL_TRIANGLES; OutType: GLEnum = GL_TRIANGLE_STRIP): Integer; virtual abstract;
 
       (**
         * Bind shader
@@ -93,7 +93,7 @@ type
       (**
         * Load a shader from files
         *)
-      constructor Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0);
+      constructor Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InType: GLEnum = GL_TRIANGLES; OutType: GLEnum = GL_TRIANGLE_STRIP);
 
       (**
         * Destroy shader
@@ -176,13 +176,13 @@ begin
   ModuleManager.ModShdMng.UniformMatrix4D(VName, V);
 end;
 
-constructor TShader.Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0);
+constructor TShader.Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InType: GLEnum = GL_TRIANGLES; OutType: GLEnum = GL_TRIANGLE_STRIP);
 begin
   VSFile := GetFirstExistingFilename(VSFile);
   FSFile := GetFirstExistingFilename(FSFile);
   if GSFile <> '' then
     GSFile := GetFirstExistingFilename(GSFile);
-  fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile), ModuleManager.ModPathes.Convert(GSFile), VerticesOut)
+  fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile), ModuleManager.ModPathes.Convert(GSFile), VerticesOut, InType, OutType)
 end;
 
 destructor TShader.Free;

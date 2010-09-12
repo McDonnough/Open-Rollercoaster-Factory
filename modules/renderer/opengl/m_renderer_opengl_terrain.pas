@@ -48,6 +48,8 @@ type
       procedure CheckWaterLevel(X, Y: Word);
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
+      fMinTerrainHeight: Single;
+      fMaxTerrainHeight: Single;
       procedure ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
       procedure Render(Event: String; Data, Result: Pointer);
@@ -402,11 +404,14 @@ begin
     fFineVBO.Render;
     fFineVBO.Unbind;
     end;
-  fBoundShader.UniformI('LOD', 3);
-  fBoundShader.UniformF('VOffset', 0, 0);
-  fBorderVBO.Bind;
-  fBorderVBO.Render;
-  fBorderVBO.Unbind;
+  if fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow' then
+    begin
+    fBoundShader.UniformI('LOD', 3);
+    fBoundShader.UniformF('VOffset', 0, 0);
+    fBorderVBO.Bind;
+    fBorderVBO.Render;
+    fBorderVBO.Unbind;
+    end;
   fBoundShader.Unbind;
   Park.pTerrain.Collection.Texture.UnBind;
 
@@ -451,6 +456,21 @@ begin
     if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
       glVertex3f(Park.pTerrain.CurrMark.X, 0.1 + Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y], Park.pTerrain.CurrMark.Y);
   glEnd;
+
+//   glDisable(GL_DEPTH_TEST);
+//   glDisable(GL_CULL_FACE);
+//   glBegin(GL_QUADS);
+//     with ModuleManager.ModRenderer do
+//       begin
+//       glColor4f(0, 0, 0, 1); glVertex3f(ShadowQuad[0].X, 64, ShadowQuad[0].Z);
+//       glColor4f(1, 0, 0, 1); glVertex3f(ShadowQuad[1].X, 64, ShadowQuad[1].Z);
+//       glColor4f(1, 1, 0, 1); glVertex3f(ShadowQuad[2].X, 64, ShadowQuad[2].Z);
+//       glColor4f(0, 1, 0, 1); glVertex3f(ShadowQuad[3].X, 64, ShadowQuad[3].Z);
+//       glColor4f(1, 1, 1, 1);
+//       end;
+//   glEnd;
+//   glEnable(GL_CULL_FACE);
+//   glEnable(GL_DEPTH_TEST);
 
   glEnable(GL_TEXTURE_2D);
   if fInterface.Options.Items['all:renderpass'] = '0' then
@@ -681,6 +701,8 @@ var
 
   procedure UpdateVertex(X, Y: Word);
   begin
+    fMinTerrainHeight := Min(fMinTerrainHeight, Park.pTerrain.HeightMap[X / 5, Y / 5] - 8);
+    fMaxTerrainHeight := Max(fMaxTerrainHeight, Park.pTerrain.HeightMap[X / 5, Y / 5] + 8);
     Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
@@ -688,6 +710,7 @@ var
   procedure UpdateVertexSD(X, Y: Word);
   begin
     if (x mod 4 <> 0) or (y mod 4 = 0) then exit;
+    fMinTerrainHeight := Min(fMinTerrainHeight, Park.pTerrain.HeightMap[X / 5, Y / 5]);
     Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X div 4, Y div 4, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
@@ -821,6 +844,8 @@ begin
   fFrameCount := 0;
   fWaterVBO := nil;
   fBorderVBO := nil;
+  fMinTerrainHeight := 256;
+  fMaxTerrainHeight := 0;
   try
     fHeightMap := nil;
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');

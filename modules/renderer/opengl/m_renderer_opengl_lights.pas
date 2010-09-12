@@ -85,7 +85,7 @@ begin
   Position := Vector(-1000, 0, 0, 0);
   if fInterface.Options.Items['shadows:enabled'] = 'on' then
     begin
-    fShadowMap := TFBO.Create(StrToIntWD(fInterface.Options.Items['shadows:texsize'], 2048), StrToIntWD(fInterface.Options.Items['shadows:texsize'], 2048), true); // Flat map
+    fShadowMap := TFBO.Create(StrToIntWD(fInterface.Options.Items['shadows:texsize'], 512), 4 * StrToIntWD(fInterface.Options.Items['shadows:texsize'], 512), true); // Flat map
     fShadowMap.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
     fShadowMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fShadowMap.Textures[0].Unbind;

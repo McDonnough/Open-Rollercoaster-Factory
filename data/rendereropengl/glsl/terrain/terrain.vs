@@ -37,7 +37,7 @@ vec4 mapPixelToQuad(vec2 P) {
     result.x = -result.x;
   result.y = distance(B1, P) / distance(B1, B2);
   if (distance(B2, P) > distance(B2, B1) && distance(B2, P) > distance(B1, P))
-    result.y;
+    result.y = -result.y;
   return vec4(result, 1.0, 1.0);
 }
 
@@ -60,6 +60,6 @@ void main(void) {
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;
   DVertex = gl_ClipVertex;
   vec4 LightVec = Vertex - gl_LightSource[0].position;
-  gl_TexCoord[7] = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);
+  gl_TexCoord[7] = mix(vec4(-1.0,-1.0, 0.0, 0.0), mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y), min(1.0, 3.0 - LOD));
   gl_Position = gl_ModelViewProjectionMatrix * Vertex;
 }

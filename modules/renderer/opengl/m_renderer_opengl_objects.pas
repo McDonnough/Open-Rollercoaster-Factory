@@ -221,9 +221,9 @@ begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     inc(a);
-    fTest.Rotate(RotateMatrix(a, Vector(0, 1, 0)));
+{    fTest.Rotate(RotateMatrix(a, Vector(0, 1, 0)));
     fTest.fMeshes[0].RotationMatrix := (RotateMatrix(-5 * a, Vector(0, 1, 0)));
-    fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-5 * a, Vector(0, 1, 0)));
+    fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-5 * a, Vector(0, 1, 0)));}
     end;
   if fBoundShader <> fNewBoundShader then
     begin

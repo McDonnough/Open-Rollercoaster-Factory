@@ -41,8 +41,6 @@ procedure TModuleGLMngDefault.SetUp2DMatrix;
 var
   X, Y: Integer;
 begin
-  if fMatrixMode = mm2D then
-    exit;
   ModuleManager.ModGLContext.GetResolution(X, Y);
   fMatrixMode := mm2D;
   glLoadIdentity;
@@ -53,8 +51,6 @@ procedure TModuleGLMngDefault.SetUp3DMatrix;
 var
   X, Y: Integer;
 begin
-  if fMatrixMode = mm3D then
-    exit;
   ModuleManager.ModGLContext.GetResolution(X, Y);
   fMatrixMode := mm3D;
   glLoadIdentity;

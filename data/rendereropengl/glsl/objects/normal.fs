@@ -7,10 +7,12 @@ uniform int UseBumpMap;
 uniform int UseTexture;
 
 varying vec4 Vertex;
+varying vec4 DVertex;
 varying vec3 Normal;
 
 void main(void) {
   vec4 Diffuse = vec4(0.0, 0.0, 0.0, 1.0);
+  vec4 Specular = vec4(0.0, 0.0, 0.0, 1.0);
   vec4 Ambient = vec4(0.0, 0.0, 0.0, 1.0);
   vec3 normal = normalize(Normal);
   vec4 result = gl_TextureMatrix[0] * Vertex;
@@ -27,11 +29,13 @@ void main(void) {
       SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   }
   Diffuse = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz))))));
+  Specular = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), pow(dot(-normalize(reflect(DVertex.xyz, normal)), normalize(gl_LightSource[0].position.xyz - Vertex.xyz)), 20.0)))));
   Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
   Diffuse.a = 0.0;
+  Specular.a = 0.0;
   Ambient.a = 1.0;
   vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
   if (UseTexture == 1)
     color = texture2D(Tex, gl_TexCoord[0].xy);
-  gl_FragColor = color * (Diffuse + Ambient);
+  gl_FragColor = color * (Diffuse + Ambient) + Specular;
 }

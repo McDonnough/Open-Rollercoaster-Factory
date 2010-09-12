@@ -23,7 +23,7 @@ type
     public
       fShadowDelay: Single;
       ShadowQuad: Array[0..3] of TVector3D;
-      OS, OC: TVector3D;
+      VecToFront, OS, OC: TVector3D;
       CR, CG, CB: Boolean;
       RCamera: TRCamera;
       RTerrain: TRTerrain;
@@ -38,6 +38,8 @@ type
       procedure CheckModConf;
       procedure RenderShadows;
       procedure RenderParts(Solid, Transparent: Boolean);
+      function GetRay(MX, MY: Single): TVector3D;
+      function GetNegRay(MX, MY: Single): TVector3D;
       procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
       constructor Create;
       destructor Free;
@@ -202,14 +204,89 @@ begin
 end;
 
 procedure TModuleRendererOpenGL.RenderShadows;
+var
+  i: Integer;
+  LightVec, t1, t2: TVector3D;
+  tmp1, tmp2: TVector2D;
+  H: Single;
+  S: Single;
+  OldShadowQuad: Array[0..3] of TVector3D;
 begin
   with ModuleManager.ModRenderer.RSky.Sun.Position do
     OS := Vector(X, Y, Z);
-  ShadowQuad[0] := Vector(0, 0, 0);
-  ShadowQuad[1] := Vector(204.8, 0, 0);
-  ShadowQuad[2] := Vector(204.8, 0, 204.8);
-  ShadowQuad[3] := Vector(0, 0, 204.8);
   OC := ModuleManager.ModCamera.ActiveCamera.Position;
+  H := OC.Y - RTerrain.fMinTerrainHeight;
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  ModuleManager.ModGLMng.SetUp3DMatrix;
+  ShadowQuad[0] := GetRay(-1, -1);
+  ShadowQuad[1] := GetRay( 1, -1);
+  ShadowQuad[2] := GetRay( 1,  1);
+  ShadowQuad[3] := GetRay(-1,  1);
+  if (ShadowQuad[0].Y > ShadowQuad[3].Y) or (ShadowQuad[1].Y > ShadowQuad[2].Y) then
+    begin
+    t1 := ShadowQuad[0];            t2 := ShadowQuad[1];
+    ShadowQuad[0] := ShadowQuad[3]; ShadowQuad[1] := ShadowQuad[2];
+    ShadowQuad[3] := t1;            ShadowQuad[2] := t2;
+    end;
+{  if (ShadowQuad[0].Y > 0) and (ShadowQuad[1].Y > 0) and (ShadowQuad[2].Y > 0) and (ShadowQuad[3].Y > 0) then
+    begin
+    ShadowQuad[0] := GetNegRay(-1, -1);
+    ShadowQuad[1] := GetNegRay( 1, -1);
+    ShadowQuad[2] := GetNegRay( 1,  1);
+    ShadowQuad[3] := GetNegRay(-1,  1);
+    H := H + 30;
+    end
+  else }if (ShadowQuad[2].Y > -0.004 * H) or (ShadowQuad[3].Y > -0.004 * H) then
+    begin
+    ShadowQuad[2].Y := -0.004 * H;
+    ShadowQuad[3].Y := -0.004 * H;
+    end;
+  if DotProduct(normalize((ShadowQuad[0] + ShadowQuad[1]) / 2), normalize((ShadowQuad[3] + ShadowQuad[2]) / 2)) > DotProduct(normalize((ShadowQuad[3] + ShadowQuad[2]) / 2), Vector(0, -1, 0)) then
+    begin
+    ShadowQuad[0] := normalize(Vector(0, -1, 0) - Cross(VecToFront, Vector(0, 1, 0)) * Vector(1, 0, 1));
+    ShadowQuad[1] := normalize(Cross(VecToFront, Vector(0, 1, 0)) * Vector(1, 0, 1) + Vector(0, -1, 0));
+    end;
+  t1 := normalize(Vector(VecToFront.X, 0, VecToFront.Z));
+  t2 := normalize(OS - OC);
+  S := DotProduct(t1, normalize(t2 * Vector(1, 0, 1)));
+  if S > 0 then
+    begin
+    for i := 0 to 1 do
+      begin
+      t1 := GetRay(1 - 2 * i, 1) * -1;
+      t2 := GetRay(-1, -1);
+      ShadowQuad[i] := ShadowQuad[i] + Vector(t1.x, 0, t1.z) / abs(t2.y) * Min(20, H) * S;
+      end;
+    end;
+
+{  FitToLight(ShadowQuad[0], ShadowQuad[1], OldShadowQuad[0] - OldShadowQuad[1]);
+  FitToLight(ShadowQuad[0], ShadowQuad[3], OldShadowQuad[1] - OldShadowQuad[2]);
+  FitToLight(ShadowQuad[1], ShadowQuad[0], OldShadowQuad[1] - OldShadowQuad[0]);
+  FitToLight(ShadowQuad[1], ShadowQuad[2], OldShadowQuad[0] - OldShadowQuad[3]);}
+{  FitToLight(ShadowQuad[2], ShadowQuad[1]);
+  FitToLight(ShadowQuad[2], ShadowQuad[3]);
+  FitToLight(ShadowQuad[3], ShadowQuad[0]);
+  FitToLight(ShadowQuad[3], ShadowQuad[2]);}
+  for i := 0 to 3 do
+    begin
+    ShadowQuad[i] := OC + ShadowQuad[i] * H / abs(ShadowQuad[i].Y);
+    end;
+  for i := 0 to 3 do
+    begin
+    LightVec := (ShadowQuad[i] - OS);
+    ShadowQuad[i] := ShadowQuad[i] + LightVec * RTerrain.fMinTerrainHeight / abs(LightVec.Y);
+    end;
+
+  tmp1 := LineIntersection(Vector(ShadowQuad[1].X, ShadowQuad[1].Z), Vector(ShadowQuad[2].X, ShadowQuad[2].Z),
+                           Vector(ShadowQuad[3].X, ShadowQuad[3].Z), Vector(ShadowQuad[3].X, ShadowQuad[3].Z) + Vector(ShadowQuad[1].X, ShadowQuad[1].Z) - Vector(ShadowQuad[0].X, ShadowQuad[0].Z));
+  tmp2 := LineIntersection(Vector(ShadowQuad[0].X, ShadowQuad[0].Z), Vector(ShadowQuad[3].X, ShadowQuad[3].Z),
+                           Vector(ShadowQuad[2].X, ShadowQuad[2].Z), Vector(ShadowQuad[2].X, ShadowQuad[2].Z) + Vector(ShadowQuad[1].X, ShadowQuad[1].Z) - Vector(ShadowQuad[0].X, ShadowQuad[0].Z));
+  if VecLengthNoRoot(OS - Vector(tmp1.x, 0, tmp1.y)) > VecLengthNoRoot(OS - Vector(tmp2.x, 0, tmp2.y)) then
+    ShadowQuad[2] := Vector(tmp1.X, 0, tmp1.Y)
+  else
+    ShadowQuad[3] := Vector(tmp2.X, 0, tmp2.Y);
+
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
   gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
@@ -238,30 +315,52 @@ begin
   fInterface.PopOptions;
 end;
 
+function TModuleRendererOpenGL.GetNegRay(MX, MY: Single): TVector3D;
+var
+  pmatrix: TMatrix;
+  VecLeft, VecUp: TVector3D;
+begin
+  glGetFloatv(GL_PROJECTION_MATRIX, @pmatrix[0]);
+
+  with ModuleManager.ModCamera do
+    VecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(-DegToRad(ActiveCamera.Rotation.X)),
+                                  -Sin(DegToRad(-ActiveCamera.Rotation.X)),
+                                  -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(-DegToRad(ActiveCamera.Rotation.X))));
+  VecLeft := Normal(VecToFront, Vector(0, 1, 0));
+  VecUp := Normal(VecLeft, VecToFront);
+  Result := normalize(VecToFront + VecUp * (MY / pMatrix[5]) + VecLeft * (MX / pMatrix[0]));
+end;
+
+function TModuleRendererOpenGL.GetRay(MX, MY: Single): TVector3D;
+var
+  pmatrix: TMatrix;
+  VecLeft, VecUp: TVector3D;
+begin
+  glGetFloatv(GL_PROJECTION_MATRIX, @pmatrix[0]);
+
+  with ModuleManager.ModCamera do
+    VecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                  -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                  -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+  VecLeft := Normal(VecToFront, Vector(0, 1, 0));
+  VecUp := Normal(VecLeft, VecToFront);
+  Result := normalize(VecToFront + VecUp * (MY / pMatrix[5]) + VecLeft * (MX / pMatrix[0]));
+end;
+
 procedure TModuleRendererOpenGL.RenderScene;
 var
   i: Integer;
 
   procedure GetSelectionRay;
   var
-    pmatrix: TMatrix;
     MX, MY: Single;
-    VecToFront, VecLeft, VecUp: TVector3d;
   begin
     fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-
-    glGetFloatv(GL_PROJECTION_MATRIX, @pmatrix[0]);
 
     MX := 2 * (ModuleManager.ModInputHandler.MouseX / ResX) - 1;
     MY := -2 * (ModuleManager.ModInputHandler.MouseY / ResY) + 1;
 
-    with ModuleManager.ModCamera do
-      VecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
-                                    -Sin(DegToRad(ActiveCamera.Rotation.X)),
-                                    -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
-    VecLeft := Normal(VecToFront, Vector(0, 1, 0));
-    VecUp := Normal(VecLeft, VecToFront);
-    fSelectionRay := normalize(VecToFront + VecUp * (MY / pMatrix[5]) + VecLeft * (MX / pMatrix[0]));
+    fSelectionRay := GetRay(MX, MY);
   end;
 begin
   CR := true;
@@ -288,13 +387,6 @@ begin
   glDepthMask(true);
 
   glDisable(GL_BLEND);
-
-  glMatrixMode(GL_TEXTURE);
-  glLoadIdentity;
-  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
-  gluLookAt(OS.X, OS.Y, OS.Z,
-            Round(OC.X), Round(OC.Y), Round(OC.Z),
-            0, 1, 0);
 
   if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
     RenderShadows;
@@ -347,7 +439,7 @@ begin
     SetConfVal('terrain:autoplants', 'on');
     SetConfVal('terrain:hd', 'on');
     SetConfVal('shadows:enabled', 'on');
-    SetConfVal('shadows:texsize', '2048');
+    SetConfVal('shadows:texsize', '512');
     end;
   fInterface.Options.Items['terrain:autoplants'] := GetConfVal('terrain:autoplants');
   fInterface.Options.Items['terrain:hd'] := GetConfVal('terrain:hd');

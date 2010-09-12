@@ -138,6 +138,8 @@ function Vector3D(A: TVector4D): TVector3D;
 procedure MakeOGLCompatibleMatrix(A: TMatrix3D; B: Pointer);
 procedure MakeOGLCompatibleMatrix(A: TMatrix4D; B: Pointer);
 
+function LineIntersection(p1, p2, p3, p4: TVector2D): TVector2D;
+
 implementation
 
 uses
@@ -666,6 +668,17 @@ begin
   Result[0].W := P.X;
   Result[1].W := P.Y;
   Result[2].W := P.Z;
+end;
+
+function LineIntersection(p1, p2, p3, p4: TVector2D): TVector2D;
+var
+  divisor, fac1, fac2: Single;
+begin
+  divisor := (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
+  fac1 := p1.x * p2.y - p1.y * p2.x;
+  fac2 := p3.x * p4.y - p3.y * p4.x;
+  Result := Vector((fac1 * (p3.x - p4.x) - fac2 * (p1.x - p2.x)) / divisor,
+                   (fac1 * (p3.y - p4.y) - fac2 * (p1.y - p2.y)) / divisor);
 end;
 
 end.

@@ -37,7 +37,7 @@ vec4 mapPixelToQuad(vec2 P) {
     result.x = -result.x;
   result.y = distance(B1, P) / distance(B1, B2);
   if (distance(B2, P) > distance(B2, B1) && distance(B2, P) > distance(B1, P))
-    result.y;
+    result.y = -result.y;
   result *= 2.0;
   result -= 1.0;
   return vec4(result, 1.0, 1.0);

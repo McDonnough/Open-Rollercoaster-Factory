@@ -460,7 +460,7 @@ begin
   if fFileDialog <> nil then
     fFileDialog.Free;
   EventManager.RemoveCallback(@SetWater);
-  EventManager.RemoveCallback(@DeleteWaterWater);
+  EventManager.RemoveCallback(@DeleteWater);
   EventManager.RemoveCallback(@LoadTexture);
   EventManager.RemoveCallback(@LoadTextureDialog);
   EventManager.RemoveCallback(@SetAutoTex);

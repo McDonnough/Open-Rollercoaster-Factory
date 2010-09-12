@@ -92,7 +92,7 @@ begin
     end;
 
   for i := 0 to high(fShdRef) do
-    if fShdRef[i].Name = VSFile + ':' + FSFile then
+    if fShdRef[i].Name = VSFile + ':' + FSFile + ':' + GSFile then
       exit(i);
 
   SetLength(fShdRef, length(fShdRef) + 1);

@@ -205,47 +205,60 @@ end;
 procedure TRObjects.Render(O: TManagedObject);
 var
   i: Integer;
-  fNewBoundShader: TShader;
   tmpMatrix: TMatrix4D;
   Matrix: Array[0..15] of Single;
+  fNewShader, fTessShader: TShader;
 begin
   glEnable(GL_ALPHA_TEST);
   glEnable(GL_CULL_FACE);
-  fNewBoundShader := fShader;
+  fNewShader := fShader;
+  fTessShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
-    fNewBoundShader := fTransformDepthShader
+    begin
+    fNewShader := fTransformDepthShader;
+    fTessShader := fTransformDepthShaderTesselation;
+    end
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
-    fNewBoundShader := fSunShadowShader
+    begin
+    fNewShader := fSunShadowShader;
+    fTessShader := fSunShadowShaderTesselation;
+    end
   else
     begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     inc(a);
-{    fTest.Rotate(RotateMatrix(a, Vector(0, 1, 0)));
-    fTest.fMeshes[0].RotationMatrix := (RotateMatrix(-5 * a, Vector(0, 1, 0)));
-    fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-5 * a, Vector(0, 1, 0)));}
+    fTest.Rotate(RotateMatrix(0.2 * a, Vector(0, 1, 0)));
+    fTest.fMeshes[0].RotationMatrix := (RotateMatrix(-1 * a, Vector(0, 1, 0)));
+    fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-1 * a, Vector(0, 1, 0)));
     end;
-  if fBoundShader <> fNewBoundShader then
-    begin
-    fBoundShader := fNewBoundShader;
-    fBoundShader.Bind;
-    end;
-  fBoundShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
-  fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
-  fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
-  fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
+  fTessShader.Bind;
+  fTessShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
+  fTessShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
+  fTessShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
+  fTessShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
+  fNewShader.Bind;
+  fNewShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
+  fNewShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
+  fNewShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
+  fNewShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
 
   for i := 0 to high(O.fManagedMeshes) do
     begin
     if O.fManagedMeshes[i].fMesh.BumpMap <> nil then
       begin
       O.fManagedMeshes[i].fMesh.BumpMap.Bind(1);
+      fBoundShader := fNewShader;
       fBoundShader.UniformI('UseBumpMap', 1);
+//       fBoundShader := fTessShader;
+//       fBoundShader.UniformI('UseBumpMap', 1);
+//       fBoundShader.UniformI('TexSize', O.fManagedMeshes[i].fMesh.BumpMap.Width, O.fManagedMeshes[i].fMesh.BumpMap.Height);
       end
     else
       begin
       ModuleManager.ModTexMng.ActivateTexUnit(1);
       ModuleManager.ModTexMng.BindTexture(-1);
+      fBoundShader := fNewShader;
       fBoundShader.UniformI('UseBumpMap', 0);
       end;
     if O.fManagedMeshes[i].fMesh.Texture <> nil then
@@ -259,6 +272,7 @@ begin
       ModuleManager.ModTexMng.BindTexture(-1);
       fBoundShader.UniformI('UseTexture', 0);
       end;
+    fBoundShader.Bind;
     tmpMatrix := TranslateMatrix(O.fManagedMeshes[i].fMesh.StaticOffset) * Matrix4D(O.fManagedMeshes[i].fMesh.StaticRotationMatrix);
     tmpMatrix := tmpMatrix * TranslateMatrix(O.fManagedMeshes[i].fMesh.Offset) * Matrix4D(O.fManagedMeshes[i].fMesh.RotationMatrix);
     MakeOGLCompatibleMatrix(tmpMatrix, @Matrix[0]);
@@ -305,14 +319,14 @@ begin
     fSunShadowShader.UniformI('Tex', 0);
     fSunShadowShader.UniformI('ModelTexture', 0);
     fSunShadowShader.UniformI('Bump', 1);
-    fShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs', 'rendereropengl/glsl/objects/normal.gs');
+    fShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
     fShaderTesselation.UniformI('Tex', 0);
     fShaderTesselation.UniformI('Bump', 1);
     fShaderTesselation.UniformI('SunShadowMap', 7);
-    fTransformDepthShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs', 'rendereropengl/glsl/objects/normal.gs');
+    fTransformDepthShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
     fTransformDepthShaderTesselation.UniformI('Tex', 0);
     fTransformDepthShaderTesselation.UniformI('Bump', 1);
-    fSunShadowShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs', 'rendereropengl/glsl/objects/normal.gs');
+    fSunShadowShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
     fSunShadowShaderTesselation.UniformI('Tex', 0);
     fSunShadowShaderTesselation.UniformI('ModelTexture', 0);
     fSunShadowShaderTesselation.UniformI('Bump', 1);

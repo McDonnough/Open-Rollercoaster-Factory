@@ -9,6 +9,7 @@ uniform int UseTexture;
 varying vec4 Vertex;
 varying vec4 DVertex;
 varying vec3 Normal;
+varying vec3 StandardTangent;
 
 void main(void) {
   vec4 Diffuse = vec4(0.0, 0.0, 0.0, 1.0);
@@ -18,8 +19,13 @@ void main(void) {
   vec4 result = gl_TextureMatrix[0] * Vertex;
   if (UseBumpMap == 1) {
     vec4 BumpColor = texture2D(Bump, gl_TexCoord[0].zw) * 2.0 - 1.0;
-    vec3 tangent = normalize(cross(abs(normal), vec3(0.01, 1.0, 0.01)));
-    vec3 bitangent = normalize(cross(abs(tangent), normal));
+    vec3 tangent;
+    if (abs(dot(normal, vec3(0.0, 1.0, 0.0))) >= 0.99)
+      tangent = normalize(dot(normal, vec3(0.0, 1.0, 0.0)) * StandardTangent);
+    else
+      tangent = normalize(cross(normal, vec3(0.0, 1.0, 0.0)));
+    vec3 bitangent = normalize(cross(StandardTangent, normal));
+    tangent = normalize(cross(bitangent, normal));
     normal = normalize(BumpColor.r * tangent + BumpColor.b * normal + BumpColor.g * bitangent);
   }
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);

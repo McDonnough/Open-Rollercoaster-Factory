@@ -11,6 +11,7 @@ varying vec4 DVertex;
 varying vec4 Vertex;
 varying float dist;
 varying vec3 Normal;
+varying vec3 StandardTangent;
 
 vec2 LineIntersection(vec2 p1, vec2 p2, vec2 p3, vec2 p4) {
   float divisor = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x);
@@ -38,6 +39,7 @@ vec4 mapPixelToQuad(vec2 P) {
 
 void main(void) {
   Normal = mat3(TransformMatrix) * gl_Normal;
+  StandardTangent = mat3(TransformMatrix) * vec3(1.0, 0.0, 0.0);
   gl_TexCoord[0] = vec4(gl_MultiTexCoord0.xy, gl_Color.rg);
   Vertex = TransformMatrix * gl_Vertex;
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;

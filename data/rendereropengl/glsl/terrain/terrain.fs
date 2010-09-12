@@ -106,6 +106,7 @@ void main(void) {
     SunShadow = texture2D(SunShadowMap, gl_TexCoord[7].xy);
     if (SunShadow.a - 0.1 <= Vertex.y)
       SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
+    SunShadow.rgb *= clamp(abs(SunShadow.a - Vertex.y), 0.0, 1.0);
   }
   Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
   Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));

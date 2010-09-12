@@ -258,6 +258,11 @@ begin
       t2 := GetRay(-1, -1);
       ShadowQuad[i] := ShadowQuad[i] + Vector(t1.x, 0, t1.z) / abs(t2.y) * Min(20, H) * S;
       end;
+    if (ShadowQuad[2].Y > Mix(-0.004, -0.008, S) * H) or (ShadowQuad[3].Y > Mix(-0.004, -0.008, S) * H) then
+      begin
+      ShadowQuad[2].Y := Mix(-0.004, -0.008, S) * H;
+      ShadowQuad[3].Y := Mix(-0.004, -0.008, S) * H;
+      end;
     end;
 
 {  FitToLight(ShadowQuad[0], ShadowQuad[1], OldShadowQuad[0] - OldShadowQuad[1]);

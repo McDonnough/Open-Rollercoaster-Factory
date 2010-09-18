@@ -71,6 +71,17 @@ type
       destructor Free;
     end;
 
+  TDisplayList = class
+    protected
+      fList: GLUInt;
+    public
+      procedure StartCompiling;
+      procedure EndCompiling;
+      procedure Render;
+      constructor Create;
+      destructor Free;
+    end;
+
 implementation
 
 uses
@@ -332,6 +343,32 @@ end;
 destructor TOcclusionQuery.Free;
 begin
   glDeleteQueries(1, @fQuery);
+end;
+
+
+procedure TDisplayList.StartCompiling;
+begin
+  glNewList(fList, GL_COMPILE);
+end;
+
+procedure TDisplayList.EndCompiling;
+begin
+  glEndList;
+end;
+
+procedure TDisplayList.Render;
+begin
+  glCallList(fList);
+end;
+
+constructor TDisplayList.Create;
+begin
+  fList := glGenLists(1);
+end;
+
+destructor TDisplayList.Free;
+begin
+  glDeleteLists(1, fList);
 end;
 
 end.

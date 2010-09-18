@@ -12,8 +12,10 @@ type
   TMeshTriangleVertexArray = Array[0..2] of Integer;
 
   TMeshVertex = record
-    Position, Normal: TVector3D;
-    TexCoord, BumpTexCoord: TVector2D;
+    Position, Normal, BumpTangent: TVector3D;
+    TexCoord: TVector2D;
+    BumpTexCoordFactor: Single;
+    Fix: Boolean;
     end;
 
   PMeshVertex = ^TMeshVertex;
@@ -22,6 +24,9 @@ type
     protected
       fVertices: Array of TMeshVertex;
       fTriangles: Array of TMeshTriangleVertexArray;
+      fTransformMatrix: TMatrix4D;
+      fStaticOffset, fOffset: TVector3D;
+      fStaticRotationMatrix, fRotationMatrix: TMatrix3D;
       procedure setVertex(I: Integer; V: TMeshVertex);
       procedure setTriangle(I: Integer; V: TMeshTriangleVertexArray);
       function getVertex(I: Integer): TMeshVertex;
@@ -29,13 +34,21 @@ type
       function getTriangle(I: Integer): TMeshTriangleVertexArray;
       function getVCount: Integer;
       function getTCount: Integer;
+      procedure SetStaticOffset(A: TVector3D);
+      procedure SetOffset(A: TVector3D);
+      procedure SetStaticRotationMatrix(A: TMatrix3D);
+      procedure SetRotationMatrix(A: TMatrix3D);
+      procedure UpdateMatrix;
     public
       Parent: Pointer;
       MaxDistance, MinDistance: Single;
       Color: TVector4D;
       Texture, BumpMap: TTexture;
-      StaticOffset, Offset: TVector3D;
-      StaticRotationMatrix, RotationMatrix: TMatrix3D;
+      property TransformMatrix: TMatrix4D read fTransformMatrix;
+      property StaticOffset: TVector3D read fStaticOffset write SetStaticOffset;
+      property Offset: TVector3D read fOffset write SetOffset;
+      property StaticRotationMatrix: TMatrix3D read fStaticRotationMatrix write SetStaticRotationMatrix;
+      property RotationMatrix: TMatrix3D read fRotationMatrix write SetRotationMatrix;
       property Vertices[i: Integer]: TMeshVertex read getVertex write setVertex;
       property pVertices[i: Integer]: PMeshVertex read getPVertex;
       property Triangles[i: Integer]: TMeshTriangleVertexArray read getTriangle write setTriangle;
@@ -49,7 +62,7 @@ function MakeTriangle(A, B, C: TVector3D): TTriangle;
 function MakeTriangleFromMeshTriangleVertexArray(Mesh: TMesh; A: TMeshTriangleVertexArray): TTriangle;
 function RayTriangleIntersection(Ray: TRay; Tri: TTriangle; var I: TVector3D): Boolean;
 function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
-function MakeExtendedMeshVertex(P, N: TVector3D; T, B: TVector2D): TMeshVertex;
+function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single; B: TVector3D): TMeshVertex;
 function MakeTriangleVertexArray(A, B, C: Integer): TMeshTriangleVertexArray;
 
 implementation
@@ -57,6 +70,35 @@ implementation
 uses
   u_selection, u_events;
 
+procedure TMesh.UpdateMatrix;
+begin
+  fTransformMatrix := TranslateMatrix(StaticOffset) * Matrix4D(StaticRotationMatrix);
+  fTransformMatrix := fTransformMatrix * TranslateMatrix(Offset) * Matrix4D(RotationMatrix);
+end;
+
+procedure TMesh.SetStaticOffset(A: TVector3D);
+begin
+  fStaticOffset := A;
+  UpdateMatrix;
+end;
+
+procedure TMesh.SetOffset(A: TVector3D);
+begin
+  fOffset := A;
+  UpdateMatrix;
+end;
+
+procedure TMesh.SetStaticRotationMatrix(A: TMatrix3D);
+begin
+  fStaticRotationMatrix := A;
+  UpdateMatrix;
+end;
+
+procedure TMesh.SetRotationMatrix(A: TMatrix3D);
+begin
+  fRotationMatrix := A;
+  UpdateMatrix;
+end;
 
 procedure TMesh.setVertex(I: Integer; V: TMeshVertex);
 begin
@@ -141,18 +183,9 @@ end;
 
 function MakeTriangleFromMeshTriangleVertexArray(Mesh: TMesh; A: TMeshTriangleVertexArray): TTriangle;
 begin
-  Result[0] := Mesh.Vertices[A[0]].Position;
-  Result[1] := Mesh.Vertices[A[1]].Position;
-  Result[2] := Mesh.Vertices[A[2]].Position;
-  Result[0] := Result[0] * Mesh.RotationMatrix;
-  Result[1] := Result[1] * Mesh.RotationMatrix;
-  Result[2] := Result[2] * Mesh.RotationMatrix;
-  Result[0] := Result[0] * Mesh.StaticRotationMatrix;
-  Result[1] := Result[1] * Mesh.StaticRotationMatrix;
-  Result[2] := Result[2] * Mesh.StaticRotationMatrix;
-  Result[0] := Result[0] + Mesh.Offset + Mesh.StaticOffset;
-  Result[1] := Result[1] + Mesh.Offset + Mesh.StaticOffset;
-  Result[2] := Result[2] + Mesh.Offset + Mesh.StaticOffset;
+  Result[0] := Vector3D(Vector(Mesh.Vertices[A[0]].Position, 1.0) * Mesh.TransformMatrix);
+  Result[1] := Vector3D(Vector(Mesh.Vertices[A[1]].Position, 1.0) * Mesh.TransformMatrix);
+  Result[2] := Vector3D(Vector(Mesh.Vertices[A[2]].Position, 1.0) * Mesh.TransformMatrix);
 end;
 
 function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
@@ -160,15 +193,17 @@ begin
   Result.Position := P;
   Result.Normal := N;
   Result.TexCoord := T;
-  Result.BumpTexCoord := T;
+  Result.BumpTexCoordFactor := 1;
+  Result.BumpTangent := Cross(Result.Normal, Vector(0, 1, 0));
 end;
 
-function MakeExtendedMeshVertex(P, N: TVector3D; T, B: TVector2D): TMeshVertex;
+function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single; B: TVector3D): TMeshVertex;
 begin
   Result.Position := P;
   Result.Normal := N;
   Result.TexCoord := T;
-  Result.BumpTexCoord := B;
+  Result.BumpTexCoordFactor := 1;
+  Result.BumpTangent := B;
 end;
 
 //

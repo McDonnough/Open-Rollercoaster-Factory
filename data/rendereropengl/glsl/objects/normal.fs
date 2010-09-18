@@ -33,9 +33,11 @@ void main(void) {
     SunShadow = texture2D(SunShadowMap, gl_TexCoord[7].xy);
     if (SunShadow.a - 0.1 <= Vertex.y)
       SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
+    SunShadow.rgb *= max(0.0, dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)));
+    SunShadow.rgb *= clamp(abs(SunShadow.a - Vertex.y), 0.0, 1.0);
   }
   Diffuse = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz))))));
-  Specular = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), pow(dot(-normalize(reflect(DVertex.xyz, normal)), normalize(gl_LightSource[0].position.xyz - Vertex.xyz)), 20.0)))));
+  Specular = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), pow(max(0.0, dot(normalize(reflect(normalize(DVertex.xyz), normal)), normalize(gl_LightSource[0].position.xyz - Vertex.xyz))), 20.0)))));
   Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
   Diffuse.a = 0.0;
   Specular.a = 0.0;

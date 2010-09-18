@@ -29,6 +29,7 @@ type
       RTerrain: TRTerrain;
       RObjects: TRObjects;
       RSky: TRSky;
+      MinRenderHeight: Single;
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
       property DistTexture: TTexture read fDistTexture;
@@ -36,11 +37,13 @@ type
       procedure Unload;
       procedure RenderScene;
       procedure CheckModConf;
+      function mapPixelToQuad(P: TVector2D): TVector2D;
       procedure RenderShadows;
       procedure RenderParts(Solid, Transparent: Boolean);
       function GetRay(MX, MY: Single): TVector3D;
       function GetNegRay(MX, MY: Single): TVector3D;
       procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
+      function ProjectToBottom(A: TVector3D): TVector2D;
       constructor Create;
       destructor Free;
     end;
@@ -67,6 +70,7 @@ begin
   s := Explode(',', GetConfVal('effects'));
   for i := 0 to high(s) do
     RenderEffectManager.LoadEffect(StrToInt(S[i]));
+  MinRenderHeight := 0;
 end;
 
 procedure TModuleRendererOpenGL.Unload;
@@ -203,19 +207,51 @@ begin
   fInterface.Options.Items['all:below'] := '256';
 end;
 
+
+function TModuleRendererOpenGL.mapPixelToQuad(P: TVector2D): TVector2D;
+var
+  ABtoP, CtoD, B1, B2, D1, C1: TVector2D;
+  a: TVector3D;
+  nShadowQuad: Array[0..3] of TVector2D;
+begin
+  nShadowQuad[0] := Vector(ShadowQuad[0].x, ShadowQuad[0].z);
+  nShadowQuad[1] := Vector(ShadowQuad[1].x, ShadowQuad[1].z);
+  nShadowQuad[2] := Vector(ShadowQuad[2].x, ShadowQuad[2].z);
+  nShadowQuad[3] := Vector(ShadowQuad[3].x, ShadowQuad[3].z);
+  a := Cross(Vector(0.0, 1.0, 0.0), Vector(nShadowQuad[0].x - nShadowQuad[1].x, 0.0, nShadowQuad[0].y - nShadowQuad[1].y));
+  ABtoP := Vector(A.X, A.Z);
+  CtoD := nShadowQuad[3] - nShadowQuad[2];
+  B1 := LineIntersection(nShadowQuad[0], nShadowQuad[1], P, P + ABtoP);
+  B2 := LineIntersection(nShadowQuad[3], nShadowQuad[2], P, P + ABtoP);
+  D1 := LineIntersection(nShadowQuad[0], nShadowQuad[3], P, P + CtoD);
+  C1 := LineIntersection(nShadowQuad[1], nShadowQuad[2], P, P + CtoD);
+  result.x := VecLength(D1 - P) / VecLength(D1 - C1);
+  if (VecLengthNoRoot(C1 - P) > VecLengthNoRoot(C1 - D1)) and (VecLengthNoRoot(C1 - P) > VecLengthNoRoot(D1 - P)) then
+    result.x := -result.x;
+  result.y := VecLength(B1 - P) / VecLength(B1 - B2);
+  if (VecLengthNoRoot(B2 - P) > VecLengthNoRoot(B2 - B1)) and (VecLengthNoRoot(B2 - P) > VecLengthNoRoot(B1 - P)) then
+    result.y := -result.y;
+end;
+
+function TModuleRendererOpenGL.ProjectToBottom(A: TVector3D): TVector2D;
+begin
+  A := A + (A - OS) * A.Y / abs(A.Y - OS.Y);
+  Result := Vector(A.X, A.Z);
+end;
+
 procedure TModuleRendererOpenGL.RenderShadows;
 var
   i: Integer;
   LightVec, t1, t2: TVector3D;
   tmp1, tmp2: TVector2D;
   H: Single;
-  S: Single;
-  OldShadowQuad: Array[0..3] of TVector3D;
+  S, T: Single;
+  NewShadowQuad: Array[0..3] of TVector3D;
 begin
   with ModuleManager.ModRenderer.RSky.Sun.Position do
     OS := Vector(X, Y, Z);
   OC := ModuleManager.ModCamera.ActiveCamera.Position;
-  H := OC.Y - RTerrain.fMinTerrainHeight;
+  H := OC.Y - MinRenderHeight;
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
   ModuleManager.ModGLMng.SetUp3DMatrix;
@@ -250,7 +286,7 @@ begin
   t1 := normalize(Vector(VecToFront.X, 0, VecToFront.Z));
   t2 := normalize(OS - OC);
   S := DotProduct(t1, normalize(t2 * Vector(1, 0, 1)));
-  if S > 0 then
+  if S >= 0 then
     begin
     for i := 0 to 1 do
       begin
@@ -263,6 +299,20 @@ begin
       ShadowQuad[2].Y := Mix(-0.004, -0.008, S) * H;
       ShadowQuad[3].Y := Mix(-0.004, -0.008, S) * H;
       end;
+    end
+  else
+    begin
+    // Workaround for a bug that prevents parts of shadows from being rendered
+    T := DotProduct(Normalize(VecToFront), Vector(0, -1, 0));
+    T := T * T;
+    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
     end;
 
 {  FitToLight(ShadowQuad[0], ShadowQuad[1], OldShadowQuad[0] - OldShadowQuad[1]);
@@ -280,7 +330,7 @@ begin
   for i := 0 to 3 do
     begin
     LightVec := (ShadowQuad[i] - OS);
-    ShadowQuad[i] := ShadowQuad[i] + LightVec * RTerrain.fMinTerrainHeight / abs(LightVec.Y);
+    ShadowQuad[i] := ShadowQuad[i] + LightVec * MinRenderHeight / abs(LightVec.Y);
     end;
 
   tmp1 := LineIntersection(Vector(ShadowQuad[1].X, ShadowQuad[1].Z), Vector(ShadowQuad[2].X, ShadowQuad[2].Z),
@@ -291,17 +341,6 @@ begin
     ShadowQuad[2] := Vector(tmp1.X, 0, tmp1.Y)
   else
     ShadowQuad[3] := Vector(tmp2.X, 0, tmp2.Y);
-
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity;
-  gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity;
-  gluLookAt(OS.X, OS.Y, OS.Z,
-            Round(OC.X), Round(OC.Y), Round(OC.Z),
-            0, 1, 0);
-  fFrustum.Calculate;
-  glLoadIdentity;
 
   fInterface.PushOptions;
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Bind;
@@ -396,6 +435,7 @@ begin
   if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
     RenderShadows;
   fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
+  MinRenderHeight := OC.Y - 8;
 
   glEnable(GL_BLEND);
 

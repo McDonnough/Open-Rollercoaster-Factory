@@ -27,6 +27,10 @@ type
   TMatrix3D = Array[0..2] of TVector3D;
   TMatrix4D = Array[0..3] of TVector4D;
 
+  TQuad = Array[0..3] of TVector2D;
+
+function Quad(A, B, C, D: TVector2D): TQuad;
+
 function Vector(X, Y: Single): TVector2D;
 function Vector(X, Y, Z: Single): TVector3D;
 function Vector(X, Y, Z, W: Single): TVector4D;
@@ -139,6 +143,8 @@ procedure MakeOGLCompatibleMatrix(A: TMatrix3D; B: Pointer);
 procedure MakeOGLCompatibleMatrix(A: TMatrix4D; B: Pointer);
 
 function LineIntersection(p1, p2, p3, p4: TVector2D): TVector2D;
+
+function PointInQuad(Q: TQuad; P: TVector2D): Boolean;
 
 implementation
 
@@ -679,6 +685,31 @@ begin
   fac2 := p3.x * p4.y - p3.y * p4.x;
   Result := Vector((fac1 * (p3.x - p4.x) - fac2 * (p1.x - p2.x)) / divisor,
                    (fac1 * (p3.y - p4.y) - fac2 * (p1.y - p2.y)) / divisor);
+end;
+
+function PointInQuad(Q: TQuad; P: TVector2D): Boolean;
+var
+  AD1, AB1, BC1, DC1: TVector2D;
+  A: TVector3D;
+begin
+  Result := true;
+  A := Cross(Vector(Q[0].X - Q[1].X, 0, Q[0].Y - Q[1].Y), Vector(0, 1, 0));
+  AB1 := LineIntersection(Q[0], Q[1], P, P + Vector(A.X, A.Z));
+  DC1 := LineIntersection(Q[3], Q[2], P, P + Vector(A.X, A.Z));
+  if (VecLengthNoRoot(P - AB1) > VecLengthNoRoot(AB1 - DC1)) or (VecLengthNoRoot(P - DC1) > VecLengthNoRoot(AB1 - DC1)) then
+    exit(false);
+  AD1 := LineIntersection(Q[0], Q[3], P, P + Q[0] - Q[1]);
+  BC1 := LineIntersection(Q[1], Q[2], P, P + Q[0] - Q[1]);
+  if (VecLengthNoRoot(P - AD1) > VecLengthNoRoot(AD1 - BC1)) or (VecLengthNoRoot(P - BC1) > VecLengthNoRoot(AD1 - BC1)) then
+    exit(false);
+end;
+
+function Quad(A, B, C, D: TVector2D): TQuad;
+begin
+  Result[0] := A;
+  Result[1] := B;
+  Result[2] := C;
+  Result[3] := D;
 end;
 
 end.

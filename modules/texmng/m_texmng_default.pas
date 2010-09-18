@@ -38,6 +38,7 @@ type
       function ReadPixel(Texture: Integer; X, Y: Integer): DWord;
       procedure SetPixel(Texture: Integer; X, Y: Integer; Color: DWord);
       function GetRealTexID(Tex: Integer): GLUInt;
+      function GetBPP(Tex: Integer): Integer;
       destructor Free;
     end;
 
@@ -237,6 +238,13 @@ end;
 function TModuleTextureManagerDefault.GetRealTexID(Tex: Integer): GLUInt;
 begin
   Result := fTexRefs[Tex].Tex;
+end;
+
+function TModuleTextureManagerDefault.GetBPP(Tex: Integer): Integer;
+begin
+  Result := 3;
+  if (fTexRefs[Tex].ExternalFormat = GL_RGBA) or (fTexRefs[Tex].ExternalFormat = GL_COMPRESSED_RGBA) or (fTexRefs[Tex].ExternalFormat = GL_BGRA) or (fTexRefs[Tex].ExternalFormat = GL_RGBA32F) or (fTexRefs[Tex].ExternalFormat = GL_RGBA16F) then
+    Result := 4;
 end;
 
 destructor TModuleTextureManagerDefault.Free;

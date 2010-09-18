@@ -30,9 +30,8 @@ type
     protected
       fBoundShader: TShader;
       fShader, fTransformDepthShader, fSunShadowShader: TShader;
-      fShaderTesselation, fTransformDepthShaderTesselation, fSunShadowShaderTesselation: TShader;
       fManagedObjects: Array of TManagedObject;
-      a: Integer;
+      b: Integer;
       fTest: TBasicObject;
     public
       procedure AddObject(Event: String; Data, Result: Pointer);
@@ -58,6 +57,7 @@ begin
   fChangedVertices := TRow.Create;
   fChangedTriangles := TRow.Create;
   fTriangles := 0;
+  fRadius := 0;
 end;
 
 procedure TManagedMesh.CreateVBO;
@@ -73,7 +73,7 @@ begin
     for j := 0 to 2 do
       begin
       fVBO.TexCoords[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].TexCoord;
-      fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoord, 0.0, 1.0);
+      fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoordFactor, fMesh.Vertices[fMesh.Triangles[i][j]].BumpTangent);
       fVBO.Normals[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Normal;
       fVBO.Vertices[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Position;
       end;
@@ -82,7 +82,7 @@ end;
 
 procedure TManagedMesh.UpdateVBO;
 var
-  i, j: Integer;
+  i, j, k, l: Integer;
   fMap: Array of Boolean;
 begin
   if (fMesh.TriangleCount <> fTriangles) or (fVBO = nil) then
@@ -98,9 +98,10 @@ begin
         if (fChangedTriangles.HasValue(i)) or (fChangedVertices.HasValue(fMesh.Triangles[i][j])) then
           begin
           fVBO.TexCoords[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].TexCoord;
-          fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoord, 0.0, 1.0);
+          fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoordFactor, fMesh.Vertices[fMesh.Triangles[i][j]].BumpTangent);
           fVBO.Normals[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Normal;
           fVBO.Vertices[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Position;
+          fRadius := Max(fRadius, VecLength(fMesh.Vertices[fMesh.Triangles[i][j]].Position));
           end;
         end;
     fVBO.Unbind;
@@ -207,80 +208,76 @@ var
   i: Integer;
   tmpMatrix: TMatrix4D;
   Matrix: Array[0..15] of Single;
-  fNewShader, fTessShader: TShader;
+  A: TVector4D;
 begin
   glEnable(GL_ALPHA_TEST);
   glEnable(GL_CULL_FACE);
-  fNewShader := fShader;
-  fTessShader := fShader;
+  fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
-    begin
-    fNewShader := fTransformDepthShader;
-    fTessShader := fTransformDepthShaderTesselation;
-    end
+    fBoundShader := fTransformDepthShader
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
-    begin
-    fNewShader := fSunShadowShader;
-    fTessShader := fSunShadowShaderTesselation;
-    end
+    fBoundShader := fSunShadowShader
   else
     begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    inc(a);
-    fTest.Rotate(RotateMatrix(0.2 * a, Vector(0, 1, 0)));
-    fTest.fMeshes[0].RotationMatrix := (RotateMatrix(-1 * a, Vector(0, 1, 0)));
-    fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-1 * a, Vector(0, 1, 0)));
+    inc(b, 1);
+    fTest.Rotate(RotateMatrix(0.2 * b, Vector(0, 1, 0)));
+    fTest.fMeshes[0].RotationMatrix := (RotateMatrix(-1 * b, Vector(0, 1, 0)));
+    fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-1 * b, Vector(0, 1, 0)));
     end;
-  fTessShader.Bind;
-  fTessShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
-  fTessShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
-  fTessShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
-  fTessShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
-  fNewShader.Bind;
-  fNewShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
-  fNewShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
-  fNewShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
-  fNewShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
+  fBoundShader.Bind;
+  fBoundShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
+  fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
+  fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
+  fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
 
   for i := 0 to high(O.fManagedMeshes) do
     begin
-    if O.fManagedMeshes[i].fMesh.BumpMap <> nil then
-      begin
-      O.fManagedMeshes[i].fMesh.BumpMap.Bind(1);
-      fBoundShader := fNewShader;
-      fBoundShader.UniformI('UseBumpMap', 1);
-//       fBoundShader := fTessShader;
-//       fBoundShader.UniformI('UseBumpMap', 1);
-//       fBoundShader.UniformI('TexSize', O.fManagedMeshes[i].fMesh.BumpMap.Width, O.fManagedMeshes[i].fMesh.BumpMap.Height);
-      end
-    else
-      begin
-      ModuleManager.ModTexMng.ActivateTexUnit(1);
-      ModuleManager.ModTexMng.BindTexture(-1);
-      fBoundShader := fNewShader;
-      fBoundShader.UniformI('UseBumpMap', 0);
-      end;
-    if O.fManagedMeshes[i].fMesh.Texture <> nil then
-      begin
-      O.fManagedMeshes[i].fMesh.Texture.Bind(0);
-      fBoundShader.UniformI('UseTexture', 1);
-      end
-    else
-      begin
-      ModuleManager.ModTexMng.ActivateTexUnit(0);
-      ModuleManager.ModTexMng.BindTexture(-1);
-      fBoundShader.UniformI('UseTexture', 0);
-      end;
-    fBoundShader.Bind;
     tmpMatrix := TranslateMatrix(O.fManagedMeshes[i].fMesh.StaticOffset) * Matrix4D(O.fManagedMeshes[i].fMesh.StaticRotationMatrix);
     tmpMatrix := tmpMatrix * TranslateMatrix(O.fManagedMeshes[i].fMesh.Offset) * Matrix4D(O.fManagedMeshes[i].fMesh.RotationMatrix);
-    MakeOGLCompatibleMatrix(tmpMatrix, @Matrix[0]);
-    fBoundShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
-    O.fManagedMeshes[i].UpdateVBO;
-    O.fManagedMeshes[i].fVBO.Bind;
-    O.fManagedMeshes[i].fVBO.Render;
-    O.fManagedMeshes[i].fVBO.UnBind;
+    A := Vector(0, 0, 0, 1) * tmpMatrix;
+    if ModuleManager.ModRenderer.Frustum.IsSphereWithin(A.X, A.Y, A.Z, O.fManagedMeshes[i].fRadius) then
+      begin
+      O.fManagedMeshes[i].UpdateVBO;
+      MakeOGLCompatibleMatrix(tmpMatrix, @Matrix[0]);
+      if O.fManagedMeshes[i].fMesh.BumpMap <> nil then
+        begin
+        O.fManagedMeshes[i].fMesh.BumpMap.Bind(1);
+        fBoundShader.Bind;
+        fBoundShader.UniformI('UseBumpMap', 1);
+        fBoundShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
+        end
+      else
+        begin
+        ModuleManager.ModTexMng.ActivateTexUnit(1);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        fBoundShader.Bind;
+        fBoundShader.UniformI('UseBumpMap', 0);
+        fBoundShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
+        end;
+      if O.fManagedMeshes[i].fMesh.Texture <> nil then
+        begin
+        O.fManagedMeshes[i].fMesh.Texture.Bind(0);
+        fBoundShader.UniformI('UseTexture', 1);
+        end
+      else
+        begin
+        ModuleManager.ModTexMng.ActivateTexUnit(0);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        fBoundShader.UniformI('UseTexture', 0);
+        end;
+      O.fManagedMeshes[i].fVBO.Bind;
+      if O.fManagedMeshes[i].fMesh.Texture <> nil then
+        if O.fManagedMeshes[i].fMesh.Texture.BPP = 4 then
+          begin
+          glCullFace(GL_FRONT);
+          O.fManagedMeshes[i].fVBO.Render;
+          glCullFace(GL_BACK);
+          end;
+      O.fManagedMeshes[i].fVBO.Render;
+      O.fManagedMeshes[i].fVBO.UnBind;
+      end;
     end;
 end;
 
@@ -319,17 +316,6 @@ begin
     fSunShadowShader.UniformI('Tex', 0);
     fSunShadowShader.UniformI('ModelTexture', 0);
     fSunShadowShader.UniformI('Bump', 1);
-    fShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
-    fShaderTesselation.UniformI('Tex', 0);
-    fShaderTesselation.UniformI('Bump', 1);
-    fShaderTesselation.UniformI('SunShadowMap', 7);
-    fTransformDepthShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
-    fTransformDepthShaderTesselation.UniformI('Tex', 0);
-    fTransformDepthShaderTesselation.UniformI('Bump', 1);
-    fSunShadowShaderTesselation := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs', 'rendereropengl/glsl/objects/normal.gs', 256);
-    fSunShadowShaderTesselation.UniformI('Tex', 0);
-    fSunShadowShaderTesselation.UniformI('ModelTexture', 0);
-    fSunShadowShaderTesselation.UniformI('Bump', 1);
     EventManager.AddCallback('TBasicObject.Created', @AddObject);
     EventManager.AddCallback('TBasicObject.Deleted', @DeleteObject);
     EventManager.AddCallback('TBasicObject.AddedMesh', @AddMesh);
@@ -346,35 +332,35 @@ begin
       begin
       Offset := Vector(10 - 20 * i, 0, 10 - 20 * i);
 
-      Vertices[0] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(0, 0), Vector(0, 0));
-      Vertices[1] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(1, 0), Vector(1, 0));
-      Vertices[2] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(1, 1), Vector(1, 1));
-      Vertices[3] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(0, 1), Vector(0, 1));
+      Vertices[0] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(0, 0), 1, Vector(1, 0, 0));
+      Vertices[1] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(1, 0), 1, Vector(1, 0, 0));
+      Vertices[2] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(1, 1), 1, Vector(1, 0, 0));
+      Vertices[3] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(0, 1), 1, Vector(1, 0, 0));
 
-      Vertices[4] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(0, 1), Vector(0, 1));
-      Vertices[5] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(1, 1), Vector(1, 1));
-      Vertices[6] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(1, 0), Vector(1, 0));
-      Vertices[7] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(0, 0), Vector(0, 0));
+      Vertices[4] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(0, 1), 1, Vector(-1, 0, 0));
+      Vertices[5] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(1, 1), 1, Vector(-1, 0, 0));
+      Vertices[6] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(1, 0), 1, Vector(-1, 0, 0));
+      Vertices[7] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(0, 0), 1, Vector(-1, 0, 0));
 
-      Vertices[8] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(-1, 0, 0), Vector(0, 1), Vector(0, 1));
-      Vertices[9] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(-1, 0, 0), Vector(1, 1), Vector(1, 1));
-      Vertices[10] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(-1, 0, 0), Vector(1, 0), Vector(1, 0));
-      Vertices[11] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(-1, 0, 0), Vector(0, 0), Vector(0, 0));
+      Vertices[8] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(-1, 0, 0), Vector(0, 1), 1, Vector(0, 1, 0));
+      Vertices[9] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(-1, 0, 0), Vector(1, 1), 1, Vector(0, 1, 0));
+      Vertices[10] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(-1, 0, 0), Vector(1, 0), 1, Vector(0, 1, 0));
+      Vertices[11] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(-1, 0, 0), Vector(0, 0), 1, Vector(0, 1, 0));
 
-      Vertices[12] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(1, 0, 0), Vector(0, 0), Vector(0, 0));
-      Vertices[13] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(1, 0, 0), Vector(1, 0), Vector(1, 0));
-      Vertices[14] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 0), Vector(1, 1), Vector(1, 1));
-      Vertices[15] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 0), Vector(0, 1), Vector(0, 1));
+      Vertices[12] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(1, 0, 0), Vector(0, 0), 1, Vector(0, -1, 0));
+      Vertices[13] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(1, 0, 0), Vector(1, 0), 1, Vector(0, -1, 0));
+      Vertices[14] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 0), Vector(1, 1), 1, Vector(0, -1, 0));
+      Vertices[15] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 0), Vector(0, 1), 1, Vector(0, -1, 0));
 
-      Vertices[16] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 0), Vector(0, 0));
-      Vertices[17] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 0), Vector(1, 0));
-      Vertices[18] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 1), Vector(1, 1));
-      Vertices[19] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 1), Vector(0, 1));
+      Vertices[16] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 0), 1, Vector(0, -1, 0));
+      Vertices[17] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 0), 1, Vector(0, -1, 0));
+      Vertices[18] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 1), 1, Vector(0, -1, 0));
+      Vertices[19] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 1), 1, Vector(0, -1, 0));
 
-      Vertices[20] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 1), Vector(0, 1));
-      Vertices[21] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 1), Vector(1, 1));
-      Vertices[22] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 0), Vector(1, 0));
-      Vertices[23] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 0), Vector(0, 0));
+      Vertices[20] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 1), 1, Vector(0, 1, 0));
+      Vertices[21] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 1), 1, Vector(0, 1, 0));
+      Vertices[22] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 0), 1, Vector(0, 1, 0));
+      Vertices[23] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 0), 1, Vector(0, 1, 0));
 
       Triangles[0] := MakeTriangleVertexArray(0, 1, 2);
       Triangles[1] := MakeTriangleVertexArray(0, 2, 3);
@@ -417,9 +403,6 @@ begin
   fShader.Free;
   fTransformDepthShader.Free;
   fSunShadowShader.Free;
-  fShaderTesselation.Free;
-  fTransformDepthShaderTesselation.Free;
-  fSunShadowShaderTesselation.Free;
 end;
 
 end.

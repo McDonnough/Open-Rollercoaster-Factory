@@ -34,7 +34,7 @@ type
       fWaterShader, fWaterShaderTransformDepth, fWaterShaderTransformSunShadow: TShader;
       fWaterBumpmap: TTexture;
       fWaterBumpmapOffset: TVector2D;
-      fBoundingSphereRadius, fAvgHeight: Array of Array of Single;
+      fBoundingSphereRadius, fAvgHeight, fMinHeight: Array of Array of Single;
       fHeightRanges: Array of Array of Array[0..1] of Single;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
@@ -48,8 +48,6 @@ type
       procedure CheckWaterLevel(X, Y: Word);
     public
       fWaterLayerFBOs: Array of TWaterLayerFBO;
-      fMinTerrainHeight: Single;
-      fMaxTerrainHeight: Single;
       procedure ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
       procedure Render(Event: String; Data, Result: Pointer);
@@ -289,6 +287,7 @@ var
               exit;
           if (fHeightRanges[X, Y, 0] > StrToFloatWD(fInterface.Options.Items['all:below'], 256)) or (fHeightRanges[X, Y, 1] < StrToFloatWD(fInterface.Options.Items['all:above'], 0)) then
             exit;
+          ModuleManager.ModRenderer.MinRenderHeight := Min(ModuleManager.ModRenderer.MinRenderHeight, fMinHeight[X, Y] - 8);
           fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
           if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
             begin
@@ -633,10 +632,11 @@ end;
 procedure TRTerrain.RecalcBoundingSpheres(X, Y: Integer);
 var
   i, j, k: Integer;
-  avgh, temp, temp2: Single;
+  avgh, minh, temp, temp2: Single;
   a, b, c, d: Single;
 begin
   avgh := 0;
+  minh := 256;
   fHeightRanges[X, Y, 0] := 256;
   fHeightRanges[X, Y, 1] := 0;
   for i := 0 to high(fWaterLayerFBOs) do
@@ -659,10 +659,11 @@ begin
       else if (i = 128) and (j = 128) then
         d := temp;
       avgh := avgh + temp;
-
+      minh := Min(minh, temp);
       end;
   avgh := avgh / 129 / 129;
   fAvgHeight[X, Y] := avgh;
+  fMinHeight[X, Y] := minh;
   fBoundingSphereRadius[X, Y] := VecLength(Vector(12.8, Max(Max(a, b), Max(c, d)) - avgh, 12.8));
 end;
 
@@ -701,8 +702,6 @@ var
 
   procedure UpdateVertex(X, Y: Word);
   begin
-    fMinTerrainHeight := Min(fMinTerrainHeight, Park.pTerrain.HeightMap[X / 5, Y / 5] - 8);
-    fMaxTerrainHeight := Max(fMaxTerrainHeight, Park.pTerrain.HeightMap[X / 5, Y / 5] + 8);
     Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
@@ -710,7 +709,6 @@ var
   procedure UpdateVertexSD(X, Y: Word);
   begin
     if (x mod 4 <> 0) or (y mod 4 = 0) then exit;
-    fMinTerrainHeight := Min(fMinTerrainHeight, Park.pTerrain.HeightMap[X / 5, Y / 5]);
     Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X div 4, Y div 4, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;
@@ -743,11 +741,13 @@ begin
     fHeightMap.SetClamp(GL_CLAMP, GL_CLAMP);
     fHeightMap.Unbind;
     SetLength(fAvgHeight, Park.pTerrain.SizeX div 128);
+    SetLength(fMinHeight, Park.pTerrain.SizeX div 128);
     SetLength(fHeightRanges, Park.pTerrain.SizeX div 128);
     SetLength(fBoundingSphereRadius, length(fAvgHeight));
     for i := 0 to high(fAvgHeight) do
       begin
       SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 128);
+      SetLength(fMinHeight[i], Park.pTerrain.SizeY div 128);
       SetLength(fHeightRanges[i], Park.pTerrain.SizeY div 128);
       SetLength(fBoundingSphereRadius[i], length(fAvgHeight[i]));
       end;
@@ -844,8 +844,6 @@ begin
   fFrameCount := 0;
   fWaterVBO := nil;
   fBorderVBO := nil;
-  fMinTerrainHeight := 256;
-  fMaxTerrainHeight := 0;
   try
     fHeightMap := nil;
     fShader := TShader.Create('rendereropengl/glsl/terrain/terrain.vs', 'rendereropengl/glsl/terrain/terrain.fs');
@@ -863,6 +861,7 @@ begin
     fShaderTransformDepth.UniformI('HeightMap', 1);
     fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fShaderTransformSunShadow.UniformI('HeightMap', 1);
+    fShaderTransformSunShadow.UniformI('UseTexture', 0);
     fWaterShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/waterTransform.vs', 'rendereropengl/glsl/terrain/simpleWater.fs');
     fWaterShaderTransformDepth.UniformI('HeightMap', 0);
     fWaterShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/waterSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');

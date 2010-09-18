@@ -19,7 +19,7 @@ type
 implementation
 
 uses
-  m_renderer_opengl_interface;
+  m_renderer_opengl_interface, u_vectors, m_varlist;
 
 const
   Right  = 0;
@@ -63,16 +63,57 @@ end;
 function TFrustum.IsSphereWithin(pX, pY, pZ, Radius: Single): Boolean;
 var
   i : Integer;
+  ObjectShadowQuad: TQuad;
 begin
   if fInterface.Options.Items['all:frustumcull'] = 'off' then
     exit(true);
   Result := true;
-  for i := 0 to 5 do
-    if (Frustum[i][A]*pX + Frustum[i][B]*pY +
-       Frustum[i][C]*pZ + Frustum[i][D]) <= -Radius then
+  if Radius * Radius > VecLengthNoRoot(Vector(PX, PY, PZ) - ModuleManager.ModCamera.ActiveCamera.Position) then
+    exit;
+  if fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow' then
+    begin
+    for i := 0 to 5 do
+      if (Frustum[i][A]*pX + Frustum[i][B]*pY +
+         Frustum[i][C]*pZ + Frustum[i][D]) <= -Radius then
+        begin
+        Result := False;
+        exit;
+        end;
+    end
+  else
+    with ModuleManager.ModRenderer do
       begin
-      Result := False;
-      exit;
+      ObjectShadowQuad[0] := ProjectToBottom(Vector(pX - Radius, pY - Radius, pZ - Radius));
+      ObjectShadowQuad[1] := ProjectToBottom(Vector(pX + Radius, pY - Radius, pZ - Radius));
+      ObjectShadowQuad[2] := ProjectToBottom(Vector(pX + Radius, pY - Radius, pZ + Radius));
+      ObjectShadowQuad[3] := ProjectToBottom(Vector(pX - Radius, pY - Radius, pZ + Radius));
+      if (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[0].x, ShadowQuad[0].z))) and (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[1].x, ShadowQuad[1].z)))
+     and (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[2].x, ShadowQuad[2].z))) and (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[3].x, ShadowQuad[3].z))) then
+        begin
+        ObjectShadowQuad[0] := ProjectToBottom(Vector(pX - Radius, pY + Radius, pZ - Radius));
+        ObjectShadowQuad[1] := ProjectToBottom(Vector(pX + Radius, pY + Radius, pZ - Radius));
+        ObjectShadowQuad[2] := ProjectToBottom(Vector(pX + Radius, pY + Radius, pZ + Radius));
+        ObjectShadowQuad[3] := ProjectToBottom(Vector(pX - Radius, pY + Radius, pZ + Radius));
+        if (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[0].x, ShadowQuad[0].z))) and (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[1].x, ShadowQuad[1].z)))
+       and (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[2].x, ShadowQuad[2].z))) and (not PointInQuad(ObjectShadowQuad, Vector(ShadowQuad[3].x, ShadowQuad[3].z))) then
+          begin
+          ObjectShadowQuad[0] := Vector(ShadowQuad[0].x, ShadowQuad[0].z);
+          ObjectShadowQuad[1] := Vector(ShadowQuad[1].x, ShadowQuad[1].z);
+          ObjectShadowQuad[2] := Vector(ShadowQuad[2].x, ShadowQuad[2].z);
+          ObjectShadowQuad[3] := Vector(ShadowQuad[3].x, ShadowQuad[3].z);
+          if (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX - Radius, pY + Radius, pZ - Radius)))) and (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX + Radius, pY + Radius, pZ - Radius))))
+         and (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX + Radius, pY + Radius, pZ + Radius)))) and (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX - Radius, pY + Radius, pZ + Radius)))) then
+            begin
+            ObjectShadowQuad[0] := Vector(ShadowQuad[0].x, ShadowQuad[0].z);
+            ObjectShadowQuad[1] := Vector(ShadowQuad[1].x, ShadowQuad[1].z);
+            ObjectShadowQuad[2] := Vector(ShadowQuad[2].x, ShadowQuad[2].z);
+            ObjectShadowQuad[3] := Vector(ShadowQuad[3].x, ShadowQuad[3].z);
+            if (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX - Radius, pY - Radius, pZ - Radius)))) and (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX + Radius, pY - Radius, pZ - Radius))))
+           and (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX + Radius, pY - Radius, pZ + Radius)))) and (not PointInQuad(ObjectShadowQuad, ProjectToBottom(Vector(pX - Radius, pY - Radius, pZ + Radius)))) then
+              Result := false;
+            end;
+          end;
+        end;
       end;
 end;
 

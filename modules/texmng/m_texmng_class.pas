@@ -87,6 +87,11 @@ type
         * Get the OpenGL Texture ID
         *)
       function GetRealTexID(Tex: Integer): GLUInt; virtual abstract;
+
+      (**
+        * Get the OpenGL Texture ID
+        *)
+      function GetBPP(Tex: Integer): Integer; virtual abstract;
     end;
 
   TTexture = class
@@ -108,6 +113,7 @@ type
       procedure SetClamp(X, Y: GLEnum);
       function GetRealTexID: GLUInt;
       procedure FromTexImage(Tex: TTexImage);
+      function BPP: Integer;
       destructor Free;
     end;
 
@@ -183,6 +189,11 @@ begin
     Format := GL_RGBA;
   CreateNew(Tex.Width, Tex.Height, Format);
   Fill(@Tex.Data[0], Format);
+end;
+
+function TTexture.BPP: Integer;
+begin
+  Result := ModuleManager.ModTexMng.GetBPP(fID);
 end;
 
 destructor TTexture.Free;

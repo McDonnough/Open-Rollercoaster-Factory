@@ -72,7 +72,7 @@ begin
     for j := 0 to 2 do
       begin
       fVBO.TexCoords[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].TexCoord;
-      fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoordFactor, fMesh.Vertices[fMesh.Triangles[i][j]].BumpTangent);
+      fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoordFactor, Vector(0, 0, 0));
       fVBO.Normals[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Normal;
       fVBO.Vertices[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Position;
       end;
@@ -97,7 +97,7 @@ begin
         if (fChangedTriangles.HasValue(i)) or (fChangedVertices.HasValue(fMesh.Triangles[i][j])) then
           begin
           fVBO.TexCoords[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].TexCoord;
-          fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoordFactor, fMesh.Vertices[fMesh.Triangles[i][j]].BumpTangent);
+          fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoordFactor, Vector(0, 0, 0));
           fVBO.Normals[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Normal;
           fVBO.Vertices[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Position;
           fRadius := Max(fRadius, VecLength(fMesh.Vertices[fMesh.Triangles[i][j]].Position));
@@ -340,35 +340,35 @@ begin
       begin
       Offset := Vector(10 - 20 * i, 0, 10 - 20 * i);
 
-      Vertices[0] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(0, 0), 1, Vector(1, 0, 0));
-      Vertices[1] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(1, 0), 1, Vector(1, 0, 0));
-      Vertices[2] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(1, 1), 1, Vector(1, 0, 0));
-      Vertices[3] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(0, 1), 1, Vector(1, 0, 0));
+      Vertices[0] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(0, 0), 1);
+      Vertices[1] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(1, 0), 1);
+      Vertices[2] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(1, 1), 1);
+      Vertices[3] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(0, 1), 1);
 
-      Vertices[4] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(0, 1), 1, Vector(-1, 0, 0));
-      Vertices[5] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(1, 1), 1, Vector(-1, 0, 0));
-      Vertices[6] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(1, 0), 1, Vector(-1, 0, 0));
-      Vertices[7] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(0, 0), 1, Vector(-1, 0, 0));
+      Vertices[4] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(0, 1), 1);
+      Vertices[5] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(1, 1), 1);
+      Vertices[6] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(1, 0), 1);
+      Vertices[7] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(0, 0), 1);
 
-      Vertices[8] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(-1, 0, 0), Vector(0, 1), 1, Vector(0, 1, 0));
-      Vertices[9] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(-1, 0, 0), Vector(1, 1), 1, Vector(0, 1, 0));
-      Vertices[10] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(-1, 0, 0), Vector(1, 0), 1, Vector(0, 1, 0));
-      Vertices[11] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(-1, 0, 0), Vector(0, 0), 1, Vector(0, 1, 0));
+      Vertices[8] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(-1, 0, 0), Vector(0, 1), 1);
+      Vertices[9] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(-1, 0, 0), Vector(1, 1), 1);
+      Vertices[10] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(-1, 0, 0), Vector(1, 0), 1);
+      Vertices[11] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(-1, 0, 0), Vector(0, 0), 1);
 
-      Vertices[12] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(1, 0, 0), Vector(0, 0), 1, Vector(0, -1, 0));
-      Vertices[13] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(1, 0, 0), Vector(1, 0), 1, Vector(0, -1, 0));
-      Vertices[14] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 0), Vector(1, 1), 1, Vector(0, -1, 0));
-      Vertices[15] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 0), Vector(0, 1), 1, Vector(0, -1, 0));
+      Vertices[12] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(1, 0, 0), Vector(0, 0), 1);
+      Vertices[13] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(1, 0, 0), Vector(1, 0), 1);
+      Vertices[14] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 0), Vector(1, 1), 1);
+      Vertices[15] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 0), Vector(0, 1), 1);
 
-      Vertices[16] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 0), 1, Vector(0, -1, 0));
-      Vertices[17] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 0), 1, Vector(0, -1, 0));
-      Vertices[18] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 1), 1, Vector(0, -1, 0));
-      Vertices[19] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 1), 1, Vector(0, -1, 0));
+      Vertices[16] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 0), 1);
+      Vertices[17] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 0), 1);
+      Vertices[18] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 1), 1);
+      Vertices[19] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 1), 1);
 
-      Vertices[20] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 1), 1, Vector(0, 1, 0));
-      Vertices[21] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 1), 1, Vector(0, 1, 0));
-      Vertices[22] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 0), 1, Vector(0, 1, 0));
-      Vertices[23] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 0), 1, Vector(0, 1, 0));
+      Vertices[20] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 1), 1);
+      Vertices[21] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 1), 1);
+      Vertices[22] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 0), 1);
+      Vertices[23] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 0), 1);
 
       Triangles[0] := MakeTriangleVertexArray(0, 1, 2);
       Triangles[1] := MakeTriangleVertexArray(0, 2, 3);

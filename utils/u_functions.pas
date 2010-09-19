@@ -81,6 +81,7 @@ function StrToFloatWD(A: String; Default: Single): Single;
 
 function HexToInt(A: String): Integer;
 
+function IsWhitespace(C: Char): Boolean;
 
 implementation
 
@@ -304,6 +305,11 @@ begin
       'a'..'f': Result := Result + Ord(A[i]) - Ord('a') + 10;
       end;
     end;
+end;
+
+function IsWhitespace(C: Char): Boolean;
+begin
+  Result := C in [' ', #10, #13, #9];
 end;
 
 end.

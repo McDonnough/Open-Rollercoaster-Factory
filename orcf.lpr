@@ -4,11 +4,12 @@ program orcf;
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  SysUtils, Classes, m_varlist, main, u_events;
+  SysUtils, Classes, m_varlist, main, u_events, u_ase;
 
 {$IFDEF WINDOWS}{$R orcf.rc}{$ENDIF}
 
 begin
+  DecimalSeparator := '.';
   Randomize;
   EventManager := TEventManager.Create;
   ModuleManager := TModuleManager.Create;

@@ -40,12 +40,6 @@ var
   LastAttribute: String;
   Document: TDOMDocument;
 
-
-  function IsWhitespace(C: Char): Boolean;
-  begin
-    Result := C in [' ', #10, #13, #9];
-  end;
-
   procedure AddTextNode;
   begin
     if (tmpString <> '') and (length(ElementStack) > 0) then

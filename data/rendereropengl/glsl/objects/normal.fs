@@ -46,7 +46,7 @@ void main(void) {
     color = texture2D(Tex, gl_TexCoord[0].xy);
   color *= MeshColor;
   Diffuse = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), mix(1.0, dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)), color.a)))));
-  Specular = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), pow(max(0.0, dot(Reflected, Eye)), 20.0)))));
+  Specular = clamp(gl_FrontMaterial.shininess, 0.0, 1.0) * gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), pow(max(0.0, dot(Reflected, Eye)), gl_FrontMaterial.shininess)))));
   Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
   Diffuse.a = 0.0;
   Ambient.a = 1.0;

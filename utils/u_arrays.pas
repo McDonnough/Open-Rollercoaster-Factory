@@ -23,6 +23,9 @@ type
       function Extract(X, C: Integer): TRow;
       function Min: Integer;
       function Max: Integer;
+      procedure Push(A: Integer);
+      function Pop: Integer;
+      function Last: Integer;
       constructor Create;
       constructor Create(Count: Integer; Items: Pointer);
     end;
@@ -190,6 +193,22 @@ begin
   Result := Value[0];
   for i := 1 to Length - 1 do
     Result := Math.Max(Result, Value[i]);
+end;
+
+procedure TRow.Push(A: Integer);
+begin
+  Insert(Length, A);
+end;
+
+function TRow.Pop: Integer;
+begin
+  Result := Last;
+  Delete(Length - 1);
+end;
+
+function TRow.Last: Integer;
+begin
+  Result := Value[Length - 1];
 end;
 
 constructor TRow.Create;

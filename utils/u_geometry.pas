@@ -12,7 +12,7 @@ type
   TMeshTriangleVertexArray = Array[0..2] of Integer;
 
   TMeshVertex = record
-    Position, Normal, BumpTangent: TVector3D;
+    Position, Normal: TVector3D;
     TexCoord: TVector2D;
     BumpTexCoordFactor: Single;
     Fix: Boolean;
@@ -41,6 +41,7 @@ type
       procedure UpdateMatrix;
     public
       Parent: Pointer;
+      Shininess: Single;
       MaxDistance, MinDistance: Single;
       Color: TVector4D;
       Texture, BumpMap: TTexture;
@@ -57,18 +58,20 @@ type
       constructor Create;
     end;
 
+  AMesh = Array of TMesh;
+
 function MakeRay(A, B: TVector3D): TRay;
 function MakeTriangle(A, B, C: TVector3D): TTriangle;
 function MakeTriangleFromMeshTriangleVertexArray(Mesh: TMesh; A: TMeshTriangleVertexArray): TTriangle;
 function RayTriangleIntersection(Ray: TRay; Tri: TTriangle; var I: TVector3D): Boolean;
 function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
-function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single; B: TVector3D): TMeshVertex;
+function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single): TMeshVertex;
 function MakeTriangleVertexArray(A, B, C: Integer): TMeshTriangleVertexArray;
 
 implementation
 
 uses
-  u_selection, u_events;
+  u_selection, u_events, u_ase;
 
 procedure TMesh.UpdateMatrix;
 begin
@@ -164,6 +167,7 @@ begin
   Offset := Vector(0, 0, 0);
   StaticRotationMatrix := Identity3D;
   StaticOffset := Vector(0, 0, 0);
+  Shininess := 20;
 end;
 
 
@@ -194,16 +198,14 @@ begin
   Result.Normal := N;
   Result.TexCoord := T;
   Result.BumpTexCoordFactor := 1;
-  Result.BumpTangent := Cross(Result.Normal, Vector(0, 1, 0));
 end;
 
-function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single; B: TVector3D): TMeshVertex;
+function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single): TMeshVertex;
 begin
   Result.Position := P;
   Result.Normal := N;
   Result.TexCoord := T;
-  Result.BumpTexCoordFactor := 1;
-  Result.BumpTangent := B;
+  Result.BumpTexCoordFactor := BF;
 end;
 
 //

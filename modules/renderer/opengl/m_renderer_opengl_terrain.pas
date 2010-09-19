@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, DGLOpenGL, m_renderer_opengl_classes, u_vectors, m_shdmng_class, m_texmng_class, u_math, math,
-  m_renderer_opengl_interface;
+  m_renderer_opengl_interface, g_loader_ocf, g_object_base;
 
 type
   TWaterLayerFBO = class
@@ -42,11 +42,13 @@ type
       fHeightMap: TTexture;
       fFrameCount: Byte;
       RenderStep: Single;
+      fMarks: Array of TBasicObject;
       procedure Sync;
       procedure Execute; override;
       procedure RecalcBoundingSpheres(X, Y: Integer);
       procedure CheckWaterLevel(X, Y: Word);
     public
+      fTerrainMarkOCF: TOCFFile;
       fWaterLayerFBOs: Array of TWaterLayerFBO;
       procedure ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
@@ -420,14 +422,27 @@ begin
   glDisable(GL_TEXTURE_2D);
   glDisable(GL_CULL_FACE);
 
-  glBegin(GL_QUADS);
-    glColor4f(1, 1, 1, 1);
-    for i := 0 to Park.pTerrain.Marks.Height - 1 do
+  for i := high(fMarks) downto Park.pTerrain.Marks.Height do
+    begin
+    fMarks[i].Free;
+    SetLength(fMarks, length(fMarks) - 1);
+    end;
+
+  for i := high(fMarks) + 1 to Park.pTerrain.Marks.Height - 1 do
+    begin
+    SetLength(fMarks, length(fMarks) + 1);
+    fMarks[i] := TBasicObject.Create;
+    fMarks[i].ReadFromOCFFile(fTerrainMarkOCF);
+    end;
+
+
+    for i := 0 to high(fMarks) do
       begin
-      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
+      fMarks[i].Move(Vector(Park.pTerrain.Marks.Value[0, i], Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], Park.pTerrain.Marks.Value[1, i]));
+{      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
-      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);}
       end;
     if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
       if Park.pTerrain.MarkMode = 0 then
@@ -446,7 +461,6 @@ begin
         glVertex3f(Park.pTerrain.CurrMark.X + 0.1, 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10, Park.pTerrain.CurrMark.Y + 0.1);
         glVertex3f(Park.pTerrain.CurrMark.X - 0.1, 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10, Park.pTerrain.CurrMark.Y + 0.1);
         end;
-  glEnd;
 
   glBegin(GL_LINE_LOOP);
     glColor4f(1, 1, 1, 1);
@@ -520,15 +534,15 @@ begin
               begin
               fDeg := PI * 2 * Random;
               fRot := PI * 2 * Random;
-              fTMP := Vector(Sin(fRot), Cos(fRot)) * 0.4;
+              fTMP := Vector(Sin(fRot), Cos(fRot)) * 0.6;
               Position := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) + Vector(Sin(fDeg), Cos(fDeg)) * (2 * Random + 18);
               fAPPositions[i, j] := Position;
               inc(fAPCount[i]);
               if Park.pTerrain.TexMap[Position.X, Position.Y] = i then
                 begin
                 fAPVBOs[i].Vertices[4 * j + 0] := Vector(fAPPositions[i, j].X, 0, fAPPositions[i, j].Y);
-                fAPVBOs[i].Vertices[4 * j + 1] := Vector(fAPPositions[i, j].X, 0.2, fAPPositions[i, j].Y);
-                fAPVBOs[i].Vertices[4 * j + 2] := Vector(fAPPositions[i, j].X + fTMP.X, 0.2, fAPPositions[i, j].Y + fTMP.Y);
+                fAPVBOs[i].Vertices[4 * j + 1] := Vector(fAPPositions[i, j].X, 0.3, fAPPositions[i, j].Y);
+                fAPVBOs[i].Vertices[4 * j + 2] := Vector(fAPPositions[i, j].X + fTMP.X, 0.3, fAPPositions[i, j].Y + fTMP.Y);
                 fAPVBOs[i].Vertices[4 * j + 3] := Vector(fAPPositions[i, j].X + fTMP.X, 0, fAPPositions[i, j].Y + fTMP.Y);
                 end
               else
@@ -840,6 +854,8 @@ begin
   writeln('Initializing terrain renderer');
   inherited Create(false);
   fTerrainEditorIsOpen := false;
+  fTerrainMarkOCF := nil;
+  ModuleManager.ModOCFManager.RequestOCFFile('terrain/terrainmarks/defaultmark.ocf', 'TOCFManager.Loaded', @fTerrainMarkOCF);
   fForcedHeightLine := -1;
   fFrameCount := 0;
   fWaterVBO := nil;
@@ -862,6 +878,7 @@ begin
     fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fShaderTransformSunShadow.UniformI('HeightMap', 1);
     fShaderTransformSunShadow.UniformI('UseTexture', 0);
+    fShaderTransformSunShadow.UniformF('MeshColor', 1, 1, 1, 1);
     fWaterShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/waterTransform.vs', 'rendereropengl/glsl/terrain/simpleWater.fs');
     fWaterShaderTransformDepth.UniformI('HeightMap', 0);
     fWaterShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/waterSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');

@@ -7,6 +7,7 @@ uniform vec2 ShadowQuadB;
 uniform vec2 ShadowQuadC;
 uniform vec2 ShadowQuadD;
 
+varying vec3 v;
 varying vec4 DVertex;
 varying vec4 Vertex;
 varying float dist;
@@ -44,6 +45,7 @@ void main(void) {
   Vertex = TransformMatrix * gl_Vertex;
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;
   DVertex = gl_ClipVertex;
+  v = gl_Vertex.xyz - gl_SecondaryColor.rgb;
   dist = length(gl_ClipVertex);
   vec4 LightVec = Vertex - gl_LightSource[0].position;
   gl_TexCoord[7] = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);

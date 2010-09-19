@@ -31,7 +31,6 @@ type
       fBoundShader: TShader;
       fShader, fTransformDepthShader, fSunShadowShader: TShader;
       fManagedObjects: Array of TManagedObject;
-      b: Integer;
       fTest: TBasicObject;
     public
       procedure AddObject(Event: String; Data, Result: Pointer);
@@ -40,7 +39,7 @@ type
       procedure DeleteMesh(Event: String; Data, Result: Pointer);
       procedure ChangeVertex(Event: String; Data, Result: Pointer);
       procedure ChangeTriangle(Event: String; Data, Result: Pointer);
-      procedure Render(O: TManagedObject);
+      procedure Render(O: TManagedObject; Transparent: Boolean);
       procedure Render(Event: String; Data, Result: Pointer);
       constructor Create;
       destructor Free;
@@ -203,12 +202,14 @@ begin
           end;
 end;
 
-procedure TRObjects.Render(O: TManagedObject);
+procedure TRObjects.Render(O: TManagedObject; Transparent: Boolean);
 var
   i: Integer;
   tmpMatrix: TMatrix4D;
   Matrix: Array[0..15] of Single;
   A: TVector4D;
+  D: Single;
+  IsTransparent: Boolean;
 begin
   glEnable(GL_ALPHA_TEST);
   glEnable(GL_CULL_FACE);
@@ -221,25 +222,31 @@ begin
     begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    inc(b, 1);
-    fTest.Rotate(RotateMatrix(0.2 * b, Vector(0, 1, 0)));
-    fTest.fMeshes[0].RotationMatrix := (RotateMatrix(-1 * b, Vector(0, 1, 0)));
-    fTest.fMeshes[1].RotationMatrix := (RotateMatrix(-1 * b, Vector(0, 1, 0)));
     end;
   fBoundShader.Bind;
   fBoundShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
   fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
   fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
   fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
-
   for i := 0 to high(O.fManagedMeshes) do
     begin
+    IsTransparent := false;
+    if O.fManagedMeshes[i].fMesh.Texture <> nil then
+      begin
+      if (O.fManagedMeshes[i].fMesh.Texture.BPP = 4) or (O.fManagedMeshes[i].fMesh.Color.W < 1.0) then
+        IsTransparent := true;
+      end
+    else
+      if O.fManagedMeshes[i].fMesh.Color.W < 1.0 then
+        IsTransparent := true;
+    if IsTransparent <> Transparent then
+      continue;
     tmpMatrix := TranslateMatrix(O.fManagedMeshes[i].fMesh.StaticOffset) * Matrix4D(O.fManagedMeshes[i].fMesh.StaticRotationMatrix);
     tmpMatrix := tmpMatrix * TranslateMatrix(O.fManagedMeshes[i].fMesh.Offset) * Matrix4D(O.fManagedMeshes[i].fMesh.RotationMatrix);
     A := Vector(0, 0, 0, 1) * tmpMatrix;
-    if ModuleManager.ModRenderer.Frustum.IsSphereWithin(A.X, A.Y, A.Z, O.fManagedMeshes[i].fRadius) then
+    D := VecLengthNoRoot(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(A));
+    if (D < O.fManagedMeshes[i].fMesh.MaxDistance * O.fManagedMeshes[i].fMesh.MaxDistance) and (D >= O.fManagedMeshes[i].fMesh.MinDistance * O.fManagedMeshes[i].fMesh.MinDistance) and (ModuleManager.ModRenderer.Frustum.IsSphereWithin(A.X, A.Y, A.Z, O.fManagedMeshes[i].fRadius)) then
       begin
-      O.fManagedMeshes[i].UpdateVBO;
       MakeOGLCompatibleMatrix(tmpMatrix, @Matrix[0]);
       if O.fManagedMeshes[i].fMesh.BumpMap <> nil then
         begin
@@ -267,14 +274,15 @@ begin
         ModuleManager.ModTexMng.BindTexture(-1);
         fBoundShader.UniformI('UseTexture', 0);
         end;
+      fBoundShader.UniformF('MeshColor', O.fManagedMeshes[i].fMesh.Color.X, O.fManagedMeshes[i].fMesh.Color.Y, O.fManagedMeshes[i].fMesh.Color.Z, O.fManagedMeshes[i].fMesh.Color.W);
+      O.fManagedMeshes[i].UpdateVBO;
       O.fManagedMeshes[i].fVBO.Bind;
-      if O.fManagedMeshes[i].fMesh.Texture <> nil then
-        if O.fManagedMeshes[i].fMesh.Texture.BPP = 4 then
-          begin
-          glCullFace(GL_FRONT);
-          O.fManagedMeshes[i].fVBO.Render;
-          glCullFace(GL_BACK);
-          end;
+      if IsTransparent then
+        begin
+        glCullFace(GL_FRONT);
+        O.fManagedMeshes[i].fVBO.Render;
+        glCullFace(GL_BACK);
+        end;
       O.fManagedMeshes[i].fVBO.Render;
       O.fManagedMeshes[i].fVBO.UnBind;
       end;
@@ -286,7 +294,7 @@ var
   i: Integer;
 begin
   for i := 0 to high(fManagedObjects) do
-    Render(fManagedObjects[i]);
+    Render(fManagedObjects[i], Byte(Data^) = 2);
   if fBoundShader <> nil then
     begin
     fBoundShader.Unbind;

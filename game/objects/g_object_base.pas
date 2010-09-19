@@ -57,6 +57,7 @@ end;
 
 procedure TBasicObject.ReadFromOCFFile(F: TOCFFile);
 begin
+
 end;
 
 procedure TBasicObject.Rotate(Matrix: TMatrix3D);

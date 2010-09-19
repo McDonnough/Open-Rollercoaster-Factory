@@ -37,12 +37,12 @@ type
       procedure Unload;
       procedure RenderScene;
       procedure CheckModConf;
-      function mapPixelToQuad(P: TVector2D): TVector2D;
       procedure RenderShadows;
+      procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
       procedure RenderParts(Solid, Transparent: Boolean);
       function GetRay(MX, MY: Single): TVector3D;
       function GetNegRay(MX, MY: Single): TVector3D;
-      procedure Render(EyeMode: Single = 0; EyeFocus: Single = 10);
+      function mapPixelToQuad(P: TVector2D): TVector2D;
       function ProjectToBottom(A: TVector3D): TVector2D;
       constructor Create;
       destructor Free;
@@ -85,15 +85,19 @@ begin
 end;
 
 procedure TModuleRendererOpenGL.RenderParts(Solid, Transparent: Boolean);
+const
+  SolidOnly: Byte = 1;
+  TransparentOnly: Byte = 2;
 begin
   if Solid then
     begin
     RSky.Render('', nil, nil);
+    RObjects.Render('', @SolidOnly, nil);
     RTerrain.Render('', nil, nil);
     end;
   if Transparent then
     begin
-    RObjects.Render('', nil, nil);
+    RObjects.Render('', @TransparentOnly, nil);
     RTerrain.RenderAutoplants('', nil, nil);
     end;
   fInterface.Options.Items['all:renderpass'] := IntToStr(StrToInt(fInterface.Options.Items['all:renderpass']) + 1);
@@ -436,6 +440,7 @@ begin
     RenderShadows;
   fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
   MinRenderHeight := OC.Y - 8;
+  glSecondaryColor3f(OC.X, OC.Y, OC.Z);
 
   glEnable(GL_BLEND);
 

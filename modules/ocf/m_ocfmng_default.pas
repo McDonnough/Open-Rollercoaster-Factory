@@ -33,6 +33,7 @@ type
       procedure ReloadOCFFile(FileName, Event: String; AdditionalData: Pointer);
       procedure CheckLoaded;
       procedure CheckModConf;
+      procedure __Loaded(Event: String; Data, Result: Pointer);
       constructor Create;
       destructor Free;
     end;
@@ -152,6 +153,8 @@ begin
   fModName := 'OCFManagerDefault';
   fModType := 'OCFManager';
 
+  EventManager.AddCallback('TOCFManager.Loaded', @__Loaded);
+
   fThread := TOCFManagerWorkingThread.Create(true);
 
   fSignalCounter := 0;
@@ -160,6 +163,11 @@ end;
 procedure TModuleOCFManagerDefault.CheckModConf;
 begin
   fThread.Resume;
+end;
+
+procedure TModuleOCFManagerDefault.__Loaded(Event: String; Data, Result: Pointer);
+begin
+  TOCFFile(Result^) := TOCFFile(Data);
 end;
 
 destructor TModuleOCFManagerDefault.Free;
@@ -171,6 +179,7 @@ begin
     if fOCFFiles[i] <> nil then
       fOCFFiles[i].Free;
   fThread.Free;
+  EventManager.RemoveCallback(@__Loaded);
 end;
 
 end.

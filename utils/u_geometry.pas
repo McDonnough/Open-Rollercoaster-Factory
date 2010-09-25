@@ -16,6 +16,7 @@ type
     TexCoord: TVector2D;
     BumpTexCoordFactor: Single;
     Fix: Boolean;
+    FaceRefs: Array of Integer;
     end;
 
   PMeshVertex = ^TMeshVertex;
@@ -43,8 +44,16 @@ type
       Parent: Pointer;
       Shininess: Single;
       MaxDistance, MinDistance: Single;
+      Reflective: Single;
       Color: TVector4D;
       Texture, BumpMap: TTexture;
+      procedure GetFacesContainingVertex(A: PMeshVertex);
+      procedure SmoothNormals;
+      procedure FaceNormals;
+      procedure FinishedVertexCreation;
+      procedure FaceNormal(Face: Integer);
+      function GetFaceNormal(Face: Integer): TVector3D;
+      procedure VertexNormal(Vertex: PMeshVertex);
       property TransformMatrix: TMatrix4D read fTransformMatrix;
       property StaticOffset: TVector3D read fStaticOffset write SetStaticOffset;
       property Offset: TVector3D read fOffset write SetOffset;
@@ -68,10 +77,75 @@ function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
 function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single): TMeshVertex;
 function MakeTriangleVertexArray(A, B, C: Integer): TMeshTriangleVertexArray;
 
+operator = (A, B: TMeshVertex): Boolean;
+
 implementation
 
 uses
   u_selection, u_events, u_ase;
+
+procedure TMesh.GetFacesContainingVertex(A: PMeshVertex);
+var
+  i, j: Integer;
+begin
+  for i := 0 to TriangleCount - 1 do
+    if (fVertices[fTriangles[i][0]].Position = A^.Position) or (fVertices[fTriangles[i][1]].Position = A^.Position) or (fVertices[fTriangles[i][2]].Position = A^.Position) then
+      begin
+      SetLength(A^.FaceRefs, Length(A^.FaceRefs) + 1);
+      A^.FaceRefs[high(A^.FaceRefs)] := i;
+      end;
+end;
+
+procedure TMesh.SmoothNormals;
+var
+  i: Integer;
+begin
+  for i := 0 to VertexCount - 1 do
+    VertexNormal(pVertices[i]);
+end;
+
+procedure TMesh.FaceNormals;
+var
+  i: Integer;
+begin
+  for i := 0 to TriangleCount - 1 do
+    FaceNormal(i);
+end;
+
+function TMesh.GetFaceNormal(Face: Integer): TVector3D;
+begin
+  Result := Normal(fVertices[Triangles[Face][0]].Position - fVertices[Triangles[Face][1]].Position, fVertices[Triangles[Face][1]].Position - fVertices[Triangles[Face][2]].Position);
+end;
+
+procedure TMesh.FaceNormal(Face: Integer);
+var
+  Normal: TVector3D;
+begin
+  Normal := GetFaceNormal(Face);
+  fVertices[Triangles[Face][0]].Normal := Normal;
+  fVertices[Triangles[Face][1]].Normal := Normal;
+  fVertices[Triangles[Face][2]].Normal := Normal;
+end;
+
+procedure TMesh.VertexNormal(Vertex: PMeshVertex);
+var
+  i: Integer;
+  Normal: TVector3D;
+begin
+  Normal := GetFaceNormal(Vertex^.FaceRefs[0]);
+  for i := 1 to high(Vertex^.FaceRefs) do
+    Normal := Normal + GetFaceNormal(Vertex^.FaceRefs[i]);
+  Normal := Normalize(Normal);
+  Vertex^.Normal := Normal;
+end;
+
+procedure TMesh.FinishedVertexCreation;
+var
+  i: Integer;
+begin
+  for i := 0 to VertexCount - 1 do
+    GetFacesContainingVertex(@fVertices[i]);
+end;
 
 procedure TMesh.UpdateMatrix;
 begin
@@ -168,6 +242,7 @@ begin
   StaticRotationMatrix := Identity3D;
   StaticOffset := Vector(0, 0, 0);
   Shininess := 20;
+  Reflective := 0;
 end;
 
 
@@ -271,6 +346,11 @@ begin
   Result[0] := A;
   Result[1] := B;
   Result[2] := C;
+end;
+
+operator = (A, B: TMeshVertex): Boolean;
+begin
+  Result := (A.Position = B.Position) and (A.Normal = B.Normal) and (A.TexCoord = B.TexCoord) and (A.BumpTexCoordFactor = B.BumpTexCoordFactor) and (A.Fix = B.Fix);
 end;
 
 end.

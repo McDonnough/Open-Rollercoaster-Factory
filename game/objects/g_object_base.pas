@@ -16,6 +16,7 @@ type
 //       property Script: TScript read fScript;
       property Position: TVector3D read fOffset;
       property Rotation: TMatrix3D read fRotation;
+      function AddMesh(Mesh: TMesh): TMesh;
       function AddMesh: TMesh;
       procedure DeleteMesh(I: Integer);
       procedure ReadFromOCFFile(F: TOCFFile);
@@ -30,11 +31,11 @@ implementation
 uses
   m_varlist, u_events;
 
-function TBasicObject.AddMesh: TMesh;
+function TBasicObject.AddMesh(Mesh: TMesh): TMesh;
 var
   i: Integer;
 begin
-  Result := TMesh.Create;
+  Result := Mesh;
   Result.Parent := Self;
   Result.StaticOffset := fOffset;
   Result.StaticRotationMatrix := fRotation;
@@ -42,6 +43,11 @@ begin
   i := high(fMeshes);
   fMeshes[i] := Result;
   EventManager.CallEvent('TBasicObject.AddedMesh', Self, @I);
+end;
+
+function TBasicObject.AddMesh: TMesh;
+begin
+  Result := AddMesh(TMesh.Create);
 end;
 
 procedure TBasicObject.DeleteMesh(I: Integer);

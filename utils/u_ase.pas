@@ -8,12 +8,12 @@ uses
 type
   TASEMaterial = record
     Name, MaterialClass: String;
-    Ambient, Diffuse, Specular: TVector3D;                  // Diffuse = color
+    Ambient, Diffuse, Specular: TVector3D;                  // Diffuse = mesh color
     Shine, ShineStrength, Transprarency: Single;            // 1 / Shine / ShineStrength = Shininess
-    WireSize: Single;
-    Shading: String;
-    SelFillNum, XPFallOff: Single;
-    FallOff, XPType: String;
+    WireSize: Single;                                       // Unused
+    Shading: String;                                        // Unused
+    SelFillNum, XPFallOff: Single;                          // Unused
+    FallOff, XPType: String;                                // Unused
     end;
 
   TASENodeTM = record
@@ -24,13 +24,13 @@ type
     TMRotAxis: TVector3D;                                   // Applied on demand
     TMRotAngle: Single;                                     // Applied on demand
     TMScale: TVector3D;                                     // Applied  on demand
-    TMScaleAxis: TVector3D;                                 // Unhandled
+    TMScaleAxis: TVector3D;                                 // Unused
     TMScaleAxisAng: Single;                                 // Unknown meaning
     end;
 
   TASEMeshFace = record
     A, B, C: Integer;
-    AB, BC, CA: Integer;
+    AB, BC, CA: Integer;                                    // Unused
     // Rest unknown
     end;
 
@@ -40,12 +40,12 @@ type
     end;
 
   TASEMeshNormals = record
-    FaceNormal: TVector3D;
+    FaceNormal: TVector3D;                                  // Unused
     VertexNormals: Array[0..2] of TASEVertexNormal;
     end;
 
   TASEMesh = record
-    TimeValue: Single;
+    TimeValue: Single;                                      // Unused
     NumVertex, NumFaces: Integer;
     VertexList: Array of TVector3D;
     FaceList: Array of TASEMeshFace;
@@ -61,7 +61,7 @@ type
     NodeName: String;
     NodeTM: TASENodeTM;
     Mesh: TASEMesh;
-    PropMotionBlur, PropCastShadow, PropRecvShadow: Boolean;
+    PropMotionBlur, PropCastShadow, PropRecvShadow: Boolean;// Unused
     MaterialRef: Integer;
     end;
 
@@ -392,7 +392,53 @@ begin
 end;
 
 function ASEFileToMeshArray(F: TASEFile): AMesh;
+var
+  i, j, k, l: Integer;
+  tmpVertex: Array[0..2] of TMeshVertex;
+  Indicies: Array[0..2] of Integer;
 begin
+  SetLength(Result, Length(F.GeomObjects));
+  for i := 0 to high(Result) do
+    begin
+    Result[i] := TMesh.Create;
+    Result[i].Color := Vector(F.Materials[F.GeomObjects[i].MaterialRef].Diffuse, 1 - F.Materials[F.GeomObjects[i].MaterialRef].Transprarency);
+    Result[i].Shininess := 1 / F.Materials[F.GeomObjects[i].MaterialRef].Shine / F.Materials[F.GeomObjects[i].MaterialRef].ShineStrength;
+    Result[i].MaxDistance := 10000;
+    Result[i].Parent := nil;
+
+    for j := 0 to F.GeomObjects[i].Mesh.NumFaces - 1 do
+      begin
+      tmpVertex[0].Position := F.GeomObjects[i].Mesh.VertexList[F.GeomObjects[i].Mesh.FaceList[j].A];
+      tmpVertex[1].Position := F.GeomObjects[i].Mesh.VertexList[F.GeomObjects[i].Mesh.FaceList[j].B];
+      tmpVertex[2].Position := F.GeomObjects[i].Mesh.VertexList[F.GeomObjects[i].Mesh.FaceList[j].C];
+
+      tmpVertex[0].Normal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[0].Normal;
+      tmpVertex[1].Normal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[1].Normal;
+      tmpVertex[2].Normal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[2].Normal;
+
+      tmpVertex[0].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 0]]);
+      tmpVertex[1].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 1]]);
+      tmpVertex[2].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 2]]);
+
+      tmpVertex[0].BumpTexCoordFactor := 1;
+      tmpVertex[0].Fix := True;
+
+      for l := 0 to 2 do
+        Indicies[l] := Result[i].VertexCount + 2;
+      // DO NOT UNCOMMENT: Custom normal calculation, bump mapping factor and fix-property would cause problems
+{      for k := 0 to Result[i].VertexCount - 1 do
+        for l := 0 to 2 do
+          if Result[i].Vertices[k] = tmpVertex[l] then
+            Indicies[l] := k;}
+      for l := 0 to 2 do
+        if Indicies[l] >= Result[i].VertexCount then
+          begin
+          Indicies[l] := Result[i].VertexCount;
+          Result[i].Vertices[Indicies[l]] := tmpVertex[l];
+          end;
+      Result[i].Triangles[Result[i].TriangleCount] := MakeTriangleVertexArray(Indicies[0], Indicies[1], Indicies[2]);
+      end;
+    end;
 end;
 
 end.

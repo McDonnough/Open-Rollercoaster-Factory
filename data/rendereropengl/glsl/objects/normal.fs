@@ -10,7 +10,6 @@ uniform vec4 MeshColor;
 varying vec4 Vertex;
 varying vec4 DVertex;
 varying vec3 Normal;
-varying vec3 StandardTangent;
 varying vec3 v;
 
 void main(void) {

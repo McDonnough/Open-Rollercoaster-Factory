@@ -40,7 +40,6 @@ vec4 mapPixelToQuad(vec2 P) {
 
 void main(void) {
   Normal = mat3(TransformMatrix) * gl_Normal;
-  StandardTangent = mat3(TransformMatrix) * gl_Color.gba;
   gl_TexCoord[0] = vec4(gl_MultiTexCoord0.xy, gl_Color.r * gl_MultiTexCoord0.xy);
   Vertex = TransformMatrix * gl_Vertex;
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;

@@ -48,7 +48,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events, math, m_renderer_opengl_interface;
+  m_varlist, u_events, math, m_renderer_opengl_interface, u_ase;
 
 constructor TManagedMesh.Create;
 begin
@@ -75,6 +75,7 @@ begin
       fVBO.Colors[3 * i + j] := Vector(fMesh.Vertices[fMesh.Triangles[i][j]].BumpTexCoordFactor, Vector(0, 0, 0));
       fVBO.Normals[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Normal;
       fVBO.Vertices[3 * i + j] := fMesh.Vertices[fMesh.Triangles[i][j]].Position;
+      fRadius := Max(fRadius, VecLength(fMesh.Vertices[fMesh.Triangles[i][j]].Position));
       end;
   fVBO.Unbind;
 end;
@@ -105,6 +106,8 @@ begin
         end;
     fVBO.Unbind;
     end;
+  fChangedTriangles.Resize(0);
+  fChangedVertices.Resize(0);
 end;
 
 destructor TManagedMesh.Free;
@@ -274,6 +277,7 @@ begin
         ModuleManager.ModTexMng.BindTexture(-1);
         fBoundShader.UniformI('UseTexture', 0);
         end;
+      glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, @O.fManagedMeshes[i].fMesh.Shininess);
       fBoundShader.UniformF('MeshColor', O.fManagedMeshes[i].fMesh.Color.X, O.fManagedMeshes[i].fMesh.Color.Y, O.fManagedMeshes[i].fMesh.Color.Z, O.fManagedMeshes[i].fMesh.Color.W);
       O.fManagedMeshes[i].UpdateVBO;
       O.fManagedMeshes[i].fVBO.Bind;
@@ -308,7 +312,8 @@ end;
 
 constructor TRObjects.Create;
 var
-  i: Integer;
+  i, j, k: Integer;
+  Meshes: AMesh;
 begin
   writeln('Initializing object renderer');
   try
@@ -335,61 +340,12 @@ begin
   end;
   fTest := TBasicObject.Create;
   fTest.Move(Vector(160, 70, 160));
-  for i := 0 to 1 do
-    with fTest.AddMesh do
+  Meshes := ASEFileToMeshArray(LoadASEFile('/home/philip/untitled.ase'));
+  for i := 0 to high(Meshes) do
+    with fTest.AddMesh(Meshes[i]) do
       begin
-      Offset := Vector(10 - 20 * i, 0, 10 - 20 * i);
-
-      Vertices[0] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(0, 0), 1);
-      Vertices[1] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, -1, 0), Vector(1, 0), 1);
-      Vertices[2] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(1, 1), 1);
-      Vertices[3] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(0, -1, 0), Vector(0, 1), 1);
-
-      Vertices[4] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(0, 1), 1);
-      Vertices[5] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(0, 1, 0), Vector(1, 1), 1);
-      Vertices[6] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(1, 0), 1);
-      Vertices[7] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 1, 0), Vector(0, 0), 1);
-
-      Vertices[8] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(-1, 0, 0), Vector(0, 1), 1);
-      Vertices[9] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(-1, 0, 0), Vector(1, 1), 1);
-      Vertices[10] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(-1, 0, 0), Vector(1, 0), 1);
-      Vertices[11] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(-1, 0, 0), Vector(0, 0), 1);
-
-      Vertices[12] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(1, 0, 0), Vector(0, 0), 1);
-      Vertices[13] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(1, 0, 0), Vector(1, 0), 1);
-      Vertices[14] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 0), Vector(1, 1), 1);
-      Vertices[15] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 0), Vector(0, 1), 1);
-
-      Vertices[16] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 0), 1);
-      Vertices[17] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 0), 1);
-      Vertices[18] := MakeExtendedMeshVertex(Vector(2.5, 2.5, -2.5), Vector(0, 0, -1), Vector(1, 1), 1);
-      Vertices[19] := MakeExtendedMeshVertex(Vector(2.5, -2.5, -2.5), Vector(0, 0, -1), Vector(0, 1), 1);
-
-      Vertices[20] := MakeExtendedMeshVertex(Vector(2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 1), 1);
-      Vertices[21] := MakeExtendedMeshVertex(Vector(2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 1), 1);
-      Vertices[22] := MakeExtendedMeshVertex(Vector(-2.5, 2.5, 2.5), Vector(1, 0, 1), Vector(1, 0), 1);
-      Vertices[23] := MakeExtendedMeshVertex(Vector(-2.5, -2.5, 2.5), Vector(1, 0, 1), Vector(0, 0), 1);
-
-      Triangles[0] := MakeTriangleVertexArray(0, 1, 2);
-      Triangles[1] := MakeTriangleVertexArray(0, 2, 3);
-      Triangles[2] := MakeTriangleVertexArray(4, 5, 6);
-      Triangles[3] := MakeTriangleVertexArray(4, 6, 7);
-      Triangles[4] := MakeTriangleVertexArray(8, 9, 10);
-      Triangles[5] := MakeTriangleVertexArray(8, 10, 11);
-      Triangles[6] := MakeTriangleVertexArray(12, 13, 14);
-      Triangles[7] := MakeTriangleVertexArray(12, 14, 15);
-      Triangles[8] := MakeTriangleVertexArray(16, 17, 18);
-      Triangles[9] := MakeTriangleVertexArray(16, 18, 19);
-      Triangles[10] := MakeTriangleVertexArray(20, 21, 22);
-      Triangles[11] := MakeTriangleVertexArray(20, 22, 23);
-
-      if i = 0 then
-        begin
-        Texture := TTexture.Create;
-        Texture.FromFile('scenery/test.tga');
-        BumpMap := TTexture.Create;
-        BumpMap.FromFile('scenery/testbump.tga');
-        end;
+      FinishedVertexCreation;
+      SmoothNormals;
       end;
 end;
 
@@ -397,8 +353,6 @@ destructor TRObjects.Free;
 var
   i: Integer;
 begin
-  fTest.fMeshes[0].BumpMap.Free;
-  fTest.fMeshes[0].Texture.Free;
   fTest.Free;
   for i := 0 to high(fManagedObjects) do
     fManagedObjects[i].Free;

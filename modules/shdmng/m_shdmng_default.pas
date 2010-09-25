@@ -23,7 +23,7 @@ type
       constructor Create;
       destructor Free;
       procedure CheckModConf;
-      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0): Integer;
+      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer;
       procedure BindShader(Shader: Integer);
       procedure DeleteShader(Shader: Integer);
       procedure Uniformf(VName: String; v0: GLfloat);
@@ -63,7 +63,7 @@ procedure TModuleShaderManagerDefault.CheckModConf;
 begin
 end;
 
-function TModuleShaderManagerDefault.LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0): Integer;
+function TModuleShaderManagerDefault.LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer;
   function glSlang_GetInfoLog(glObject: GLHandle): String;
   var
     blen,slen: GLInt;
@@ -144,8 +144,8 @@ begin
     begin
     glAttachShader(fShdRef[Result].ID, GSObject);
     glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_VERTICES_OUT_EXT, VerticesOut);
-    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_INPUT_TYPE_EXT, GL_TRIANGLES);
-    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_OUTPUT_TYPE_EXT, GL_TRIANGLE_STRIP);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_INPUT_TYPE_EXT, InputType);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_OUTPUT_TYPE_EXT, OutputType);
     end;
 
   glLinkProgram(fShdRef[Result].ID);

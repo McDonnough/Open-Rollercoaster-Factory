@@ -101,7 +101,7 @@ var
   i: Integer;
 begin
   for i := 0 to VertexCount - 1 do
-    VertexNormal(pVertices[i]);
+    VertexNormal(@fVertices[i]);
 end;
 
 procedure TMesh.FaceNormals;
@@ -122,9 +122,9 @@ var
   Normal: TVector3D;
 begin
   Normal := GetFaceNormal(Face);
-  fVertices[Triangles[Face][0]].Normal := Normal;
-  fVertices[Triangles[Face][1]].Normal := Normal;
-  fVertices[Triangles[Face][2]].Normal := Normal;
+  fVertices[fTriangles[Face][0]].Normal := Normal;
+  fVertices[fTriangles[Face][1]].Normal := Normal;
+  fVertices[fTriangles[Face][2]].Normal := Normal;
 end;
 
 procedure TMesh.VertexNormal(Vertex: PMeshVertex);

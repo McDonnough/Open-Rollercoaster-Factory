@@ -54,6 +54,7 @@ type
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
       procedure Render(Event: String; Data, Result: Pointer);
       procedure RenderAutoplants(Event: String; Data, Result: Pointer);
+      procedure Advance;
       procedure RecreateWaterVBO;
       procedure RecreateBorderVBO;
       procedure CheckWaterLayerVisibility;
@@ -160,6 +161,11 @@ end;
 procedure TRTerrain.ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
 begin
   fTerrainEditorIsOpen := not fTerrainEditorIsOpen;
+end;
+
+procedure TRTerrain.Advance;
+begin
+  fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00002, 0.00010) * FPSDisplay.MS;
 end;
 
 procedure TRTerrain.SetHeightLine(Event: String; Data, Result: Pointer);
@@ -291,7 +297,7 @@ var
             exit;
           ModuleManager.ModRenderer.MinRenderHeight := Min(ModuleManager.ModRenderer.MinRenderHeight, fMinHeight[X, Y] - 8);
           fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
-          if VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000 then
+          if ((VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000) and (ModuleManager.ModRenderer.StaticLODBias + ModuleManager.ModRenderer.DynamicLODBias <= 0)) or (ModuleManager.ModRenderer.StaticLODBias + ModuleManager.ModRenderer.DynamicLODBias < 0) then
             begin
             fBoundShader.UniformI('LOD', 1);
             fGoodVBO.Bind;
@@ -501,7 +507,7 @@ var
   Position, fTmp: TVector2D;
 begin
   // Render autoplants
-  if fInterface.Options.Items['terrain:autoplants'] <> 'off' then
+  if (ModuleManager.ModRenderer.StaticLODBias + ModuleManager.ModRenderer.DynamicLODBias <= 0) and (fInterface.Options.Items['terrain:autoplants'] <> 'off') then
     begin
     fHeightMap.Bind(1);
     glDisable(GL_CULL_FACE);
@@ -616,18 +622,26 @@ begin
   fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
   fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
   if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
+    begin
     if (Park.pTerrain.MarkMode = 1) then
       fBoundShader.UniformF('HeightLineToHighlight', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
     else
       fBoundShader.UniformF('HeightLineToHighlight', fForcedHeightLine);
 
-  if fBoundShader <> fWaterShaderTransformDepth then
-    fWaterBumpmapOffset := fWaterBumpmapOffset - Vector(0.00002, 0.00010) * FPSDisplay.MS;
+    if fInterface.Options.Items['water:reflection'] = 'off' then
+      fBoundShader.UniformI('UseReflection', 0)
+    else
+      fBoundShader.UniformI('UseReflection', 1);
+    if fInterface.Options.Items['water:refraction'] = 'off' then
+      fBoundShader.UniformI('UseRefraction', 0)
+    else
+      fBoundShader.UniformI('UseRefraction', 1);
+    end;
 
   for k := 0 to high(fWaterLayerFBOs) do
     begin
-    if fWaterLayerFBOs[k].Query.Result = 0 then
-      continue;
+//     if fWaterLayerFBOs[k].Query.Result = 0 then
+//       continue;
     fWaterLayerFBOs[k].ReflectionFBO.Textures[0].Bind(1);
     fWaterLayerFBOs[k].RefractionFBO.Textures[0].Bind(2);
     fWaterBumpmap.Bind(3);

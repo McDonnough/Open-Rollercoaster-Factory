@@ -65,6 +65,7 @@ type
       property VertexCount: Integer read getVCount;
       property TriangleCount: Integer read getTCount;
       constructor Create;
+      destructor Free;
     end;
 
   AMesh = Array of TMesh;
@@ -183,7 +184,8 @@ begin
   if I = VertexCount then
     SetLength(fVertices, I + 1);
   fVertices[i] := V;
-  EventManager.CallEvent('TMesh.ChangedVertex', Self, @I);
+  if Parent <> nil then
+    EventManager.CallEvent('TMesh.ChangedVertex', Self, @I);
 end;
 
 procedure TMesh.setTriangle(I: Integer; V: TMeshTriangleVertexArray);
@@ -192,7 +194,8 @@ begin
   if I = TriangleCount then
     SetLength(fTriangles, I + 1);
   fTriangles[i] := V;
-  EventManager.CallEvent('TMesh.ChangedTriangle', Self, @I);
+  if Parent <> nil then
+    EventManager.CallEvent('TMesh.ChangedTriangle', Self, @I);
 end;
 
 function TMesh.getVertex(I: Integer): TMeshVertex;
@@ -245,7 +248,11 @@ begin
   Reflective := 0;
 end;
 
-
+destructor TMesh.Free;
+begin
+  SetLength(fVertices, 0);
+  SetLength(fTriangles, 0);
+end;
 
 function MakeRay(A, B: TVector3D): TRay;
 begin

@@ -103,6 +103,7 @@ begin
   fLabel.Width := 64;
   fLabel.Height := 16;
   fLabel.Size := 16;
+  SetTime;
 end;
 
 
@@ -114,12 +115,12 @@ begin
   ModuleManager.ModLoadScreen.SetVisibility(false);
   if New = rsMainMenu then
     begin
-    ModuleManager.ModMainMenu.Setup;
     if Park <> nil then
       begin
       Park.Free;
       Park := nil;
       end;
+    ModuleManager.ModMainMenu.Setup;
     end
   else
     ModuleManager.ModMainMenu.Hide;
@@ -141,6 +142,7 @@ procedure MainLoop; cdecl;
 var
   ResX, ResY: Integer;
 begin
+  FPSDisplay.Calculate;
   FPSDisplay.SetTime;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModInputHandler.UpdateData;
@@ -188,8 +190,6 @@ begin
     ModuleManager.ModGLContext.EndMainLoop;
     ChangeRenderState(rsMainMenu);
     end;
-
-  FPSDisplay.Calculate;
 end;
 
 end.

@@ -420,11 +420,12 @@ begin
       tmpVertex[1].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 1]]);
       tmpVertex[2].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 2]]);
 
-      tmpVertex[0].BumpTexCoordFactor := 1;
-      tmpVertex[0].Fix := True;
-
       for l := 0 to 2 do
+        begin
+        tmpVertex[l].BumpTexCoordFactor := 1;
+        tmpVertex[l].Fix := True;
         Indicies[l] := Result[i].VertexCount + 2;
+        end;
       // DO NOT UNCOMMENT: Custom normal calculation, bump mapping factor and fix-property would cause problems
 {      for k := 0 to Result[i].VertexCount - 1 do
         for l := 0 to 2 do

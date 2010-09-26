@@ -46,7 +46,7 @@ begin
     for b := 0 to Samples - 1 do
       begin
       Ray[0] := ModuleManager.ModCamera.ActiveCamera.Position;
-      Ray[1] := Vector(1000 * ((-ResX + 2 * (i + a / Samples)) / ResX), 1000 * ((-ResY + 2 * (j + b / Samples)) / ResX), 1000);
+      Ray[1] := Vector(((-ResX + 2 * (i + a / Samples)) / ResX), ((-ResY + 2 * (j + b / Samples)) / ResX), 1);
       Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.Z, Ray[1], Vector(0, 0, 1));
       Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.X, Ray[1], Vector(1, 0, 0));
       Ray[1] := Rotate(ModuleManager.ModCamera.ActiveCamera.Rotation.Y, Ray[1], Vector(0, 1, 0));
@@ -66,7 +66,13 @@ var
 begin
   for i := SX to SX + 19 do
     for j := SY to SY + 19 do
+      begin
+      if (i mod 2 <> 0) or (j mod 2 <> 0) then continue;
       DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i))^) := GetColorAtPixel(i, j);
+      DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i + 1))^) := DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i))^);
+      DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * (j + 1) + i + 1))^) := DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i))^);
+      DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * (j + 1) + i))^) := DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i))^);
+      end;
 end;
 
 procedure TRendererRaytraceThread.Execute;

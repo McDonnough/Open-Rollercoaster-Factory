@@ -265,12 +265,12 @@ end;
 destructor TPark.Free;
 begin
   EventManager.RemoveCallback(@StartLoading);
+  fParkUI.Free;
   ModuleManager.ModRenderer.Unload;
-  fNormalSelectionEngine.Free;
   fSelectionEngine := nil;
+  fNormalSelectionEngine.Free;
   pSky.Free;
   pTerrain.Free;
-  fParkUI.Free;
 end;
 
 end.

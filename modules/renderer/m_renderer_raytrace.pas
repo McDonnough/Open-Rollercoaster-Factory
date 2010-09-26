@@ -22,7 +22,6 @@ type
       procedure RenderScene;
       procedure CheckModConf;
       constructor Create;
-      destructor Free;
     end;
 
 implementation
@@ -35,8 +34,11 @@ var
   i: Integer;
 begin
   for i := 0 to high(fRenderThreads) do
+    begin
+    fRenderThreads[i].Working := false;
     while fRenderThreads[i].Working do
       sleep(1);
+    end;
 end;
 
 procedure TModuleRendererRaytrace.PostInit;
@@ -143,10 +145,6 @@ begin
 end;
 
 constructor TModuleRendererRaytrace.Create;
-begin
-end;
-
-destructor TModuleRendererRaytrace.Free;
 begin
 end;
 

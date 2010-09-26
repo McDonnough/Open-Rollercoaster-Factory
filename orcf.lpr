@@ -4,7 +4,7 @@ program orcf;
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  SysUtils, Classes, m_varlist, main, u_events, u_ase;
+  SysUtils, Classes, m_varlist, main, u_events;
 
 {$IFDEF WINDOWS}{$R orcf.rc}{$ENDIF}
 

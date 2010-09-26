@@ -55,7 +55,8 @@ begin
   if (i >= 0) and (i <= high(fMeshes)) then
     begin
     EventManager.CallEvent('TBasicObject.DeletedMesh', Self, @I);
-    fMeshes[i].Free;
+// Causes random crashes:
+//    fMeshes[i].Free;
     fMeshes[i] := fMeshes[high(fMeshes)];
     SetLength(fMeshes, length(fMeshes) - 1);
     end;

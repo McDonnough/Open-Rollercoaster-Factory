@@ -7,6 +7,8 @@ uniform sampler2D RefractionMap;
 uniform sampler2D SunShadowMap;
 uniform vec2 TerrainSize;
 uniform float HeightLineToHighlight;
+uniform int UseReflection;
+uniform int UseRefraction;
 
 uniform vec2 ShadowQuadA;
 uniform vec2 ShadowQuadB;
@@ -85,10 +87,17 @@ void main(void) {
   Eye       = normalize(-v.xyz);
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * gl_LightSource[0].position - v).xyz), normalize(gl_NormalMatrix * normal)));
   vec4 Specular = gl_LightSource[0].diffuse * ShadowFactor * pow(max(dot(Reflected, Eye), 0.0), 100.0);
-  float MirrorFactor = 0.2 + 0.6 * dot(normalize(gl_NormalMatrix * normal), normalize(-v.xyz));
-  vec4 RefractColor;
-  RefractColor.a = Vertex.y - texture2D(RefractionMap, RealPosition).a;
-  RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * pow((1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0)), 2.0);
+  float MirrorFactor = 0.0;
+  vec4 RefractColor = vec4(0.0, 0.0, 0.0, 1.0);
+  if (UseRefraction == 1) {
+    RefractColor.a = Vertex.y - texture2D(RefractionMap, RealPosition).a;
+    RefractColor.rgb = texture2D(RefractionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0)).rgb * pow((1.0 - clamp(0.1 * RefractColor.a, 0.0, 1.0)), 2.0);
+  }
+  vec4 ReflectColor = 3.0 * gl_LightSource[0].ambient * gl_LightSource[0].ambient;
+  if (UseReflection == 1) {
+    ReflectColor = texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
+    MirrorFactor = 0.2 + 0.6 * dot(normalize(gl_NormalMatrix * normal), normalize(-v.xyz));
+  }
   AddLight(1);
   AddLight(2);
   AddLight(3);
@@ -96,11 +105,11 @@ void main(void) {
   AddLight(5);
   AddLight(6);
   AddLight(7);
-  gl_FragColor = (1.0 - MirrorFactor) * texture2D(ReflectionMap, RealPosition + reflectionOffset * clamp(RefractColor.a, 0.0, 1.0));
+  gl_FragColor = (1.0 - MirrorFactor) * ReflectColor;
   gl_FragColor += RefractColor * MirrorFactor;
   gl_FragColor *= (0.5 + 0.5 * ShadowFactor);
   gl_FragColor += Specular;
   if (HeightLineToHighlight >= 0)
     gl_FragColor = mix(gl_FragColor, vec4(0.0, 1.0, 1.0, 1.0), 0.5 * min(1.0, 1.0 - min(20.0 * abs(Vertex.y - HeightLineToHighlight), 1.0)));
-  gl_FragColor.a = 4.0 * clamp(Vertex.y - terrainHeight, 0.0, 0.25);
+  gl_FragColor.a = (0.5 + 3.5 * UseRefraction) * max(Vertex.y - terrainHeight, 0.0);
 }

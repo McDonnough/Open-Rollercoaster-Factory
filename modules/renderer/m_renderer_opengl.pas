@@ -30,6 +30,7 @@ type
       RObjects: TRObjects;
       RSky: TRSky;
       MinRenderHeight: Single;
+      DynamicLODBias, StaticLODBias: Integer;
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
       property DistTexture: TTexture read fDistTexture;
@@ -201,6 +202,10 @@ begin
     glDisable(GL_CLIP_PLANE0);
     end;
   fInterface.PopOptions;
+
+  RObjects.RenderReflections;
+
+  fFrustum.Calculate;
 
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   RenderParts(true, false);
@@ -478,6 +483,8 @@ begin
   glDisable(GL_CULL_FACE);
 
   EventManager.CallEvent('TModuleRenderer.PostRender', nil, nil);
+
+  RTerrain.Advance;
 end;
 
 procedure TModuleRendererOpenGL.CheckModConf;
@@ -491,6 +498,7 @@ begin
     SetConfVal('shadows:enabled', 'on');
     SetConfVal('shadows:texsize', '512');
     end;
+  StaticLODBias := 0;
   fInterface.Options.Items['terrain:autoplants'] := GetConfVal('terrain:autoplants');
   fInterface.Options.Items['terrain:hd'] := GetConfVal('terrain:hd');
   fInterface.Options.Items['shadows:enabled'] := GetConfVal('shadows:enabled');
@@ -506,6 +514,7 @@ begin
   fInterface := TRendererOpenGLInterface.Create;
   fFrustum := TFrustum.Create;
   SetConfVal('all:polygonmode', 'fill');
+  DynamicLODBias := 0;
   fDistTexture := TTexture.Create;
   fDistTexture.CreateNew(ResX, ResY, GL_RGBA);
   fDistTexture.SetClamp(GL_CLAMP, GL_CLAMP);

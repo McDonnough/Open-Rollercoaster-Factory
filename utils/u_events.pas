@@ -45,7 +45,6 @@ begin
         except
           ModuleManager.ModLog.AddError('Event ' + Event + ' #' + IntToStr(j) + ' caused an exception');
         end;
-      exit;
       end;
 end;
 
@@ -78,7 +77,6 @@ begin
       begin
       fEvents[i] := fEvents[high(fEvents)];
       setLength(fEvents, length(fEvents) - 1);
-      exit;
       end;
 end;
 
@@ -86,7 +84,9 @@ procedure TEventManager.RemoveCallback(Callback: TEventCallback);
 var
   i, j, k: Integer;
 begin
-  for i := 0 to high(fEvents) do
+  i := 0;
+  while i <= high(fEvents) do
+    begin
     for j := 0 to high(fEvents[i].Callbacks) do
       if j <= high(fEvents[i].Callbacks) then
         if fEvents[i].Callbacks[j] = Callback then
@@ -94,7 +94,15 @@ begin
           for k := j + 1 to high(fEvents[i].Callbacks) do
             fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];
           setLength(fEvents[i].Callbacks, length(fEvents[i].Callbacks) - 1);
+          if length(fEvents[i].Callbacks) = 0 then
+            begin
+            fEvents[i] := fEvents[high(fEvents)];
+            SetLength(fEvents, length(fEvents) - 1);
+            dec(i);
+            end;
           end;
+    inc(i);
+    end;
 end;
 
 procedure TEventManager.RemoveCallback(Event: String; Callback: TEventCallback);
@@ -112,7 +120,6 @@ begin
               fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];
             setLength(fEvents[i].Callbacks, length(fEvents[i].Callbacks) - 1);
             end;
-      exit;
       end;
 end;
 

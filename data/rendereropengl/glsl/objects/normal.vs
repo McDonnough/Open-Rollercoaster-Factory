@@ -21,6 +21,7 @@ vec2 LineIntersection(vec2 p1, vec2 p2, vec2 p3, vec2 p4) {
   return vec2((fac1 * (p3.x - p4.x) - fac2 * (p1.x - p2.x)) / divisor,
               (fac1 * (p3.y - p4.y) - fac2 * (p1.y - p2.y)) / divisor);
 }
+
 vec4 mapPixelToQuad(vec2 P) {
   vec2 result;
   vec2 ABtoP = cross(vec3(0.0, 1.0, 0.0), vec3(ShadowQuadA.x - ShadowQuadB.x, 0.0, ShadowQuadA.y - ShadowQuadB.y)).xz;
@@ -44,7 +45,7 @@ void main(void) {
   Vertex = TransformMatrix * gl_Vertex;
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;
   DVertex = gl_ClipVertex;
-  v = gl_Vertex.xyz - gl_SecondaryColor.rgb;
+  v = Vertex.xyz - gl_SecondaryColor.xyz;
   dist = length(gl_ClipVertex);
   vec4 LightVec = Vertex - gl_LightSource[0].position;
   gl_TexCoord[7] = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);

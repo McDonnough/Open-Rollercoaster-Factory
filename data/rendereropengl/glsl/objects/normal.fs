@@ -2,15 +2,39 @@
 
 uniform sampler2D Tex;
 uniform sampler2D Bump;
+uniform sampler2D Reflections;
 uniform sampler2D SunShadowMap;
 uniform int UseBumpMap;
+uniform int UseReflections;
 uniform int UseTexture;
+uniform float Reflective;
 uniform vec4 MeshColor;
 
 varying vec4 Vertex;
 varying vec4 DVertex;
 varying vec3 Normal;
 varying vec3 v;
+
+vec3 GetReflectionColor(vec3 normal) {
+  normal = reflect(normalize(v), -normal);
+  float mx = max(abs(normal.x), max(abs(normal.y), abs(normal.z)));
+  normal = normal / mx;
+  vec2 texCoord = vec2(0, 0);
+  if (normal.z <= -0.99)
+    texCoord = 0.5 + 0.5 * normal.xy * vec2(0.99, 0.99);
+  if (normal.z >= 0.99)
+    texCoord = 0.5 + 0.5 * normal.xy * vec2(-0.99, 0.99) + vec2(2.0, 0.0);
+  if (normal.x <= -0.99)
+    texCoord = 0.5 + 0.5 * normal.zy * vec2(-0.99, 0.99) + vec2(0.0, 1.0);
+  if (normal.x >= 0.99)
+    texCoord = 0.5 + 0.5 * normal.zy * vec2(0.99, 0.99) + vec2(1.0, 0.0);
+  if (normal.y <= -0.99)
+    texCoord = 0.5 + 0.5 * normal.xz * vec2(0.99, -0.99) + vec2(1.0, 1.0);
+  if (normal.y >= 0.99)
+    texCoord = 0.5 + 0.5 * normal.xz * vec2(0.99, 0.99) + vec2(2.0, 1.0);
+  texCoord /= vec2(3.0, 2.0);
+  return texture2D(Reflections, texCoord).rgb;
+}
 
 void main(void) {
   vec4 Diffuse = vec4(0.0, 0.0, 0.0, 1.0);
@@ -46,8 +70,14 @@ void main(void) {
   color *= MeshColor;
   Diffuse = gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), mix(1.0, dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)), color.a)))));
   Specular = clamp(gl_FrontMaterial.shininess, 0.0, 1.0) * gl_LightSource[0].diffuse * max(vec4(0.0, 0.0, 0.0, 0.0), (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), pow(max(0.0, dot(Reflected, Eye)), gl_FrontMaterial.shininess)))));
-  Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
+  Ambient = gl_LightSource[0].ambient * (0.4 + 0.6 * dot(normal, vec3(0.0, 1.0, 0.0)));
+  vec3 ReflectionColor = Ambient.rgb;
+  if (UseReflections == 1)
+    ReflectionColor = GetReflectionColor(normal);
+  Diffuse *= (1.0 - Reflective);
+  Ambient *= (1.0 - Reflective);
+  color.rgb *= (1.0 - Reflective);
   Diffuse.a = 0.0;
   Ambient.a = 1.0;
-  gl_FragColor = color * (Diffuse + Ambient) + Specular;
+  gl_FragColor = color * (Diffuse + Ambient) + Reflective * vec4(ReflectionColor, 0.0) + Specular;
 }

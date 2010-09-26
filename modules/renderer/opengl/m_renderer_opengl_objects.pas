@@ -3,7 +3,8 @@ unit m_renderer_opengl_objects;
 interface
 
 uses
-  SysUtils, Classes, g_object_base, g_park, m_shdmng_class, m_renderer_opengl_classes, u_geometry, u_arrays, DGLOpenGL, u_vectors, m_texmng_class;
+  SysUtils, Classes, g_object_base, g_park, m_shdmng_class, m_renderer_opengl_classes, u_geometry, u_arrays, DGLOpenGL, u_vectors, m_texmng_class,
+  m_renderer_opengl_frustum;
 
 type
   TManagedMesh = class
@@ -13,9 +14,12 @@ type
       fRadius: Single;
       fChangedVertices, fChangedTriangles: TRow;
       fTriangles: Integer;
+      Reflection: TFBO;
+      fFrameMod: Integer;
       constructor Create;
       procedure CreateVBO;
       procedure UpdateVBO;
+      procedure CreateReflectionFBO;
       destructor Free;
     end;
 
@@ -28,10 +32,13 @@ type
 
   TRObjects = class
     protected
+      b: Integer;
       fBoundShader: TShader;
       fShader, fTransformDepthShader, fSunShadowShader: TShader;
       fManagedObjects: Array of TManagedObject;
       fTest: TBasicObject;
+      fFrames: Integer;
+      fExcludedMesh: TManagedMesh;
     public
       procedure AddObject(Event: String; Data, Result: Pointer);
       procedure DeleteObject(Event: String; Data, Result: Pointer);
@@ -41,6 +48,8 @@ type
       procedure ChangeTriangle(Event: String; Data, Result: Pointer);
       procedure Render(O: TManagedObject; Transparent: Boolean);
       procedure Render(Event: String; Data, Result: Pointer);
+      procedure RenderReflections(O: TManagedMesh);
+      procedure RenderReflections;
       constructor Create;
       destructor Free;
     end;
@@ -57,6 +66,15 @@ begin
   fChangedTriangles := TRow.Create;
   fTriangles := 0;
   fRadius := 0;
+  Reflection := nil;
+end;
+
+procedure TManagedMesh.CreateReflectionFBO;
+begin
+  Reflection := TFBO.Create(384, 576, true);
+  Reflection.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+  Reflection.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fFrameMod := Round(3 * Random);
 end;
 
 procedure TManagedMesh.CreateVBO;
@@ -116,6 +134,8 @@ begin
   fChangedTriangles.Free;
   if fVBO <> nil then
     fVBO.Free;
+  if Reflection <> nil then
+    Reflection.Free;
 end;
 
 destructor TManagedObject.Free;
@@ -205,6 +225,141 @@ begin
           end;
 end;
 
+procedure TRObjects.RenderReflections(O: TManagedMesh);
+begin
+  fExcludedMesh := O;
+  ModuleManager.ModRenderer.DynamicLODBias := 8;
+
+  if O.Reflection = nil then
+    O.CreateReflectionFBO;
+  O.Reflection.Bind;
+  glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
+
+  // FRONT
+  glViewport(0, 0, O.Reflection.Width div 3, O.Reflection.Height div 2);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  ModuleManager.ModRenderer.Frustum.Calculate;
+
+  ModuleManager.ModRenderer.RenderParts(true, false);
+  ModuleManager.ModRenderer.RTerrain.RenderWaterSurfaces;
+  ModuleManager.ModRenderer.RenderParts(false, true);
+
+  // BACK
+  glViewport(2 * O.Reflection.Width div 3, 0, O.Reflection.Width div 3, O.Reflection.Height div 2);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  glRotatef(180, 0, 1, 0);
+  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  ModuleManager.ModRenderer.Frustum.Calculate;
+
+  ModuleManager.ModRenderer.RenderParts(true, false);
+  ModuleManager.ModRenderer.RTerrain.RenderWaterSurfaces;
+  ModuleManager.ModRenderer.RenderParts(false, true);
+
+  // LEFT
+  glViewport(0, O.Reflection.Height div 2, O.Reflection.Width div 3, O.Reflection.Height div 2);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  glRotatef(270, 0, 1, 0);
+  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  ModuleManager.ModRenderer.Frustum.Calculate;
+
+  ModuleManager.ModRenderer.RenderParts(true, false);
+  ModuleManager.ModRenderer.RTerrain.RenderWaterSurfaces;
+  ModuleManager.ModRenderer.RenderParts(false, true);
+
+  // RIGHT
+  glViewport(O.Reflection.Width div 3, 0, O.Reflection.Width div 3, O.Reflection.Height div 2);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  glRotatef(90, 0, 1, 0);
+  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  ModuleManager.ModRenderer.Frustum.Calculate;
+
+  ModuleManager.ModRenderer.RenderParts(true, false);
+  ModuleManager.ModRenderer.RTerrain.RenderWaterSurfaces;
+  ModuleManager.ModRenderer.RenderParts(false, true);
+
+  // DOWN
+  glViewport(O.Reflection.Width div 3, O.Reflection.Height div 2, O.Reflection.Width div 3, O.Reflection.Height div 2);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  glRotatef(90, 1, 0, 0);
+  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  ModuleManager.ModRenderer.Frustum.Calculate;
+
+  ModuleManager.ModRenderer.RenderParts(true, false);
+  ModuleManager.ModRenderer.RTerrain.RenderWaterSurfaces;
+  ModuleManager.ModRenderer.RenderParts(false, true);
+
+  // UP
+  glViewport(2 * O.Reflection.Width div 3, O.Reflection.Height div 2, O.Reflection.Width div 3, O.Reflection.Height div 2);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+  glRotatef(270, 1, 0, 0);
+  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  ModuleManager.ModRenderer.Frustum.Calculate;
+
+  ModuleManager.ModRenderer.RenderParts(true, false);
+  ModuleManager.ModRenderer.RTerrain.RenderWaterSurfaces;
+  ModuleManager.ModRenderer.RenderParts(false, true);
+
+  O.Reflection.Unbind;
+
+  ModuleManager.ModRenderer.DynamicLODBias := 0;
+end;
+
+procedure TRObjects.RenderReflections;
+var
+  i, j: Integer;
+  x: TFrustum;
+  tmpMatrix: TMatrix4D;
+  A: TVector4D;
+  D: Single;
+  FrameMod: Integer;
+begin
+  inc(fFrames);
+  FrameMod := fFrames mod 4;
+  x := TFrustum.Create;
+  x.Calculate;
+  fInterface.PushOptions;
+  fInterface.Options.Items['water:reflection'] := 'off';
+  fInterface.Options.Items['water:refraction'] := 'off';
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix;
+  glLoadIdentity;
+  gluPerspective(90, 1, 0.1, 10000);
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix;
+  for i := 0 to high(fManagedObjects) do
+    for j := 0 to high(fManagedObjects[i].fManagedMeshes) do
+      if FrameMod = fManagedObjects[i].fManagedMeshes[j].fFrameMod then
+        begin
+        tmpMatrix := TranslateMatrix(fManagedObjects[i].fManagedMeshes[j].fMesh.StaticOffset) * Matrix4D(fManagedObjects[i].fManagedMeshes[j].fMesh.StaticRotationMatrix);
+        tmpMatrix := tmpMatrix * TranslateMatrix(fManagedObjects[i].fManagedMeshes[j].fMesh.Offset) * Matrix4D(fManagedObjects[i].fManagedMeshes[j].fMesh.RotationMatrix);
+        A := Vector(0, 0, 0, 1) * tmpMatrix;
+        D := VecLengthNoRoot(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(A));
+        if (D < fManagedObjects[i].fManagedMeshes[j].fMesh.MaxDistance * fManagedObjects[i].fManagedMeshes[j].fMesh.MaxDistance) and (D >= fManagedObjects[i].fManagedMeshes[j].fMesh.MinDistance * fManagedObjects[i].fManagedMeshes[j].fMesh.MinDistance) and (X.IsSphereWithin(A.X, A.Y, A.Z, fManagedObjects[i].fManagedMeshes[j].fRadius)) then
+          RenderReflections(fManagedObjects[i].fManagedMeshes[j]);
+        end;
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix;
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix;
+  glMatrixMode(GL_MODELVIEW);
+  fInterface.PopOptions;
+  fExcludedMesh := nil;
+  x.Free;
+end;
+
 procedure TRObjects.Render(O: TManagedObject; Transparent: Boolean);
 var
   i: Integer;
@@ -231,8 +386,16 @@ begin
   fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
   fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
   fBoundShader.UniformF('ShadowQuadD', ModuleManager.ModRenderer.ShadowQuad[3].X, ModuleManager.ModRenderer.ShadowQuad[3].Z);
+  if O.fObject = fTest then
+    begin
+    inc(b);
+    O.fManagedMeshes[2].fMesh.Offset := Vector(3 - 3 * Sin(DegToRad(b / 20)), 3 + 3 * Sin(DegToRad(b / 20)), 3 + 3 * Cos(DegToRad(b / 20)));
+    O.fManagedMeshes[0].fMesh.RotationMatrix := RotateMatrix(b / 50, Normalize(Vector(0, 1, 0)));
+    end;
   for i := 0 to high(O.fManagedMeshes) do
     begin
+    if O.fManagedMeshes[i] = fExcludedMesh then
+      continue;
     IsTransparent := false;
     if O.fManagedMeshes[i].fMesh.Texture <> nil then
       begin
@@ -266,6 +429,21 @@ begin
         fBoundShader.UniformI('UseBumpMap', 0);
         fBoundShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
         end;
+      if O.fManagedMeshes[i].fMesh.Reflective <> 0 then
+        begin
+        if O.fManagedMeshes[i].Reflection = nil then
+          O.fManagedMeshes[i].CreateReflectionFBO;
+        O.fManagedMeshes[i].Reflection.Textures[0].Bind(2);
+        fBoundShader.UniformI('UseReflections', 1);
+        fBoundShader.UniformF('Reflective', O.fManagedMeshes[i].fMesh.Reflective);
+        end
+      else
+        begin
+        ModuleManager.ModTexMng.ActivateTexUnit(2);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        fBoundShader.UniformI('UseReflections', 0);
+        fBoundShader.UniformF('Reflective', 0);
+        end;
       if O.fManagedMeshes[i].fMesh.Texture <> nil then
         begin
         O.fManagedMeshes[i].fMesh.Texture.Bind(0);
@@ -291,6 +469,7 @@ begin
       O.fManagedMeshes[i].fVBO.UnBind;
       end;
     end;
+
 end;
 
 procedure TRObjects.Render(Event: String; Data, Result: Pointer);
@@ -317,18 +496,19 @@ var
 begin
   writeln('Initializing object renderer');
   try
+    fExcludedMesh := nil;
+    fFrames := 0;
     fBoundShader := nil;
     fShader := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs');
     fShader.UniformI('Tex', 0);
     fShader.UniformI('Bump', 1);
+    fShader.UniformI('Reflections', 2);
     fShader.UniformI('SunShadowMap', 7);
     fTransformDepthShader := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs');
     fTransformDepthShader.UniformI('Tex', 0);
-    fTransformDepthShader.UniformI('Bump', 1);
     fSunShadowShader := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
     fSunShadowShader.UniformI('Tex', 0);
     fSunShadowShader.UniformI('ModelTexture', 0);
-    fSunShadowShader.UniformI('Bump', 1);
     EventManager.AddCallback('TBasicObject.Created', @AddObject);
     EventManager.AddCallback('TBasicObject.Deleted', @DeleteObject);
     EventManager.AddCallback('TBasicObject.AddedMesh', @AddMesh);
@@ -340,12 +520,31 @@ begin
   end;
   fTest := TBasicObject.Create;
   fTest.Move(Vector(160, 70, 160));
-  Meshes := ASEFileToMeshArray(LoadASEFile('/home/philip/untitled.ase'));
+  Meshes := ASEFileToMeshArray(LoadASEFile('scenery/untitled.ase'));
   for i := 0 to high(Meshes) do
     with fTest.AddMesh(Meshes[i]) do
       begin
       FinishedVertexCreation;
       SmoothNormals;
+      if i = 2 then
+        begin
+        Reflective := 0.8;
+        Offset := Vector(0, 5, 5);
+//         BumpMap := TTexture.Create;
+//         BumpMap.FromFile('scenery/testbump.tga');
+        end;
+      if i = 1 then
+        begin
+        Reflective := 0.2;
+        Offset := Vector(0, 0, 0);
+        BumpMap := TTexture.Create;
+        BumpMap.FromFile('scenery/testbump.tga');
+        end;
+      if i = 0 then
+        begin
+        Reflective := 0.2;
+        Offset := Vector(0, 7, 5);
+        end;
       end;
 end;
 

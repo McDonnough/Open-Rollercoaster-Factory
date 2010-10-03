@@ -18,6 +18,11 @@ type
     X, Y, Z, W: Single;
     end;
 
+  TSphere = record
+    Position: TVector3D;
+    Radius: Single;
+    end;
+
   PVector2D = ^TVector2D;
   PVector3D = ^TVector3D;
   PVector4D = ^TVector4D;
@@ -145,6 +150,11 @@ procedure MakeOGLCompatibleMatrix(A: TMatrix4D; B: Pointer);
 function LineIntersection(p1, p2, p3, p4: TVector2D): TVector2D;
 
 function PointInQuad(Q: TQuad; P: TVector2D): Boolean;
+
+
+function Sphere(Pos: TVector3D; Rad: Single): TSphere;
+
+function SphereSphereIntersection(A, B: TSphere): Boolean;
 
 implementation
 
@@ -710,6 +720,17 @@ begin
   Result[1] := B;
   Result[2] := C;
   Result[3] := D;
+end;
+
+function Sphere(Pos: TVector3D; Rad: Single): TSphere;
+begin
+  Result.Position := Pos;
+  Result.Radius := Rad;
+end;
+
+function SphereSphereIntersection(A, B: TSphere): Boolean;
+begin
+  Result := VecLengthNoRoot(A.Position - B.Position) < (A.Radius + B.Radius) * (A.Radius + B.Radius);
 end;
 
 end.

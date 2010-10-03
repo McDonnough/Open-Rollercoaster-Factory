@@ -34,7 +34,7 @@ type
     protected
       b: Integer;
       fBoundShader: TShader;
-      fShader, fTransformDepthShader, fSunShadowShader: TShader;
+      fShader, fShadowShader, fTransformDepthShader, fSunShadowShader: TShader;
       fManagedObjects: Array of TManagedObject;
       fTest: TBasicObject;
       fFrames: Integer;
@@ -226,7 +226,11 @@ begin
 end;
 
 procedure TRObjects.RenderReflections(O: TManagedMesh);
+var
+  Pos: TVector4D;
 begin
+  Pos := Vector(0, 0, 0, 1) * O.fMesh.TransformMatrix;
+
   fExcludedMesh := O;
   ModuleManager.ModRenderer.DynamicLODBias := 8;
 
@@ -240,7 +244,7 @@ begin
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
-  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  glTranslatef(-Pos.X, -Pos.Y, -Pos.Z);
   ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RenderParts(true, false);
@@ -253,7 +257,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
   glRotatef(180, 0, 1, 0);
-  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  glTranslatef(-Pos.X, -Pos.Y, -Pos.Z);
   ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RenderParts(true, false);
@@ -266,7 +270,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
   glRotatef(270, 0, 1, 0);
-  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  glTranslatef(-Pos.X, -Pos.Y, -Pos.Z);
   ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RenderParts(true, false);
@@ -279,7 +283,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
   glRotatef(90, 0, 1, 0);
-  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  glTranslatef(-Pos.X, -Pos.Y, -Pos.Z);
   ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RenderParts(true, false);
@@ -292,7 +296,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
   glRotatef(90, 1, 0, 0);
-  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  glTranslatef(-Pos.X, -Pos.Y, -Pos.Z);
   ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RenderParts(true, false);
@@ -305,7 +309,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
   glRotatef(270, 1, 0, 0);
-  glTranslatef(-O.fMesh.StaticOffset.X - O.fMesh.Offset.X, -O.fMesh.StaticOffset.Y - O.fMesh.Offset.Y, -O.fMesh.StaticOffset.Z - O.fMesh.Offset.Z);
+  glTranslatef(-Pos.X, -Pos.Y, -Pos.Z);
   ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RenderParts(true, false);
@@ -374,6 +378,8 @@ begin
   fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fTransformDepthShader
+  else if fInterface.Options.Items['shader:mode'] = 'shadow:shadow' then
+    fBoundShader := fShadowShader
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
     fBoundShader := fSunShadowShader
   else
@@ -389,8 +395,10 @@ begin
   if O.fObject = fTest then
     begin
     inc(b);
-    O.fManagedMeshes[2].fMesh.Offset := Vector(3 - 3 * Sin(DegToRad(b / 20)), 3 + 3 * Sin(DegToRad(b / 20)), 3 + 3 * Cos(DegToRad(b / 20)));
-    O.fManagedMeshes[0].fMesh.RotationMatrix := RotateMatrix(b / 50, Normalize(Vector(0, 1, 0)));
+    O.fManagedMeshes[3].fMesh.Offset := Vector(3 - 3 * Sin(DegToRad(b / 20)), 3 + 3 * Sin(DegToRad(b / 20)), 3 + 3 * Cos(DegToRad(b / 20)));
+    O.fManagedMeshes[0].fMesh.Offset := Vector(5 - 3 * Sin(DegToRad(b / 25)), 3 + 3 * Sin(DegToRad(b / 25)), 1 + 3 * Cos(DegToRad(b / 25)));
+    O.fManagedMeshes[1].fMesh.RotationMatrix := RotateMatrix(b / 40, Normalize(Vector(0, 1, 0)));
+    O.fManagedMeshes[2].fMesh.RotationMatrix := RotateMatrix(b / 50, Normalize(Vector(0.422618, -0.9659258, -0.258819)));
     end;
   for i := 0 to high(O.fManagedMeshes) do
     begin
@@ -503,11 +511,15 @@ begin
     fShader.UniformI('Tex', 0);
     fShader.UniformI('Bump', 1);
     fShader.UniformI('Reflections', 2);
+    fShader.UniformI('ShadowMap1', 4);
+    fShader.UniformI('ShadowMap2', 5);
+    fShader.UniformI('ShadowMap3', 6);
     fShader.UniformI('SunShadowMap', 7);
+    fShadowShader := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/shadows/shdGen.fs');
+    fShadowShader.UniformI('ModelTexture', 0);
     fTransformDepthShader := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs');
     fTransformDepthShader.UniformI('Tex', 0);
     fSunShadowShader := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
-    fSunShadowShader.UniformI('Tex', 0);
     fSunShadowShader.UniformI('ModelTexture', 0);
     EventManager.AddCallback('TBasicObject.Created', @AddObject);
     EventManager.AddCallback('TBasicObject.Deleted', @DeleteObject);
@@ -526,24 +538,29 @@ begin
       begin
       FinishedVertexCreation;
       SmoothNormals;
-      if i = 2 then
+      if i = 3 then
         begin
         Reflective := 0.8;
         Offset := Vector(0, 5, 5);
 //         BumpMap := TTexture.Create;
 //         BumpMap.FromFile('scenery/testbump.tga');
         end;
-      if i = 1 then
+      if i = 2 then
         begin
         Reflective := 0.2;
         Offset := Vector(0, 0, 0);
         BumpMap := TTexture.Create;
         BumpMap.FromFile('scenery/testbump.tga');
         end;
-      if i = 0 then
+      if i = 1 then
         begin
         Reflective := 0.2;
         Offset := Vector(0, 7, 5);
+        end;
+      if i = 0 then
+        begin
+        Reflective := 0.8;
+        Offset := Vector(0, 5, 8);
         end;
       end;
 end;
@@ -562,6 +579,7 @@ begin
   EventManager.RemoveCallback(@ChangeVertex);
   EventManager.RemoveCallback(@ChangeTriangle);
   fShader.Free;
+  fShadowShader.Free;
   fTransformDepthShader.Free;
   fSunShadowShader.Free;
 end;

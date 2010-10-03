@@ -49,7 +49,7 @@ vec2 mapPixelToQuad(vec2 P) {
 void AddLight(int ID) {
   vec3 DistVector = gl_LightSource[ID].position.xyz - Vertex.xyz;
   float lnrDistVector = max(0.5, DistVector.x * DistVector.x + DistVector.y * DistVector.y + DistVector.z * DistVector.z);
-  vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * gl_LightSource[ID].position - v).xyz), normalize(gl_NormalMatrix * normal)));
+  vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * vec4(gl_LightSource[ID].position.xyz, 1.0) - v).xyz), normalize(gl_NormalMatrix * normal)));
   Specular += gl_LightSource[ID].diffuse * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector * pow(max(dot(Reflected, Eye), 0.0), 100.0);
 }
 

@@ -21,12 +21,13 @@ type
       fDistTexture: TTexture;
       fSunShadowOpenAngle: Single;
     public
-      fShadowDelay: Single;
       ShadowQuad: Array[0..3] of TVector3D;
       VecToFront, OS, OC: TVector3D;
       CR, CG, CB: Boolean;
       RCamera: TRCamera;
       RTerrain: TRTerrain;
+      MaxRenderDistance: Single;
+      DistanceMeasuringPoint: TVector3D;
       RObjects: TRObjects;
       RSky: TRSky;
       MinRenderHeight: Single;
@@ -48,9 +49,6 @@ type
       constructor Create;
       destructor Free;
     end;
-
-const
-  SHADOW_UPDATE_TIME = 1;
 
 implementation
 
@@ -132,8 +130,8 @@ begin
   fInterface.PushOptions;
   glPushMatrix;
     fInterface.Options.Items['terrain:autoplants'] := 'off';
-    fInterface.Options.Items['shader:mode'] := 'transform:depth';
     fInterface.Options.Items['sky:rendering'] := 'off';
+    fInterface.Options.Items['shader:mode'] := 'transform:depth';
 
     RTerrain.RenderWaterSurfaces;
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -203,6 +201,8 @@ begin
     end;
   fInterface.PopOptions;
 
+  if RObjects = nil then
+    writeln('A');
   RObjects.RenderReflections;
 
   fFrustum.Calculate;
@@ -421,16 +421,25 @@ begin
   CB := true;
 
   fInterface.Options.Items['all:renderpass'] := '0';
-  fShadowDelay := fShadowDelay + FPSDisplay.MS;
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
 
   // Preparation
   RSky.Advance;
   RSky.CameraLight.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X;
-  RSky.CameraLight.Position.Y := ModuleManager.ModCamera.ActiveCamera.Position.Y + 5;
+  RSky.CameraLight.Position.Y := ModuleManager.ModCamera.ActiveCamera.Position.Y + 2;
   RSky.CameraLight.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
-  RSky.CameraLight.Position.W := 10;
+  RSky.CameraLight.Position.W := 2;
   RSky.CameraLight.Color := Vector(1, 1, 1, 1);
-//   RSky.CameraLight.Bind(1);
+  RSky.CameraLight.Bind(1);
+
+  RSky.CameraLight2.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X + 5;
+  RSky.CameraLight2.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z + 5;
+  RSky.CameraLight2.Position.Y := Park.pTerrain.HeightMap[RSky.CameraLight2.Position.X, RSky.CameraLight2.Position.Z] + 2;
+  RSky.CameraLight2.Position.W := 2;
+  RSky.CameraLight2.Color := Vector(1, 1, 1, 1);
+  RSky.CameraLight2.Bind(2);
 
   // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';
@@ -441,9 +450,21 @@ begin
 
   glDisable(GL_BLEND);
 
-  if (fShadowDelay >= SHADOW_UPDATE_TIME) and (fInterface.Options.Items['shadows:enabled'] = 'on') then
+  if (fInterface.Options.Items['shadows:enabled'] = 'on') then
+    begin
+    DistanceMeasuringPoint := OC;
+    MaxRenderDistance := 10000;
     RenderShadows;
-  fShadowDelay := SHADOW_UPDATE_TIME * fpart(fShadowDelay / SHADOW_UPDATE_TIME);
+    fLightManager.RenderShadows;
+    MaxRenderDistance := 10000;
+    DistanceMeasuringPoint := OC;
+    end;
+  RSky.CameraLight.Bind(1);
+  RSky.CameraLight2.Bind(2);
+  RSky.CameraLight.ShadowMap.Textures[0].Bind(4);
+  RSky.CameraLight2.ShadowMap.Textures[0].Bind(5);
+  glActiveTexture(GL_TEXTURE0);
+
   MinRenderHeight := OC.Y - 8;
   glSecondaryColor3f(OC.X, OC.Y, OC.Z);
 

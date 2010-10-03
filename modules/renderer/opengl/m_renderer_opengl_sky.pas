@@ -9,11 +9,12 @@ type
   TRSky = class
     protected
       fSun: TSun;
-      fCameraLight: TLight;
+      fCameraLight, fCameraLight2: TLight;
       fShader: TShader;
     public
       property Sun: TSun read fSun;
       property CameraLight: TLight read fCameraLight;
+      property CameraLight2: TLight read fCameraLight2;
       procedure Render(Event: String; Data, Result: Pointer);
       procedure Advance;
       constructor Create;
@@ -95,13 +96,17 @@ begin
   fSun := TSun.Create;
   fCameraLight := TLight.Create;
   EventManager.CallEvent('TLightManager.AddLight', fCameraLight, nil);
+  fCameraLight2 := TLight.Create;
+  EventManager.CallEvent('TLightManager.AddLight', fCameraLight2, nil);
   EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 
 destructor TRSky.Free;
 begin
+  EventManager.CallEvent('TLightManager.RemoveLight', fCameraLight2, nil);
   EventManager.CallEvent('TLightManager.RemoveLight', fCameraLight, nil);
   fCameraLight.Free;
+  fCameraLight2.Free;
   EventManager.RemoveCallback(@Render);
   fSun.Free;
   fShader.Free;

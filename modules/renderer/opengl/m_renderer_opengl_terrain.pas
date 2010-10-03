@@ -30,7 +30,7 @@ type
       fAPVBOs: Array[0..7] of TVBO;
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
-      fShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
+      fShader, fShadowShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
       fWaterShader, fWaterShaderTransformDepth, fWaterShaderTransformSunShadow: TShader;
       fWaterBumpmap: TTexture;
       fWaterBumpmapOffset: TVector2D;
@@ -283,17 +283,20 @@ end;
 procedure TRTerrain.Render(Event: String; Data, Result: Pointer);
 var
   fBoundShader: TShader;
+  CurrWaterLayer: Integer;
+  WaterModeRefraction: Boolean;
+  fBelow, fAbove: Single;
 
   procedure RenderBlock(X, Y: Integer; Check: Boolean);
   begin
     try
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 128 - 1) and (Y <= Park.pTerrain.SizeY div 128 - 1) then
-        if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y, fBoundingSphereRadius[X, Y])) then
+        if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y, fBoundingSphereRadius[X, Y])) and (SphereSphereIntersection(Sphere(Vector(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y), fBoundingSphereRadius[X, Y]), Sphere(ModuleManager.ModRenderer.DistanceMeasuringPoint, ModuleManager.ModRenderer.MaxRenderDistance))) then
           begin
-          if fInterface.Options.Items['water:mode'] = 'refraction' then
-            if not fWaterLayerFBOs[StrToIntWD(fInterface.Options.Items['water:currlayer'], 0)].Blocks[X, Y] then
+          if WaterModeRefraction then
+            if not fWaterLayerFBOs[CurrWaterLayer].Blocks[X, Y] then
               exit;
-          if (fHeightRanges[X, Y, 0] > StrToFloatWD(fInterface.Options.Items['all:below'], 256)) or (fHeightRanges[X, Y, 1] < StrToFloatWD(fInterface.Options.Items['all:above'], 0)) then
+          if (fHeightRanges[X, Y, 0] > fBelow) or (fHeightRanges[X, Y, 1] < fAbove) then
             exit;
           ModuleManager.ModRenderer.MinRenderHeight := Min(ModuleManager.ModRenderer.MinRenderHeight, fMinHeight[X, Y] - 8);
           fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
@@ -320,6 +323,10 @@ var
   i, j, k: integer;
   Blocks: Array of Array[0..2] of Integer;
 begin
+  WaterModeRefraction := fInterface.Options.Items['water:mode'] = 'refraction';
+  CurrWaterLayer := StrToIntWD(fInterface.Options.Items['water:currlayer'], 0);
+  fBelow := StrToFloatWD(fInterface.Options.Items['all:below'], 256);
+  fAbove := StrToFloatWD(fInterface.Options.Items['all:above'], 0);
   if not fWorking then
     for i := 0 to high(fWaterLayerFBOs) do
       if i > high(fWaterLayerFBOs) then
@@ -339,6 +346,8 @@ begin
   fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fShaderTransformDepth
+  else if fInterface.Options.Items['shader:mode'] = 'shadow:shadow' then
+    fBoundShader := fShadowShader
   else if fInterface.Options.Items['shader:mode'] = 'sunshadow:sunshadow' then
     fBoundShader := fShaderTransformSunShadow
   else
@@ -411,7 +420,7 @@ begin
     fFineVBO.Render;
     fFineVBO.Unbind;
     end;
-  if fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow' then
+  if (fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow') and (fInterface.Options.Items['shader:mode'] <> 'shadow:shadow') then
     begin
     fBoundShader.UniformI('LOD', 3);
     fBoundShader.UniformF('VOffset', 0, 0);
@@ -445,10 +454,10 @@ begin
     for i := 0 to high(fMarks) do
       begin
       fMarks[i].Move(Vector(Park.pTerrain.Marks.Value[0, i], Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], Park.pTerrain.Marks.Value[1, i]));
-{      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
-      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);}
+      glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);
       end;
     if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) then
       if Park.pTerrain.MarkMode = 0 then
@@ -752,6 +761,7 @@ begin
     Sync;
     RecreateWaterVBO;
     fShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
+    fShadowShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformDepth.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fShaderTransformSunShadow.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     fWaterShader.UniformF('TerrainSize', Park.pTerrain.SizeX, Park.pTerrain.SizeY);
@@ -880,7 +890,13 @@ begin
     fShader.UniformI('TerrainTexture', 0);
     fShader.UniformI('HeightMap', 1);
     fShader.UniformI('SunShadowMap', 7);
+    fShader.UniformI('ShadowMap1', 4);
+    fShader.UniformI('ShadowMap2', 5);
+    fShader.UniformI('ShadowMap3', 6);
     fShader.UniformF('maxBumpDistance', fInterface.Option('terrain:bumpdist', 50));
+    fShadowShader := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/terrain/terrainShdGen.fs');
+    fShadowShader.UniformI('HeightMap', 1);
+    fShadowShader.UniformI('LOD', 1);
     fWaterShader := TShader.Create('rendereropengl/glsl/terrain/water.vs', 'rendereropengl/glsl/terrain/water.fs');
     fWaterShader.UniformI('HeightMap', 0);
     fWaterShader.UniformI('ReflectionMap', 1);
@@ -997,6 +1013,7 @@ begin
   fFineVBO.Free;
   fGoodVBO.Free;
   fRawVBO.Free;
+  fShadowShader.Free;
   fShader.Free;
   fShaderTransformDepth.Free;
   fShaderTransformSunShadow.Free;

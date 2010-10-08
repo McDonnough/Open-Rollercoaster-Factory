@@ -35,6 +35,7 @@ type
       property Frustum: TFrustum read fFrustum;
       property RenderInterface: TRendererOpenGLInterface read fInterface;
       property DistTexture: TTexture read fDistTexture;
+      property LightManager: TLightManager read fLightManager;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -201,8 +202,6 @@ begin
     end;
   fInterface.PopOptions;
 
-  if RObjects = nil then
-    writeln('A');
   RObjects.RenderReflections;
 
   fFrustum.Calculate;
@@ -363,7 +362,8 @@ begin
   fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
-  RenderParts(true, true);
+  if (Park.pSky.Time >= 86400 / 4) and (Park.pSky.Time <= 86400 / 4 * 3) then
+    RenderParts(true, true);
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
   fInterface.PopOptions;
 end;
@@ -434,8 +434,8 @@ begin
   RSky.CameraLight.Color := Vector(1, 1, 1, 1);
   RSky.CameraLight.Bind(1);
 
-  RSky.CameraLight2.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X + 5;
-  RSky.CameraLight2.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z + 5;
+  RSky.CameraLight2.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X;
+  RSky.CameraLight2.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
   RSky.CameraLight2.Position.Y := Park.pTerrain.HeightMap[RSky.CameraLight2.Position.X, RSky.CameraLight2.Position.Z] + 2;
   RSky.CameraLight2.Position.W := 2;
   RSky.CameraLight2.Color := Vector(1, 1, 1, 1);

@@ -95,16 +95,12 @@ begin
   fShader := TShader.Create('rendereropengl/glsl/sky/sky.vs', 'rendereropengl/glsl/sky/sky.fs');
   fSun := TSun.Create;
   fCameraLight := TLight.Create;
-  EventManager.CallEvent('TLightManager.AddLight', fCameraLight, nil);
   fCameraLight2 := TLight.Create;
-  EventManager.CallEvent('TLightManager.AddLight', fCameraLight2, nil);
   EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 
 destructor TRSky.Free;
 begin
-  EventManager.CallEvent('TLightManager.RemoveLight', fCameraLight2, nil);
-  EventManager.CallEvent('TLightManager.RemoveLight', fCameraLight, nil);
   fCameraLight.Free;
   fCameraLight2.Free;
   EventManager.RemoveCallback(@Render);

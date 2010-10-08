@@ -3,18 +3,21 @@ unit m_renderer_opengl_lights;
 interface
 
 uses
-  SysUtils, Classes, DGLOpenGL, m_renderer_opengl_interface, u_vectors, u_math, m_renderer_opengl_classes, m_renderer_opengl_frustum;
+  SysUtils, Classes, DGLOpenGL, m_renderer_opengl_interface, u_vectors, u_math, m_renderer_opengl_classes, m_renderer_opengl_frustum, m_texmng_class;
 
 type
   TLight = class
     protected
       fShadowMap: TFBO;
+      fDynamic: Boolean;
+      fOldPosition: TVector4D;
       fInternalID: Integer;
     private
-
+      fShadowRefreshOffset: Integer;
     public
       Position: TVector4D;
       Color: TVector4D;
+      property Dynamic: Boolean read fDynamic;
       property ShadowMap: TFBO read fShadowMap;
       function Strength(Distance: Single): Single;
       function IsVisible(A: TFrustum): Boolean;
@@ -29,6 +32,8 @@ type
   TLightManager = class(TThread)
     protected
       fRegisteredLights: Array of TLight;
+      fTmpShadowMap: TTexture;
+      fFrames: Integer;
       procedure AddLight(Event: String; Data, Result: Pointer);
       procedure RemoveLight(Event: String; Data, Result: Pointer);
       procedure Execute; override;
@@ -73,6 +78,10 @@ end;
 
 procedure TLight.CreateShadowMap;
 begin
+  fDynamic := VecLengthNoRoot(fOldPosition - Position) > 0.0001;
+  fOldPosition := Position;
+  if not ((fShadowRefreshOffset = ModuleManager.ModRenderer.LightManager.fFrames mod 4) or (Dynamic)) then
+    exit;
   ModuleManager.ModRenderer.MaxRenderDistance := MaxLightingEffect;
   ModuleManager.ModRenderer.DistanceMeasuringPoint := Vector3D(Position);
   fShadowMap.Bind;
@@ -179,6 +188,8 @@ begin
     fShadowMap.Textures[0].Unbind;
     end;
   EventManager.CallEvent('TLightManager.AddLight', self, @fInternalID);
+  fShadowRefreshOffset := Round(3 * Random);
+  fDynamic := false;
 end;
 
 destructor TLight.Free;
@@ -252,6 +263,9 @@ begin
   Waiting := false;
   EventManager.AddCallback('TLightManager.AddLight', @self.AddLight);
   EventManager.AddCallback('TLightManager.RemoveLight', @self.RemoveLight);
+  fTmpShadowMap := TTexture.Create;
+  fTmpShadowMap.CreateNew(GL_RGBA16F_ARB, 768, 256);
+  fFrames := 0;
 end;
 
 procedure TLightManager.RenderShadows;
@@ -280,7 +294,7 @@ begin
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
   for i := 0 to high(fRegisteredLights) do
-    if fRegisteredLights[i].IsVisible(X) then
+    if (fRegisteredLights[i].IsVisible(X)) then
       fRegisteredLights[i].CreateShadowMap;
   fInterface.PopOptions;
   glMatrixMode(GL_MODELVIEW);
@@ -289,12 +303,14 @@ begin
   glPopMatrix;
   glMatrixMode(GL_MODELVIEW);
   X.Free;
+  inc(fFrames);
 end;
 
 destructor TLightManager.Free;
 begin
   EventManager.RemoveCallback('TLightManager.AddLight');
   EventManager.RemoveCallback('TLightManager.RemoveLight');
+  fTmpShadowMap.Free;
   Waiting := False;
   Terminate;
   sleep(100);

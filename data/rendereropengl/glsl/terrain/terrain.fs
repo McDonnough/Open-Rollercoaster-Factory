@@ -129,20 +129,20 @@ void main(void) {
   normal = normalize(normal);
   vec4 SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
   if (gl_TexCoord[7].xy == clamp(gl_TexCoord[7].xy, vec2(0.0, 0.0), vec2(1.0, 1.0))) {
-    SunShadow = texture2D(SunShadowMap, gl_TexCoord[7].xy);
+//     SunShadow = texture2D(SunShadowMap, gl_TexCoord[7].xy);
     if (SunShadow.a - 0.1 <= Vertex.y)
       SunShadow = vec4(0.0, 0.0, 0.0, 0.0);
     SunShadow.rgb *= clamp(abs(SunShadow.a - Vertex.y), 0.0, 1.0);
   }
   Diffuse = gl_LightSource[0].diffuse * (((1.0 - vec4(SunShadow.rgb, 0.0)) * max(-length(SunShadow.rgb) / sqrt(3.0), dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex.xyz)))));
   Ambient = gl_LightSource[0].ambient * (0.3 + 0.7 * dot(normal, vec3(0.0, 1.0, 0.0)));
-  Shadows[0] = texture2D(ShadowMap1, GetShadowCoord(gl_LightSource[1].position.xyz - Vertex.xyz));
+  Shadows[0] = 0.0 * texture2D(ShadowMap1, GetShadowCoord(gl_LightSource[1].position.xyz - Vertex.xyz));
   if (Shadows[0].a + 0.1 > distance(gl_LightSource[1].position.xyz, Vertex.xyz))
     Shadows[0] = vec4(0.0, 0.0, 0.0, 0.0);
-  Shadows[1] = texture2D(ShadowMap2, GetShadowCoord(gl_LightSource[2].position.xyz - Vertex.xyz));
+  Shadows[1] = 0.0 * texture2D(ShadowMap2, GetShadowCoord(gl_LightSource[2].position.xyz - Vertex.xyz));
   if (Shadows[1].a + 0.1 > distance(gl_LightSource[2].position.xyz, Vertex.xyz))
     Shadows[1] = vec4(0.0, 0.0, 0.0, 0.0);
-  Shadows[2] = texture2D(ShadowMap3, GetShadowCoord(gl_LightSource[3].position.xyz - Vertex.xyz));
+  Shadows[2] = 0.0 * texture2D(ShadowMap3, GetShadowCoord(gl_LightSource[3].position.xyz - Vertex.xyz));
   if (Shadows[2].a + 0.1 > distance(gl_LightSource[3].position.xyz, Vertex.xyz))
     Shadows[2] = vec4(0.0, 0.0, 0.0, 0.0);
   Shadows[3] = vec4(0.0, 0.0, 0.0, 0.0);

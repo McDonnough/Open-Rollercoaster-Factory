@@ -49,5 +49,6 @@ void main(void) {
   dist = length(gl_ClipVertex);
   vec4 LightVec = Vertex - gl_LightSource[0].position;
   gl_TexCoord[7] = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);
-  gl_Position = gl_ModelViewProjectionMatrix * Vertex;
+//   gl_Position = gl_ModelViewProjectionMatrix * Vertex;
+  gl_Position = Vertex;
 }

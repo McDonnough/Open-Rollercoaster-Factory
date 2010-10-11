@@ -62,8 +62,7 @@ void main(void) {
   gl_TexCoord[0] = vec4(Vertex.xz * 8.0, 0.0, 1.0);
   dist = Vertex.y;
   vec4 LightVec = Vertex - gl_LightSource[0].position;
-  gl_Position = Vertex;
-//   gl_Position = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);
+  gl_Position = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);
 //   gl_Position = gl_TextureMatrix[0] * Vertex;
 //   gl_Position = sqrt(abs(gl_Position)) * sign(gl_Position);
 }

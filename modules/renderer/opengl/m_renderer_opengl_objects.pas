@@ -507,8 +507,7 @@ begin
     fExcludedMesh := nil;
     fFrames := 0;
     fBoundShader := nil;
-//     fShader := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs');
-    fShader := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs', 'rendereropengl/glsl/objects/normal.gs', 18);
+    fShader := TShader.Create('rendereropengl/glsl/objects/normal.vs', 'rendereropengl/glsl/objects/normal.fs');
     fShader.UniformI('Tex', 0);
     fShader.UniformI('Bump', 1);
     fShader.UniformI('Reflections', 2);

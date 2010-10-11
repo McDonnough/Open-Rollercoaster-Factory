@@ -256,6 +256,9 @@ var
   S, T: Single;
   NewShadowQuad: Array[0..3] of TVector3D;
 begin
+  with ModuleManager.ModRenderer.RSky.Sun.Position do
+    OS := Vector(X, Y, Z);
+  OC := ModuleManager.ModCamera.ActiveCamera.Position;
   H := OC.Y - MinRenderHeight;
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
@@ -307,28 +310,17 @@ begin
     end
   else
     begin
-    for i := 2 to 3 do
-      begin
-      t1 := GetRay(1 - 2 * (i - 2), 1) * -1;
-      t2 := GetRay(-1, -1);
-      ShadowQuad[i] := ShadowQuad[i] + Vector(t1.x, 0, t1.z) / abs(t2.y) * Min(20, H) * S;
-      end;
-    if (ShadowQuad[0].Y > Mix(0.004, 0.008, S) * H) or (ShadowQuad[1].Y > Mix(0.004, 0.008, S) * H) then
-      begin
-      ShadowQuad[0].Y := Mix(0.004, 0.008, S) * H;
-      ShadowQuad[1].Y := Mix(0.004, 0.008, S) * H;
-      end;
     // Workaround for a bug that prevents parts of shadows from being rendered
-{    T := DotProduct(Normalize(VecToFront), t2);
+    T := DotProduct(Normalize(VecToFront), Vector(0, -1, 0));
     T := T * T;
-    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[1]) * 0.5 * (1.0 - abs(T)) * 0.3;
-    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[3]) * 0.5 * (1.0 - abs(T)) * 0.3;
-    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[0]) * 0.5 * (1.0 - abs(T)) * 0.3;
-    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[2]) * 0.5 * (1.0 - abs(T)) * 0.3;
-    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[1]) * 0.5 * (1.0 - abs(T)) * 0.3;
-    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[3]) * 0.5 * (1.0 - abs(T)) * 0.3;
-    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[0]) * 0.5 * (1.0 - abs(T)) * 0.3;
-    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[2]) * 0.5 * (1.0 - abs(T)) * 0.3;}
+    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
     end;
 
 {  FitToLight(ShadowQuad[0], ShadowQuad[1], OldShadowQuad[0] - OldShadowQuad[1]);
@@ -458,19 +450,15 @@ begin
 
   glDisable(GL_BLEND);
 
-  with ModuleManager.ModRenderer.RSky.Sun.Position do
-    OS := Vector(X, Y, Z);
-  OC := ModuleManager.ModCamera.ActiveCamera.Position;
-  DistanceMeasuringPoint := OC;
-  MaxRenderDistance := 10000;
-
-//   if (fInterface.Options.Items['shadows:enabled'] = 'on') then
-//     begin
-//     RenderShadows;
-//     fLightManager.RenderShadows;
-//     MaxRenderDistance := 10000;
-//     DistanceMeasuringPoint := OC;
-//     end;
+  if (fInterface.Options.Items['shadows:enabled'] = 'on') then
+    begin
+    DistanceMeasuringPoint := OC;
+    MaxRenderDistance := 10000;
+    RenderShadows;
+    fLightManager.RenderShadows;
+    MaxRenderDistance := 10000;
+    DistanceMeasuringPoint := OC;
+    end;
   RSky.CameraLight.Bind(1);
   RSky.CameraLight2.Bind(2);
   RSky.CameraLight.ShadowMap.Textures[0].Bind(4);

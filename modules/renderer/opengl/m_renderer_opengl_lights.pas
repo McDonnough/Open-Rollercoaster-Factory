@@ -12,7 +12,6 @@ type
       fDynamic: Boolean;
       fOldPosition: TVector4D;
       fInternalID: Integer;
-      fHints: QWord;
     private
       fShadowRefreshOffset: Integer;
     public
@@ -26,7 +25,7 @@ type
       procedure CreateShadowMap;
       procedure Bind(I: Integer);
       procedure Unbind(I: Integer);
-      constructor Create(Hints: QWord = 0);
+      constructor Create;
       destructor Free;
     end;
 
@@ -56,9 +55,6 @@ type
       constructor Create;
       destructor Free;
     end;
-
-const
-  LIGHT_HINT_NO_SHADOW = 1;
 
 implementation
 
@@ -180,13 +176,11 @@ begin
   glLightfv(GL_LIGHT0 + i, GL_POSITION, @Null.X);
 end;
 
-constructor TLight.Create(Hints: QWord = 0);
+constructor TLight.Create;
 begin
   Color := Vector(1, 1, 1, 1);
   Position := Vector(0, 0, 0, 0);
-  fHints := Hints;
-  fShadowMap := nil;
-  if (fInterface.Options.Items['shadows:enabled'] = 'on') and (not (Hints and LIGHT_HINT_NO_SHADOW <> 0)) then
+  if fInterface.Options.Items['shadows:enabled'] = 'on'  then
     begin
     fShadowMap := TFBO.Create(768, 256, true); // Cube map
     fShadowMap.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);
@@ -201,7 +195,7 @@ end;
 destructor TLight.Free;
 begin
   EventManager.CallEvent('TLightManager.RemoveLight', @fInternalID, nil);
-  if fShadowMap <> nil then
+  if fInterface.Options.Items['shadows:enabled'] = 'on' then
     fShadowMap.Free;
 end;
 
@@ -300,7 +294,7 @@ begin
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
   for i := 0 to high(fRegisteredLights) do
-    if (fRegisteredLights[i].ShadowMap <> nil) and (fRegisteredLights[i].IsVisible(X)) then
+    if (fRegisteredLights[i].IsVisible(X)) then
       fRegisteredLights[i].CreateShadowMap;
   fInterface.PopOptions;
   glMatrixMode(GL_MODELVIEW);

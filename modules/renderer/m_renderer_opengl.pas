@@ -138,6 +138,27 @@ begin
     glClear(GL_DEPTH_BUFFER_BIT);
     RenderParts(true, false);
     RTerrain.CheckWaterLayerVisibility;
+    glDepthMask(false);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_STENCIL_TEST);
+    glEnable(GL_STENCIL_TEST_TWO_SIDE_EXT);
+    glActiveStencilFaceEXT(GL_BACK);
+    glStencilOp(GL_KEEP,            // stencil test fail
+                GL_DECR_WRAP_EXT,   // depth test fail
+                GL_KEEP);           // depth test pass
+    glStencilMask(255);
+    glStencilFunc(GL_ALWAYS, 0, 255);
+
+    glActiveStencilFaceEXT(GL_FRONT);
+    glStencilOp(GL_KEEP,            // stencil test fail
+                GL_INCR_WRAP_EXT,   // depth test fail
+                GL_KEEP);           // depth test pass
+    glStencilMask(255);
+    glStencilFunc(GL_ALWAYS, 0, 255);
+    RenderShadows;
+    glDisable(GL_STENCIL_TEST);
+    glDisable(GL_STENCIL_TEST_TWO_SIDE_EXT);
+    glDepthMask(true);
   glPopMatrix;
   fInterface.PopOptions;
   if EyeMode = 0 then
@@ -207,9 +228,13 @@ begin
   fFrustum.Calculate;
 
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  glEnable(GL_STENCIL_TEST);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+  glStencilFunc(GL_EQUAL, 0, 255);
   RenderParts(true, false);
   RTerrain.RenderWaterSurfaces;
   RenderParts(false, true);
+  glDisable(GL_STENCIL_TEST);
 
   fInterface.Options.Items['all:above'] := '0';
   fInterface.Options.Items['all:below'] := '256';
@@ -248,18 +273,15 @@ begin
 end;
 
 procedure TModuleRendererOpenGL.RenderShadows;
-var
-  i: Integer;
+// var
+{  i: Integer;
   LightVec, t1, t2: TVector3D;
   tmp1, tmp2: TVector2D;
   H: Single;
   S, T: Single;
-  NewShadowQuad: Array[0..3] of TVector3D;
+  NewShadowQuad: Array[0..3] of TVector3D;}
 begin
-  with ModuleManager.ModRenderer.RSky.Sun.Position do
-    OS := Vector(X, Y, Z);
-  OC := ModuleManager.ModCamera.ActiveCamera.Position;
-  H := OC.Y - MinRenderHeight;
+{  H := OC.Y - MinRenderHeight;
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity;
   ModuleManager.ModGLMng.SetUp3DMatrix;
@@ -272,7 +294,7 @@ begin
     t1 := ShadowQuad[0];            t2 := ShadowQuad[1];
     ShadowQuad[0] := ShadowQuad[3]; ShadowQuad[1] := ShadowQuad[2];
     ShadowQuad[3] := t1;            ShadowQuad[2] := t2;
-    end;
+    end;}
 {  if (ShadowQuad[0].Y > 0) and (ShadowQuad[1].Y > 0) and (ShadowQuad[2].Y > 0) and (ShadowQuad[3].Y > 0) then
     begin
     ShadowQuad[0] := GetNegRay(-1, -1);
@@ -281,7 +303,7 @@ begin
     ShadowQuad[3] := GetNegRay(-1,  1);
     H := H + 30;
     end
-  else }if (ShadowQuad[2].Y > -0.004 * H) or (ShadowQuad[3].Y > -0.004 * H) then
+  else if (ShadowQuad[2].Y > -0.004 * H) or (ShadowQuad[3].Y > -0.004 * H) then
     begin
     ShadowQuad[2].Y := -0.004 * H;
     ShadowQuad[3].Y := -0.004 * H;
@@ -321,7 +343,7 @@ begin
     ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
     ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
     ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    end;
+    end;}
 
 {  FitToLight(ShadowQuad[0], ShadowQuad[1], OldShadowQuad[0] - OldShadowQuad[1]);
   FitToLight(ShadowQuad[0], ShadowQuad[3], OldShadowQuad[1] - OldShadowQuad[2]);
@@ -331,7 +353,7 @@ begin
   FitToLight(ShadowQuad[2], ShadowQuad[3]);
   FitToLight(ShadowQuad[3], ShadowQuad[0]);
   FitToLight(ShadowQuad[3], ShadowQuad[2]);}
-  for i := 0 to 3 do
+{  for i := 0 to 3 do
     begin
     ShadowQuad[i] := OC + ShadowQuad[i] * H / abs(ShadowQuad[i].Y);
     end;
@@ -352,19 +374,20 @@ begin
 
   fInterface.PushOptions;
   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Bind;
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);}
 //   glMatrixMode(GL_TEXTURE);
 //   glLoadIdentity;
 //   gluPerspective(fSunShadowOpenAngle, 1, 0.5, 20000);
 //   gluLookAt(OS.X, OS.Y, OS.Z,
 //             Round(OC.X), Round(OC.Y), Round(OC.Z),
 //             0, 1, 0);
+  fInterface.PushOptions;
   fInterface.Options.Items['shader:mode'] := 'sunshadow:sunshadow';
   fInterface.Options.Items['terrain:autoplants'] := 'off';
   fInterface.Options.Items['sky:rendering'] := 'off';
   if (Park.pSky.Time >= 86400 / 4) and (Park.pSky.Time <= 86400 / 4 * 3) then
     RenderParts(true, true);
-  ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
+//   ModuleManager.ModRenderer.RSky.Sun.ShadowMap.UnBind;
   fInterface.PopOptions;
 end;
 
@@ -450,11 +473,14 @@ begin
 
   glDisable(GL_BLEND);
 
+  with ModuleManager.ModRenderer.RSky.Sun.Position do
+    OS := Vector(X, Y, Z);
+  OC := ModuleManager.ModCamera.ActiveCamera.Position;
+  DistanceMeasuringPoint := OC;
+  MaxRenderDistance := 10000;
   if (fInterface.Options.Items['shadows:enabled'] = 'on') then
     begin
-    DistanceMeasuringPoint := OC;
-    MaxRenderDistance := 10000;
-    RenderShadows;
+//     RenderShadows;
     fLightManager.RenderShadows;
     MaxRenderDistance := 10000;
     DistanceMeasuringPoint := OC;
@@ -476,7 +502,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
   if fInterface.Options.Items['shadows:enabled'] = 'on' then
     ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);

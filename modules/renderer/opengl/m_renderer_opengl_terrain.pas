@@ -905,7 +905,7 @@ begin
     fWaterShader.UniformI('SunShadowMap', 7);
     fShaderTransformDepth := TShader.Create('rendereropengl/glsl/terrain/terrainTransform.vs', 'rendereropengl/glsl/simple.fs');
     fShaderTransformDepth.UniformI('HeightMap', 1);
-    fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
+    fShaderTransformSunShadow := TShader.Create('rendereropengl/glsl/terrain/terrainSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs', 'rendereropengl/glsl/shadows/shdGenSun.gs', 0);
     fShaderTransformSunShadow.UniformI('HeightMap', 1);
     fShaderTransformSunShadow.UniformI('UseTexture', 0);
     fShaderTransformSunShadow.UniformF('MeshColor', 1, 1, 1, 1);

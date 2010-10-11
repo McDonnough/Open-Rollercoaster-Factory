@@ -374,7 +374,7 @@ var
   IsTransparent: Boolean;
 begin
   glEnable(GL_ALPHA_TEST);
-  glEnable(GL_CULL_FACE);
+  glDisable(GL_CULL_FACE);
   fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fTransformDepthShader
@@ -519,7 +519,7 @@ begin
     fShadowShader.UniformI('ModelTexture', 0);
     fTransformDepthShader := TShader.Create('rendereropengl/glsl/objects/normalTransform.vs', 'rendereropengl/glsl/simple.fs');
     fTransformDepthShader.UniformI('Tex', 0);
-    fSunShadowShader := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs');
+    fSunShadowShader := TShader.Create('rendereropengl/glsl/objects/normalSunShadowTransform.vs', 'rendereropengl/glsl/shadows/shdGenSun.fs', 'rendereropengl/glsl/shadows/shdGenSun.gs', 18);
     fSunShadowShader.UniformI('ModelTexture', 0);
     EventManager.AddCallback('TBasicObject.Created', @AddObject);
     EventManager.AddCallback('TBasicObject.Deleted', @DeleteObject);

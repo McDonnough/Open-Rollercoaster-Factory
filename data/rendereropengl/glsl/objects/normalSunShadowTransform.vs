@@ -41,5 +41,6 @@ void main(void) {
   Vertex = TransformMatrix * gl_Vertex;
   dist = Vertex.y;
   vec4 LightVec = Vertex - gl_LightSource[0].position;
-  gl_Position = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);
+  gl_Position = Vertex;
+//   gl_Position = mapPixelToQuad(Vertex.xz + LightVec.xz / abs(LightVec.y) * Vertex.y);
 }

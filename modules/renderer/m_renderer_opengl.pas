@@ -310,17 +310,28 @@ begin
     end
   else
     begin
+    for i := 2 to 3 do
+      begin
+      t1 := GetRay(1 - 2 * (i - 2), 1) * -1;
+      t2 := GetRay(-1, -1);
+      ShadowQuad[i] := ShadowQuad[i] + Vector(t1.x, 0, t1.z) / abs(t2.y) * Min(20, H) * S;
+      end;
+    if (ShadowQuad[0].Y > Mix(0.004, 0.008, S) * H) or (ShadowQuad[1].Y > Mix(0.004, 0.008, S) * H) then
+      begin
+      ShadowQuad[0].Y := Mix(0.004, 0.008, S) * H;
+      ShadowQuad[1].Y := Mix(0.004, 0.008, S) * H;
+      end;
     // Workaround for a bug that prevents parts of shadows from being rendered
-    T := DotProduct(Normalize(VecToFront), Vector(0, -1, 0));
-    T := T * T;
-    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
-    ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     T := DotProduct(Normalize(VecToFront), Vector(0, -1, 0));
+//     T := T * T;
+//     ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     ShadowQuad[0] := ShadowQuad[0] + (ShadowQuad[0] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     ShadowQuad[1] := ShadowQuad[1] + (ShadowQuad[1] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[1]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     ShadowQuad[2] := ShadowQuad[2] + (ShadowQuad[2] - ShadowQuad[3]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[0]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
+//     ShadowQuad[3] := ShadowQuad[3] + (ShadowQuad[3] - ShadowQuad[2]) * 0.5 * (abs(T)) * min(0.3, 0.6 + 0.5 * S);
     end;
 
 {  FitToLight(ShadowQuad[0], ShadowQuad[1], OldShadowQuad[0] - OldShadowQuad[1]);
@@ -430,16 +441,23 @@ begin
   RSky.CameraLight.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X;
   RSky.CameraLight.Position.Y := ModuleManager.ModCamera.ActiveCamera.Position.Y + 2;
   RSky.CameraLight.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
-  RSky.CameraLight.Position.W := 2;
+  RSky.CameraLight.Position.W := 5;
   RSky.CameraLight.Color := Vector(1, 1, 1, 1);
-  RSky.CameraLight.Bind(1);
+//   RSky.CameraLight.Bind(1);
 
   RSky.CameraLight2.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X;
   RSky.CameraLight2.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
   RSky.CameraLight2.Position.Y := Park.pTerrain.HeightMap[RSky.CameraLight2.Position.X, RSky.CameraLight2.Position.Z] + 2;
   RSky.CameraLight2.Position.W := 2;
   RSky.CameraLight2.Color := Vector(1, 1, 1, 1);
-  RSky.CameraLight2.Bind(2);
+//   RSky.CameraLight2.Bind(2);
+
+  // Assigning lights to meshes
+  if not LightManager.Working then
+    begin
+    LightManager.AssignLightsToObjects;
+    LightManager.Working := true;
+    end;
 
   // Rendering
   fInterface.Options.Items['shader:mode'] := 'normal:normal';
@@ -459,11 +477,9 @@ begin
     MaxRenderDistance := 10000;
     DistanceMeasuringPoint := OC;
     end;
-  RSky.CameraLight.Bind(1);
-  RSky.CameraLight2.Bind(2);
-  RSky.CameraLight.ShadowMap.Textures[0].Bind(4);
-  RSky.CameraLight2.ShadowMap.Textures[0].Bind(5);
-  glActiveTexture(GL_TEXTURE0);
+//   RSky.CameraLight.Bind(1);
+//   RSky.CameraLight2.Bind(2);
+//   glActiveTexture(GL_TEXTURE0);
 
   MinRenderHeight := OC.Y - 8;
   glSecondaryColor3f(OC.X, OC.Y, OC.Z);

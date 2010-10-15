@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, g_object_base, g_park, m_shdmng_class, m_renderer_opengl_classes, u_geometry, u_arrays, DGLOpenGL, u_vectors, m_texmng_class,
-  m_renderer_opengl_frustum;
+  m_renderer_opengl_frustum, m_renderer_opengl_lights;
 
 type
   TManagedMesh = class
@@ -16,6 +16,7 @@ type
       fTriangles: Integer;
       Reflection: TFBO;
       fFrameMod: Integer;
+      fStrongestLights: Array[0..6] of TLight;
       constructor Create;
       procedure CreateVBO;
       procedure UpdateVBO;
@@ -35,11 +36,11 @@ type
       b: Integer;
       fBoundShader: TShader;
       fShader, fShadowShader, fTransformDepthShader, fSunShadowShader: TShader;
-      fManagedObjects: Array of TManagedObject;
       fTest: TBasicObject;
       fFrames: Integer;
       fExcludedMesh: TManagedMesh;
     public
+      fManagedObjects: Array of TManagedObject;
       procedure AddObject(Event: String; Data, Result: Pointer);
       procedure DeleteObject(Event: String; Data, Result: Pointer);
       procedure AddMesh(Event: String; Data, Result: Pointer);
@@ -60,6 +61,8 @@ uses
   m_varlist, u_events, math, m_renderer_opengl_interface, u_ase;
 
 constructor TManagedMesh.Create;
+var
+  i: Integer;
 begin
   fVBO := nil;
   fChangedVertices := TRow.Create;
@@ -67,6 +70,8 @@ begin
   fTriangles := 0;
   fRadius := 0;
   Reflection := nil;
+  for i := 0 to high(fStrongestLights) do
+    fStrongestLights[i] := nil;
 end;
 
 procedure TManagedMesh.CreateReflectionFBO;
@@ -177,6 +182,7 @@ begin
       SetLength(fManagedObjects[i].fManagedMeshes, Integer(Result^) + 1);
       fManagedObjects[i].fManagedMeshes[Integer(Result^)] := TManagedMesh.Create;
       fManagedObjects[i].fManagedMeshes[Integer(Result^)].fMesh := fManagedObjects[i].fObject.fMeshes[Integer(Result^)];
+      EventManager.CallEvent('TRObjects.MeshAdded', fManagedObjects[i].fManagedMeshes[Integer(Result^)], nil);
       exit;
       end;
 end;
@@ -188,6 +194,7 @@ begin
   for i := 0 to high(fManagedObjects) do
     if fManagedObjects[i].fObject = TBasicObject(Data) then
       begin
+      EventManager.CallEvent('TRObjects.MeshDeleted', fManagedObjects[i].fManagedMeshes[Integer(Result^)], nil);
       fManagedObjects[i].fManagedMeshes[Integer(Result^)].Free;
       fManagedObjects[i].fManagedMeshes[Integer(Result^)] := fManagedObjects[i].fManagedMeshes[high(fManagedObjects[i].fManagedMeshes)];
       SetLength(fManagedObjects[i].fManagedMeshes, Length(fManagedObjects[i].fManagedMeshes) - 1);
@@ -325,7 +332,6 @@ procedure TRObjects.RenderReflections;
 var
   i, j: Integer;
   x: TFrustum;
-  tmpMatrix: TMatrix4D;
   A: TVector4D;
   D: Single;
   FrameMod: Integer;
@@ -347,9 +353,7 @@ begin
     for j := 0 to high(fManagedObjects[i].fManagedMeshes) do
       if FrameMod = fManagedObjects[i].fManagedMeshes[j].fFrameMod then
         begin
-        tmpMatrix := TranslateMatrix(fManagedObjects[i].fManagedMeshes[j].fMesh.StaticOffset) * Matrix4D(fManagedObjects[i].fManagedMeshes[j].fMesh.StaticRotationMatrix);
-        tmpMatrix := tmpMatrix * TranslateMatrix(fManagedObjects[i].fManagedMeshes[j].fMesh.Offset) * Matrix4D(fManagedObjects[i].fManagedMeshes[j].fMesh.RotationMatrix);
-        A := Vector(0, 0, 0, 1) * tmpMatrix;
+        A := Vector(0, 0, 0, 1) * fManagedObjects[i].fManagedMeshes[j].fMesh.TransformMatrix;
         D := VecLengthNoRoot(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(A));
         if (D < fManagedObjects[i].fManagedMeshes[j].fMesh.MaxDistance * fManagedObjects[i].fManagedMeshes[j].fMesh.MaxDistance) and (D >= fManagedObjects[i].fManagedMeshes[j].fMesh.MinDistance * fManagedObjects[i].fManagedMeshes[j].fMesh.MinDistance) and (X.IsSphereWithin(A.X, A.Y, A.Z, fManagedObjects[i].fManagedMeshes[j].fRadius)) then
           RenderReflections(fManagedObjects[i].fManagedMeshes[j]);
@@ -366,12 +370,12 @@ end;
 
 procedure TRObjects.Render(O: TManagedObject; Transparent: Boolean);
 var
-  i: Integer;
-  tmpMatrix: TMatrix4D;
+  i, j: Integer;
   Matrix: Array[0..15] of Single;
   A: TVector4D;
   D: Single;
   IsTransparent: Boolean;
+  tmpMatrix: TMatrix4D;
 begin
   glEnable(GL_ALPHA_TEST);
   glEnable(GL_CULL_FACE);
@@ -415,12 +419,11 @@ begin
         IsTransparent := true;
     if IsTransparent <> Transparent then
       continue;
-    tmpMatrix := TranslateMatrix(O.fManagedMeshes[i].fMesh.StaticOffset) * Matrix4D(O.fManagedMeshes[i].fMesh.StaticRotationMatrix);
-    tmpMatrix := tmpMatrix * TranslateMatrix(O.fManagedMeshes[i].fMesh.Offset) * Matrix4D(O.fManagedMeshes[i].fMesh.RotationMatrix);
-    A := Vector(0, 0, 0, 1) * tmpMatrix;
+    A := Vector(0, 0, 0, 1) * O.fManagedMeshes[i].fMesh.TransformMatrix;
     D := VecLengthNoRoot(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(A));
     if (D < O.fManagedMeshes[i].fMesh.MaxDistance * O.fManagedMeshes[i].fMesh.MaxDistance) and (D >= O.fManagedMeshes[i].fMesh.MinDistance * O.fManagedMeshes[i].fMesh.MinDistance) and (ModuleManager.ModRenderer.Frustum.IsSphereWithin(A.X, A.Y, A.Z, O.fManagedMeshes[i].fRadius)) then
       begin
+      tmpMatrix := O.fManagedMeshes[i].fMesh.TransformMatrix;
       MakeOGLCompatibleMatrix(tmpMatrix, @Matrix[0]);
       if O.fManagedMeshes[i].fMesh.BumpMap <> nil then
         begin
@@ -462,6 +465,16 @@ begin
         ModuleManager.ModTexMng.ActivateTexUnit(0);
         ModuleManager.ModTexMng.BindTexture(-1);
         fBoundShader.UniformI('UseTexture', 0);
+        end;
+      if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
+        begin
+        ModuleManager.ModRenderer.LightManager.StartBinding;
+        for j := 0 to high(O.fManagedMeshes[i].fStrongestLights) do
+          if O.fManagedMeshes[i].fStrongestLights[j] <> nil then
+            O.fManagedMeshes[i].fStrongestLights[j].Bind(j + 1)
+          else
+            ModuleManager.ModRenderer.LightManager.NoLight.Bind(j + 1);
+        ModuleManager.ModRenderer.LightManager.EndBinding;
         end;
       glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, @O.fManagedMeshes[i].fMesh.Shininess);
       fBoundShader.UniformF('MeshColor', O.fManagedMeshes[i].fMesh.Color.X, O.fManagedMeshes[i].fMesh.Color.Y, O.fManagedMeshes[i].fMesh.Color.Z, O.fManagedMeshes[i].fMesh.Color.W);

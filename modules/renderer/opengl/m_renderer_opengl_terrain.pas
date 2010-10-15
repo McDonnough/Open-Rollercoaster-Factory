@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, DGLOpenGL, m_renderer_opengl_classes, u_vectors, m_shdmng_class, m_texmng_class, u_math, math,
-  m_renderer_opengl_interface, g_loader_ocf, g_object_base;
+  m_renderer_opengl_interface, g_loader_ocf, g_object_base, m_renderer_opengl_lights;
 
 type
   TWaterLayerFBO = class
@@ -34,7 +34,6 @@ type
       fWaterShader, fWaterShaderTransformDepth, fWaterShaderTransformSunShadow: TShader;
       fWaterBumpmap: TTexture;
       fWaterBumpmapOffset: TVector2D;
-      fBoundingSphereRadius, fAvgHeight, fMinHeight: Array of Array of Single;
       fHeightRanges: Array of Array of Array[0..1] of Single;
       fTmpFineOffsetX, fTmpFineOffsetY: Word;
       fFineOffsetX, fFineOffsetY: Word;
@@ -48,8 +47,10 @@ type
       procedure RecalcBoundingSpheres(X, Y: Integer);
       procedure CheckWaterLevel(X, Y: Word);
     public
+      fBoundingSphereRadius, fAvgHeight, fMinHeight: Array of Array of Single;
       fTerrainMarkOCF: TOCFFile;
       fWaterLayerFBOs: Array of TWaterLayerFBO;
+      fStrongestLights: Array of Array of Array[0..6] of TLight;
       procedure ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
       procedure Render(Event: String; Data, Result: Pointer);
@@ -288,6 +289,8 @@ var
   fBelow, fAbove: Single;
 
   procedure RenderBlock(X, Y: Integer; Check: Boolean);
+  var
+    k: Integer;
   begin
     try
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 128 - 1) and (Y <= Park.pTerrain.SizeY div 128 - 1) then
@@ -300,6 +303,16 @@ var
             exit;
           ModuleManager.ModRenderer.MinRenderHeight := Min(ModuleManager.ModRenderer.MinRenderHeight, fMinHeight[X, Y] - 8);
           fBoundShader.UniformF('VOffset', 128 * x / 5, 128 * y / 5);
+          if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
+            begin
+            ModuleManager.ModRenderer.LightManager.StartBinding;
+            for k := 0 to high(fStrongestLights[X, Y]) do
+              if fStrongestLights[X, Y, k] <> nil then
+                fStrongestLights[X, Y, k].Bind(k + 1)
+              else
+                ModuleManager.ModRenderer.LightManager.NoLight.Bind(k + 1);
+            ModuleManager.ModRenderer.LightManager.EndBinding;
+            end;
           if ((VecLengthNoRoot(Vector(128 * x / 5, 0, 128 * y / 5) + Vector(12.8, 0.0, 12.8) - ModuleManager.ModCamera.ActiveCamera.Position * Vector(1, 0, 1)) < 13000) and (ModuleManager.ModRenderer.StaticLODBias + ModuleManager.ModRenderer.DynamicLODBias <= 0)) or (ModuleManager.ModRenderer.StaticLODBias + ModuleManager.ModRenderer.DynamicLODBias < 0) then
             begin
             fBoundShader.UniformI('LOD', 1);
@@ -322,6 +335,7 @@ var
 var
   i, j, k: integer;
   Blocks: Array of Array[0..2] of Integer;
+  fFineBlockX, fFineBlockY: Integer;
 begin
   WaterModeRefraction := fInterface.Options.Items['water:mode'] = 'refraction';
   CurrWaterLayer := StrToIntWD(fInterface.Options.Items['water:currlayer'], 0);
@@ -414,6 +428,18 @@ begin
     RenderBlock(Blocks[i, 1], Blocks[i, 2], fBoundShader = fShaderTransformDepth);
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     begin
+    fFineBlockX := Round((fFineOffsetX + 128) / 128);
+    fFineBlockY := Round((fFineOffsetY + 128) / 128);
+    if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
+      begin
+      ModuleManager.ModRenderer.LightManager.StartBinding;
+      for k := 0 to high(fStrongestLights[fFineBlockX, fFineBlockY]) do
+        if fStrongestLights[fFineBlockX, fFineBlockY, k] <> nil then
+          fStrongestLights[fFineBlockX, fFineBlockY, k].Bind(k + 1)
+        else
+          ModuleManager.ModRenderer.LightManager.NoLight.Bind(k + 1);
+      ModuleManager.ModRenderer.LightManager.EndBinding;
+      end;
     fBoundShader.UniformI('LOD', 2);
     fBoundShader.UniformF('VOffset', fFineOffsetX / 5, fFineOffsetY / 5);
     fFineVBO.Bind;
@@ -511,11 +537,24 @@ procedure TRTerrain.RenderAutoplants(Event: String; Data, Result: Pointer);
 const
   AUTOPLANT_UPDATE_FRAMES = 10;
 var
-  i, j: Integer;
+  i, j, k: Integer;
   fDeg, fRot: Single;
   Position, fTmp: TVector2D;
+  fFineBlockX, fFineBlockY: Integer;
 begin
   // Render autoplants
+  fFineBlockX := Round((fFineOffsetX + 128) / 128);
+  fFineBlockY := Round((fFineOffsetY + 128) / 128);
+  if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
+    begin
+    ModuleManager.ModRenderer.LightManager.StartBinding;
+    for k := 0 to high(fStrongestLights[fFineBlockX, fFineBlockY]) do
+      if fStrongestLights[fFineBlockX, fFineBlockY, k] <> nil then
+        fStrongestLights[fFineBlockX, fFineBlockY, k].Bind(k + 1)
+      else
+        ModuleManager.ModRenderer.LightManager.NoLight.Bind(k + 1);
+    ModuleManager.ModRenderer.LightManager.EndBinding;
+    end;
   if (ModuleManager.ModRenderer.StaticLODBias + ModuleManager.ModRenderer.DynamicLODBias <= 0) and (fInterface.Options.Items['terrain:autoplants'] <> 'off') then
     begin
     fHeightMap.Bind(1);
@@ -781,12 +820,14 @@ begin
     SetLength(fAvgHeight, Park.pTerrain.SizeX div 128);
     SetLength(fMinHeight, Park.pTerrain.SizeX div 128);
     SetLength(fHeightRanges, Park.pTerrain.SizeX div 128);
+    SetLength(fStrongestLights, Park.pTerrain.SizeX div 128);
     SetLength(fBoundingSphereRadius, length(fAvgHeight));
     for i := 0 to high(fAvgHeight) do
       begin
       SetLength(fAvgHeight[i], Park.pTerrain.SizeY div 128);
       SetLength(fMinHeight[i], Park.pTerrain.SizeY div 128);
       SetLength(fHeightRanges[i], Park.pTerrain.SizeY div 128);
+      SetLength(fStrongestLights[i], Park.pTerrain.SizeY div 128);
       SetLength(fBoundingSphereRadius[i], length(fAvgHeight[i]));
       end;
     for i := 0 to high(fWaterLayerFBOs) do

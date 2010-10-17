@@ -18,6 +18,7 @@ vec4 Ambient = vec4(0.0, 0.0, 0.0, 1.0);
 void AddLight(int ID) {
   vec3 DistVector = gl_LightSource[ID].position.xyz - Vertex.xyz;
   float lnrDistVector = max(0.5, DistVector.x * DistVector.x + DistVector.y * DistVector.y + DistVector.z * DistVector.z);
+  Ambient += gl_LightSource[ID].ambient * gl_LightSource[ID].ambient.a * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector;
   Diffuse += gl_LightSource[ID].diffuse * gl_LightSource[ID].diffuse.a * dot(normal, normalize(DistVector)) * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector;
 }
 

@@ -55,6 +55,7 @@ vec2 GetShadowCoord(vec3 vector) {
 void AddLight(int ID) {
   vec3 DistVector = gl_LightSource[ID].position.xyz - Vertex.xyz;
   float lnrDistVector = max(0.5, dot(DistVector, DistVector));
+  Ambient += gl_LightSource[ID].ambient * gl_LightSource[ID].ambient.a * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector;
   Diffuse += gl_LightSource[ID].diffuse * gl_LightSource[ID].diffuse.a * ((1.0 - vec4(Shadows[ID - 1].rgb, 0.0)) * max(-length(Shadows[ID - 1].rgb) / sqrt(3.0), dot(normal, normalize(DistVector)))) * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector;
 }
 

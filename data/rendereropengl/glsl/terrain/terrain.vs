@@ -5,6 +5,7 @@ uniform vec2 TerrainSize;
 
 uniform vec2 offset;
 uniform vec2 VOffset;
+uniform vec2 Scale;
 uniform int LOD;
 
 uniform vec2 ShadowQuadA;
@@ -52,6 +53,7 @@ const vec4 LODMap = vec4(8.0, 4.0, 1.0, 1.0);
 
 void main(void) {
   Vertex = gl_Vertex;
+  Vertex.xz *= Scale;
   rhf = Vertex.y;
   Vertex.xz *= LODMap[LOD];
   Vertex.xz += VOffset;

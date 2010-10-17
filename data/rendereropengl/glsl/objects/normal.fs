@@ -24,6 +24,7 @@ vec3 Eye = vec3(0.0, 0.0, 0.0);
 vec3 normal = vec3(0.0, 1.0, 0.0);
 vec4 Diffuse = vec4(0.0, 0.0, 0.0, 1.0);
 vec4 Specular = vec4(0.0, 0.0, 0.0, 1.0);
+vec4 Ambient = vec4(0.0, 0.0, 0.0, 1.0);
 
 vec2 GetShadowCoord(vec3 vector) {
   vector = -normalize(vector);
@@ -50,6 +51,7 @@ void AddLight(int ID) {
   vec3 DistVector = gl_LightSource[ID].position.xyz - Vertex.xyz;
   float lnrDistVector = max(0.5, dot(DistVector, DistVector));
   Diffuse += gl_LightSource[ID].diffuse * gl_LightSource[ID].diffuse.a * ((1.0 - vec4(Shadows[ID - 1].rgb, 0.0)) * max(-length(Shadows[ID - 1].rgb) / sqrt(3.0), dot(normal, normalize(DistVector))) * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector);
+  Ambient += gl_LightSource[ID].ambient * gl_LightSource[ID].ambient.a * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector;
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * vec4(gl_LightSource[ID].position.xyz, 1.0) - DVertex).xyz), normalize(gl_NormalMatrix * normal)));
   Specular += clamp(gl_FrontMaterial.shininess, 0.0, 1.0) * gl_LightSource[ID].diffuse * gl_LightSource[ID].diffuse.a * (1.0 - vec4(Shadows[ID - 1].rgb, 0.0)) * max(-length(Shadows[ID - 1].rgb) / sqrt(3.0), pow(dot(Reflected, Eye), gl_FrontMaterial.shininess)) * gl_LightSource[ID].position.w * gl_LightSource[ID].position.w / lnrDistVector;
 }
@@ -76,7 +78,6 @@ vec3 GetReflectionColor(vec3 vector) {
 }
 
 void main(void) {
-  vec4 Ambient = vec4(0.0, 0.0, 0.0, 1.0);
   normal = normalize(Normal);
   vec4 result = gl_TextureMatrix[0] * Vertex;
   if (UseBumpMap == 1) {

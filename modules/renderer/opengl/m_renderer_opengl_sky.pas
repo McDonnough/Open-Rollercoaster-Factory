@@ -94,8 +94,53 @@ begin
   writeln('Initializing sky renderer');
   fShader := TShader.Create('rendereropengl/glsl/sky/sky.vs', 'rendereropengl/glsl/sky/sky.fs');
   fSun := TSun.Create;
-  fCameraLight := TLight.Create;
+  fCameraLight := TLight.Create(LIGHT_HINT_NO_SHADOW);
   fCameraLight2 := TLight.Create;
+  with TLight.Create do
+    begin
+    Color := Vector(1, 1, 0, 1);
+    Position := Vector(60, 66, 60, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(0, 1, 0, 1);
+    Position := Vector(20, 66, 60, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(1, 0, 0, 1);
+    Position := Vector(40, 66, 60, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(1, 0, 1, 1);
+    Position := Vector(60, 66, 20, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(0, 0, 1, 1);
+    Position := Vector(20, 66, 20, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(0, 1, 1, 1);
+    Position := Vector(40, 66, 20, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(1, 0.5, 0, 1);
+    Position := Vector(60, 66, 40, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(0.5, 1, 0, 1);
+    Position := Vector(20, 66, 40, 2);
+    end;
+  with TLight.Create do
+    begin
+    Color := Vector(1, 1, 1, 1);
+    Position := Vector(40, 66, 40, 2);
+    end;
   EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 

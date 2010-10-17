@@ -442,15 +442,15 @@ begin
   RSky.CameraLight.Position.Y := ModuleManager.ModCamera.ActiveCamera.Position.Y + 2;
   RSky.CameraLight.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
   RSky.CameraLight.Position.W := 5;
+//   RSky.CameraLight.DiffuseFactor := 0.3;
+//   RSky.CameraLight.AmbientFactor := 0.7;
   RSky.CameraLight.Color := Vector(1, 1, 1, 1);
-//   RSky.CameraLight.Bind(1);
 
   RSky.CameraLight2.Position.X := ModuleManager.ModCamera.ActiveCamera.Position.X;
   RSky.CameraLight2.Position.Z := ModuleManager.ModCamera.ActiveCamera.Position.Z;
   RSky.CameraLight2.Position.Y := Park.pTerrain.HeightMap[RSky.CameraLight2.Position.X, RSky.CameraLight2.Position.Z] + 2;
   RSky.CameraLight2.Position.W := 2;
   RSky.CameraLight2.Color := Vector(1, 1, 1, 1);
-//   RSky.CameraLight2.Bind(2);
 
   // Assigning lights to meshes
   if not LightManager.Working then

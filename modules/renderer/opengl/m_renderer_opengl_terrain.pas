@@ -30,7 +30,7 @@ type
       fAPVBOs: Array[0..7] of TVBO;
       fAPCount: Array[0..7] of Integer;
       fAPPositions: Array[0..7] of Array of TVector2D;
-      fShader, fShadowShader, fShaderTransformDepth, fShaderTransformSunShadow, fShaderTransformShadow, fAPShader: TShader;
+      fShader, fShadowShader, fShaderTransformDepth, fShaderTransformSunShadow, fAPShader: TShader;
       fWaterShader, fWaterShaderTransformDepth, fWaterShaderTransformSunShadow: TShader;
       fWaterBumpmap: TTexture;
       fWaterBumpmapOffset: TVector2D;
@@ -46,6 +46,7 @@ type
       procedure Execute; override;
       procedure RecalcBoundingSpheres(X, Y: Integer);
       procedure CheckWaterLevel(X, Y: Word);
+      function BlockIsEven(X, Y: Integer): Boolean;
     public
       fBoundingSphereRadius, fAvgHeight, fMinHeight: Array of Array of Single;
       fTerrainMarkOCF: TOCFFile;
@@ -110,6 +111,11 @@ begin
   sleep(1);
 end;
 
+function TRTerrain.BlockIsEven(X, Y: Integer): Boolean;
+begin
+  Result := abs(fMinHeight[X, Y] - fAvgHeight[X, Y]) < 0.001;
+end;
+
 procedure TRTerrain.Execute;
 var
   i, j, l: Integer;
@@ -137,17 +143,21 @@ begin
         fWorking := true;
         fCanWork := false;
         if fCheckWater then
+          begin
           for l := 0 to high(fWaterLayerFBOs) do
             begin
             if fWaterLayerFBOs[l].Check then
               fWaterLayerFBOs[l].Deletable := Check(L);
             end;
+          fCheckWater := false;
+          end;
         if fCheckBBoxes then
+          begin
           for i := 0 to Park.pTerrain.SizeX div 128 - 1 do
             for j := 0 to Park.pTerrain.SizeY div 128 - 1 do
               RecalcBoundingSpheres(i, j);
-        fCheckWater := false;
-        fCheckBBoxes := false;
+          fCheckBBoxes := false;
+          end;
         end
       else
         sleep(1);
@@ -288,11 +298,32 @@ var
   WaterModeRefraction: Boolean;
   fBelow, fAbove: Single;
 
+  procedure BindBlockLights(X, Y: Integer);
+  var
+    k: Integer;
+  begin
+    X := Round(Clamp(X, 0, Park.pTerrain.SizeX div 128 - 1));
+    Y := Round(Clamp(Y, 0, Park.pTerrain.SizeY div 128 - 1));
+    if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
+      begin
+      ModuleManager.ModRenderer.LightManager.StartBinding;
+      for k := 0 to high(fStrongestLights[X, Y]) do
+        if fStrongestLights[X, Y, k] <> nil then
+          fStrongestLights[X, Y, k].Bind(k + 1)
+        else
+          ModuleManager.ModRenderer.LightManager.NoLight.Bind(k + 1);
+      ModuleManager.ModRenderer.LightManager.EndBinding;
+      end;
+  end;
+
   procedure RenderBlock(X, Y: Integer; Check: Boolean);
   var
     k: Integer;
   begin
     try
+      if (fBoundShader = fShaderTransformSunShadow) or (fBoundShader = fShadowShader) then
+        if BlockIsEven(X, Y) then
+          exit;
       if (X >= 0) and (Y >= 0) and (X <= Park.pTerrain.SizeX div 128 - 1) and (Y <= Park.pTerrain.SizeY div 128 - 1) then
         if (ModuleManager.ModRenderer.Frustum.IsSphereWithin(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y, fBoundingSphereRadius[X, Y])) and (SphereSphereIntersection(Sphere(Vector(12.8 + 25.6 * X, fAvgHeight[X, Y], 12.8 + 25.6 * Y), fBoundingSphereRadius[X, Y]), Sphere(ModuleManager.ModRenderer.DistanceMeasuringPoint, ModuleManager.ModRenderer.MaxRenderDistance))) then
           begin
@@ -336,6 +367,7 @@ var
   i, j, k: integer;
   Blocks: Array of Array[0..2] of Integer;
   fFineBlockX, fFineBlockY: Integer;
+  DoFineRender: Boolean;
 begin
   WaterModeRefraction := fInterface.Options.Items['water:mode'] = 'refraction';
   CurrWaterLayer := StrToIntWD(fInterface.Options.Items['water:currlayer'], 0);
@@ -353,10 +385,10 @@ begin
           SetLength(fWaterLayerFBOs, length(fWaterLayerFBOs) - 1);
           end;
   glDisable(GL_BLEND);
-  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
-  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
   fHeightMap.Bind(1);
   Park.pTerrain.Collection.Texture.Bind(0);
+  fFineOffsetX := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.X) * 5 - 128, 0, Park.pTerrain.SizeX - 256) / 4);
+  fFineOffsetY := 4 * Round(Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Z) * 5 - 128, 0, Park.pTerrain.SizeY - 256) / 4);
   fBoundShader := fShader;
   if fInterface.Options.Items['shader:mode'] = 'transform:depth' then
     fBoundShader := fShaderTransformDepth
@@ -386,6 +418,7 @@ begin
       end;
     end;
   fBoundShader.Bind;
+  fBoundShader.UniformF('Scale', 1, 1);
   fBoundShader.UniformF('ShadowQuadA', ModuleManager.ModRenderer.ShadowQuad[0].X, ModuleManager.ModRenderer.ShadowQuad[0].Z);
   fBoundShader.UniformF('ShadowQuadB', ModuleManager.ModRenderer.ShadowQuad[1].X, ModuleManager.ModRenderer.ShadowQuad[1].Z);
   fBoundShader.UniformF('ShadowQuadC', ModuleManager.ModRenderer.ShadowQuad[2].X, ModuleManager.ModRenderer.ShadowQuad[2].Z);
@@ -428,25 +461,37 @@ begin
     RenderBlock(Blocks[i, 1], Blocks[i, 2], fBoundShader = fShaderTransformDepth);
   if fInterface.Options.Items['terrain:hd'] <> 'off' then
     begin
-    fFineBlockX := Round((fFineOffsetX + 128) / 128);
-    fFineBlockY := Round((fFineOffsetY + 128) / 128);
-    if fInterface.Options.Items['shader:mode'] = 'normal:normal' then
+    DoFineRender := true;
+    if ((fBoundShader = fShadowShader) or (fBoundShader = fShaderTransformSunShadow)) and (
+          (BlockIsEven(Floor((fFineOffsetX + 64) / 128), Floor((fFineOffsetY + 64) / 128)))
+      and (BlockIsEven(Floor((fFineOffsetX + 64) / 128), Floor((fFineOffsetY + 192) / 128)))
+      and (BlockIsEven(Floor((fFineOffsetX + 192) / 128), Floor((fFineOffsetY + 192) / 128)))
+      and (BlockIsEven(Floor((fFineOffsetX + 192) / 128), Floor((fFineOffsetY + 64) / 128)))) then
+        DoFineRender := false;
+    if DoFineRender then
       begin
-      ModuleManager.ModRenderer.LightManager.StartBinding;
-      for k := 0 to high(fStrongestLights[fFineBlockX, fFineBlockY]) do
-        if fStrongestLights[fFineBlockX, fFineBlockY, k] <> nil then
-          fStrongestLights[fFineBlockX, fFineBlockY, k].Bind(k + 1)
-        else
-          ModuleManager.ModRenderer.LightManager.NoLight.Bind(k + 1);
-      ModuleManager.ModRenderer.LightManager.EndBinding;
+      glDisable(GL_CULL_FACE);
+      fBoundShader.UniformI('LOD', 2);
+      fBoundShader.UniformF('VOffset', fFineOffsetX / 5 + 25.6, fFineOffsetY / 5 + 25.6);
+      fFineVBO.Bind;
+      BindBlockLights(Floor((fFineOffsetX + 192) / 128), Floor((fFineOffsetY + 192) / 128));
+      fBoundShader.UniformF('Scale', 1, 1);
+      fFineVBO.Render;
+      BindBlockLights(Floor((fFineOffsetX + 64) / 128), Floor((fFineOffsetY + 192) / 128));
+      fBoundShader.UniformF('Scale', -1, 1);
+      fFineVBO.Render;
+      BindBlockLights(Floor((fFineOffsetX + 64) / 128), Floor((fFineOffsetY + 64) / 128));
+      fBoundShader.UniformF('Scale', -1, -1);
+      fFineVBO.Render;
+      BindBlockLights(Floor((fFineOffsetX + 192) / 128), Floor((fFineOffsetY + 64) / 128));
+      fBoundShader.UniformF('Scale', 1, -1);
+      fFineVBO.Render;
+      fFineVBO.Unbind;
+      fBoundShader.UniformF('Scale', 1, 1);
+      glEnable(GL_CULL_FACE);
       end;
-    fBoundShader.UniformI('LOD', 2);
-    fBoundShader.UniformF('VOffset', fFineOffsetX / 5, fFineOffsetY / 5);
-    fFineVBO.Bind;
-    fFineVBO.Render;
-    fFineVBO.Unbind;
     end;
-  if (fInterface.Options.Items['shader:mode'] <> 'sunshadow:sunshadow') and (fInterface.Options.Items['shader:mode'] <> 'shadow:shadow') then
+  if (fBoundShader <> fShadowShader) and (fBoundShader <> fShaderTransformSunShadow) then
     begin
     fBoundShader.UniformI('LOD', 3);
     fBoundShader.UniformF('VOffset', 0, 0);
@@ -973,23 +1018,23 @@ begin
     fWaterBumpmapOffset := Vector(0, 0);
     fFineOffsetX := 0;
     fFineOffsetY := 0;
-    fFineVBO := TVBO.Create(130 * 130 * 4 + 12 * 32 * 32 * 4, GL_V3F, GL_QUADS);
+    fFineVBO := TVBO.Create((65 * 65 + 3 * 33 * 33) * 4, GL_V3F, GL_QUADS);
     cv := 0;
-    for i := -1 to 128 do
-      for j := -1 to 128 do
+    for i := 0 to 64 do
+      for j := 0 to 64 do
         begin
-        fFineVBO.Vertices[cv + 0] := Vector(12.8 + 0.2 * i, 0.0, 0.2 * j + 13.0);
-        fFineVBO.Vertices[cv + 1] := Vector(13.0 + 0.2 * i, 0.0, 0.2 * j + 13.0);
-        fFineVBO.Vertices[cv + 2] := Vector(13.0 + 0.2 * i, 0.0, 0.2 * j + 12.8);
-        fFineVBO.Vertices[cv + 3] := Vector(12.8 + 0.2 * i, 0.0, 0.2 * j + 12.8);
+        fFineVBO.Vertices[cv + 0] := Vector(0.0 + 0.2 * i, 0.0, 0.2 * j + 0.2);
+        fFineVBO.Vertices[cv + 1] := Vector(0.2 + 0.2 * i, 0.0, 0.2 * j + 0.2);
+        fFineVBO.Vertices[cv + 2] := Vector(0.2 + 0.2 * i, 0.0, 0.2 * j + 0.0);
+        fFineVBO.Vertices[cv + 3] := Vector(0.0 + 0.2 * i, 0.0, 0.2 * j + 0.0);
         inc(cv, 4);
         end;
-    for k := 0 to 3 do
-      for l := 0 to 3 do
-        if (k = 0) or (k = 3) or (l = 3) or (l = 0) then
+    for k := 0 to 1 do
+      for l := 0 to 1 do
+        if (k > 0) or (l > 0) then
           begin
-          for i := 0 to 31 do
-            for j := 0 to 31 do
+          for i := 0 to 32 do
+            for j := 0 to 32 do
               begin
               fFineVBO.Vertices[cv + 0] := Vector(12.8 * k + 0.4 * i,       0.0, 12.8 * l + 0.4 * j + 0.4);
               fFineVBO.Vertices[cv + 1] := Vector(12.8 * k + 0.4 * i + 0.4, 0.0, 12.8 * l + 0.4 * j + 0.4);

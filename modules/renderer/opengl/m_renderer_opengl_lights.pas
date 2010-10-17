@@ -13,11 +13,13 @@ type
       fDynamic: Boolean;
       fOldPosition: TVector4D;
       fInternalID: Integer;
+      fHints: QWord;
     private
       fShadowRefreshOffset: Integer;
     public
       Position: TVector4D;
       Color: TVector4D;
+      DiffuseFactor, AmbientFactor: Single;
       property Dynamic: Boolean read fDynamic;
       property ShadowMap: TFBO read fShadowMap;
       function Strength(Distance: Single): Single;
@@ -89,12 +91,12 @@ uses
 
 function TLight.Strength(Distance: Single): Single;
 begin
-  Result := VecLengthNoRoot(Vector3D(Color)) * Position.W * Color.W / Max(0.01, Distance);
+  Result := VecLengthNoRoot(Vector3D(Color) * (AmbientFactor + DiffuseFactor)) * Position.W * Color.W / Max(0.01, Distance);
 end;
 
 function TLight.MaxLightingEffect: Single;
 begin
-  Result := Position.W * Color.W / 0.1;
+  Result := Position.W * Color.W * (AmbientFactor + DiffuseFactor) / 0.1;
 end;
 
 function TLight.IsVisible(A: TFrustum): Boolean;
@@ -107,8 +109,8 @@ procedure TLight.CreateShadowMap;
 begin
   fDynamic := VecLengthNoRoot(fOldPosition - Position) > 0.0001;
   fOldPosition := Position;
-  if not ((fShadowRefreshOffset = ModuleManager.ModRenderer.LightManager.fFrames mod 4) or (Dynamic)) then
-    exit;
+//   if not ((fShadowRefreshOffset = ModuleManager.ModRenderer.LightManager.fFrames mod 4) or (Dynamic)) then
+//     exit;
   ModuleManager.ModRenderer.MaxRenderDistance := MaxLightingEffect;
   ModuleManager.ModRenderer.DistanceMeasuringPoint := Vector3D(Position);
   fShadowMap.Bind;
@@ -197,9 +199,14 @@ begin
 end;
 
 procedure TLight.Bind(I: Integer);
+var
+  A, B: TVector4D;
 begin
   glEnable(GL_LIGHT0 + i);
-  glLightfv(GL_LIGHT0 + i, GL_DIFFUSE,  @Color.X);
+  A := Color * DiffuseFactor;
+  B := Color * AmbientFactor;
+  glLightfv(GL_LIGHT0 + i, GL_DIFFUSE,  @A.X);
+  glLightfv(GL_LIGHT0 + i, GL_AMBIENT,  @B.X);
   glLightfv(GL_LIGHT0 + i, GL_POSITION, @Position.X);
   if (fShadowMap <> nil) and (I <= 3) then
     fShadowMap.Textures[0].Bind(3 + I)
@@ -231,12 +238,18 @@ begin
   Color := Vector(1, 1, 1, 1);
   Position := Vector(0, 0, 0, 0);
   fShadowMap := nil;
+  fHints := Hints;
+  DiffuseFactor := 1;
+  AmbientFactor := 0;
   if (fInterface.Options.Items['shadows:enabled'] = 'on') and (Hints and LIGHT_HINT_NO_SHADOW = 0) then
     begin
     fShadowMap := TFBO.Create(768, 256, true); // Cube map
     fShadowMap.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);
     fShadowMap.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fShadowMap.Textures[0].Unbind;
+    fShadowMap.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    fShadowMap.Unbind;
     end;
   EventManager.CallEvent('TLightManager.AddLight', self, @fInternalID);
   fShadowRefreshOffset := Round(3 * Random);
@@ -356,9 +369,12 @@ begin
         for i := 0 to high(fStrongestTerrainLights) do
           for j := 0 to high(fStrongestTerrainLights[i]) do
             begin
-            BlockPos := Vector(12.8 + 25.6 * I, ModuleManager.ModRenderer.RTerrain.fAvgHeight[I, J], 12.8 + 25.6 * J);
             for k := 0 to high(fRegisteredLights) do
               begin
+              BlockPos := Vector3D(fRegisteredLights[k].Position);
+              BlockPos.X := Clamp(BlockPos.X, 25.6 * I, 25.6 * (I + 1));
+              BlockPos.Z := Clamp(BlockPos.Z, 25.6 * J, 25.6 * (J + 1));
+              BlockPos.Y := Park.pTerrain.HeightMap[BlockPos.X, BlockPos.Z];
               Dist := VecLength(Vector3D(fRegisteredLights[k].Position) - BlockPos);
               for l := 0 to high(fStrongestTerrainLights[i, j].Lights) do
                 begin

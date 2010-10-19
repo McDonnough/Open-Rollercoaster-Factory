@@ -3,7 +3,7 @@ unit u_selection;
 interface
 
 uses
-  SysUtils, Classes, u_geometry, u_vectors, u_math;
+  SysUtils, Classes, u_geometry, u_vectors, u_math, u_scene;
 
 type
   TSelectableObject = record

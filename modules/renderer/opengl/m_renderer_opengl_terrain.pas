@@ -468,6 +468,7 @@ begin
       and (BlockIsEven(Floor((fFineOffsetX + 192) / 128), Floor((fFineOffsetY + 192) / 128)))
       and (BlockIsEven(Floor((fFineOffsetX + 192) / 128), Floor((fFineOffsetY + 64) / 128)))) then
         DoFineRender := false;
+
     if DoFineRender then
       begin
       glDisable(GL_CULL_FACE);

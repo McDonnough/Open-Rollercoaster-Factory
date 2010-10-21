@@ -32,6 +32,7 @@ type
     Position, Color, VertexNormal: TVector3D;
     OriginalPosition, OriginalNormal: TVector3D;
     Bones: Array of TBoneEffect;
+    FaceIDs: Array of Integer;
     end;
   PVertex = ^TVertex;
 
@@ -40,8 +41,10 @@ type
     end;
   PTextureVertex = ^TTextureVertex;
 
+  TTriangleIndexList = Array[0..2] of Integer;
+
   TFace = record
-    Vertices, TexCoords: Array[0..2] of Integer;
+    Vertices, TexCoords: TTriangleIndexList;
     FaceNormal: TVector3D;
     end;
   PFace = ^TFace;
@@ -126,6 +129,7 @@ type
       function AddFace: PFace;
       procedure ChangesApplied;
       procedure AddChild(Mesh: TGeoMesh);
+      procedure UpdateFaceVertexAssociationForVertexNormalCalculation;
       constructor Create;
       destructor Free;
     end;
@@ -143,10 +147,22 @@ type
       destructor Free;
     end;
 
+function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
+
 implementation
 
 uses
   u_events;
+
+function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
+begin
+  Result[0] := A;
+  Result[1] := B;
+  Result[2] := C;
+end;
+
+
+
 
 function TLightSource.Duplicate: TLightSource;
 begin
@@ -260,6 +276,7 @@ end;
 
 destructor TGeoMesh.Free;
 begin
+  EventManager.CallEvent('TGeoObject.DeletedMesh', ParentObject, Self);
 end;
 
 
@@ -277,6 +294,7 @@ begin
   SetLength(Meshes, length(Meshes) + 1);
   Meshes[high(Meshes)] := TGeoMesh.Create;
   Result := Meshes[high(Meshes)];
+  EventManager.CallEvent('TGeoObject.AddedMesh', Self, Result);
 end;
 
 function TGeoObject.AddMaterial: TMaterial;
@@ -290,12 +308,27 @@ function TGeoObject.Duplicate: TGeoObject;
 begin
 end;
 
+procedure TGeoMesh.UpdateFaceVertexAssociationForVertexNormalCalculation;
+var
+  i, j: Integer;
+begin
+  for i := 0 to high(Faces) do
+    for j := 0 to 2 do
+      with Vertices[Faces[i].Vertices[j]] do
+        begin
+        SetLength(FaceIDs, Length(FaceIDs) + 1);
+        FaceIDs[high(FaceIDs)] := i;
+        end;
+end;
+
 constructor TGeoObject.Create;
 begin
+  EventManager.CallEvent('TGeoObject.Created', Self, nil);
 end;
 
 destructor TGeoObject.Free;
 begin
+  EventManager.CallEvent('TGeoObject.Deleted', Self, nil);
 end;
 
 

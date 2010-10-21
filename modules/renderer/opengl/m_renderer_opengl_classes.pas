@@ -3,7 +3,7 @@ unit m_renderer_opengl_classes;
 interface
 
 uses
-  SysUtils, Classes, DGLOpenGL, u_vectors, u_math, m_texmng_class;
+  SysUtils, Classes, DGLOpenGL, u_vectors, u_math, m_texmng_class, u_scene;
 
 type
   TVBO = class
@@ -40,6 +40,55 @@ type
       constructor Create(VertCount: Integer; Format, PolygonType: GLEnum);
       destructor Free;
     end;
+
+  TObjectVBOVertex = record
+    Vertex: TVector3D;
+    TexCoord: TVector2D;
+    Normal: TVector3D;
+    Color: TVector4D;
+    end;
+
+  TObjectVBO = class
+    protected
+      fVertexData: Array of TObjectVBOVertex;
+      fIndexData: Array of TTriangleIndexList;
+      fVerticesChanged, fTrianglesChanged: Array of Boolean;
+      fChangedVertices, fChangedTriangles: Array of DWord;
+      fChangedVerticesCount, fChangedTrianglesCount: DWord;
+      fVertices, fTriangles: DWord;
+      fVertexBuffer, fIndexBuffer: GLUInt;
+      fVBOPointer, fIndexPointer: Pointer;
+      fLastMode: GLEnum;
+      procedure Map(Mode: GLEnum);
+      procedure UnMap;
+
+      function getVertex(ID: DWord): TVector3D;
+      function getColor(ID: DWord): TVector4D;
+      function getNormal(ID: DWord): TVector3D;
+      function getTexCoord(ID: DWord): TVector2D;
+
+      procedure setVertex(ID: DWord; Vec: TVector3D);
+      procedure setColor(ID: DWord; Vec: TVector4D);
+      procedure setNormal(ID: DWord; Vec: TVector3D);
+      procedure setTexCoord(ID: DWord; Vec: TVector2D);
+
+      function GetIndicies(ID: DWord): TTriangleIndexList;
+      procedure SetIndicies(ID: DWord; Indicies: TTriangleIndexList);
+
+      procedure ApplyChanges;
+    public
+      property Vertices[ID: DWord]: TVector3D read getVertex write setVertex;
+      property Colors[ID: DWord]: TVector4D read getColor write setColor;
+      property Normals[ID: DWord]: TVector3D read getNormal write setNormal;
+      property TexCoords[ID: DWord]: TVector2D read getTexCoord write setTexCoord;
+      property Indicies[ID: DWord]: TTriangleIndexList read GetIndicies write SetIndicies;
+      procedure Bind;
+      procedure Render;
+      procedure Unbind;
+      constructor Create(VertexCount, FaceCount: DWord);
+      destructor Free;
+    end;
+
 
   TFBO = class
     protected
@@ -86,6 +135,13 @@ implementation
 
 uses
   m_varlist;
+
+const
+  OBJECT_VBO_VERTEX_OFFSET   =  0 * SizeOf(Single);
+  OBJECT_VBO_TEXCOORD_OFFSET =  3 * SizeOf(Single);
+  OBJECT_VBO_NORMAL_OFFSET   =  5 * SizeOf(Single);
+  OBJECT_VBO_COLOR_OFFSET    =  8 * SizeOf(Single);
+  OBJECT_VBO_VERTEX_SIZE     = 12 * SizeOf(Single);
 
 var
   fCurrentFBO: TFBO = nil;
@@ -246,6 +302,210 @@ begin
   Unbind;
   glDeleteBuffers(1, @fVBO);
 end;
+
+
+
+procedure TObjectVBO.Map(Mode: GLEnum);
+begin
+  if (fVBOPointer = nil) or (fLastMode <> Mode) then
+    begin
+    Bind;
+    if fVBOPointer <> nil then
+      Unmap;
+    fVBOPointer := glMapBuffer(GL_ARRAY_BUFFER, Mode);
+    fIndexPointer := glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, Mode);
+    fLastMode := Mode;
+    end;
+end;
+
+procedure TObjectVBO.UnMap;
+begin
+  if fVBOPointer <> nil then
+    begin
+    fVBOPointer := nil;
+    fIndexPointer := nil;
+    glUnMapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+    glUnMapBuffer(GL_ARRAY_BUFFER);
+    end;
+end;
+
+function TObjectVBO.getVertex(ID: DWord): TVector3D;
+begin
+  Result := fVertexData[ID].Vertex;
+end;
+
+function TObjectVBO.getColor(ID: DWord): TVector4D;
+begin
+  Result := fVertexData[ID].Color;
+end;
+
+function TObjectVBO.getNormal(ID: DWord): TVector3D;
+begin
+  Result := fVertexData[ID].Normal;
+end;
+
+function TObjectVBO.getTexCoord(ID: DWord): TVector2D;
+begin
+  Result := fVertexData[ID].TexCoord;
+end;
+
+procedure TObjectVBO.setVertex(ID: DWord; Vec: TVector3D);
+begin
+  fVertexData[ID].Vertex := Vec;
+  if not fVerticesChanged[ID] then
+    begin
+    fVerticesChanged[ID] := true;
+    fChangedVertices[fChangedVerticesCount] := ID;
+    inc(fChangedVerticesCount);
+    end;
+end;
+
+procedure TObjectVBO.setColor(ID: DWord; Vec: TVector4D);
+begin
+  fVertexData[ID].Color := Vec;
+  if not fVerticesChanged[ID] then
+    begin
+    fVerticesChanged[ID] := true;
+    fChangedVertices[fChangedVerticesCount] := ID;
+    inc(fChangedVerticesCount);
+    end;
+end;
+
+procedure TObjectVBO.setNormal(ID: DWord; Vec: TVector3D);
+begin
+  fVertexData[ID].Normal := Vec;
+  if not fVerticesChanged[ID] then
+    begin
+    fVerticesChanged[ID] := true;
+    fChangedVertices[fChangedVerticesCount] := ID;
+    inc(fChangedVerticesCount);
+    end;
+end;
+
+procedure TObjectVBO.setTexCoord(ID: DWord; Vec: TVector2D);
+begin
+  fVertexData[ID].TexCoord := Vec;
+  if not fVerticesChanged[ID] then
+    begin
+    fVerticesChanged[ID] := true;
+    fChangedVertices[fChangedVerticesCount] := ID;
+    inc(fChangedVerticesCount);
+    end;
+end;
+
+function TObjectVBO.GetIndicies(ID: DWord): TTriangleIndexList;
+begin
+  Result := TriangleIndexList(fIndexData[ID, 0], fIndexData[ID, 1], fIndexData[ID, 2]);
+end;
+
+procedure TObjectVBO.SetIndicies(ID: DWord; Indicies: TTriangleIndexList);
+begin
+  fIndexData[ID, 0] := Indicies[0];
+  fIndexData[ID, 1] := Indicies[1];
+  fIndexData[ID, 2] := Indicies[2];
+  if not fTrianglesChanged[ID] then
+    begin
+    fTrianglesChanged[ID] := True;
+    fChangedTriangles[fChangedTrianglesCount] := ID;
+    inc(fChangedTrianglesCount);
+    end;
+end;
+
+procedure TObjectVBO.ApplyChanges;
+var
+  i: Integer;
+begin
+  Map(GL_WRITE_ONLY);
+  for i := 0 to fChangedVerticesCount - 1 do
+    begin
+    TVector3D((fVBOPointer + OBJECT_VBO_VERTEX_SIZE * fChangedVertices[i] + OBJECT_VBO_VERTEX_OFFSET)^) := fVertexData[fChangedVertices[i]].Vertex;
+    TVector2D((fVBOPointer + OBJECT_VBO_VERTEX_SIZE * fChangedVertices[i] + OBJECT_VBO_TEXCOORD_OFFSET)^) := fVertexData[fChangedVertices[i]].TexCoord;
+    TVector3D((fVBOPointer + OBJECT_VBO_VERTEX_SIZE * fChangedVertices[i] + OBJECT_VBO_NORMAL_OFFSET)^) := fVertexData[fChangedVertices[i]].Normal;
+    TVector4D((fVBOPointer + OBJECT_VBO_VERTEX_SIZE * fChangedVertices[i] + OBJECT_VBO_COLOR_OFFSET)^) := fVertexData[fChangedVertices[i]].Color;
+    fVerticesChanged[fChangedVertices[i]] := false;
+    end;
+  for i := 0 to fChangedTrianglesCount - 1 do
+    begin
+    DWord((fIndexPointer + 12 * fChangedTriangles[i] + 0)^) := fIndexData[fChangedTriangles[i], 0];
+    DWord((fIndexPointer + 12 * fChangedTriangles[i] + 4)^) := fIndexData[fChangedTriangles[i], 1];
+    DWord((fIndexPointer + 12 * fChangedTriangles[i] + 8)^) := fIndexData[fChangedTriangles[i], 2];
+    fTrianglesChanged[fChangedTriangles[i]] := false;
+    end;
+  Unmap;
+  fChangedTrianglesCount := 0;
+  fChangedVerticesCount := 0;
+end;
+
+procedure TObjectVBO.Bind;
+begin
+  glBindBufferARB(GL_ARRAY_BUFFER, fVertexBuffer);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, fIndexBuffer);
+end;
+
+procedure TObjectVBO.Render;
+begin
+  ApplyChanges;
+  Bind;
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_COLOR_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glVertexPointer(3, GL_FLOAT, OBJECT_VBO_VERTEX_SIZE, Pointer(OBJECT_VBO_VERTEX_OFFSET));
+  glTexCoordPointer(2, GL_FLOAT, OBJECT_VBO_VERTEX_SIZE, Pointer(OBJECT_VBO_TEXCOORD_OFFSET));
+  glNormalPointer(GL_FLOAT, OBJECT_VBO_VERTEX_SIZE, Pointer(OBJECT_VBO_NORMAL_OFFSET));
+  glColorPointer(4, GL_FLOAT, OBJECT_VBO_VERTEX_SIZE, Pointer(OBJECT_VBO_COLOR_OFFSET));
+
+  glDrawElements(GL_TRIANGLES, 3 * fTriangles, GL_UNSIGNED_INT, nil);
+
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_NORMAL_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+end;
+
+procedure TObjectVBO.Unbind;
+begin
+  UnMap;
+  glBindBufferARB(GL_ARRAY_BUFFER, 0);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
+end;
+
+constructor TObjectVBO.Create(VertexCount, FaceCount: DWord);
+var
+  i: Integer;
+begin
+  fVertices := VertexCount;
+  fTriangles := FaceCount;
+  SetLength(fVertexData, VertexCount);
+  SetLength(fVerticesChanged, VertexCount);
+  setLength(fChangedVertices, VertexCount);
+  SetLength(fIndexData, FaceCount);
+  SetLength(fTrianglesChanged, FaceCount);
+  SetLength(fChangedTriangles, FaceCount);
+  glGenBuffers(1, @fVertexBuffer);
+  glGenBuffers(1, @fIndexBuffer);
+  Bind;
+  glBufferData(GL_ARRAY_BUFFER, fVertices * OBJECT_VBO_VERTEX_SIZE, nil, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * fTriangles * 4, nil, GL_DYNAMIC_DRAW);
+  for i := 0 to VertexCount - 1 do
+    begin
+    Vertices[i] := Vector(0, 0, 0);
+    TexCoords[i] := Vector(0, 0);
+    Normals[i] := Vector(0, 0, 0);
+    Colors[i] := Vector(0, 0, 0, 0);
+    end;
+  for i := 0 to FaceCount - 1 do
+    Indicies[i] := TriangleIndexList(0, 0, 0);
+  ApplyChanges;
+end;
+
+destructor TObjectVBO.Free;
+begin
+  Unbind;
+  glDeleteBuffers(1, @fVertexBuffer);
+  glDeleteBuffers(1, @fIndexBuffer);
+end;
+
 
 
 class procedure TFBO.UnbindCurrent;

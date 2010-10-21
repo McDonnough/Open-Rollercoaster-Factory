@@ -7,7 +7,7 @@ uses
   m_renderer_opengl_camera, m_renderer_opengl_terrain, math, m_texmng_class,
   m_shdmng_class, m_renderer_opengl_plugins, u_functions, m_renderer_opengl_frustum,
   m_renderer_opengl_interface, m_renderer_opengl_lights, m_renderer_opengl_sky,
-  m_renderer_opengl_classes, m_renderer_opengl_objects, u_geometry;
+  m_renderer_opengl_classes, m_renderer_opengl_objects, u_geometry, u_scene;
 
 type
   TModuleRendererOpenGL = class(TModuleRendererClass)
@@ -20,6 +20,7 @@ type
       ResX, ResY: Integer;
       fDistTexture: TTexture;
       fSunShadowOpenAngle: Single;
+//       fTestVBO: TObjectVBO;
     public
       ShadowQuad: Array[0..3] of TVector3D;
       VecToFront, OS, OC: TVector3D;
@@ -498,21 +499,25 @@ begin
     ModuleManager.ModRenderer.RSky.Sun.ShadowMap.Textures[0].Bind(7);
 
   EventManager.CallEvent('TModuleRenderer.Render', nil, nil);
-
+//
 //   glUseProgram(0);
 //   glDisable(GL_TEXTURE_2D);
 //   glDisable(GL_CULL_FACE);
-//
+
 //   glColor4f(1, 1, 1, 1);
 //   glBegin(GL_QUADS);
-//     glVertex3f(-10, 0, -10);
-//     glVertex3f( 10, 0, -10);
-//     glVertex3f( 10, 0,  10);
-//     glVertex3f(-10, 0,  10);
+//     glVertex3f(-10, 70, -10);
+//     glVertex3f( 10, 70, -10);
+//     glVertex3f( 10, 70,  10);
+//     glVertex3f(-10, 70,  10);
 //   glEnd;
-//
-//   glEnable(GL_TEXTURE_2D);
+//   fTestVBO.Bind;
+//   fTestVBO.Vertices[0] := fTestVBO.Vertices[0] + Vector(0, 0.01, 0);
+//   fTestVBO.Render;
+//   fTestVBO.Unbind;
 
+//   glEnable(GL_TEXTURE_2D);
+//
   glMatrixMode(GL_TEXTURE);
   glLoadIdentity;
   glMatrixMode(GL_MODELVIEW);
@@ -556,10 +561,23 @@ begin
   fDistTexture.CreateNew(ResX, ResY, GL_RGBA);
   fDistTexture.SetClamp(GL_CLAMP, GL_CLAMP);
   fDistTexture.SetFilter(GL_NEAREST, GL_NEAREST);
+//   fTestVBO := TObjectVBO.Create(4, 2);
+//   with fTestVBO do
+//     begin
+//     Vertices[0] := Vector(-10, 70, -10); Normals[0] := Vector(0, 1, 0); TexCoords[0] := Vector(0, 0); Colors[0] := Vector(1, 1, 1, 1);
+//     Vertices[1] := Vector( 10, 70, -10); Normals[1] := Vector(0, 1, 0); TexCoords[1] := Vector(0, 0); Colors[1] := Vector(1, 1, 1, 1);
+//     Vertices[2] := Vector( 10, 70,  10); Normals[2] := Vector(0, 1, 0); TexCoords[2] := Vector(0, 0); Colors[2] := Vector(1, 1, 1, 1);
+//     Vertices[3] := Vector(-10, 70,  10); Normals[3] := Vector(0, 1, 0); TexCoords[3] := Vector(0, 0); Colors[3] := Vector(1, 1, 1, 1);
+//
+//     Indicies[0] := TriangleIndexList(0, 1, 2);
+//     Indicies[1] := TriangleIndexList(0, 2, 3);
+//     end;
+//   fTestVBO.Unbind;
 end;
 
 destructor TModuleRendererOpenGL.Free;
 begin
+//   fTestVBO.Free;
   fDistTexture.Free;
   fFrustum.Free;
   fInterface.Free;

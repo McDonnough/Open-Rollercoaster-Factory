@@ -131,10 +131,10 @@ operator * (A, B: TMatrix3D): TMatrix3D;
 operator * (A, B: TMatrix4D): TMatrix4D;
 
 function Rotate(Deg: Single; AVector, Axis: TVector3D): TVector3D;
-function RotateMatrix(Deg: Single; Axis: TVector3D): TMatrix3D;
+function RotationMatrix(Deg: Single; Axis: TVector3D): TMatrix4D;
 
 
-function TranslateMatrix(P: TVector3D): TMatrix4D;
+function TranslationMatrix(P: TVector3D): TMatrix4D;
 
 
 function Identity3D: TMatrix3D;
@@ -595,16 +595,17 @@ begin
                                Vector(Axis.X * Axis.Z * (1 - C) - Axis.Y * S, Axis.Y * Axis.Z * (1 - C) + Axis.X * s, Axis.Z * Axis.Z * (1 - C) + C));
 end;
 
-function RotateMatrix(Deg: Single; Axis: TVector3D): TMatrix3D;
+function RotationMatrix(Deg: Single; Axis: TVector3D): TMatrix4D;
 var
   c, s: Single;
 begin
   Axis := Normalize(Axis);
   C := Cos(DegToRad(Deg));
   S := Sin(DegToRad(Deg));
-  Result := Matrix3D(Vector(Axis.X * Axis.X * (1 - C) + C, Axis.X * Axis.Y * (1 - C) - Axis.Z * s, Axis.X * Axis.Z * (1 - C) + Axis.Y * s),
-                     Vector(Axis.Y * Axis.X * (1 - C) + Axis.Z * S, Axis.Y * Axis.Y * (1 - C) + C, Axis.Y * Axis.Z * (1 - C) - Axis.X * s),
-                     Vector(Axis.X * Axis.Z * (1 - C) - Axis.Y * S, Axis.Y * Axis.Z * (1 - C) + Axis.X * s, Axis.Z * Axis.Z * (1 - C) + C));
+  Result := Matrix4D(Vector(Axis.X * Axis.X * (1 - C) + C, Axis.X * Axis.Y * (1 - C) - Axis.Z * s, Axis.X * Axis.Z * (1 - C) + Axis.Y * s, 0),
+                     Vector(Axis.Y * Axis.X * (1 - C) + Axis.Z * S, Axis.Y * Axis.Y * (1 - C) + C, Axis.Y * Axis.Z * (1 - C) - Axis.X * s, 0),
+                     Vector(Axis.X * Axis.Z * (1 - C) - Axis.Y * S, Axis.Y * Axis.Z * (1 - C) + Axis.X * s, Axis.Z * Axis.Z * (1 - C) + C, 0),
+                     Vector(0,                                      0,                                      0,                             1));
 end;
 
 function Identity3D: TMatrix3D;
@@ -678,7 +679,7 @@ begin
   Result[3] := Vector(0, 0, 0, 1);
 end;
 
-function TranslateMatrix(P: TVector3D): TMatrix4D;
+function TranslationMatrix(P: TVector3D): TMatrix4D;
 begin
   Result := Identity4D;
   Result[0].W := P.X;

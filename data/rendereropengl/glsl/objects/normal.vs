@@ -6,6 +6,7 @@ uniform vec2 ShadowQuadA;
 uniform vec2 ShadowQuadB;
 uniform vec2 ShadowQuadC;
 uniform vec2 ShadowQuadD;
+uniform float BumpMapFactor;
 
 varying vec3 v;
 varying vec4 DVertex;
@@ -41,7 +42,7 @@ vec4 mapPixelToQuad(vec2 P) {
 
 void main(void) {
   Normal = mat3(TransformMatrix) * gl_Normal;
-  gl_TexCoord[0] = vec4(gl_MultiTexCoord0.xy, gl_Color.r * gl_MultiTexCoord0.xy);
+  gl_TexCoord[0] = vec4(gl_MultiTexCoord0.xy, BumpMapFactor * gl_MultiTexCoord0.xy);
   Vertex = TransformMatrix * gl_Vertex;
   gl_ClipVertex = gl_ModelViewMatrix * Vertex;
   DVertex = gl_ClipVertex;

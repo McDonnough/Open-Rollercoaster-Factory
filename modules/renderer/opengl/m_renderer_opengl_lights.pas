@@ -370,54 +370,56 @@ begin
           for j := 0 to high(fStrongestTerrainLights[i]) do
             begin
             for k := 0 to high(fRegisteredLights) do
-              begin
-              BlockPos := Vector3D(fRegisteredLights[k].Position);
-              BlockPos.X := Clamp(BlockPos.X, 25.6 * I, 25.6 * (I + 1));
-              BlockPos.Z := Clamp(BlockPos.Z, 25.6 * J, 25.6 * (J + 1));
-              BlockPos.Y := Park.pTerrain.HeightMap[BlockPos.X, BlockPos.Z];
-              Dist := VecLength(Vector3D(fRegisteredLights[k].Position) - BlockPos);
-              for l := 0 to high(fStrongestTerrainLights[i, j].Lights) do
+//               if fRegisteredLights[k].IsVisible then
                 begin
-                if fRegisteredLights[k].Strength(Dist) > fStrongestTerrainLights[i, j].LightStrengthValues[l] then
+                BlockPos := Vector3D(fRegisteredLights[k].Position);
+                BlockPos.X := Clamp(BlockPos.X, 25.6 * I, 25.6 * (I + 1));
+                BlockPos.Z := Clamp(BlockPos.Z, 25.6 * J, 25.6 * (J + 1));
+                BlockPos.Y := Park.pTerrain.HeightMap[BlockPos.X, BlockPos.Z];
+                Dist := VecLength(Vector3D(fRegisteredLights[k].Position) - BlockPos);
+                for l := 0 to high(fStrongestTerrainLights[i, j].Lights) do
                   begin
-                  for m := high(fStrongestTerrainLights[i, j].Lights) - 1 downto l do
+                  if fRegisteredLights[k].Strength(Dist) > fStrongestTerrainLights[i, j].LightStrengthValues[l] then
                     begin
-                    fStrongestTerrainLights[i, j].Lights[m + 1] := fStrongestTerrainLights[i, j].Lights[m];
-                    fStrongestTerrainLights[i, j].LightStrengthValues[m + 1] := fStrongestTerrainLights[i, j].LightStrengthValues[m];
+                    for m := high(fStrongestTerrainLights[i, j].Lights) - 1 downto l do
+                      begin
+                      fStrongestTerrainLights[i, j].Lights[m + 1] := fStrongestTerrainLights[i, j].Lights[m];
+                      fStrongestTerrainLights[i, j].LightStrengthValues[m + 1] := fStrongestTerrainLights[i, j].LightStrengthValues[m];
+                      end;
+                    fStrongestTerrainLights[i, j].Lights[l] := fRegisteredLights[k];
+                    fStrongestTerrainLights[i, j].LightStrengthValues[l] := fRegisteredLights[k].Strength(Dist);
+                    break;
                     end;
-                  fStrongestTerrainLights[i, j].Lights[l] := fRegisteredLights[k];
-                  fStrongestTerrainLights[i, j].LightStrengthValues[l] := fRegisteredLights[k].Strength(Dist);
-                  break;
                   end;
                 end;
-              end;
             end;
         for i := 0 to high(fMeshLights) do
           begin
-          MeshPos := Vector(0, 0, 0, 1) * TManagedMesh(fMeshLights[i].Mesh).fMesh.TransformMatrix;
+          MeshPos := Vector(0, 0, 0, 1) * TManagedMesh(fMeshLights[i].Mesh).fMesh.CalculatedMatrix;
           for j := 0 to high(fMeshLights[i].Lights) do
             begin
             fMeshLights[i].LightStrengthValues[j] := 0;
             fMeshLights[i].Lights[j] := nil;
             end;
           for j := 1 to high(fRegisteredLights) do
-            begin
-            Dist := VecLength(Vector3D(MeshPos) - Vector3D(fRegisteredLights[j].Position));
-            for k := 0 to high(fMeshLights[i].Lights) do
+//             if fRegisteredLights[j].IsVisible then
               begin
-              if fRegisteredLights[j].Strength(Dist) > fMeshLights[i].LightStrengthValues[k] then
+              Dist := VecLength(Vector3D(MeshPos) - Vector3D(fRegisteredLights[j].Position));
+              for k := 0 to high(fMeshLights[i].Lights) do
                 begin
-                for l := high(fMeshLights[i].Lights) - 1 downto k do
+                if fRegisteredLights[j].Strength(Dist) > fMeshLights[i].LightStrengthValues[k] then
                   begin
-                  fMeshLights[i].Lights[l + 1] := fMeshLights[i].Lights[l];
-                  fMeshLights[i].LightStrengthValues[l + 1] := fMeshLights[i].LightStrengthValues[l];
+                  for l := high(fMeshLights[i].Lights) - 1 downto k do
+                    begin
+                    fMeshLights[i].Lights[l + 1] := fMeshLights[i].Lights[l];
+                    fMeshLights[i].LightStrengthValues[l + 1] := fMeshLights[i].LightStrengthValues[l];
+                    end;
+                  fMeshLights[i].Lights[k] := fRegisteredLights[j];
+                  fMeshLights[i].LightStrengthValues[k] := fRegisteredLights[j].Strength(Dist);
+                  break;
                   end;
-                fMeshLights[i].Lights[k] := fRegisteredLights[j];
-                fMeshLights[i].LightStrengthValues[k] := fRegisteredLights[j].Strength(Dist);
-                break;
                 end;
               end;
-            end;
           end;
         end;
       fWorking := false;

@@ -52,6 +52,8 @@ type
     protected
       fVertexData: Array of TObjectVBOVertex;
       fIndexData: Array of TTriangleIndexList;
+      fMeshVertexIDList: Array of Integer;
+      fMeshTextureVertexIDList: Array of Integer;
       fVerticesChanged, fTrianglesChanged: Array of Boolean;
       fChangedVertices, fChangedTriangles: Array of DWord;
       fChangedVerticesCount, fChangedTrianglesCount: DWord;
@@ -59,6 +61,8 @@ type
       fVertexBuffer, fIndexBuffer: GLUInt;
       fVBOPointer, fIndexPointer: Pointer;
       fLastMode: GLEnum;
+      fMesh: TGeoMesh;
+      fRadius: Single;
       procedure Map(Mode: GLEnum);
       procedure UnMap;
 
@@ -82,10 +86,13 @@ type
       property Normals[ID: DWord]: TVector3D read getNormal write setNormal;
       property TexCoords[ID: DWord]: TVector2D read getTexCoord write setTexCoord;
       property Indicies[ID: DWord]: TTriangleIndexList read GetIndicies write SetIndicies;
+      property Radius: Single read fRadius;
+      procedure LookForChanges;
       procedure Bind;
       procedure Render;
       procedure Unbind;
-      constructor Create(VertexCount, FaceCount: DWord);
+      constructor Create(Mesh: TGeoMesh);
+      constructor Create(VertexCount, FaceCount: DWord; Mesh: TGeoMesh = nil);
       destructor Free;
     end;
 
@@ -351,6 +358,8 @@ end;
 
 procedure TObjectVBO.setVertex(ID: DWord; Vec: TVector3D);
 begin
+  if VecLengthNoRoot(Vec) > fRadius * fRadius then
+    fRadius := VecLength(Vec);
   fVertexData[ID].Vertex := Vec;
   if not fVerticesChanged[ID] then
     begin
@@ -411,6 +420,12 @@ begin
     end;
 end;
 
+procedure TObjectVBO.LookForChanges;
+var
+  i: Integer;
+begin
+end;
+
 procedure TObjectVBO.ApplyChanges;
 var
   i: Integer;
@@ -438,6 +453,8 @@ end;
 
 procedure TObjectVBO.Bind;
 begin
+  if fMesh <> nil then
+    LookForChanges;
   glBindBufferARB(GL_ARRAY_BUFFER, fVertexBuffer);
   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, fIndexBuffer);
 end;
@@ -470,10 +487,103 @@ begin
   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
 end;
 
-constructor TObjectVBO.Create(VertexCount, FaceCount: DWord);
+constructor TObjectVBO.Create(Mesh: TGeoMesh);
+// type
+//   TSomething = record
+//     OrigVertex: Integer;
+//     TVert: Integer;
+//     Facenormal, Used: Boolean;
+//     FaceIDs: Array of Integer;
+//     end;
+var
+  i, j, k, l, VC: Integer;
+//   f: Boolean;
+//   VertexTVertexAssoc: Array of Array of TSomething;
+//   FaceVertexAssoc: Array of Array[0..2] of Integer;
+//   FaceVertexCount: Array of Integer;
+begin
+//   SetLength(VertexTVertexAssoc, Length(Mesh.Vertices));
+//   VC := 0;
+//   for i := 0 to high(Mesh.Vertices) do
+//     for j := 0 to high(Mesh.Vertices[i].FaceIDs) do
+//       begin
+//       F := False;
+//       if Mesh.Vertices[i].UseFaceNormal then
+//         for k := 0 to 2 do
+//           if Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].Vertices[k] = i then
+//             for l := 0 to high(VertexTVertexAssoc[i]) do
+//               if (VertexTVertexAssoc[i, l].TVert = Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].TexCoords[k]) and not (VertexTVertexAssoc[i, l].Facenormal) then
+//                 F := True;
+//       if F then
+//         begin
+//         SetLength(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs, length(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs));
+//         VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs[high(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs)] := Mesh.Vertices[i].FaceIDs[j];
+//         end
+//       else
+//         for k := 0 to 2 do
+//           if Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].Vertices[k] = i then
+//             begin
+//             SetLength(VertexTVertexAssoc[i], length(VertexTVertexAssoc[i]) + 1);
+//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].TVert := Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].TexCoords[k];
+//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].Facenormal := Mesh.Vertices[i].UseFaceNormal;
+//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].Used := False;
+//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].OrigVertex := i;
+//             SetLength(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs, 1);
+//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs[0] := Mesh.Vertices[i].FaceIDs[j];
+//             inc(VC);
+//             end;
+//       end;
+//   Create(VC, Length(Mesh.Faces), Mesh);
+//   SetLength(FaceVertexAssoc, Length(Mesh.Faces));
+//   SetLength(FaceVertexCount, Length(Mesh.Faces));
+//   VC := 0;
+//   for i := 0 to high(VertexTVertexAssoc) do
+//    for j := 0 to high(VertexTVertexAssoc[i]) do
+//       begin
+//       Vertices[VC] := Mesh.Vertices[VertexTVertexAssoc[i, j].OrigVertex].Position;
+//       TexCoords[VC] := Mesh.TextureVertices[VertexTVertexAssoc[i, j].TVert].Position;
+//       if Mesh.Vertices[i].UseFaceNormal then
+//         Normals[VC] := Mesh.Faces[VertexTVertexAssoc[i, j].FaceIDs[0]].Facenormal
+//       else
+//         Normals[VC] := Mesh.Vertices[VertexTVertexAssoc[i, j].OrigVertex].Vertexnormal;
+//       Colors[i] := Mesh.Vertices[i].Color;
+//       for k := 0 to high(VertexTVertexAssoc[i, j].FaceIDs) do
+//         begin
+//         inc(FaceVertexCount[VertexTVertexAssoc[i, j].FaceIDs[k]]);
+//         if FaceVertexCount[VertexTVertexAssoc[i, j].FaceIDs[k]] = 3 then
+//           Finish me
+//         end;
+//       end;
+
+  SetLength(fMeshVertexIDList, 3 * Length(Mesh.Faces));
+  SetLength(fMeshTextureVertexIDList, 3 * Length(Mesh.Faces));
+
+
+  Create(3 * Length(Mesh.Faces), Length(Mesh.Faces), Mesh);
+  for i := 0 to high(Mesh.Faces) do
+    begin
+    Indicies[i] := TriangleIndexList(3 * i, 3 * i + 1, 3 * i + 2);
+    for j := 0 to 2 do
+      begin
+      fMeshVertexIDList[3 * i + j] := Mesh.Faces[i].Vertices[j];
+      fMeshTextureVertexIDList[3 * i + j] := Mesh.Faces[i].TexCoords[j];
+      Vertices[3 * i + j] := Mesh.Vertices[Mesh.Faces[i].Vertices[j]].Position;
+      if Mesh.Vertices[Mesh.Faces[i].Vertices[j]].UseFaceNormal then
+        Normals[3 * i + j] := Mesh.Faces[i].FaceNormal
+      else
+        Normals[3 * i + j] := Mesh.Vertices[Mesh.Faces[i].Vertices[j]].VertexNormal;
+      Colors[3 * i + j] := Mesh.Vertices[Mesh.Faces[i].Vertices[j]].Color;
+      TexCoords[3 * i + j] := Mesh.TextureVertices[Mesh.Faces[i].TexCoords[j]].Position;
+      end;
+    end;
+end;
+
+constructor TObjectVBO.Create(VertexCount, FaceCount: DWord; Mesh: TGeoMesh = nil);
 var
   i: Integer;
 begin
+  fRadius := 0;
+  fMesh := Mesh;
   fVertices := VertexCount;
   fTriangles := FaceCount;
   SetLength(fVertexData, VertexCount);

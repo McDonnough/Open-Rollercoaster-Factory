@@ -3,7 +3,7 @@ unit u_ase;
 interface
 
 uses
-  SysUtils, classes, u_geometry, u_vectors, u_math, math, u_files, u_functions, u_arrays;
+  SysUtils, classes, u_scene, u_vectors, u_math, math, u_files, u_functions, u_arrays;
 
 type
   TASEMaterial = record
@@ -73,7 +73,7 @@ type
 
 function LoadASEFile(F: String): TASEFile;
 function LoadASECode(A: String): TASEFile;
-function ASEFileToMeshArray(F: TASEFile): AMesh;
+function ASEFileToMeshArray(F: TASEFile): TGeoObject;
 
 implementation
 
@@ -391,55 +391,49 @@ begin
   end;
 end;
 
-function ASEFileToMeshArray(F: TASEFile): AMesh;
+function ASEFileToMeshArray(F: TASEFile): TGeoObject;
 var
-  i, j, k, l: Integer;
-  tmpVertex: Array[0..2] of TMeshVertex;
-  Indicies: Array[0..2] of Integer;
+  i, j: Integer;
 begin
-  SetLength(Result, Length(F.GeomObjects));
-  for i := 0 to high(Result) do
-    begin
-    Result[i] := TMesh.Create;
-    Result[i].Color := Vector(F.Materials[F.GeomObjects[i].MaterialRef].Diffuse, 1 - F.Materials[F.GeomObjects[i].MaterialRef].Transprarency);
-    Result[i].Shininess := 1 / F.Materials[F.GeomObjects[i].MaterialRef].Shine / F.Materials[F.GeomObjects[i].MaterialRef].ShineStrength;
-    Result[i].MaxDistance := 10000;
-    Result[i].Parent := nil;
-
-    for j := 0 to F.GeomObjects[i].Mesh.NumFaces - 1 do
+  Result := TGeoObject.Create;
+  for i := 0 to F.MaterialCount do
+    with Result.AddMaterial do
       begin
-      tmpVertex[0].Position := F.GeomObjects[i].Mesh.VertexList[F.GeomObjects[i].Mesh.FaceList[j].A];
-      tmpVertex[1].Position := F.GeomObjects[i].Mesh.VertexList[F.GeomObjects[i].Mesh.FaceList[j].B];
-      tmpVertex[2].Position := F.GeomObjects[i].Mesh.VertexList[F.GeomObjects[i].Mesh.FaceList[j].C];
-
-      tmpVertex[0].Normal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[0].Normal;
-      tmpVertex[1].Normal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[1].Normal;
-      tmpVertex[2].Normal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[2].Normal;
-
-      tmpVertex[0].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 0]]);
-      tmpVertex[1].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 1]]);
-      tmpVertex[2].TexCoord := Vector2D(F.GeomObjects[i].Mesh.TVertexList[F.GeomObjects[i].Mesh.TFaceList[j, 2]]);
-
-      for l := 0 to 2 do
-        begin
-        tmpVertex[l].BumpTexCoordFactor := 1;
-        tmpVertex[l].Fix := True;
-        Indicies[l] := Result[i].VertexCount + 2;
-        end;
-      // DO NOT UNCOMMENT: Custom normal calculation, bump mapping factor and fix-property would cause problems
-{      for k := 0 to Result[i].VertexCount - 1 do
-        for l := 0 to 2 do
-          if Result[i].Vertices[k] = tmpVertex[l] then
-            Indicies[l] := k;}
-      for l := 0 to 2 do
-        if Indicies[l] >= Result[i].VertexCount then
-          begin
-          Indicies[l] := Result[i].VertexCount;
-          Result[i].Vertices[Indicies[l]] := tmpVertex[l];
-          end;
-      Result[i].Triangles[Result[i].TriangleCount] := MakeTriangleVertexArray(Indicies[0], Indicies[1], Indicies[2]);
+      Color := Vector(F.Materials[i].Diffuse, 1 - F.Materials[i].Transprarency);
+      Specularity := 1 / F.Materials[F.GeomObjects[i].MaterialRef].Shine / F.Materials[F.GeomObjects[i].MaterialRef].ShineStrength;
       end;
-    end;
+  for i := 0 to high(F.GeomObjects) do
+    with Result.AddMesh do
+      begin
+      Material := Result.Materials[F.GeomObjects[i].MaterialRef];
+      MinDistance := 0;
+      MaxDistance := 10000;
+      Parent := nil;
+
+      for j := 0 to F.GeomObjects[i].Mesh.NumVertex - 1 do
+        with (AddVertex)^ do
+          Position := F.GeomObjects[i].Mesh.VertexList[j];
+
+      for j := 0 to F.GeomObjects[i].Mesh.NumTVertex - 1 do
+        with (AddTextureVertex)^ do
+          Position := Vector2D(F.GeomObjects[i].Mesh.TVertexList[j]);
+
+      for j := 0 to F.GeomObjects[i].Mesh.NumFaces - 1 do
+        with (AddFace)^ do
+          begin
+          Vertices[0] := F.GeomObjects[i].Mesh.FaceList[j].A;
+          Vertices[1] := F.GeomObjects[i].Mesh.FaceList[j].B;
+          Vertices[2] := F.GeomObjects[i].Mesh.FaceList[j].C;
+          TexCoords[0] := F.GeomObjects[i].Mesh.TFaceList[j, 0];
+          TexCoords[1] := F.GeomObjects[i].Mesh.TFaceList[j, 1];
+          TexCoords[2] := F.GeomObjects[i].Mesh.TFaceList[j, 2];
+          Facenormal := F.GeomObjects[i].Mesh.Normals[j].Facenormal;
+          Result.Meshes[i].Vertices[Vertices[0]].VertexNormal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[0].Normal;
+          Result.Meshes[i].Vertices[Vertices[1]].VertexNormal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[1].Normal;
+          Result.Meshes[i].Vertices[Vertices[2]].VertexNormal := F.GeomObjects[i].Mesh.Normals[j].VertexNormals[2].Normal;
+          end;
+      UpdateFaceVertexAssociationForVertexNormalCalculation;
+      end;
 end;
 
 end.

@@ -150,8 +150,8 @@ end;
 
 procedure TMesh.UpdateMatrix;
 begin
-  fTransformMatrix := TranslateMatrix(StaticOffset) * Matrix4D(StaticRotationMatrix);
-  fTransformMatrix := fTransformMatrix * TranslateMatrix(Offset) * Matrix4D(RotationMatrix);
+  fTransformMatrix := TranslationMatrix(StaticOffset) * Matrix4D(StaticRotationMatrix);
+  fTransformMatrix := fTransformMatrix * TranslationMatrix(Offset) * Matrix4D(RotationMatrix);
 end;
 
 procedure TMesh.SetStaticOffset(A: TVector3D);

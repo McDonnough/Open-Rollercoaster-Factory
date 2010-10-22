@@ -3,7 +3,7 @@ unit m_renderer_opengl_objects;
 interface
 
 uses
-  SysUtils, Classes, g_object_base, g_park, m_shdmng_class, m_renderer_opengl_classes, u_geometry, u_arrays, DGLOpenGL, u_vectors, m_texmng_class,
+  SysUtils, Classes, g_park, m_shdmng_class, m_renderer_opengl_classes, u_arrays, DGLOpenGL, u_vectors, m_texmng_class,
   m_renderer_opengl_frustum, m_renderer_opengl_lights, u_scene;
 
 type

@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, DGLOpenGL, m_renderer_opengl_classes, u_vectors, m_shdmng_class, m_texmng_class, u_math, math,
-  m_renderer_opengl_interface, g_loader_ocf, g_object_base, m_renderer_opengl_lights;
+  m_renderer_opengl_interface, g_loader_ocf, m_renderer_opengl_lights, u_scene;
 
 type
   TWaterLayerFBO = class
@@ -41,7 +41,7 @@ type
       fHeightMap: TTexture;
       fFrameCount: Byte;
       RenderStep: Single;
-      fMarks: Array of TBasicObject;
+      fMarks: Array of TGeoObject;
       procedure Sync;
       procedure Execute; override;
       procedure RecalcBoundingSpheres(X, Y: Integer);
@@ -518,14 +518,14 @@ begin
   for i := high(fMarks) + 1 to Park.pTerrain.Marks.Height - 1 do
     begin
     SetLength(fMarks, length(fMarks) + 1);
-    fMarks[i] := TBasicObject.Create;
-    fMarks[i].ReadFromOCFFile(fTerrainMarkOCF);
+    fMarks[i] := TGeoObject.Create;
+//     fMarks[i].ReadFromOCFFile(fTerrainMarkOCF);
     end;
 
 
     for i := 0 to high(fMarks) do
       begin
-      fMarks[i].Move(Vector(Park.pTerrain.Marks.Value[0, i], Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], Park.pTerrain.Marks.Value[1, i]));
+      fMarks[i].Matrix := TranslationMatrix(Vector(Park.pTerrain.Marks.Value[0, i], Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], Park.pTerrain.Marks.Value[1, i]));
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] - 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] - 0.1);
       glVertex3f(0.2 * Park.pTerrain.Marks.Value[0, i] + 0.1, 0.1 + Park.pTerrain.HeightMap[0.2 * Park.pTerrain.Marks.Value[0, i], 0.2 * Park.pTerrain.Marks.Value[1, i]], 0.2 * Park.pTerrain.Marks.Value[1, i] + 0.1);

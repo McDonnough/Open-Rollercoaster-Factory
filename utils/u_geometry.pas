@@ -3,7 +3,7 @@ unit u_geometry;
 interface
 
 uses
-  SysUtils, Classes, u_math, u_vectors, m_texmng_class;
+  SysUtils, Classes, u_math, u_vectors, m_texmng_class, u_scene;
 
 type
   TTriangle = Array[0..2] of TVector3D;
@@ -77,6 +77,7 @@ function RayTriangleIntersection(Ray: TRay; Tri: TTriangle; var I: TVector3D): B
 function MakeMeshVertex(P, N: TVector3D; T: TVector2D): TMeshVertex;
 function MakeExtendedMeshVertex(P, N: TVector3D; T: TVector2D; BF: Single): TMeshVertex;
 function MakeTriangleVertexArray(A, B, C: Integer): TMeshTriangleVertexArray;
+function MakeTriangleFromFace(Mesh: TGeoMesh; A: TFace): TTriangle;
 
 operator = (A, B: TMeshVertex): Boolean;
 
@@ -358,6 +359,13 @@ end;
 operator = (A, B: TMeshVertex): Boolean;
 begin
   Result := (A.Position = B.Position) and (A.Normal = B.Normal) and (A.TexCoord = B.TexCoord) and (A.BumpTexCoordFactor = B.BumpTexCoordFactor) and (A.Fix = B.Fix);
+end;
+
+function MakeTriangleFromFace(Mesh: TGeoMesh; A: TFace): TTriangle;
+begin
+  Result[0] := Mesh.Vertices[A.Vertices[0]].Position;
+  Result[1] := Mesh.Vertices[A.Vertices[1]].Position;
+  Result[2] := Mesh.Vertices[A.Vertices[2]].Position;
 end;
 
 end.

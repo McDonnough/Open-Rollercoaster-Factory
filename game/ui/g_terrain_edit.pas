@@ -3,7 +3,7 @@ unit g_terrain_edit;
 interface
 
 uses
-  SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_geometry, u_math, u_vectors, u_arrays, u_functions, math,
+  SysUtils, Classes, g_parkui, m_gui_iconifiedbutton_class, u_selection, u_scene, u_math, u_vectors, u_arrays, u_functions, math,
   m_gui_button_class, u_dialogs;
 
 type
@@ -11,7 +11,7 @@ type
     protected
       MarkMode: TIconifiedButton;
       MarksFixed: Boolean;
-      fSelectionMap: TMesh;
+      fSelectionMap: TGeoMesh;
       fSelectionObject: PSelectableObject;
       fTerrainSelectionEngine: TSelectionEngine;
       fCameraOffset: TVector3D;
@@ -320,8 +320,8 @@ begin
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
       begin
-      fSelectionMap.pVertices[(SELECTION_SIZE + 1) * j + i]^.Position := fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position - fCameraOffset + fTmpCameraOffset;
-      fSelectionMap.pVertices[(SELECTION_SIZE + 1) * j + i]^.Position.Y := Park.pTerrain.HeightMap[fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position.X, fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position.Z];
+      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position := fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position - fCameraOffset + fTmpCameraOffset;
+      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position.Y := Park.pTerrain.HeightMap[fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position.X, fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i].Position.Z];
       end;
   fCameraOffset := fTmpCameraOffset;
 end;
@@ -431,15 +431,26 @@ begin
   EventManager.AddCallback('TTerrain.Resize', @Resized);
 
   fCameraOffset := Vector(0, 0, 0);
-  fSelectionMap := TMesh.Create;
+  fSelectionMap := TGeoMesh.Create;
   for j := 0 to SELECTION_SIZE do
     for i := 0 to SELECTION_SIZE do
-      fSelectionMap.Vertices[(SELECTION_SIZE + 1) * j + i] := MakeMeshVertex(Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.8, Vector(0.0, 1.0, 0.0), Vector(0.0, 0.0));
+      with (fSelectionMap.AddVertex)^ do
+        Position := Vector(i - 0.5 * SELECTION_SIZE, 0, j - 0.5 * SELECTION_SIZE) * 0.8;
   for j := 0 to SELECTION_SIZE - 1 do
     for i := 0 to SELECTION_SIZE - 1 do
       begin
-      fSelectionMap.Triangles[fSelectionMap.TriangleCount] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * j + i, (SELECTION_SIZE + 1) * j + i + 1, (SELECTION_SIZE + 1) * (j + 1) + i);
-      fSelectionMap.Triangles[fSelectionMap.TriangleCount] := MakeTriangleVertexArray((SELECTION_SIZE + 1) * (j + 1) + (i + 1), (SELECTION_SIZE + 1) * j + i + 1, (SELECTION_SIZE + 1) * (j + 1) + i);
+      with (fSelectionMap.AddFace)^ do
+        begin
+        Vertices[0] := (SELECTION_SIZE + 1) * j + i;
+        Vertices[1] := (SELECTION_SIZE + 1) * j + i + 1;
+        Vertices[2] := (SELECTION_SIZE + 1) * (j + 1) + i;
+        end;
+      with (fSelectionMap.AddFace)^ do
+        begin
+        Vertices[0] := (SELECTION_SIZE + 1) * (j + 1) + (i + 1);
+        Vertices[1] := (SELECTION_SIZE + 1) * j + i + 1;
+        Vertices[2] := (SELECTION_SIZE + 1) * (j + 1) + i;
+        end;
       end;
   fTerrainSelectionEngine := TSelectionEngine.Create;
   fSelectionObject := fTerrainSelectionEngine.Add(fSelectionMap, 'GUIActions.terrain_edit.marks.move');

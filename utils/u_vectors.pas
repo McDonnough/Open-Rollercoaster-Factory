@@ -49,6 +49,9 @@ function Vector(XY, ZW: TVector2D): TVector4D;
 function Vector(XYZ: TVector3D; W: Single): TVector4D;
 function Vector(X: Single; YZW: TVector3D): TVector4D;
 
+function MixVec(A, B: TVector2D; F: Single): TVector2D;
+function MixVec(A, B: TVector3D; F: Single): TVector3D;
+function MixVec(A, B: TVector4D; F: Single): TVector4D;
 
 operator + (A, B: TVector2D): TVector2D;
 operator + (A, B: TVector3D): TVector3D;
@@ -395,6 +398,22 @@ begin
   Result := Vector(Round(A.X), Round(A.Y), ROund(A.Z), Round(A.W));
 end;
 
+
+
+function MixVec(A, B: TVector2D; F: Single): TVector2D;
+begin
+  Result := B * F + A * (1 - F);
+end;
+
+function MixVec(A, B: TVector3D; F: Single): TVector3D;
+begin
+  Result := B * F + A * (1 - F);
+end;
+
+function MixVec(A, B: TVector4D; F: Single): TVector4D;
+begin
+  Result := B * F + A * (1 - F);
+end;
 
 
 function Vector(X, Y: Single): TVector2D;

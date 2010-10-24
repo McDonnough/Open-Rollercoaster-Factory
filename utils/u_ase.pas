@@ -406,7 +406,7 @@ begin
     with Result.AddMesh do
       begin
       Material := Result.Materials[F.GeomObjects[i].MaterialRef];
-      MinDistance := 0;
+      MinDistance := -10000;
       MaxDistance := 10000;
       Parent := nil;
 

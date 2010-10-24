@@ -1,9 +1,9 @@
-unit m_renderer_opengl_sky;
+unit m_renderer_owe_sky;
 
 interface
 
 uses
-  SysUtils, Classes, DGLOpenGL, m_renderer_opengl_lights, math, u_math, u_vectors, u_events, m_shdmng_class, m_renderer_opengl_interface;
+  SysUtils, Classes, DGLOpenGL, m_renderer_owe_lights, math, u_math, u_vectors, u_events, m_shdmng_class;
 
 type
   TRSky = class
@@ -13,8 +13,6 @@ type
       fShader: TShader;
     public
       property Sun: TSun read fSun;
-      property CameraLight: TLight read fCameraLight;
-      property CameraLight2: TLight read fCameraLight2;
       procedure Render(Event: String; Data, Result: Pointer);
       procedure Advance;
       constructor Create;
@@ -24,18 +22,11 @@ type
 implementation
 
 uses
-  g_park, m_varlist, m_renderer_opengl, u_functions;
+  g_park, m_varlist, m_renderer_owe, u_functions;
 
 procedure TRSky.Render(Event: String; Data, Result: Pointer);
 begin
-  glPushMatrix;
-  glLoadIdentity;
-  fSun.Bind(0);
-  glPopMatrix;
-  if fInterface.Options.Items['sky:rendering'] = 'off' then
-    exit;
   fShader.Bind;
-  glDepthMask(false);
   glBegin(GL_QUADS);
     glVertex3f(-5000, 2500, -5000);
     glVertex3f( 5000, 2500, -5000);
@@ -62,15 +53,11 @@ begin
     glVertex3f( 5000, 2500,  5000);
     glVertex3f( 5000, 2500, -5000);
 
-    if StrToIntWD(fInterface.Options.Items['all:above'], 0) = 0 then
-      begin
-      glVertex3f(-5000,    0, -5000);
-      glVertex3f(-5000,    0,  5000);
-      glVertex3f( 5000,    0,  5000);
-      glVertex3f( 5000,    0, -5000);
-      end;
+    glVertex3f(-5000,    0, -5000);
+    glVertex3f(-5000,    0,  5000);
+    glVertex3f( 5000,    0,  5000);
+    glVertex3f( 5000,    0, -5000);
   glEnd;
-  glDepthMask(true);
   fShader.Unbind;
 end;
 
@@ -91,64 +78,13 @@ end;
 
 constructor TRSky.Create;
 begin
-  writeln('Initializing sky renderer');
-  fShader := TShader.Create('rendereropengl/glsl/sky/sky.vs', 'rendereropengl/glsl/sky/sky.fs');
+  writeln('Hint: Initializing sky renderer');
+  fShader := TShader.Create('orcf-world-engine/scene/sky/sky.vs', 'orcf-world-engine/scene/sky/sky.fs');
   fSun := TSun.Create;
-  fCameraLight := TLight.Create(LIGHT_HINT_NO_SHADOW);
-  fCameraLight2 := TLight.Create;
-{  with TLight.Create do
-    begin
-    Color := Vector(1, 1, 0, 1);
-    Position := Vector(60, 66, 60, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(0, 1, 0, 1);
-    Position := Vector(20, 66, 60, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(1, 0, 0, 1);
-    Position := Vector(40, 66, 60, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(1, 0, 1, 1);
-    Position := Vector(60, 66, 20, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(0, 0, 1, 1);
-    Position := Vector(20, 66, 20, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(0, 1, 1, 1);
-    Position := Vector(40, 66, 20, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(1, 0.5, 0, 1);
-    Position := Vector(60, 66, 40, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(0.5, 1, 0, 1);
-    Position := Vector(20, 66, 40, 2);
-    end;
-  with TLight.Create do
-    begin
-    Color := Vector(1, 1, 1, 1);
-    Position := Vector(40, 66, 40, 2);
-    end;}
-  EventManager.AddCallback('TPark.RenderParts', @Render);
 end;
 
 destructor TRSky.Free;
 begin
-  fCameraLight.Free;
-  fCameraLight2.Free;
-  EventManager.RemoveCallback(@Render);
   fSun.Free;
   fShader.Free;
 end;

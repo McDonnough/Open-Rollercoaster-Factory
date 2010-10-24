@@ -42,6 +42,7 @@ begin
     Exit(ModuleManager.ModPathes.PersonalDataPath + FileName)
   else if FileExists(ModuleManager.ModPathes.DataPath + FileName) then
     Exit(ModuleManager.ModPathes.DataPath + FileName);
+  ModuleManager.ModLog.AddError('File ''' + FileName + ''' does not exist');
 end;
 
 function ByteStreamFromFile(FileName: String): TByteStream;

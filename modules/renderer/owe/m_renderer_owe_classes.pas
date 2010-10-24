@@ -1,4 +1,4 @@
-unit m_renderer_opengl_classes;
+unit m_renderer_owe_classes;
 
 interface
 
@@ -102,6 +102,7 @@ type
       fTextures: Array of TTexture;
       fID, fDepthBuffer: GLUInt;
       fSizeX, fSizeY: Integer;
+      Buffers: Array of GLEnum;
       class procedure UnbindCurrent;
       function getTexture(I: Integer): TTexture;
     public
@@ -648,9 +649,11 @@ procedure TFBO.Bind;
 begin
   UnbindCurrent;
   fCurrentFBO := self;
-  glPushAttrib(GL_VIEWPORT_BIT);
+  glPushAttrib(GL_VIEWPORT_BIT or GL_COLOR_BUFFER_BIT);
   glViewport(0, 0, Width, Height);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fID);
+  if length(Buffers) > 1 then
+    glDrawBuffers(length(Buffers), @Buffers[0]);
 end;
 
 procedure TFBO.UnBind;
@@ -675,6 +678,8 @@ begin
   fTextures[i].SetFilter(MinFilter, MagFilter);
   glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, fTextures[i].GetRealTexID, 0);
   fTextures[i].Unbind;
+  SetLength(Buffers, length(Buffers) + 1);
+  Buffers[high(Buffers)] := GL_COLOR_ATTACHMENT0_EXT + i;
 end;
 
 constructor TFBO.Create(SizeX, SizeY: Integer; DepthBuffer: Boolean);
@@ -688,8 +693,9 @@ begin
     begin
     glGenRenderbuffersEXT(1, @fDepthBuffer);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fDepthBuffer);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, SizeX, SizeY);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_STENCIL_EXT, SizeX, SizeY);
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fDepthBuffer);
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fDepthBuffer);
     end;
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 end;

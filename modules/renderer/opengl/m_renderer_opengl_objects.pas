@@ -322,9 +322,15 @@ begin
   if O.fObject = fTest then
     begin
     inc(b);
+//     fTest.Matrix := TranslationMatrix(Vector(160, 70, 160)) * RotationMatrix(b / 200, Normalize(Vector(0, 1, 0)));
+    O.fObject.Armatures[0].Bones[0].Matrix := TranslationMatrix(Vector(2, 10, 4)) * RotationMatrix(10 * Sin(b / 100), Vector(1, 0, 0));
+    O.fObject.UpdateArmatures;
+    O.fObject.UpdateVertexPositions;
+    O.fObject.Meshes[1].RecalcFaceNormals;
+    O.fObject.Meshes[1].RecalcVertexNormals;
     O.fManagedMeshes[3].fMesh.Matrix := TranslationMatrix(Vector(3 - 3 * Sin(DegToRad(b / 20)), 3 + 3 * Sin(DegToRad(b / 20)), 3 + 3 * Cos(DegToRad(b / 20))));
     O.fManagedMeshes[0].fMesh.Matrix := TranslationMatrix(Vector(5 - 3 * Sin(DegToRad(b / 25)), 3 + 3 * Sin(DegToRad(b / 25)), 1 + 3 * Cos(DegToRad(b / 25))));
-    O.fManagedMeshes[1].fMesh.Matrix := RotationMatrix(b / 40, Normalize(Vector(0, 1, 0))) * TranslationMatrix(Vector(2, 10, 4));
+//     O.fManagedMeshes[1].fMesh.Matrix := TranslationMatrix(Vector(2, 10, 4)) * RotationMatrix(b / 40, Normalize(Vector(0, 1, 0)));
     O.fManagedMeshes[2].fMesh.Matrix := RotationMatrix(b / 50, Normalize(Vector(0.422618, -0.9659258, -0.258819)));
     O.fObject.UpdateMatrix;
     end;
@@ -477,6 +483,15 @@ begin
   fTest.UpdateMatrix;
   fTest.RecalcFaceNormals;
   fTest.RecalcVertexNormals;
+  with fTest.AddArmature do
+    begin
+    with AddBone do
+      begin
+      SourcePosition := Vector(0, -5, 0);
+      DestinationPosition := Vector(0, -6, 0);
+      end;
+    end;
+  fTest.Meshes[1].AddBoneToAll(fTest.Armatures[0].Bones[0]);
   fTest.Register;
 end;
 

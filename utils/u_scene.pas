@@ -10,7 +10,7 @@ type
     public
       Name: String;
       Position: TVector4D;
-      Color: TVector4D;
+      Color: TVector3D;
       Energy, FalloffDistance: Single;
       DiffuseFactor, AmbientFactor: Single;
       CastShadows: Boolean;
@@ -20,6 +20,9 @@ type
     end;
 
   TBone = class;
+  TArmature = class;
+  TGeoObject = class;
+  TGeoMesh = class;
 
   TBoneEffect = record
     Bone: TBone;
@@ -30,9 +33,10 @@ type
   TVertex = record
     VertexID: Integer;
     Changed: Boolean;
+    ParentMesh: TGeoMesh;
     Color: TVector4D;
     Position, VertexNormal: TVector3D;
-    OriginalPosition, OriginalNormal: TVector3D;
+    OriginalPosition: TVector3D;
     Bones: Array of TBoneEffect;
     FaceIDs: Array of Integer;
     UseFacenormal: Boolean;
@@ -50,24 +54,28 @@ type
     FaceID: Integer;
     Vertices, TexCoords: TTriangleIndexList;
     FaceNormal: TVector3D;
+    ParentMesh: TGeoMesh;
     end;
   PFace = ^TFace;
 
   TBone = class
     protected
-      fSourcePosition, fDestinationPosition: TVector3D;
-      fMatrix: TMatrix4D;
-      procedure SetSourcePosition(S: TVector3D);
-      procedure SetDestinationPosition(D: TVector3D);
-      procedure SetMatrix(Matrix: TMatrix4D);
+      fCalculatedMatrix: TMatrix4D;
+      fCalculatedSourcePosition: TVector3D;
     public
+      SourcePosition, DestinationPosition: TVector3D;
+      Matrix: TMatrix4D;
       Name: String;
       Updated: Boolean;
       ParentBone: TBone;
-      property SourcePosition: TVector3D read fSourcePosition write SetSourcePosition;
-      property DestinationPosition: TVector3D read fDestinationPosition write SetDestinationPosition;
-      property Matrix: TMatrix4D read fMatrix write SetMatrix;
+      ParentArmature: TArmature;
+      Children: Array of TBone;
+      property CalculatedMatrix: TMatrix4D read fCalculatedMatrix;
+      property CalculatedSourcePosition: TVector3D read fCalculatedSourcePosition;
+      procedure AddChild(Bone: TBone);
+      procedure UpdateMatrix;
       function Duplicate: TBone;
+      constructor Create;
     end;
 
   TBezierPoint = record
@@ -96,11 +104,16 @@ type
     public
       Name: String;
       Bones: Array of TBone;
+      ParentArmature: TArmature;
+      ParentObject: TGeoObject;
+      CalculatedMatrix, Matrix: TMatrix4D;
+      Children: Array of TArmature;
       function Duplicate: TArmature;
       function AddBone: TBone;
+      procedure UpdateMatrix;
+      procedure AddChild(A: TArmature);
+      constructor Create;
     end;
-
-  TGeoObject = class;
 
   TMaterial = class
     public
@@ -128,16 +141,17 @@ type
       Matrix, CalculatedMatrix: TMatrix4D;
       ParentObject: TGeoObject;
       Material: TMaterial;
+      procedure AddBoneToAll(B: TBone);
       procedure RecalcFaceNormals;
       procedure RecalcVertexNormals;
       function Duplicate: TGeoMesh;
       function AddVertex: PVertex;
       function AddTextureVertex: PTextureVertex;
       function AddFace: PFace;
-      procedure ChangesApplied;
       procedure AddChild(Mesh: TGeoMesh);
       procedure UpdateFaceVertexAssociationForVertexNormalCalculation;
       procedure UpdateMatrix;
+      procedure UpdateVertexPositions;
       constructor Create;
       destructor Free;
     end;
@@ -157,6 +171,8 @@ type
       procedure Register;
       procedure RecalcFaceNormals;
       procedure RecalcVertexNormals;
+      procedure UpdateVertexPositions;
+      procedure UpdateArmatures;
       constructor Create;
       destructor Free;
     end;
@@ -194,28 +210,39 @@ end;
 
 
 
-procedure TBone.SetSourcePosition(S: TVector3D);
+procedure TBone.AddChild(Bone: TBone);
 begin
-  fSourcePosition := S;
-  Updated := true;
+  Bone.ParentBone := Self;
+  SetLength(Children, Length(Children) + 1);
+  Children[high(Children)] := Bone;
 end;
 
-procedure TBone.SetDestinationPosition(D: TVector3D);
+procedure TBone.UpdateMatrix;
+var
+  i: Integer;
 begin
-  fDestinationPosition := D;
-  Updated := true;
-end;
-
-procedure TBone.SetMatrix(Matrix: TMatrix4D);
-begin
-  fMatrix := Matrix;
-  Updated := true;
+  if ParentBone <> nil then
+    fCalculatedMatrix := ParentBone.CalculatedMatrix * Matrix
+  else
+    fCalculatedMatrix := ParentArmature.CalculatedMatrix * Matrix;
+  fCalculatedSourcePosition := Vector3D(Vector(SourcePosition, 1) * fCalculatedMatrix);
+  for i := 0 to high(Children) do
+    Children[i].UpdateMatrix;
 end;
 
 function TBone.Duplicate: TBone;
 begin
 end;
 
+constructor TBone.Create;
+begin
+  fCalculatedMatrix := Identity4D;
+  Matrix := Identity4D;
+  ParentBone := nil;
+  ParentArmature := nil;
+  SourcePosition := Vector(0, 0, 0);
+  DestinationPosition := Vector(0, 1, 0);
+end;
 
 
 
@@ -238,11 +265,41 @@ end;
 
 function TArmature.AddBone: TBone;
 begin
-  SetLength(Bones, high(Bones) + 1);
+  SetLength(Bones, Length(Bones) + 1);
   Bones[high(Bones)] := TBone.Create;
   Result := Bones[high(Bones)];
+  Result.ParentArmature := Self;
 end;
 
+procedure TArmature.UpdateMatrix;
+var
+  i: Integer;
+begin
+  if ParentArmature <> nil then
+    CalculatedMatrix := ParentArmature.CalculatedMatrix * Matrix
+  else
+    CalculatedMatrix := Matrix;
+  for i := 0 to high(Bones) do
+    if Bones[i].ParentBone = nil then
+      Bones[i].UpdateMatrix;
+  for i := 0 to high(Children) do
+    Children[i].UpdateMatrix;
+end;
+
+procedure TArmature.AddChild(A: TArmature);
+begin
+  SetLength(Children, length(Children) + 1);
+  Children[high(Children)] := A;
+  A.ParentArmature := Self;
+end;
+
+constructor TArmature.Create;
+begin
+  ParentArmature := nil;
+  ParentObject := nil;
+  CalculatedMatrix := Identity4D;
+  Matrix := Identity4D;
+end;
 
 
 function TMaterial.Duplicate: TMaterial;
@@ -293,6 +350,7 @@ begin
   Result := @Vertices[high(Vertices)];
   Result^.Changed := True;
   Result^.VertexID := high(Vertices);
+  Result^.ParentMesh := Self;
 end;
 
 function TGeoMesh.AddTextureVertex: PTextureVertex;
@@ -306,10 +364,22 @@ begin
   SetLength(Faces, length(Faces) + 1);
   Result := @Faces[high(Faces)];
   Result^.FaceID := high(Faces);
+  Result^.ParentMesh := Self;
 end;
 
-procedure TGeoMesh.ChangesApplied;
+procedure TGeoMesh.AddBoneToAll(B: TBone);
+var
+  i: Integer;
 begin
+  for i := 0 to high(Vertices) do
+    begin
+    SetLength(Vertices[i].Bones, length(Vertices[i].Bones) + 1);
+    with Vertices[i].Bones[high(Vertices[i].Bones)] do
+      begin
+      Bone := B;
+      Weight := 1;
+      end;
+    end;
 end;
 
 procedure TGeoMesh.AddChild(Mesh: TGeoMesh);
@@ -324,7 +394,10 @@ var
   i, j: Integer;
 begin
   for i := 0 to high(Vertices) do
+    begin
     SetLength(Vertices[i].FaceIDs, 0);
+    Vertices[i].OriginalPosition := Vertices[i].Position;
+    end;
   for i := 0 to high(Faces) do
     for j := 0 to 2 do
       with Vertices[Faces[i].Vertices[j]] do
@@ -346,13 +419,33 @@ begin
     Children[i].UpdateMatrix;
 end;
 
+procedure TGeoMesh.UpdateVertexPositions;
+var
+  i, j: Integer;
+  CalculatedVertexPosition: TVector3D;
+  TotalMeshOffset, ObjectOffset, RelativeMeshOffset: TVector3D;
+begin
+  TotalMeshOffset := Vector3D(Vector(0, 0, 0, 1) * CalculatedMatrix);
+  ObjectOffset := Vector3D(Vector(0, 0, 0, 1) * ParentObject.Matrix);
+  RelativeMeshOffset := TotalMeshOffset - ObjectOffset;
+  for i := 0 to high(Vertices) do
+    if length(Vertices[i].Bones) > 0 then
+      begin
+      CalculatedVertexPosition := Vector3D(Vector(Vertices[i].OriginalPosition, 1)) + RelativeMeshOffset;
+      for j := 0 to high(Vertices[i].Bones) do
+        CalculatedVertexPosition := MixVec(CalculatedVertexPosition, Vector3D(Vector(CalculatedVertexPosition - Vertices[i].Bones[j].Bone.SourcePosition, 1) * Vertices[i].Bones[j].Bone.CalculatedMatrix) + Vertices[i].Bones[j].Bone.SourcePosition, Vertices[i].Bones[j].Weight);
+      Vertices[i].Position := CalculatedVertexPosition - RelativeMeshOffset;
+      Vertices[i].Changed := True;
+      end;
+end;
+
 constructor TGeoMesh.Create;
 begin
   ParentObject := nil;
   Parent := nil;
   Name := '';
   Changed := true;
-  MinDistance := 0;
+  MinDistance := -10000;
   MaxDistance := 10000;
   Matrix := Identity4D;
   CalculatedMatrix := Identity4D;
@@ -375,6 +468,7 @@ begin
   SetLength(Armatures, length(Armatures) + 1);
   Armatures[high(Armatures)] := TArmature.Create;
   Result := Armatures[high(Armatures)];
+  Result.ParentObject := Self;
 end;
 
 function TGeoObject.AddMesh: TGeoMesh;
@@ -406,6 +500,15 @@ begin
       Meshes[i].UpdateMatrix;
 end;
 
+procedure TGeoObject.UpdateArmatures;
+var
+  i: Integer;
+begin
+  for i := 0 to high(Armatures) do
+    if Armatures[i].ParentArmature = nil then
+      Armatures[i].UpdateMatrix;
+end;
+
 procedure TGeoObject.Register;
 var
   i: Integer;
@@ -431,6 +534,14 @@ begin
     Meshes[i].RecalcVertexNormals;
 end;
 
+procedure TGeoObject.UpdateVertexPositions;
+var
+  i: Integer;
+begin
+  for i := 0 to high(Meshes) do
+    Meshes[i].UpdateVertexPositions;
+end;
+
 constructor TGeoObject.Create;
 begin
   Matrix := Identity4D;
@@ -441,8 +552,8 @@ var
   i: Integer;
 begin
 // Do not uncomment - seems to be an annoying bug in freepascal
-//   for i := 0 to high(Meshes) do
-//     Meshes[i].Free;
+  for i := 0 to high(Meshes) do
+    Meshes[i].Free;
   for i := 0 to high(Materials) do
     Materials[i].Free;
   for i := 0 to high(Armatures) do

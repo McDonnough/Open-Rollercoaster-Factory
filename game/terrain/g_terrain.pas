@@ -58,6 +58,12 @@ type
       procedure SetWaterAtPosition(X, Y, Height: Single);
       function GetTextureAtPosition(X, Y: Single): Byte;
       procedure SetTextureAtPosition(X, Y: Single; Tex: Byte);
+      function GetExactHeightAtPosition(X, Y: Integer): Word;
+      procedure SetExactHeightAtPosition(X, Y: Integer; Height: Word);
+      function GetExactWaterAtPosition(X, Y: Integer): Word;
+      procedure SetExactWaterAtPosition(X, Y: Integer; Height: Word);
+      function GetExactTextureAtPosition(X, Y: Integer): Byte;
+      procedure SetExactTextureAtPosition(X, Y: Integer; Tex: Byte);
       function CreateRaiseLowerMap: Integer;
       procedure InternalSmooth;
     public
@@ -65,6 +71,9 @@ type
       MarkMode: Integer;
       property SizeX: Word read fSizeX;
       property SizeY: Word read fSizeY;
+      property ExactHeightMap[X, Y: Integer]: Word read GetExactHeightAtPosition write SetExactHeightAtPosition;
+      property ExactTexMap[X, Y: Integer]: Byte read GetExactTextureAtPosition write SetExactTextureAtPosition;
+      property ExactWaterMap[X, Y: Integer]: Word read GetExactWaterAtPosition write SetExactWaterAtPosition;
       property HeightMap[X: Single; Y: Single]: Single read GetHeightAtPosition write SetHeightAtPosition;
       property WaterMap[X: Single; Y: Single]: Single read GetWaterAtPosition write SetWaterAtPosition;
       property TexMap[X: Single; Y: Single]: Byte read GetTextureAtPosition write SetTextureAtPosition;
@@ -376,6 +385,58 @@ begin
   fY2 := Ceil(Clamp(5 * Y, 0, fSizeY - 1));
   Result := Mix(Mix(fMap[fX1, fY1].Height, fMap[fX2, fY1].Height, fPart(5 * X)), Mix(fMap[fX1, fY2].Height, fMap[fX2, fY2].Height, fPart(5 * X)), fPart(5 * Y)) / 256;
 end;
+
+function TTerrain.GetExactHeightAtPosition(X, Y: Integer): Word;
+begin
+  try
+    Result := fMap[X, Y].Height;
+  except
+    Result := 64 * 256;
+  end;
+end;
+
+procedure TTerrain.SetExactHeightAtPosition(X, Y: Integer; Height: Word);
+begin
+  try
+    fMap[X, Y].Height := Height;
+  except
+  end;
+end;
+
+function TTerrain.GetExactWaterAtPosition(X, Y: Integer): Word;
+begin
+  try
+    Result := fMap[X, Y].Water;
+  except
+    Result := 0;
+  end;
+end;
+
+procedure TTerrain.SetExactWaterAtPosition(X, Y: Integer; Height: Word);
+begin
+  try
+    fMap[X, Y].Water := Height;
+  except
+  end;
+end;
+
+function TTerrain.GetExactTextureAtPosition(X, Y: Integer): Byte;
+begin
+  try
+    Result := fMap[X, Y].Texture;
+  except
+    Result := 0;
+  end;
+end;
+
+procedure TTerrain.SetExactTextureAtPosition(X, Y: Integer; Tex: Byte);
+begin
+  try
+    fMap[X, Y].Texture := Tex;
+  except
+  end;
+end;
+
 
 procedure TTerrain.SetHeightAtPosition(X, Y, Height: Single);
 var

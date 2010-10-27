@@ -101,7 +101,11 @@ procedure TModuleGUIDefault.CallSignals;
             TScrollBox(fHoverComponent).OnScroll(fHoverComponent);
       end;
     for i := 0 to high(Component.Children) do
-      SendSignals(Component.ChildrenRightOrder[i]);
+      try
+        SendSignals(Component.ChildrenRightOrder[i]);
+      except
+        writeln(Component.ComponentType);
+      end;
   end;
 var
   i: integer;

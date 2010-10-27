@@ -45,6 +45,8 @@ type
       property Working: Boolean read fWorking write fCanWork;
       property RawVBO: TVBO read fRawVBO;
       property FineVBO: TVBO read fFineVBO;
+      property GeometryPassShader: TShader read fGeometryPassShader;
+      property ShadowPassShader: TShader read fShadowPassShader;
       procedure Sync;
       procedure Render;
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
@@ -63,7 +65,8 @@ uses
 procedure TTerrainBlock.RenderRaw;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 0);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', fBlockCenter.X, fBlockCenter.Z);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.RawVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.RawVBO.Render;
   ModuleManager.ModRenderer.RTerrain.RawVBO.UnBind;
@@ -72,7 +75,8 @@ end;
 procedure TTerrainBlock.RenderFine;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 1);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', fBlockCenter.X, fBlockCenter.Z);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.FineVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.FineVBO.Render;
   ModuleManager.ModRenderer.RTerrain.FineVBO.UnBind;
@@ -96,6 +100,8 @@ begin
   fRadius := 1.41 * 12.8;
   fMinHeight := 64;
   fMaxHeight := 64;
+  fVisible := true;
+  fShadowsVisible := true;
   fBlockCenter := Vector(12.8 + 25.6 * X, 64, 12.8 + 25.6 * Y);
   Changed := True;
 end;
@@ -137,18 +143,101 @@ var
 begin
   Park.pTerrain.Collection.Texture.Bind(1);
   fTerrainMap.Bind(0);
+  CurrentShader.Bind;
   for i := 0 to high(Blocks) do
     if ((Blocks[i].Visible) and (CurrentShader = fGeometryPassShader)) or ((Blocks[i].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
-      if VecLengthNoRoot(Blocks[i].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (6 * ModuleManager.ModRenderer.TerrainTesselationDistance) * (6 * ModuleManager.ModRenderer.TerrainTesselationDistance) then
+      if VecLengthNoRoot(Blocks[i].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (4 * ModuleManager.ModRenderer.TerrainTesselationDistance) * (4 * ModuleManager.ModRenderer.TerrainTesselationDistance) then
         Blocks[i].RenderRaw
       else
         Blocks[i].RenderFine;
+  CurrentShader.UnBind;
 end;
 
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
-begin
+var
+  Pixel: Array[0..2] of Word;
+  HasBlock: Array of Array of Boolean;
+  i, j, k: Integer;
 
-  fCanWork := True;
+  procedure StartUpdate;
+  begin
+    fTerrainMap.Bind(0);
+  end;
+
+  procedure UpdateVertex(X, Y: Word);
+  begin
+    Pixel[0] := Park.pTerrain.ExactTexMap[X, Y];
+    Pixel[1] := Park.pTerrain.ExactWaterMap[X, Y];
+    Pixel[2] := Park.pTerrain.ExactHeightMap[X, Y];
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGB, GL_UNSIGNED_SHORT, @Pixel[0]);
+  end;
+
+  procedure EndUpdate;
+  begin
+    fTerrainMap.Unbind;
+  end;
+begin
+  if Event = 'TTerrain.Resize' then
+    begin
+    Sync;
+    if fTerrainMap <> nil then
+      fTerrainMap.Free;
+    fTerrainMap := TTexture.Create;
+    fTerrainMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGB16);
+    fTerrainMap.SetFilter(GL_NEAREST, GL_NEAREST);
+    fTerrainMap.SetClamp(GL_CLAMP, GL_CLAMP);
+    fTerrainMap.Unbind;
+    SetLength(HasBlock, Park.pTerrain.SizeX div 128);
+    for i := 0 to high(HasBlock) do
+      begin
+      SetLength(HasBlock[i], Park.pTerrain.SizeY div 128);
+      for j := 0 to high(HasBlock[i]) do
+        HasBlock[i, j] := false;
+      end;
+
+    for i := 0 to high(Blocks) do
+      if (Blocks[i].X > Park.pTerrain.SizeX div 128) or (Blocks[i].Y > Park.pTerrain.SizeY div 128) then
+        begin
+        Blocks[i].Free;
+        Blocks[i] := nil;
+        end
+      else
+        HasBlock[Blocks[i].X, Blocks[i].Y] := True;
+
+    for i := 0 to high(Blocks) do
+      while Blocks[i] = nil do
+        begin
+        Blocks[i] := Blocks[high(Blocks)];
+        SetLength(Blocks, Length(Blocks) - 1);
+        end;
+
+    for i := 0 to high(HasBlock) do
+      for j := 0 to high(HasBlock[i]) do
+        if not HasBlock[i, j] then
+          begin
+          SetLength(Blocks, length(Blocks) + 1);
+          Blocks[high(Blocks)] := TTerrainBlock.Create(i, j);
+          end;
+
+    StartUpdate;
+    for i := 0 to Park.pTerrain.SizeX - 1 do
+      for j := 0 to Park.pTerrain.SizeY - 1 do
+        UpdateVertex(I, J);
+    EndUpdate;
+    end;
+
+  if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap') or (Event = 'TTerrain.ChangedWater')) then
+    begin
+    k := Integer(Data^);
+    StartUpdate;
+    for i := 0 to k - 1 do
+      UpdateVertex(Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^), Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
+    EndUpdate;
+    if Event <> 'TTerrain.ChangedTexmap' then
+      fCanWork := True;
+    end;
+
 end;
 
 procedure TRTerrain.UpdateCollection(Event: String; Data, Result: Pointer);
@@ -176,13 +265,14 @@ begin
   fXBlocks := 0;
   fYBlocks := 0;
 
-  fGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/geometry.fs', 'orcf-world-engine/scene/terrain/terrain.gs', 32);
+  fGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/scene/terrain/terrain.fs', 'orcf-world-engine/scene/terrain/terrain.gs', 24);
   fGeometryPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.TerrainTesselationDistance);
   fGeometryPassShader.UniformF('TerrainBumpmapDistance', ModuleManager.ModRenderer.TerrainBumpmapDistance);
   fGeometryPassShader.UniformI('TerrainMap', 0);
+  fGeometryPassShader.UniformI('HeightLine', -1);
   fGeometryPassShader.UniformI('TerrainTexture', 1);
 
-  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/shadow.fs', 'orcf-world-engine/scene/terrain/terrain.gs', 32);
+  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/shadow.fs', 'orcf-world-engine/scene/terrain/terrainShadow.gs', 240);
   fShadowPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.TerrainTesselationDistance);
   fShadowPassShader.UniformI('TerrainMap', 0);
 
@@ -190,10 +280,10 @@ begin
   for i := 0 to 31 do
     for j := 0 to 31 do
       begin
-      fFineVBO.Vertices[4 * (32 * i + j) + 3] := Vector(0.2 * i, 0, 0.2 * j);
-      fFineVBO.Vertices[4 * (32 * i + j) + 2] := Vector(0.2 * i + 0.2, 0, 0.2 * j);
-      fFineVBO.Vertices[4 * (32 * i + j) + 1] := Vector(0.2 * i + 0.2, 0, 0.2 * j + 0.2);
-      fFineVBO.Vertices[4 * (32 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j + 0.2);
+      fFineVBO.Vertices[4 * (32 * i + j) + 3] := Vector(0.8 * i,       0.0, 0.8 * j);
+      fFineVBO.Vertices[4 * (32 * i + j) + 2] := Vector(0.8 * i + 0.8, 0.0, 0.8 * j);
+      fFineVBO.Vertices[4 * (32 * i + j) + 1] := Vector(0.8 * i + 0.8, 0.0, 0.8 * j + 0.8);
+      fFineVBO.Vertices[4 * (32 * i + j) + 0] := Vector(0.8 * i,       0.0, 0.8 * j + 0.8);
       end;
   fFineVBO.Unbind;
 
@@ -201,10 +291,10 @@ begin
   for i := 0 to 15 do
     for j := 0 to 15 do
       begin
-      fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(0.2 * i, 0.0, 0.2 * j);
-      fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(0.2 * i + 0.2, 0.0, 0.2 * j);
-      fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(0.2 * i + 0.2, 0, 0.2 * j + 0.2);
-      fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(0.2 * i, 0.0, 0.2 * j + 0.2);
+      fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(1.6 * i,       0.0, 1.6 * j);
+      fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(1.6 * i + 1.6, 0.0, 1.6 * j);
+      fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(1.6 * i + 1.6, 0.0, 1.6 * j + 1.6);
+      fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(1.6 * i,       0.0, 1.6 * j + 1.6);
       end;
   fRawVBO.Unbind;
 

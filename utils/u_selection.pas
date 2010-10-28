@@ -35,7 +35,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events;
+  m_varlist, u_events, math;
 
 procedure TSelectionEngine.Execute;
 var
@@ -58,7 +58,7 @@ begin
           fSelectableObjects[i].Selected := false;
           MeshPos := Vector3D(Vector(0, 0, 0, 1) * fSelectableObjects[i].Mesh.CalculatedMatrix);
           l := VecLengthNoRoot(ModuleManager.ModCamera.ActiveCamera.Position - MeshPos);
-          if (l < fSelectableObjects[i].Mesh.MinDistance * fSelectableObjects[i].Mesh.MinDistance) or (l > fSelectableObjects[i].Mesh.MaxDistance * fSelectableObjects[i].Mesh.MaxDistance) then
+          if (l < max(0, fSelectableObjects[i].Mesh.MinDistance) * max(0, fSelectableObjects[i].Mesh.MinDistance)) or (l > fSelectableObjects[i].Mesh.MaxDistance * fSelectableObjects[i].Mesh.MaxDistance) then
             continue;
           for j := 0 to Length(fSelectableObjects[i].Mesh.Faces) - 1 do
             if RayTriangleIntersection(MakeRay(ModuleManager.ModRenderer.SelectionStart, ModuleManager.ModRenderer.SelectionRay), MakeTriangleFromFace(fSelectableObjects[i].Mesh, fSelectableObjects[i].Mesh.Faces[j]), fSelectableObjects[i].IntersectionPoint) then

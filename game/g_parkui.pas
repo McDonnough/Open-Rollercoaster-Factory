@@ -78,6 +78,9 @@ type
       destructor Free;
       end;
 
+var
+  ParkUI: TParkUI = nil;
+
 implementation
 
 uses

@@ -11,7 +11,6 @@ type
       fFile: TOCFFile;
       fPostLoading: Boolean;
       fCanRender: Boolean;
-      fParkUI: TParkUI;
       fLoadState: Integer;
       fSelectionEngine: TSelectionEngine;
       fNormalSelectionEngine: TSelectionEngine;
@@ -165,7 +164,7 @@ begin
       ModuleManager.ModLoadScreen.Progress := 99;
       ModuleManager.ModLoadScreen.Text := 'Loading user interface files';
       end;
-    109: fParkUI := TParkUI.Create;
+    109: ParkUI := TParkUI.Create;
     110:
       begin
       ModuleManager.ModLoadScreen.Progress := 100;
@@ -193,7 +192,7 @@ begin
     ModuleManager.ModLoadScreen.Render
   else
     begin
-    fParkUI.Drag;
+    ParkUI.Drag;
     pSky.Time := pSky.Time + FPSDisplay.MS / 50;
     ModuleManager.ModCamera.AdvanceActiveCamera;
     fSelectionEngine.Update;
@@ -264,7 +263,6 @@ end;
 destructor TPark.Free;
 begin
   EventManager.RemoveCallback(@StartLoading);
-  fParkUI.Free;
   fSelectionEngine := nil;
   fNormalSelectionEngine.Free;
   pSky.Free;

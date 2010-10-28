@@ -413,8 +413,10 @@ var
 begin
   if Parent <> nil then
     CalculatedMatrix := Parent.CalculatedMatrix * Matrix
+  else if ParentObject <> nil then
+    CalculatedMatrix := ParentObject.Matrix * Matrix
   else
-    CalculatedMatrix := ParentObject.Matrix * Matrix;
+    CalculatedMatrix := Matrix;
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
 end;

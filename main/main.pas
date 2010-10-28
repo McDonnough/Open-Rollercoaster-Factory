@@ -35,7 +35,7 @@ procedure ChangeRenderState(New: TRenderState);
 implementation
 
 uses
-  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events;
+  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events, g_parkui;
 
 type
   TParkLoadDialog = class
@@ -149,6 +149,12 @@ begin
   ModuleManager.ModGLMng.SetUpScreen;
   ModuleManager.ModGUI.CallSignals;
   ModuleManager.ModOCFManager.CheckLoaded;
+
+  if (Park = nil) and (ParkUI <> nil) then
+    begin
+    ParkUI.Free;
+    ParkUI := nil;
+    end;
 
   case RenderState of
     rsMainMenu:

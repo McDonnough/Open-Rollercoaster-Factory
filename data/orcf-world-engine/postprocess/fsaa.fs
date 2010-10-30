@@ -11,4 +11,5 @@ void main(void) {
       gl_FragColor.rgb += texture2D(Texture, gl_TexCoord[0].xy + vec2(i, j) * 1.0 / (ScreenSize * Samples)).rgb;
   }
   gl_FragColor.rgb /= (Samples * Samples);
+  gl_FragColor *= gl_Color;
 }

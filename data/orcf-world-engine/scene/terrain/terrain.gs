@@ -6,6 +6,7 @@ uniform sampler2D TerrainMap;
 uniform float TerrainTesselationDistance;
 uniform int Tesselation;
 uniform vec2 TerrainSize;
+uniform vec2 TOffset;
 
 vec3 BasePoints[3];
 vec3 TransformedBasePoints[3];
@@ -14,9 +15,9 @@ float TransformedBasePointDistanceValues[3];
 varying out vec3 Vertex;
 
 void main(void) {
-  BasePoints[0] = vec3(gl_PositionIn[0].x, texture2D(TerrainMap, gl_PositionIn[0].xz / TerrainSize).b * 256.0, gl_PositionIn[0].z);
-  BasePoints[1] = vec3(gl_PositionIn[1].x, texture2D(TerrainMap, gl_PositionIn[1].xz / TerrainSize).b * 256.0, gl_PositionIn[1].z);
-  BasePoints[2] = vec3(gl_PositionIn[2].x, texture2D(TerrainMap, gl_PositionIn[2].xz / TerrainSize).b * 256.0, gl_PositionIn[2].z);
+  BasePoints[0] = vec3(gl_PositionIn[0].x, texture2D(TerrainMap, gl_PositionIn[0].xz / TerrainSize + TOffset).b * 256.0, gl_PositionIn[0].z);
+  BasePoints[1] = vec3(gl_PositionIn[1].x, texture2D(TerrainMap, gl_PositionIn[1].xz / TerrainSize + TOffset).b * 256.0, gl_PositionIn[1].z);
+  BasePoints[2] = vec3(gl_PositionIn[2].x, texture2D(TerrainMap, gl_PositionIn[2].xz / TerrainSize + TOffset).b * 256.0, gl_PositionIn[2].z);
 
   TransformedBasePoints[0] = (gl_ModelViewMatrix * vec4(BasePoints[0], 1.0)).xyz;
   TransformedBasePoints[1] = (gl_ModelViewMatrix * vec4(BasePoints[1], 1.0)).xyz;
@@ -79,21 +80,21 @@ void main(void) {
     owh[14] = Vertices[14].y;
 
     // Get new height values
-    Vertices[ 0].y = 256.0 * texture2D(TerrainMap, Vertices[ 0].xz / TerrainSize).b;
-    Vertices[ 1].y = 256.0 * texture2D(TerrainMap, Vertices[ 1].xz / TerrainSize).b;
-    Vertices[ 2].y = 256.0 * texture2D(TerrainMap, Vertices[ 2].xz / TerrainSize).b;
-    Vertices[ 3].y = 256.0 * texture2D(TerrainMap, Vertices[ 3].xz / TerrainSize).b;
-    Vertices[ 4].y = 256.0 * texture2D(TerrainMap, Vertices[ 4].xz / TerrainSize).b;
-    Vertices[ 5].y = 256.0 * texture2D(TerrainMap, Vertices[ 5].xz / TerrainSize).b;
-    Vertices[ 6].y = 256.0 * texture2D(TerrainMap, Vertices[ 6].xz / TerrainSize).b;
-    Vertices[ 7].y = 256.0 * texture2D(TerrainMap, Vertices[ 7].xz / TerrainSize).b;
-    Vertices[ 8].y = 256.0 * texture2D(TerrainMap, Vertices[ 8].xz / TerrainSize).b;
-    Vertices[ 9].y = 256.0 * texture2D(TerrainMap, Vertices[ 9].xz / TerrainSize).b;
-    Vertices[10].y = 256.0 * texture2D(TerrainMap, Vertices[10].xz / TerrainSize).b;
-    Vertices[11].y = 256.0 * texture2D(TerrainMap, Vertices[11].xz / TerrainSize).b;
-    Vertices[12].y = 256.0 * texture2D(TerrainMap, Vertices[12].xz / TerrainSize).b;
-    Vertices[13].y = 256.0 * texture2D(TerrainMap, Vertices[13].xz / TerrainSize).b;
-    Vertices[14].y = 256.0 * texture2D(TerrainMap, Vertices[14].xz / TerrainSize).b;
+    Vertices[ 0].y = 256.0 * texture2D(TerrainMap, Vertices[ 0].xz / TerrainSize + TOffset).b;
+    Vertices[ 1].y = 256.0 * texture2D(TerrainMap, Vertices[ 1].xz / TerrainSize + TOffset).b;
+    Vertices[ 2].y = 256.0 * texture2D(TerrainMap, Vertices[ 2].xz / TerrainSize + TOffset).b;
+    Vertices[ 3].y = 256.0 * texture2D(TerrainMap, Vertices[ 3].xz / TerrainSize + TOffset).b;
+    Vertices[ 4].y = 256.0 * texture2D(TerrainMap, Vertices[ 4].xz / TerrainSize + TOffset).b;
+    Vertices[ 5].y = 256.0 * texture2D(TerrainMap, Vertices[ 5].xz / TerrainSize + TOffset).b;
+    Vertices[ 6].y = 256.0 * texture2D(TerrainMap, Vertices[ 6].xz / TerrainSize + TOffset).b;
+    Vertices[ 7].y = 256.0 * texture2D(TerrainMap, Vertices[ 7].xz / TerrainSize + TOffset).b;
+    Vertices[ 8].y = 256.0 * texture2D(TerrainMap, Vertices[ 8].xz / TerrainSize + TOffset).b;
+    Vertices[ 9].y = 256.0 * texture2D(TerrainMap, Vertices[ 9].xz / TerrainSize + TOffset).b;
+    Vertices[10].y = 256.0 * texture2D(TerrainMap, Vertices[10].xz / TerrainSize + TOffset).b;
+    Vertices[11].y = 256.0 * texture2D(TerrainMap, Vertices[11].xz / TerrainSize + TOffset).b;
+    Vertices[12].y = 256.0 * texture2D(TerrainMap, Vertices[12].xz / TerrainSize + TOffset).b;
+    Vertices[13].y = 256.0 * texture2D(TerrainMap, Vertices[13].xz / TerrainSize + TOffset).b;
+    Vertices[14].y = 256.0 * texture2D(TerrainMap, Vertices[14].xz / TerrainSize + TOffset).b;
 
     // Prevent black holes
     Vertices[ 0].y = mix(owh[ 0], Vertices[ 0].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 0], 1.0)).xyz)));

@@ -3,7 +3,7 @@ unit m_renderer_owe_terrain;
 interface
 
 uses
-  Classes, SysUtils, u_scene, m_texmng_class, m_shdmng_class, u_events, m_renderer_owe_classes, DGLOpenGL, u_vectors;
+  Classes, SysUtils, u_scene, m_texmng_class, m_shdmng_class, u_events, m_renderer_owe_classes, DGLOpenGL, u_vectors, math;
 
 type
   TTerrainBlock = class
@@ -20,9 +20,12 @@ type
       property X: Integer read fX;
       property Y: Integer read fY;
       property Center: TVector3D read fBlockCenter;
-      property Radius: SIngle read fRadius;
+      property Radius: Single read fRadius;
+      property MinHeight: Single read fMinHeight;
+      property MaxHeight: Single read fMaxHeight;
       procedure Update;
       procedure CheckVisibility;
+      procedure RenderOneFace;
       procedure RenderRaw;
       procedure RenderFine;
       constructor Create(iX, iY: Integer);
@@ -66,6 +69,7 @@ procedure TTerrainBlock.RenderRaw;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 0);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.RawVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.RawVBO.Render;
@@ -76,15 +80,40 @@ procedure TTerrainBlock.RenderFine;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 1);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.FineVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.FineVBO.Render;
   ModuleManager.ModRenderer.RTerrain.FineVBO.UnBind;
 end;
 
+procedure TTerrainBlock.RenderOneFace;
+begin
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 0);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
+  glBegin(GL_QUADS);
+    glVertex3f(0, 0, 0);
+    glVertex3f(25.6, 0, 0);
+    glVertex3f(25.6, 0, 25.6);
+    glVertex3f(0, 0, 25.6);
+  glEnd;
+end;
+
 procedure TTerrainBlock.Update;
+var
+  i, j: Integer;
 begin
   Changed := False;
+  fMaxHeight := 0;
+  fMinHeight := 256;
+  for i := 0 to 128 do
+    for j := 0 to 128 do
+      begin
+      fMaxHeight := Max(fMaxHeight, Park.pTerrain.ExactHeightMap[128 * fX + i, 128 * fY + j] / 256);
+      fMinHeight := Min(fMinHeight, Park.pTerrain.ExactHeightMap[128 * fX + i, 128 * fY + j] / 256);
+      end;
 end;
 
 procedure TTerrainBlock.CheckVisibility;
@@ -146,7 +175,9 @@ begin
   CurrentShader.Bind;
   for i := 0 to high(Blocks) do
     if ((Blocks[i].Visible) and (CurrentShader = fGeometryPassShader)) or ((Blocks[i].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
-      if VecLengthNoRoot(Blocks[i].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (4 * ModuleManager.ModRenderer.TerrainTesselationDistance) * (4 * ModuleManager.ModRenderer.TerrainTesselationDistance) then
+      if Blocks[i].MinHeight = Blocks[i].MaxHeight then
+        Blocks[i].RenderOneFace
+      else if VecLengthNoRoot(Blocks[i].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (ModuleManager.ModRenderer.TerrainDetailDistance) * (4 * ModuleManager.ModRenderer.TerrainTesselationDistance) then
         Blocks[i].RenderRaw
       else
         Blocks[i].RenderFine;
@@ -185,7 +216,7 @@ begin
       fTerrainMap.Free;
     fTerrainMap := TTexture.Create;
     fTerrainMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGB16);
-    fTerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
+    fTerrainMap.SetFilter(GL_NEAREST, GL_NEAREST);
     fTerrainMap.SetClamp(GL_CLAMP, GL_CLAMP);
     fTerrainMap.Unbind;
     SetLength(HasBlock, Park.pTerrain.SizeX div 128);
@@ -206,10 +237,15 @@ begin
         HasBlock[Blocks[i].X, Blocks[i].Y] := True;
 
     for i := 0 to high(Blocks) do
-      while Blocks[i] = nil do
+      if i <= high(Blocks) then
         begin
-        Blocks[i] := Blocks[high(Blocks)];
-        SetLength(Blocks, Length(Blocks) - 1);
+        while Blocks[i] = nil do
+          begin
+          Blocks[i] := Blocks[high(Blocks)];
+          SetLength(Blocks, Length(Blocks) - 1);
+          if i > high(Blocks) then
+            break;
+          end;
         end;
 
     for i := 0 to high(HasBlock) do
@@ -316,6 +352,14 @@ destructor TRTerrain.Free;
 var
   i, j: Integer;
 begin
+  EventManager.RemoveCallback('TTerrain.ApplyForcedHeightLine', @SetHeightLine);
+  EventManager.RemoveCallback('GUIActions.terrain_edit.open', @ChangeTerrainEditorState);
+  EventManager.RemoveCallback('GUIActions.terrain_edit.close', @ChangeTerrainEditorState);
+  EventManager.RemoveCallback('TTerrain.Resize', @ApplyChanges);
+  EventManager.RemoveCallback('TTerrain.Changed', @ApplyChanges);
+  EventManager.RemoveCallback('TTerrain.ChangedTexmap', @ApplyChanges);
+  EventManager.RemoveCallback('TTerrain.ChangedWater', @ApplyChanges);
+  EventManager.RemoveCallback('TTerrain.ChangedCollection', @UpdateCollection);
   Terminate;
   fShadowPassShader.Free;
   fGeometryPassShader.Free;

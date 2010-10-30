@@ -14,12 +14,12 @@ type
       fRendererCamera: TRCamera;
       fRendererTerrain: TRTerrain;
       fLightManager: TLightManager;
-      fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer: TFBO;
+      fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer: TFBO;
       fFSAASamples: Integer;
       fReflectionDepth, fReflectionUpdateInterval: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
       fUseBloom, fUseScreenSpaceAmbientOcclusion, fUseMotionBlur, fUseFocalBlur: Boolean;
-      fLODDistanceOffset, fLODDistanceFactor: Single;
+      fLODDistanceOffset, fLODDistanceFactor, fMotionBlurStrength: Single;
       fShadowBufferSamples: Single;
       fSubdivisionCuts: Integer;
       fSubdivisionDistance: Single;
@@ -27,7 +27,7 @@ type
       fSSAOSamples, fShadowBlurSamples: Integer;
       fTmpShadowBuffer: TFBO;
       fMaxShadowPasses: Integer;
-      fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
+      fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
       fFullscreenShader, fAAShader: TShader;
     public
       property LightManager: TLightManager read fLightManager;
@@ -62,7 +62,11 @@ type
       property BufferSizeY: Integer read fBufferSizeY;
       property MaxShadowPasses: Integer read fMaxShadowPasses;
       property TerrainTesselationDistance: Single read fTerrainTesselationDistance;
+      property TerrainDetailDistance: Single read fTerrainDetailDistance;
       property TerrainBumpmapDistance: Single read fTerrainBumpmapDistance;
+      property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
+      property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
+      property MotionBlurStrength: Single read fMotionBlurStrength;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -87,6 +91,7 @@ begin
   fGBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
   fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
   fGBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);   // Normals
+  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only)
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
   fLightBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);     // Colors, Specular
@@ -102,13 +107,21 @@ begin
   else
     fSSAOBuffer := nil;
 
-  if (UseBloom) or (UseFocalBlur) then
+  if UseBloom then
     begin
     fBloomBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
     fBloomBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);    // Pseudo-HDR/Color Bleeding
     end
   else
     fBloomBuffer := nil;
+
+  if UseFocalBlur then
+    begin
+    fFocalBlurBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
+    fFocalBlurBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);      // Focal blur
+    end
+  else
+    fFocalBlurBuffer := nil;
 
   if UseSunRays then
     begin
@@ -125,6 +138,14 @@ begin
     end
   else
     fTmpShadowBuffer := nil;
+
+  if UseMotionBlur then
+    begin
+    fMotionBlurBuffer := TFBO.Create(ResX, ResY, false);
+    fMotionBlurBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);
+    end
+  else
+    fMotionBlurBuffer := nil;
 
   fLightManager := TLightManager.Create;
   fRendererCamera := TRCamera.Create;
@@ -157,6 +178,10 @@ begin
     fSunRayBuffer.Free;
   if fTmpShadowBuffer <> nil then
     fTmpShadowBuffer.Free;
+  if fFocalBlurBuffer <> nil then
+    fFocalBlurBuffer.Free;
+  if fMotionBlurBuffer <> nil then
+    fMotionBlurBuffer.Free;
 
   fRendererTerrain.Free;
   fRendererSky.Free;
@@ -165,6 +190,15 @@ begin
 end;
 
 procedure TModuleRendererOWE.RenderScene;
+  procedure DrawFullscreenQuad;
+  begin
+    glBegin(GL_QUADS);
+      glVertex2f(-1, -1);
+      glVertex2f( 1, -1);
+      glVertex2f( 1,  1);
+      glVertex2f(-1,  1);
+    glEnd;
+  end;
 begin
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
@@ -179,6 +213,14 @@ begin
   // Geometry pass
 
   GBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+
+    // Terrain
+
+    RTerrain.CurrentShader := RTerrain.GeometryPassShader;
+    RTerrain.Render;
+
+
   GBuffer.Unbind;
 
   // SSAO pass
@@ -186,6 +228,7 @@ begin
   if UseScreenSpaceAmbientOcclusion then
     begin
     SSAOBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     SSAOBuffer.Unbind;
     end;
 
@@ -197,8 +240,9 @@ begin
 
   if UseFocalBlur then
     begin
-    BloomBuffer.Bind;
-    BloomBuffer.Unbind;
+    FocalBlurBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    FocalBlurBuffer.Unbind;
     end;
 
   // Bloom pass
@@ -206,6 +250,7 @@ begin
   if UseBloom then
     begin
     BloomBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     BloomBuffer.Unbind;
     end;
 
@@ -214,6 +259,7 @@ begin
   if UseSunRays then
     begin
     SunRayBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     SunRayBuffer.Unbind;
     end;
 
@@ -221,31 +267,56 @@ begin
 
   fSceneBuffer.Bind;
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-  glUseProgram(0);
   glColor4f(1, 1, 1, 1);
+  fFullscreenShader.Bind;
 
-  glDisable(GL_TEXTURE_2D);
+  GBuffer.Textures[2].Bind(0);
 
-  RTerrain.CurrentShader := RTerrain.GeometryPassShader;
-  RTerrain.Render;
+  DrawFullscreenQuad;
 
-  glEnable(GL_TEXTURE_2D);
+  fFullscreenShader.Unbind;
   fSceneBuffer.Unbind;
 
   // Output
 
-  fAAShader.Bind;
+  if UseMotionBlur then
+    begin
+    // Render output to MB buffer
+    MotionBlurBuffer.Bind;
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  fSceneBuffer.Textures[0].Bind(0);
-  glBegin(GL_QUADS);
-    glVertex2f(-1, -1);
-    glVertex2f( 1, -1);
-    glVertex2f( 1,  1);
-    glVertex2f(-1,  1);
-  glEnd;
-  fSceneBuffer.Textures[0].Unbind;
+    fAAShader.Bind;
 
-  fAAShader.Unbind;
+    glColor4f(1, 1, 1, 1 - power(2.7183, -(FPSDisplay.MS * fMotionBlurStrength)));
+    fSceneBuffer.Textures[0].Bind(0);
+    DrawFullscreenQuad;
+
+    fAAShader.Unbind;
+
+    glDisable(GL_BLEND);
+    MotionBlurBuffer.Unbind;
+
+    // Render new buffer contents
+    glColor4f(1, 1, 1, 1);
+    fFullscreenShader.Bind;
+
+    MotionBlurBuffer.Textures[0].Bind(0);
+    DrawFullscreenQuad;
+
+    fFullscreenShader.Unbind;
+    end
+  else
+    begin
+    fAAShader.Bind;
+
+    glColor4f(1, 1, 1, 1);
+    fSceneBuffer.Textures[0].Bind(0);
+    DrawFullscreenQuad;
+
+    fAAShader.Unbind;
+    end;
+
 end;
 
 procedure TModuleRendererOWE.CheckModConf;
@@ -266,12 +337,14 @@ begin
     SetConfVal('bloom', '1');
     SetConfVal('focalblur', '1');
     SetConfVal('motionblur', '1');
+    SetConfVal('motionblur.strength', '0.08');
     SetConfVal('sunrays', '1');
     SetConfVal('lod.distanceoffset', '0');
     SetConfVal('lod.distancefactor', '1');
     SetConfVal('subdiv.cuts', '2');
     SetConfVal('subdiv.distance', '10');
     SetConfVal('terrain.tesselationdistance', '25');
+    SetConfVal('terrain.detaildistance', '100');
     SetConfVal('terrain.bumpmapdistance', '60');
     end;
   fFSAASamples := StrToIntWD(GetConfVal('samples'), 4);
@@ -285,10 +358,12 @@ begin
   fUseSunRays := GetConfVal('bloom') = '1';
   fUseFocalBlur := GetConfVal('focalblur') = '1';
   fUseScreenSpaceAmbientOcclusion := GetConfVal('ssao') = '1';
-  fShadowBufferSamples := StrToFloatWD('shadows.samples', 1);
-  fShadowBlurSamples := StrToIntWD('shadows.samples', 2);
-  fMaxShadowPasses := StrToIntWD('shadows.maxbuffers', 100);
+  fShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.samples'), 1);
+  fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.samples'), 2);
+  fMaxShadowPasses := StrToIntWD(GetConfVal('shadows.maxbuffers'), 100);
+  fMotionBlurStrength := StrToFloatWD(GetConfVal('motionblur.strength'), 0.08);
   fTerrainTesselationDistance := StrToFloatWD(GetConfVal('terrain.tesselationdistance'), 25);
+  fTerrainDetailDistance := StrToFloatWD(GetConfVal('terrain.detaildistance'), 100);
   fTerrainBumpmapDistance := StrToFloatWD(GetConfVal('terrain.bumpmapdistance'), 60);
   fSSAOSamples := StrToIntWD(GetConfVal('ssao.samples'), 100);
   fLODDistanceOffset := StrToIntWD(GetConfVal('lod.distanceoffset'), 0);

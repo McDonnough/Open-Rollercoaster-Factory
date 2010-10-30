@@ -213,14 +213,18 @@ begin
   // Geometry pass
 
   GBuffer.Bind;
+    glDepthMask(true);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     // Terrain
 
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
     RTerrain.Render;
 
-
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(false);
   GBuffer.Unbind;
 
   // SSAO pass
@@ -270,7 +274,7 @@ begin
   glColor4f(1, 1, 1, 1);
   fFullscreenShader.Bind;
 
-  GBuffer.Textures[2].Bind(0);
+  GBuffer.Textures[1].Bind(0);
 
   DrawFullscreenQuad;
 

@@ -274,7 +274,7 @@ begin
   glColor4f(1, 1, 1, 1);
   fFullscreenShader.Bind;
 
-  GBuffer.Textures[1].Bind(0);
+  GBuffer.Textures[2].Bind(0);
 
   DrawFullscreenQuad;
 

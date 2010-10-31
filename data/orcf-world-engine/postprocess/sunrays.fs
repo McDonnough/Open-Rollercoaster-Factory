@@ -1,3 +1,5 @@
+#version 120
+
 uniform float exposure;
 uniform float decay;
 uniform float density;

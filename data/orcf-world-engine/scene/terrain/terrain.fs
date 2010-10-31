@@ -1,4 +1,5 @@
 #version 120
+
 #extension GL_EXT_gpu_shader4 : enable
 
 uniform sampler2D TerrainMap;
@@ -62,13 +63,15 @@ void main(void) {
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy + vec2(0.0, 0.5)),
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[2].xy + vec2(0.0, 0.5)),
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[3].xy + vec2(0.0, 0.5)));
-    vec3 bumpNormal = (mix(mix(bumpColors[0], bumpColors[1], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), mix(bumpColors[2], bumpColors[3], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), (Vertex.z * 5.0 - floor(Vertex.z * 5.0)))).rbg;
+    vec3 bumpNormal = -1.0 + 2.0 * (mix(mix(bumpColors[0], bumpColors[1], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), mix(bumpColors[2], bumpColors[3], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), (Vertex.z * 5.0 - floor(Vertex.z * 5.0)))).rbg;
     float angle = acos(normal.x);
-    vec3 tangent = normalize(vec3(sin(angle), sin(angle - 1.5705), 0.0));
+    vec3 tangent = normalize(vec3(sin(angle), -cos(angle), 0.0));
     vec3 bitangent = normalize(cross(normal, tangent));
     normal = normalize(mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((TerrainBumpmapDistance - gl_FragData[0].a) / (TerrainBumpmapDistance / 2.0), 0.0, 1.0)));
   }
 
-  gl_FragData[1] = vec4(normal, 1.0);
+  gl_FragData[1] = vec4(normal, 2.0);
   gl_FragData[2] = mix(mix(texColors[0], texColors[1], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), mix(texColors[2], texColors[3], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), (Vertex.z * 5.0 - floor(Vertex.z * 5.0)));
+  gl_FragData[2].a = 0.5;
+  gl_FragData[2].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
 }

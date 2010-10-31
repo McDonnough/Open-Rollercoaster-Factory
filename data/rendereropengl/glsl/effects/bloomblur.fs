@@ -20,15 +20,15 @@ void main(void) {
        + 0.047  * texture2D(Tex, fitCoords(gl_FragCoord.xy + BlurDirection * 7.5))
        + 0.047  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 7.5))
        + 0.044  * texture2D(Tex, fitCoords(gl_FragCoord.xy + BlurDirection * 9.5))
-       + 0.044  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 9.5));
+       + 0.044  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 9.5))
        + 0.041  * texture2D(Tex, fitCoords(gl_FragCoord.xy + BlurDirection * 11.5))
-       + 0.041  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 11.5));
+       + 0.041  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 11.5))
        + 0.040  * texture2D(Tex, fitCoords(gl_FragCoord.xy + BlurDirection * 13.5))
-       + 0.040  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 13.5));
+       + 0.040  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 13.5))
        + 0.039  * texture2D(Tex, fitCoords(gl_FragCoord.xy + BlurDirection * 15.5))
-       + 0.039  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 15.5));
+       + 0.039  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 15.5))
        + 0.038  * texture2D(Tex, fitCoords(gl_FragCoord.xy + BlurDirection * 17.5))
-       + 0.038  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 17.5));
+       + 0.038  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 17.5))
        + 0.037  * texture2D(Tex, fitCoords(gl_FragCoord.xy + BlurDirection * 19.5))
        + 0.037  * texture2D(Tex, fitCoords(gl_FragCoord.xy - BlurDirection * 19.5));
   gl_FragColor.a = 1.0;

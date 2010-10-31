@@ -28,7 +28,7 @@ type
       fTmpShadowBuffer: TFBO;
       fMaxShadowPasses: Integer;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fAAShader, fSunRayShader: TShader;
+      fFullscreenShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader: TShader;
       fVecToFront: TVector3D;
     public
       property LightManager: TLightManager read fLightManager;
@@ -68,6 +68,8 @@ type
       property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
       property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
       property MotionBlurStrength: Single read fMotionBlurStrength;
+      property SunShader: TShader read fSunShader;
+      property CompositionShader: TShader read fCompositionShader;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -92,19 +94,25 @@ begin
 
   fGBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
   fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
-  fGBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);   // Normals
-  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only)
+  fGBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Normals and specular hardness
+  fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
+  fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-  fLightBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);     // Colors, Specular
+  fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Colors, Specular
+  fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSceneBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
   fSceneBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);      // Composed image
+  fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   if UseScreenSpaceAmbientOcclusion then
     begin
-    fSSAOBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-    fSSAOBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);     // Screen Space Ambient Occlusion
+    fSSAOBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
+    fSSAOBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);     // Screen Space Ambient Occlusion
+    fSSAOBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
     fSSAOBuffer := nil;
@@ -112,7 +120,8 @@ begin
   if UseBloom then
     begin
     fBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
-    fBloomBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);    // Pseudo-HDR/Color Bleeding
+    fBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);    // Pseudo-HDR/Color Bleeding
+    fBloomBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
     fBloomBuffer := nil;
@@ -121,6 +130,7 @@ begin
     begin
     fFocalBlurBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
     fFocalBlurBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);// Focal blur
+    fFocalBlurBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
     fFocalBlurBuffer := nil;
@@ -128,15 +138,17 @@ begin
   if UseSunRays then
     begin
     fSunRayBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
-    fSunRayBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);  // Color overlay
+    fSunRayBuffer.AddTexture(GL_RGBA, GL_LINEAR, GL_LINEAR);  // Color overlay
+    fSunRayBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
     fSunRayBuffer := nil;
 
-  if UseSunShadows then
+  if (UseSunShadows) or (UseBloom) then
     begin
     fTmpShadowBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
-    fTmpShadowBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Color, Distance
+    fTmpShadowBuffer.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);  // Color, Distance
+    fTmpShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
     fTmpShadowBuffer := nil;
@@ -145,6 +157,7 @@ begin
     begin
     fMotionBlurBuffer := TFBO.Create(ResX, ResY, false);
     fMotionBlurBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);
+    fMotionBlurBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
     fMotionBlurBuffer := nil;
@@ -169,12 +182,31 @@ begin
   fSunRayShader.UniformF('decay', 1.0);
   fSunRayShader.UniformF('density', 0.5);
   fSunRayShader.UniformF('weight', 5.65);
+
+  fSunShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/sun.fs');
+  fSunShader.UniformI('GeometryTexture', 0);
+  fSunShader.UniformI('NormalTexture', 1);
+  fSunShader.UniformI('ShadowTexture', 2);
+
+  fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
+  fCompositionShader.UniformI('MaterialTexture', 0);
+  fCompositionShader.UniformI('LightTexture', 1);
+
+  fBloomShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/bloom.fs');
+  fBloomShader.UniformI('Tex', 0);
+
+  fBloomBlurShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/blur.fs');
+  fBloomBlurShader.UniformI('Tex', 0);
 end;
 
 procedure TModuleRendererOWE.Unload;
 var
   i: Integer;
 begin
+  fBloomBlurShader.Free;
+  fBloomShader.Free;
+  fCompositionShader.Free;
+  fSunShader.Free;
   fSunRayShader.Free;
   fAAShader.Free;
   fFullscreenShader.Free;
@@ -290,28 +322,24 @@ begin
     end;
 
   // Lighting pass
-
-  // Material pass
-
-  // Focal Blur pass
-
-  if UseFocalBlur then
-    begin
-    glDisable(GL_BLEND);
-    FocalBlurBuffer.Bind;
+    // No shadow rendering yet
+  LightBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-    FocalBlurBuffer.Unbind;
-    end;
 
-  // Bloom pass
-
-  if UseBloom then
-    begin
+    glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
-    BloomBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-    BloomBuffer.Unbind;
-    end;
+
+    if UseSunShadows then
+      fTmpShadowBuffer.Textures[0].Bind(2);
+
+    GBuffer.Textures[1].Bind(1);
+    GBuffer.Textures[0].Bind(0);
+
+    SunShader.Bind;
+    DrawFullscreenQuad;
+    SunShader.Unbind;
+
+  LightBuffer.Unbind;
 
   // Sun ray pass
 
@@ -335,23 +363,99 @@ begin
   // Composition
 
   fSceneBuffer.Bind;
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-  fFullscreenShader.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
-  glColor4f(1, 1, 1, 1);
-  GBuffer.Textures[2].Bind(0);
-  DrawFullscreenQuad;
+    CompositionShader.Bind;
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_ONE, GL_ONE);
-  glColor4f(1, 1, 1, 1);
-  SunRayBuffer.Textures[0].Bind(0);
-  DrawFullscreenQuad;
-  glDisable(GL_BLEND);
+    LightBuffer.Textures[0].Bind(1);
+    GBuffer.Textures[2].Bind(0);
+    DrawFullscreenQuad;
 
+    CompositionShader.Unbind;
 
-  fFullscreenShader.Unbind;
+    // Apply first class post processing effects to the image
+
+    fFullscreenShader.Bind;
+
+    if UseSunRays then
+      begin
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE);
+      glColor4f(1, 1, 1, 1);
+      SunRayBuffer.Textures[0].Bind(0);
+      DrawFullscreenQuad;
+      glDisable(GL_BLEND);
+      end;
+
+    fFullscreenShader.Unbind;
+
   fSceneBuffer.Unbind;
+
+  // Focal Blur pass
+
+  if UseFocalBlur then
+    begin
+    glDisable(GL_BLEND);
+    FocalBlurBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    FocalBlurBuffer.Unbind;
+    end;
+
+  // Bloom pass
+
+  if UseBloom then
+    begin
+    glDisable(GL_BLEND);
+
+    BloomBuffer.Bind;
+
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+
+    fBloomShader.Bind;
+    fSceneBuffer.Textures[0].Bind(0);
+    DrawFullscreenQuad;
+    fBloomShader.Unbind;
+
+    BloomBuffer.Unbind;
+
+    fBloomBlurShader.Bind;
+
+    // Abuse shadow buffer here for blurring - possible because it is the same size
+    fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width, 0.0);
+    BloomBuffer.Textures[0].Bind(0);
+
+    fTmpShadowBuffer.Bind;
+    DrawFullscreenQuad;
+    fTmpShadowBuffer.Unbind;
+
+    //...and use the bloom buffer again
+    fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height);
+    fTmpShadowBuffer.Textures[0].Bind(0);
+
+    BloomBuffer.Bind;
+    DrawFullscreenQuad;
+    BloomBuffer.Unbind;
+
+    fBloomBlurShader.Unbind;
+
+    // Apply bloom to scene image
+    fSceneBuffer.Bind;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glColor4f(0.5, 0.5, 0.5, 1.0);
+
+    fBloomBuffer.Textures[0].Bind(0);
+
+    fFullscreenShader.Bind;
+    DrawFullscreenQuad;
+    fFullscreenShader.Unbind;
+
+    fSceneBuffer.Unbind;
+
+    glDisable(GL_BLEND);
+    end;
+
 
   // Output
 

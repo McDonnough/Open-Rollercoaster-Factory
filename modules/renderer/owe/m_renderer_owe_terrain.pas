@@ -69,7 +69,7 @@ procedure TTerrainBlock.RenderRaw;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 0);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.3 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.RawVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.RawVBO.Render;
@@ -80,7 +80,7 @@ procedure TTerrainBlock.RenderFine;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 1);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.3 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.FineVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.FineVBO.Render;
@@ -91,7 +91,7 @@ procedure TTerrainBlock.RenderOneFace;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 0);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.3 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   glBegin(GL_QUADS);
     glVertex3f(0, 0, 0);
@@ -352,14 +352,10 @@ destructor TRTerrain.Free;
 var
   i, j: Integer;
 begin
-  EventManager.RemoveCallback('TTerrain.ApplyForcedHeightLine', @SetHeightLine);
-  EventManager.RemoveCallback('GUIActions.terrain_edit.open', @ChangeTerrainEditorState);
-  EventManager.RemoveCallback('GUIActions.terrain_edit.close', @ChangeTerrainEditorState);
-  EventManager.RemoveCallback('TTerrain.Resize', @ApplyChanges);
-  EventManager.RemoveCallback('TTerrain.Changed', @ApplyChanges);
-  EventManager.RemoveCallback('TTerrain.ChangedTexmap', @ApplyChanges);
-  EventManager.RemoveCallback('TTerrain.ChangedWater', @ApplyChanges);
-  EventManager.RemoveCallback('TTerrain.ChangedCollection', @UpdateCollection);
+  EventManager.RemoveCallback(@SetHeightLine);
+  EventManager.RemoveCallback(@ChangeTerrainEditorState);
+  EventManager.RemoveCallback(@ApplyChanges);
+  EventManager.RemoveCallback(@UpdateCollection);
   Terminate;
   fShadowPassShader.Free;
   fGeometryPassShader.Free;

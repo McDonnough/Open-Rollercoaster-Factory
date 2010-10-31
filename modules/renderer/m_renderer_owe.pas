@@ -28,7 +28,7 @@ type
       fTmpShadowBuffer: TFBO;
       fMaxShadowPasses: Integer;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fAAShader: TShader;
+      fFullscreenShader, fAAShader, fSunRayShader: TShader;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -109,7 +109,7 @@ begin
 
   if UseBloom then
     begin
-    fBloomBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
+    fBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
     fBloomBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);    // Pseudo-HDR/Color Bleeding
     end
   else
@@ -118,14 +118,14 @@ begin
   if UseFocalBlur then
     begin
     fFocalBlurBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-    fFocalBlurBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);      // Focal blur
+    fFocalBlurBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);// Focal blur
     end
   else
     fFocalBlurBuffer := nil;
 
   if UseSunRays then
     begin
-    fSunRayBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
+    fSunRayBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
     fSunRayBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);  // Color overlay
     end
   else
@@ -154,16 +154,26 @@ begin
 
   fFullscreenShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fullscreen.fs');
   fFullscreenShader.UniformI('Texture', 0);
+
   fAAShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fsaa.fs');
   fAAShader.UniformI('Texture', 0);
   fAAShader.UniformI('ScreenSize', ResX, ResY);
   fAAShader.UniformI('Samples', FSAASamples);
+
+  fSunRayShader := TShader.Create('orcf-world-engine/postprocess/sunrays.vs', 'orcf-world-engine/postprocess/sunrays.fs');
+  fSunRayShader.UniformI('MaterialTexture', 0);
+  fSunRayShader.UniformI('NormalTexture', 1);
+  fSunRayShader.UniformF('exposure', 0.0014);
+  fSunRayShader.UniformF('decay', 1.0);
+  fSunRayShader.UniformF('density', 0.5);
+  fSunRayShader.UniformF('weight', 5.65);
 end;
 
 procedure TModuleRendererOWE.Unload;
 var
   i: Integer;
 begin
+  fSunRayShader.Free;
   fAAShader.Free;
   fFullscreenShader.Free;
 
@@ -205,6 +215,9 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
+  RSky.Advance;
+  RSky.Sun.Bind(0);
+
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
   RCamera.ApplyRotation(Vector(1, 1, 1));
@@ -217,6 +230,9 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+
+    // Sky
+    RSky.Render;
 
     // Terrain
 
@@ -264,6 +280,14 @@ begin
     begin
     SunRayBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+
+    GBuffer.Textures[1].Bind(1);
+    GBuffer.Textures[2].Bind(0);
+
+    fSunRayShader.Bind;
+    DrawFullscreenQuad;
+    fSunRayShader.Unbind;
+
     SunRayBuffer.Unbind;
     end;
 
@@ -271,12 +295,19 @@ begin
 
   fSceneBuffer.Bind;
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-  glColor4f(1, 1, 1, 1);
   fFullscreenShader.Bind;
 
+  glColor4f(1, 1, 1, 1);
   GBuffer.Textures[2].Bind(0);
-
   DrawFullscreenQuad;
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_ONE, GL_ONE);
+  glColor4f(1, 1, 1, 1);
+  SunRayBuffer.Textures[0].Bind(0);
+  DrawFullscreenQuad;
+  glDisable(GL_BLEND);
+
 
   fFullscreenShader.Unbind;
   fSceneBuffer.Unbind;
@@ -341,7 +372,7 @@ begin
     SetConfVal('bloom', '1');
     SetConfVal('focalblur', '1');
     SetConfVal('motionblur', '1');
-    SetConfVal('motionblur.strength', '0.08');
+    SetConfVal('motionblur.strength', '0.05');
     SetConfVal('sunrays', '1');
     SetConfVal('lod.distanceoffset', '0');
     SetConfVal('lod.distancefactor', '1');
@@ -365,7 +396,7 @@ begin
   fShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.samples'), 1);
   fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.samples'), 2);
   fMaxShadowPasses := StrToIntWD(GetConfVal('shadows.maxbuffers'), 100);
-  fMotionBlurStrength := StrToFloatWD(GetConfVal('motionblur.strength'), 0.08);
+  fMotionBlurStrength := StrToFloatWD(GetConfVal('motionblur.strength'), 0.05);
   fTerrainTesselationDistance := StrToFloatWD(GetConfVal('terrain.tesselationdistance'), 25);
   fTerrainDetailDistance := StrToFloatWD(GetConfVal('terrain.detaildistance'), 100);
   fTerrainBumpmapDistance := StrToFloatWD(GetConfVal('terrain.bumpmapdistance'), 60);

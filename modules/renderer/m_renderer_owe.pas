@@ -384,22 +384,6 @@ begin
 
     CompositionShader.Unbind;
 
-    // Apply first class post processing effects to the image
-
-    fFullscreenShader.Bind;
-
-    if UseSunRays then
-      begin
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_ONE, GL_ONE);
-      glColor4f(1, 1, 1, 1);
-      SunRayBuffer.Textures[0].Bind(0);
-      DrawFullscreenQuad;
-      glDisable(GL_BLEND);
-      end;
-
-    fFullscreenShader.Unbind;
-
   fSceneBuffer.Unbind;
 
   // Focal Blur pass
@@ -435,6 +419,26 @@ begin
     fFocalBlurShader.UniformF('Strength', 1.0);
     DrawFullscreenQuad;
     fFocalBlurShader.Unbind;
+
+    SceneBuffer.Unbind;
+    end;
+
+    // Apply sun ray effect to the image
+
+  if UseSunRays then
+    begin
+    SceneBuffer.Bind;
+
+    fFullscreenShader.Bind;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glColor4f(1, 1, 1, 1);
+    SunRayBuffer.Textures[0].Bind(0);
+    DrawFullscreenQuad;
+    glDisable(GL_BLEND);
+
+    fFullscreenShader.Unbind;
 
     SceneBuffer.Unbind;
     end;
@@ -481,7 +485,7 @@ begin
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    glColor4f(0.5, 0.5, 0.5, 1.0);
+    glColor4f(0.3, 0.3, 0.3, 1.0);
 
     fBloomBuffer.Textures[0].Bind(0);
 

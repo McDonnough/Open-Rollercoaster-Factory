@@ -156,7 +156,7 @@ begin
       fWorking := True;
 
       for i := 0 to high(Blocks) do
-        if Blocks[i].Changed then
+//         if Blocks[i].Changed then
           Blocks[i].Update;
 
       end;

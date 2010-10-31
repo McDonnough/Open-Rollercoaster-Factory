@@ -31,6 +31,7 @@ type
       fFullscreenShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
+      fFrustum: TFrustum;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -72,6 +73,7 @@ type
       property SunShader: TShader read fSunShader;
       property CompositionShader: TShader read fCompositionShader;
       property FocusDistance: Single read fFocusDistance;
+      property Frustum: TFrustum read fFrustum;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -203,12 +205,17 @@ begin
   fFocalBlurShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/focalblur.fs');
   fFocalBlurShader.UniformI('SceneTexture', 0);
   fFocalBlurShader.UniformI('GeometryTexture', 1);
+
+
+  fFrustum := TFrustum.Create;
 end;
 
 procedure TModuleRendererOWE.Unload;
 var
   i: Integer;
 begin
+  fFrustum.Free;
+
   fFocalBlurShader.Free;
   fBloomBlurShader.Free;
   fBloomShader.Free;
@@ -283,6 +290,12 @@ begin
 
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
+
+  Frustum.Calculate;
+
+  // Check some visibilities
+
+  RTerrain.CheckVisibility;
 
   // Geometry pass
 

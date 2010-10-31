@@ -50,6 +50,7 @@ type
       property FineVBO: TVBO read fFineVBO;
       property GeometryPassShader: TShader read fGeometryPassShader;
       property ShadowPassShader: TShader read fShadowPassShader;
+      procedure CheckVisibility;
       procedure Sync;
       procedure Render;
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
@@ -114,12 +115,14 @@ begin
       fMaxHeight := Max(fMaxHeight, Park.pTerrain.ExactHeightMap[128 * fX + i, 128 * fY + j] / 256);
       fMinHeight := Min(fMinHeight, Park.pTerrain.ExactHeightMap[128 * fX + i, 128 * fY + j] / 256);
       end;
+  fBlockCenter.Y := (fMaxHeight + fMinHeight) / 2;
+  fRadius := VecLength(Vector(12.8, (fMaxHeight - fMinHeight) / 2, 12.8));
 end;
 
 procedure TTerrainBlock.CheckVisibility;
 begin
   fShadowsVisible := true;
-  fVisible := true;
+  fVisible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(fBlockCenter.X, fBlockCenter.Y, fBlockCenter.Z, fRadius);
 end;
 
 constructor TTerrainBlock.Create(iX, iY: Integer);
@@ -135,6 +138,14 @@ begin
   Changed := True;
 end;
 
+
+procedure TRTerrain.CheckVisibility;
+var
+  i: Integer;
+begin
+  for i := 0 to high(Blocks) do
+    Blocks[i].CheckVisibility;
+end;
 
 procedure TRTerrain.Sync;
 begin
@@ -168,19 +179,41 @@ end;
 
 procedure TRTerrain.Render;
 var
-  i: Integer;
+  i, j: Integer;
+  BlockIDs: Array of Integer;
+  DistanceValues: Array of Single;
+  tmps: Single;
+  tmpi: Integer;
 begin
   Park.pTerrain.Collection.Texture.Bind(1);
   fTerrainMap.Bind(0);
+
+  setLength(BlockIDs, length(Blocks));
+  setLength(DistanceValues, length(Blocks));
+
+  for i := 0 to high(Blocks) do
+    begin
+    BlockIDs[i] := i;
+    DistanceValues[i] := VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Blocks[i].Center);
+    end;
+
+  for i := 0 to high(Blocks) - 1 do
+    for j := i + 1 to high(Blocks) do
+      if DistanceValues[i] > DistanceValues[j] then
+        begin
+        tmpS := DistanceValues[i]; DistanceValues[i] := DistanceValues[j]; DistanceValues[j] := tmpS;
+        tmpI := BlockIDs[i]; BlockIDs[i] := BlockIDs[j]; BlockIDs[j] := tmpI;
+        end;
+
   CurrentShader.Bind;
   for i := 0 to high(Blocks) do
-    if ((Blocks[i].Visible) and (CurrentShader = fGeometryPassShader)) or ((Blocks[i].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
-      if Blocks[i].MinHeight = Blocks[i].MaxHeight then
-        Blocks[i].RenderOneFace
-      else if VecLengthNoRoot(Blocks[i].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (ModuleManager.ModRenderer.TerrainDetailDistance) * (4 * ModuleManager.ModRenderer.TerrainTesselationDistance) then
-        Blocks[i].RenderRaw
+    if ((Blocks[BlockIDs[i]].Visible) and (CurrentShader = fGeometryPassShader)) or ((Blocks[BlockIDs[i]].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
+      if Blocks[BlockIDs[i]].MinHeight = Blocks[BlockIDs[i]].MaxHeight then
+        Blocks[BlockIDs[i]].RenderOneFace
+      else if VecLengthNoRoot(Blocks[BlockIDs[i]].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (ModuleManager.ModRenderer.TerrainDetailDistance) * (4 * ModuleManager.ModRenderer.TerrainTesselationDistance) then
+        Blocks[BlockIDs[i]].RenderRaw
       else
-        Blocks[i].RenderFine;
+        Blocks[BlockIDs[i]].RenderFine;
   CurrentShader.UnBind;
 end;
 

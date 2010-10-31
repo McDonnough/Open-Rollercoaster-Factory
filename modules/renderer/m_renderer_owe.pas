@@ -28,8 +28,9 @@ type
       fTmpShadowBuffer: TFBO;
       fMaxShadowPasses: Integer;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader: TShader;
+      fFullscreenShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader: TShader;
       fVecToFront: TVector3D;
+      fFocusDistance: Single;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -70,6 +71,7 @@ type
       property MotionBlurStrength: Single read fMotionBlurStrength;
       property SunShader: TShader read fSunShader;
       property CompositionShader: TShader read fCompositionShader;
+      property FocusDistance: Single read fFocusDistance;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -129,7 +131,7 @@ begin
   if UseFocalBlur then
     begin
     fFocalBlurBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-    fFocalBlurBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);// Focal blur
+    fFocalBlurBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR); // Focal blur
     fFocalBlurBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
@@ -197,12 +199,17 @@ begin
 
   fBloomBlurShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/blur.fs');
   fBloomBlurShader.UniformI('Tex', 0);
+
+  fFocalBlurShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/focalblur.fs');
+  fFocalBlurShader.UniformI('SceneTexture', 0);
+  fFocalBlurShader.UniformI('GeometryTexture', 1);
 end;
 
 procedure TModuleRendererOWE.Unload;
 var
   i: Integer;
 begin
+  fFocalBlurShader.Free;
   fBloomBlurShader.Free;
   fBloomShader.Free;
   fCompositionShader.Free;
@@ -258,6 +265,7 @@ procedure TModuleRendererOWE.RenderScene;
 var
   MX, MY: Single;
   ResX, ResY: Integer;
+  Coord: TVector4D;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 
@@ -275,20 +283,6 @@ begin
 
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
-
-  // Set up selection rays
-
-  with ModuleManager.ModCamera do
-    fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
-                                   -Sin(DegToRad(ActiveCamera.Rotation.X)),
-                                   -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
-
-  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-
-  MX := 2 * (ModuleManager.ModInputHandler.MouseX / ResX) - 1;
-  MY := -2 * (ModuleManager.ModInputHandler.MouseY / ResY) + 1;
-
-  fSelectionRay := GetRay(MX, MY);
 
   // Geometry pass
 
@@ -309,7 +303,24 @@ begin
 
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
+
+    // Get depth under mouse
+
+    glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+
   GBuffer.Unbind;
+
+  // Set up selection rays
+
+  with ModuleManager.ModCamera do
+    fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+
+  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+
+  fSelectionRay := Vector3D(Coord) - fSelectionStart;
+  fFocusDistance := Coord.W;
 
   // SSAO pass
 
@@ -396,9 +407,36 @@ begin
   if UseFocalBlur then
     begin
     glDisable(GL_BLEND);
+
     FocalBlurBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+
+    // Copy image to focal blur buffer
+
+    glColor4f(1, 1, 1, 1);
+    SceneBuffer.Textures[0].Bind(0);
+
+    fFullscreenShader.Bind;
+    DrawFullscreenQuad;
+    fFullscreenShader.Unbind;
+
     FocalBlurBuffer.Unbind;
+
+    // Apply effect
+
+    SceneBuffer.Bind;
+
+    GBuffer.Textures[0].Bind(1);
+    FocalBlurBuffer.Textures[0].Bind(0);
+
+    fFocalBlurShader.Bind;
+    fFocalBlurShader.UniformF('FocusDistance', FocusDistance);
+    fFocalBlurShader.UniformF('Screen', ResX, ResY);
+    fFocalBlurShader.UniformF('Strength', 1.0);
+    DrawFullscreenQuad;
+    fFocalBlurShader.Unbind;
+
+    SceneBuffer.Unbind;
     end;
 
   // Bloom pass

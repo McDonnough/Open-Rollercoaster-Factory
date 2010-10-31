@@ -3,7 +3,7 @@
 varying vec3 Vertex;
 
 void main(void) {
-  gl_FragData[0] = vec4(0.0, 0.0, 0.0, 0.0);
+  gl_FragData[0] = vec4(0.0, 0.0, 0.0, 5000.0);
   gl_FragData[1] = vec4(0.0, 0.0, 0.0, 0.0);
 
   vec3 pos = gl_LightSource[0].position.xyz;

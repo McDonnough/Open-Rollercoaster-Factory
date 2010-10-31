@@ -29,6 +29,7 @@ type
       fMaxShadowPasses: Integer;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
       fFullscreenShader, fAAShader, fSunRayShader: TShader;
+      fVecToFront: TVector3D;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -71,6 +72,7 @@ type
       procedure Unload;
       procedure RenderScene;
       procedure CheckModConf;
+      function GetRay(MX, MY: Single): TVector3D;
       constructor Create;
       destructor Free;
     end;
@@ -199,6 +201,18 @@ begin
   fLightManager.Free;
 end;
 
+function TModuleRendererOWE.GetRay(MX, MY: Single): TVector3D;
+var
+  pmatrix: TMatrix;
+  VecLeft, VecUp: TVector3D;
+begin
+  glGetFloatv(GL_PROJECTION_MATRIX, @pmatrix[0]);
+
+  VecLeft := Normal(fVecToFront, Vector(0, 1, 0));
+  VecUp := Normal(VecLeft, fVecToFront);
+  Result := normalize(fVecToFront + VecUp * (MY / pMatrix[5]) + VecLeft * (MX / pMatrix[0]));
+end;
+
 procedure TModuleRendererOWE.RenderScene;
   procedure DrawFullscreenQuad;
   begin
@@ -209,7 +223,14 @@ procedure TModuleRendererOWE.RenderScene;
       glVertex2f(-1,  1);
     glEnd;
   end;
+var
+  MX, MY: Single;
+  ResX, ResY: Integer;
 begin
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+
+  // Set up camera
+
   glMatrixMode(GL_PROJECTION);
   ModuleManager.ModGLMng.SetUp3DMatrix;
   glMatrixMode(GL_MODELVIEW);
@@ -223,9 +244,24 @@ begin
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
 
+  // Set up selection rays
+
+  with ModuleManager.ModCamera do
+    fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+
+  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+
+  MX := 2 * (ModuleManager.ModInputHandler.MouseX / ResX) - 1;
+  MY := -2 * (ModuleManager.ModInputHandler.MouseY / ResY) + 1;
+
+  fSelectionRay := GetRay(MX, MY);
+
   // Geometry pass
 
   GBuffer.Bind;
+    glDisable(GL_BLEND);
     glDepthMask(true);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
@@ -247,6 +283,7 @@ begin
 
   if UseScreenSpaceAmbientOcclusion then
     begin
+    glDisable(GL_BLEND);
     SSAOBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     SSAOBuffer.Unbind;
@@ -260,6 +297,7 @@ begin
 
   if UseFocalBlur then
     begin
+    glDisable(GL_BLEND);
     FocalBlurBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     FocalBlurBuffer.Unbind;
@@ -269,6 +307,7 @@ begin
 
   if UseBloom then
     begin
+    glDisable(GL_BLEND);
     BloomBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     BloomBuffer.Unbind;
@@ -278,6 +317,7 @@ begin
 
   if UseSunRays then
     begin
+    glDisable(GL_BLEND);
     SunRayBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
@@ -285,6 +325,7 @@ begin
     GBuffer.Textures[2].Bind(0);
 
     fSunRayShader.Bind;
+    fSunRayShader.UniformF('VecToFront', fVecToFront.X, fVecToFront.Y, fVecToFront.Z);;
     DrawFullscreenQuad;
     fSunRayShader.Unbind;
 

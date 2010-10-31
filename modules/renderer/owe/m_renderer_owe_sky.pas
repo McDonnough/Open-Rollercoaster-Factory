@@ -32,7 +32,7 @@ begin
   fShader.Bind;
   glBegin(GL_QUADS);
     for i := 0 to 17 do
-      for j := 0 to 9 do
+      for j := 0 to 19 do
         begin
         glVertex3f(28793 * sin(DegToRad(20 * (i + 0))) * sin(DegToRad(j + 0)), (cos(DegToRad(j + 0)) - cos(DegToRad(10))) * 32911, 28793 * cos(DegToRad(20 * (i + 0))) * sin(DegToRad(j + 0)));
         glVertex3f(28793 * sin(DegToRad(20 * (i + 1))) * sin(DegToRad(j + 0)), (cos(DegToRad(j + 0)) - cos(DegToRad(10))) * 32911, 28793 * cos(DegToRad(20 * (i + 1))) * sin(DegToRad(j + 0)));

@@ -6,10 +6,14 @@ uniform sampler2D NormalTexture;
 uniform sampler2D MaterialTexture;
 
 varying vec2 lightPositionOnScreen;
+varying float angleFactor;
 
 const int NUM_SAMPLES = 100;
 
 void main() {
+  if (angleFactor <= 0.0)
+    discard;
+
   vec2 deltaTextCoord = gl_TexCoord[0].xy - lightPositionOnScreen;
   vec2 textCoo = gl_TexCoord[0].xy;
   deltaTextCoord *= 1.0 / float(NUM_SAMPLES) * density;
@@ -28,5 +32,5 @@ void main() {
       illuminationDecay *= decay;
   }
 
-  gl_FragColor *= exposure;
+  gl_FragColor *= exposure * angleFactor;
 }

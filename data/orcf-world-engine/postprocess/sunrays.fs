@@ -1,5 +1,7 @@
 #version 120
 
+// Technique and shader from http://www.fabiensanglard.net/lightScattering/index.php
+
 uniform float exposure;
 uniform float decay;
 uniform float density;

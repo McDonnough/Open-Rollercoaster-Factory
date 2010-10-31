@@ -5,7 +5,8 @@ interface
 uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
   m_renderer_owe_camera, math, m_texmng_class, m_shdmng_class, u_functions, m_renderer_owe_frustum,
-  m_renderer_owe_sky, m_renderer_owe_classes, u_scene, m_renderer_owe_lights, m_renderer_owe_terrain;
+  m_renderer_owe_sky, m_renderer_owe_classes, u_scene, m_renderer_owe_lights, m_renderer_owe_terrain,
+  m_renderer_owe_autoplants, u_files, u_graphics;
 
 type
   TModuleRendererOWE = class(TModuleRendererClass)
@@ -13,6 +14,7 @@ type
       fRendererSky: TRSky;
       fRendererCamera: TRCamera;
       fRendererTerrain: TRTerrain;
+      fRendererAutoplants: TRAutoplants;
       fLightManager: TLightManager;
       fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer: TFBO;
       fFSAASamples: Integer;
@@ -27,16 +29,20 @@ type
       fSSAOSamples, fShadowBlurSamples: Integer;
       fTmpShadowBuffer: TFBO;
       fMaxShadowPasses: Integer;
+      fAutoplantCount: Integer;
+      fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
       fFullscreenShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
+      fTransparencyMask: TTexture;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
       property RSky: TRSky read fRendererSky;
       property RTerrain: TRTerrain read fRendererTerrain;
+      property RAutoplants: TRAutoplants read fRendererAutoplants;
       property GBuffer: TFBO read fGBuffer;
       property LightBuffer: TFBO read fLightBuffer;
       property SceneBuffer: TFBO read fSceneBuffer;
@@ -64,6 +70,8 @@ type
       property BufferSizeX: Integer read fBufferSizeX;
       property BufferSizeY: Integer read fBufferSizeY;
       property MaxShadowPasses: Integer read fMaxShadowPasses;
+      property AutoplantDistance: Single read fAutoplantDistance;
+      property AutoplantCount: Integer read fAutoplantCount;
       property TerrainTesselationDistance: Single read fTerrainTesselationDistance;
       property TerrainDetailDistance: Single read fTerrainDetailDistance;
       property TerrainBumpmapDistance: Single read fTerrainBumpmapDistance;
@@ -74,6 +82,7 @@ type
       property CompositionShader: TShader read fCompositionShader;
       property FocusDistance: Single read fFocusDistance;
       property Frustum: TFrustum read fFrustum;
+      property TransparencyMask: TTexture read fTransparencyMask;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -92,6 +101,9 @@ procedure TModuleRendererOWE.PostInit;
 var
   ResX, ResY: Integer;
 begin
+  fTransparencyMask := TTexture.Create;
+  fTransparencyMask.FromFile('orcf-world-engine/inferred/transparency-gradient.tga');
+
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBufferSizeX := ResX * FSAASamples;
   fBufferSizeY := ResY * FSAASamples;
@@ -170,6 +182,7 @@ begin
   fRendererCamera := TRCamera.Create;
   fRendererSky := TRSky.Create;
   fRendererTerrain := TRTerrain.Create;
+  fRendererAutoplants := TRAutoplants.Create;
 
   fFullscreenShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fullscreen.fs');
   fFullscreenShader.UniformI('Texture', 0);
@@ -241,10 +254,13 @@ begin
   if fMotionBlurBuffer <> nil then
     fMotionBlurBuffer.Free;
 
+  fRendererAutoplants.Free;
   fRendererTerrain.Free;
   fRendererSky.Free;
   fRendererCamera.Free;
   fLightManager.Free;
+
+  fTransparencyMask.Free;
 end;
 
 function TModuleRendererOWE.GetRay(MX, MY: Single): TVector3D;
@@ -291,7 +307,11 @@ begin
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
 
+  // Do some scene preparation
+
   Frustum.Calculate;
+
+  RAutoplants.Update;
 
   // Check some visibilities
 
@@ -300,6 +320,8 @@ begin
   // Geometry pass
 
   GBuffer.Bind;
+    fTransparencyMask.Bind(7);
+
     glDisable(GL_BLEND);
     glDepthMask(true);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
@@ -313,6 +335,13 @@ begin
 
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
     RTerrain.Render;
+
+    // Autoplants
+
+    RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
+    RAutoplants.Render;
+
+    // End
 
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
@@ -581,6 +610,8 @@ begin
     SetConfVal('terrain.tesselationdistance', '25');
     SetConfVal('terrain.detaildistance', '100');
     SetConfVal('terrain.bumpmapdistance', '60');
+    SetConfVal('autoplants.distance', '30');
+    SetConfVal('autoplants.count', '9000');
     end;
   fFSAASamples := StrToIntWD(GetConfVal('samples'), 4);
   fReflectionDepth := StrToIntWD(GetConfVal('reflections.depth'), 2);
@@ -605,6 +636,8 @@ begin
   fLODDistanceFactor := StrToIntWD(GetConfVal('lod.distancefactor'), 1);
   fSubdivisionCuts := StrToIntWD(GetConfVal('subdiv.cuts'), 2);
   fSubdivisionDistance := StrToIntWD(GetConfVal('subdiv.distance'), 10);
+  fAutoplantCount := StrToIntWD(GetConfVal('autoplants.count'), 9000);
+  fAutoplantDistance := StrToFloatWD(GetConfVal('autoplants.distance'), 30);
 end;
 
 constructor TModuleRendererOWE.Create;

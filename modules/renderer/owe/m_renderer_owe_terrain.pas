@@ -187,6 +187,7 @@ var
 begin
   Park.pTerrain.Collection.Texture.Bind(1);
   fTerrainMap.Bind(0);
+  fTerrainMap.SetFilter(GL_NEAREST, GL_NEAREST);
 
   setLength(BlockIDs, length(Blocks));
   setLength(DistanceValues, length(Blocks));
@@ -249,7 +250,6 @@ begin
       fTerrainMap.Free;
     fTerrainMap := TTexture.Create;
     fTerrainMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGB16);
-    fTerrainMap.SetFilter(GL_NEAREST, GL_NEAREST);
     fTerrainMap.SetClamp(GL_CLAMP, GL_CLAMP);
     fTerrainMap.Unbind;
     SetLength(HasBlock, Park.pTerrain.SizeX div 128);
@@ -390,6 +390,7 @@ begin
   EventManager.RemoveCallback(@ApplyChanges);
   EventManager.RemoveCallback(@UpdateCollection);
   Terminate;
+  Sync;
   fShadowPassShader.Free;
   fGeometryPassShader.Free;
   if fTerrainMap <> nil then

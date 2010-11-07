@@ -97,21 +97,21 @@ void main(void) {
     Vertices[14].y = 256.0 * texture2D(TerrainMap, Vertices[14].xz / TerrainSize + TOffset).b;
 
     // Prevent black holes
-    Vertices[ 0].y = mix(owh[ 0], Vertices[ 0].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 0], 1.0)).xyz)));
-    Vertices[ 1].y = mix(owh[ 1], Vertices[ 1].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 1], 1.0)).xyz)));
-    Vertices[ 2].y = mix(owh[ 2], Vertices[ 2].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 2], 1.0)).xyz)));
-    Vertices[ 3].y = mix(owh[ 3], Vertices[ 3].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 3], 1.0)).xyz)));
-    Vertices[ 4].y = mix(owh[ 4], Vertices[ 4].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 4], 1.0)).xyz)));
-    Vertices[ 5].y = mix(owh[ 5], Vertices[ 5].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 5], 1.0)).xyz)));
-    Vertices[ 6].y = mix(owh[ 6], Vertices[ 6].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 6], 1.0)).xyz)));
-    Vertices[ 7].y = mix(owh[ 7], Vertices[ 7].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 7], 1.0)).xyz)));
-    Vertices[ 8].y = mix(owh[ 8], Vertices[ 8].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 8], 1.0)).xyz)));
-    Vertices[ 9].y = mix(owh[ 9], Vertices[ 9].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[ 9], 1.0)).xyz)));
-    Vertices[10].y = mix(owh[10], Vertices[10].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[10], 1.0)).xyz)));
-    Vertices[11].y = mix(owh[11], Vertices[11].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[11], 1.0)).xyz)));
-    Vertices[12].y = mix(owh[12], Vertices[12].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[12], 1.0)).xyz)));
-    Vertices[13].y = mix(owh[13], Vertices[13].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[13], 1.0)).xyz)));
-    Vertices[14].y = mix(owh[14], Vertices[14].y, 0.2 * min(5.0, TerrainTesselationDistance - length((gl_ModelViewMatrix * vec4(Vertices[14], 1.0)).xyz)));
+    Vertices[ 0].y = mix(owh[ 0], Vertices[ 0].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 0], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 1].y = mix(owh[ 1], Vertices[ 1].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 1], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 2].y = mix(owh[ 2], Vertices[ 2].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 2], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 3].y = mix(owh[ 3], Vertices[ 3].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 3], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 4].y = mix(owh[ 4], Vertices[ 4].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 4], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 5].y = mix(owh[ 5], Vertices[ 5].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 5], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 6].y = mix(owh[ 6], Vertices[ 6].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 6], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 7].y = mix(owh[ 7], Vertices[ 7].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 7], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 8].y = mix(owh[ 8], Vertices[ 8].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 8], 1.0)).xyz), 0.0, 5.0));
+    Vertices[ 9].y = mix(owh[ 9], Vertices[ 9].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 9], 1.0)).xyz), 0.0, 5.0));
+    Vertices[10].y = mix(owh[10], Vertices[10].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[10], 1.0)).xyz), 0.0, 5.0));
+    Vertices[11].y = mix(owh[11], Vertices[11].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[11], 1.0)).xyz), 0.0, 5.0));
+    Vertices[12].y = mix(owh[12], Vertices[12].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[12], 1.0)).xyz), 0.0, 5.0));
+    Vertices[13].y = mix(owh[13], Vertices[13].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[13], 1.0)).xyz), 0.0, 5.0));
+    Vertices[14].y = mix(owh[14], Vertices[14].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[14], 1.0)).xyz), 0.0, 5.0));
 
     // Output new triangles
     Vertex = Vertices[ 0]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 0], 1.0); EmitVertex();

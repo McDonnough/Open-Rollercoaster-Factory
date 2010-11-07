@@ -16,7 +16,7 @@ type
       fRendererTerrain: TRTerrain;
       fRendererAutoplants: TRAutoplants;
       fLightManager: TLightManager;
-      fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer: TFBO;
+      fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer: TFBO;
       fFSAASamples: Integer;
       fReflectionDepth, fReflectionUpdateInterval: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
@@ -49,6 +49,7 @@ type
       property SSAOBuffer: TFBO read fSSAOBuffer;
       property SunRayBuffer: TFBO read fSunRayBuffer;
       property BloomBuffer: TFBO read fBloomBuffer;
+      property SpareBuffer: TFBO read fSpareBuffer;
       property FSAASamples: Integer read fFSAASamples;
       property ReflectionDepth: Integer read fReflectionDepth;
       property ReflectionUpdateInterval: Integer read fReflectionUpdateInterval;
@@ -109,12 +110,16 @@ begin
   fBufferSizeY := ResY * FSAASamples;
 
   fGBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
-  fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
+  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
   fGBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Normals and specular hardness
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
-  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
+  fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
+
+  fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
+  fSpareBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
+  fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
   fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Colors, Specular
@@ -208,6 +213,7 @@ begin
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
   fCompositionShader.UniformI('LightTexture', 1);
+  fCompositionShader.UniformI('GTexture', 2);
 
   fBloomShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/bloom.fs');
   fBloomShader.UniformI('Tex', 0);
@@ -239,6 +245,7 @@ begin
   fFullscreenShader.Free;
 
   fGBuffer.Free;
+  fSpareBuffer.Free;
   fLightBuffer.Free;
   fSceneBuffer.Free;
   if fSSAOBuffer <> nil then
@@ -319,6 +326,7 @@ begin
 
   // Geometry pass
 
+  // Opaque parts only
   GBuffer.Bind;
     fTransparencyMask.Bind(7);
 
@@ -336,15 +344,43 @@ begin
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
     RTerrain.Render;
 
-    // Autoplants
+  GBuffer.Unbind;
 
+  // Save material buffer
+  SpareBuffer.Bind;
+    GBuffer.Textures[0].Bind;
+    fFullscreenShader.Bind;
+    DrawFullscreenQuad;
+    fFullscreenShader.Unbind;
+  SpareBuffer.Unbind;
+
+  // SSAO pass
+
+  if UseScreenSpaceAmbientOcclusion then
+    begin
+    glDisable(GL_BLEND);
+    SSAOBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    SSAOBuffer.Unbind;
+    end;
+
+  // Transparent parts, fuck up the material buffer
+  GBuffer.Bind;
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0);
+    glColorMask(true, true, true, false);
+
+    // Autoplants
     RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
     RAutoplants.Render;
 
+
     // End
 
+    glColorMask(true, true, true, true);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
+    glDisable(GL_ALPHA_TEST);
 
     // Get depth under mouse
 
@@ -364,16 +400,6 @@ begin
   fSelectionRay := Vector3D(Coord) - fSelectionStart;
   fFocusDistance := Coord.W;
 
-  // SSAO pass
-
-  if UseScreenSpaceAmbientOcclusion then
-    begin
-    glDisable(GL_BLEND);
-    SSAOBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-    SSAOBuffer.Unbind;
-    end;
-
   // Lighting pass
     // No shadow rendering yet
   LightBuffer.Bind;
@@ -386,7 +412,7 @@ begin
       fTmpShadowBuffer.Textures[0].Bind(2);
 
     GBuffer.Textures[1].Bind(1);
-    GBuffer.Textures[0].Bind(0);
+    GBuffer.Textures[2].Bind(0);
 
     SunShader.Bind;
     DrawFullscreenQuad;
@@ -403,7 +429,7 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     GBuffer.Textures[1].Bind(1);
-    GBuffer.Textures[2].Bind(0);
+    SpareBuffer.Textures[0].Bind(0);
 
     fSunRayShader.Bind;
     fSunRayShader.UniformF('VecToFront', fVecToFront.X, fVecToFront.Y, fVecToFront.Z);;
@@ -416,15 +442,35 @@ begin
   // Composition
 
   fSceneBuffer.Bind;
+    glDepthMask(true);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     CompositionShader.Bind;
 
+    GBuffer.Textures[2].Bind(2);
     LightBuffer.Textures[0].Bind(1);
-    GBuffer.Textures[2].Bind(0);
+    SpareBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
 
     CompositionShader.Unbind;
+
+    // Transparent parts only
+
+    LightBuffer.Textures[0].Bind(7);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+    RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
+    RAutoplants.Render;
+
+    glDisable(GL_BLEND);
+
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(false);
 
   fSceneBuffer.Unbind;
 
@@ -452,7 +498,7 @@ begin
 
     SceneBuffer.Bind;
 
-    GBuffer.Textures[0].Bind(1);
+    GBuffer.Textures[2].Bind(1);
     FocalBlurBuffer.Textures[0].Bind(0);
 
     fFocalBlurShader.Bind;

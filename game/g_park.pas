@@ -181,9 +181,9 @@ end;
 
 procedure TPark.PostInit;
 begin
-  ModuleManager.ModRenderer.PostInit;
   ModuleManager.ModCamera.ActiveCamera := TCamera.Create;
   ModuleManager.ModCamera.ActiveCamera.LoadDefaults;
+  ModuleManager.ModRenderer.PostInit;
 end;
 
 procedure TPark.Render;

@@ -31,8 +31,8 @@ float fetchHeightAtOffset(ivec2 O) {
 void main(void) {
   iVertex = ivec2(floor(5.0 * Vertex.xz + 0.001));
 
-  gl_FragData[0].rgb = Vertex;
-  gl_FragData[0].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
+  gl_FragData[2].rgb = Vertex;
+  gl_FragData[2].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
 
   float TexIDs[4];
   TexIDs[0] = texelFetch2DOffset(TerrainMap, iVertex, 0, ivec2(0, 0)).r * 65536.0;
@@ -57,7 +57,7 @@ void main(void) {
   + normalize(cross(vec3(+0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(ivec2(+1, +0)) - VY, -0.0)))
   + normalize(cross(vec3(-0.2, fetchHeightAtOffset(ivec2(-1, +0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, +0.2))));
 
-  if (gl_FragData[0].a < TerrainBumpmapDistance) {
+  if (gl_FragData[2].a < TerrainBumpmapDistance) {
     bumpColors = mat4(
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy + vec2(0.0, 0.5)),
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy + vec2(0.0, 0.5)),
@@ -67,11 +67,11 @@ void main(void) {
     float angle = acos(normal.x);
     vec3 tangent = normalize(vec3(sin(angle), -cos(angle), 0.0));
     vec3 bitangent = normalize(cross(normal, tangent));
-    normal = normalize(mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((TerrainBumpmapDistance - gl_FragData[0].a) / (TerrainBumpmapDistance / 2.0), 0.0, 1.0)));
+    normal = normalize(mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((TerrainBumpmapDistance - gl_FragData[2].a) / (TerrainBumpmapDistance / 2.0), 0.0, 1.0)));
   }
 
   gl_FragData[1] = vec4(normal, 2.0);
-  gl_FragData[2] = mix(mix(texColors[0], texColors[1], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), mix(texColors[2], texColors[3], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), (Vertex.z * 5.0 - floor(Vertex.z * 5.0)));
-  gl_FragData[2].a = 0.5;
-  gl_FragData[2].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
+  gl_FragData[0] = mix(mix(texColors[0], texColors[1], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), mix(texColors[2], texColors[3], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), (Vertex.z * 5.0 - floor(Vertex.z * 5.0)));
+  gl_FragData[0].a = 0.5;
+  gl_FragData[0].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
 }

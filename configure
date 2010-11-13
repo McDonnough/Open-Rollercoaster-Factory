@@ -104,5 +104,10 @@ done
 
 echo "all:" > Makefile
 echo "	fpc -MObjFPC -g -Sghi $options -vewnhi $incdirs $LinkerOpt orcf.lpr" >> Makefile
+echo "" >> Makefile
+echo "clean:" >> Makefile
+echo '	find . -name "*.o" -exec rm {} \;' >> Makefile
+echo '	find . -name "*.ppu" -exec rm {} \;' >> Makefile
+echo '	rm orcf' >> Makefile
 
 echo "Configure done"

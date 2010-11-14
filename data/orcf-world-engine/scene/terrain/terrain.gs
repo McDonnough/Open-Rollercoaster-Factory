@@ -41,24 +41,24 @@ void main(void) {
 
     // Interpolate new vertices
     Vertices[ 0] = BasePoints[0];
-    Vertices[ 1] = mix(BasePoints[0], BasePoints[1], 0.25);
-    Vertices[ 2] = mix(BasePoints[0], BasePoints[1], 0.50);
-    Vertices[ 3] = mix(BasePoints[0], BasePoints[1], 0.75);
-    Vertices[ 4] = BasePoints[1];
+    Vertices[ 1] = mix(BasePoints[0], BasePoints[2], 0.25);
+    Vertices[ 2] = mix(BasePoints[0], BasePoints[2], 0.50);
+    Vertices[ 3] = mix(BasePoints[0], BasePoints[2], 0.75);
+    Vertices[ 4] = BasePoints[2];
 
-    Vertices[ 5] = mix(BasePoints[0], BasePoints[2], 0.25);
-    Vertices[ 6] = mix(mix(BasePoints[0], BasePoints[1], 0.33), BasePoints[2], 0.25);
-    Vertices[ 7] = mix(mix(BasePoints[0], BasePoints[1], 0.67), BasePoints[2], 0.25);
-    Vertices[ 8] = mix(BasePoints[1], BasePoints[2], 0.25);
+    Vertices[ 5] = mix(BasePoints[0], BasePoints[1], 0.25);
+    Vertices[ 6] = mix(mix(BasePoints[0], BasePoints[2], 0.33), BasePoints[1], 0.25);
+    Vertices[ 7] = mix(mix(BasePoints[0], BasePoints[2], 0.67), BasePoints[1], 0.25);
+    Vertices[ 8] = mix(BasePoints[2], BasePoints[1], 0.25);
 
-    Vertices[ 9] = mix(BasePoints[0], BasePoints[2], 0.50);
-    Vertices[10] = mix(mix(BasePoints[0], BasePoints[1], 0.50), BasePoints[2], 0.50);
-    Vertices[11] = mix(BasePoints[1], BasePoints[2], 0.50);
+    Vertices[ 9] = mix(BasePoints[0], BasePoints[1], 0.50);
+    Vertices[10] = mix(mix(BasePoints[0], BasePoints[1], 0.50), BasePoints[1], 0.50);
+    Vertices[11] = mix(BasePoints[2], BasePoints[1], 0.50);
 
-    Vertices[12] = mix(BasePoints[0], BasePoints[2], 0.75);
-    Vertices[13] = mix(BasePoints[1], BasePoints[2], 0.75);
+    Vertices[12] = mix(BasePoints[0], BasePoints[1], 0.75);
+    Vertices[13] = mix(BasePoints[2], BasePoints[1], 0.75);
 
-    Vertices[14] = BasePoints[2];
+    Vertices[14] = BasePoints[1];
 
     // Save old vertex y coordinates
     float owh[15];

@@ -693,9 +693,9 @@ begin
     begin
     glGenRenderbuffersEXT(1, @fDepthBuffer);
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fDepthBuffer);
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_STENCIL_EXT, SizeX, SizeY);
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, {GL_DEPTH_STENCIL_EXT}GL_DEPTH_COMPONENT, SizeX, SizeY);
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fDepthBuffer);
-    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fDepthBuffer);
+//     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fDepthBuffer);
     end;
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 end;

@@ -56,7 +56,6 @@ void main(void) {
   + normalize(cross(vec3(+0.2, fetchHeightAtOffset(ivec2(+1, +0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(ivec2(+0, -1)) - VY, -0.2)))
   + normalize(cross(vec3(+0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(ivec2(+1, +0)) - VY, -0.0)))
   + normalize(cross(vec3(-0.2, fetchHeightAtOffset(ivec2(-1, +0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, +0.2))));
-
   if (gl_FragData[2].a < TerrainBumpmapDistance) {
     bumpColors = mat4(
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy + vec2(0.0, 0.5)),

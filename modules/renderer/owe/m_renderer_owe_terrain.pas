@@ -95,10 +95,10 @@ begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.3 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   glBegin(GL_QUADS);
-    glVertex3f(0, 0, 0);
-    glVertex3f(25.6, 0, 0);
-    glVertex3f(25.6, 0, 25.6);
     glVertex3f(0, 0, 25.6);
+    glVertex3f(25.6, 0, 25.6);
+    glVertex3f(25.6, 0, 0);
+    glVertex3f(0, 0, 0);
   glEnd;
 end;
 

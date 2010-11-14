@@ -16,7 +16,7 @@ type
       fRendererTerrain: TRTerrain;
       fRendererAutoplants: TRAutoplants;
       fLightManager: TLightManager;
-      fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer: TFBO;
+      fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer, fTmpShadowBuffer: TFBO;
       fFSAASamples: Integer;
       fReflectionDepth, fReflectionUpdateInterval: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
@@ -27,16 +27,18 @@ type
       fSubdivisionDistance: Single;
       fBufferSizeX, fBufferSizeY: Integer;
       fSSAOSamples, fShadowBlurSamples: Integer;
-      fTmpShadowBuffer: TFBO;
+      fTmpBloomBuffer: TFBO;
       fMaxShadowPasses: Integer;
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
       fTransparencyMask: TTexture;
+      fShadowSize: Single;
+      fShadowOffset: TVector3D;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -84,6 +86,8 @@ type
       property FocusDistance: Single read fFocusDistance;
       property Frustum: TFrustum read fFrustum;
       property TransparencyMask: TTexture read fTransparencyMask;
+      property ShadowSize: Single read fShadowSize;
+      property ShadowOffset: TVector3D read fShadowOffset;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -104,6 +108,7 @@ var
 begin
   fTransparencyMask := TTexture.Create;
   fTransparencyMask.FromFile('orcf-world-engine/inferred/transparency-gradient.tga');
+  fTransparencyMask.SetFilter(GL_LINEAR, GL_LINEAR);
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBufferSizeX := ResX * FSAASamples;
@@ -165,14 +170,14 @@ begin
   else
     fSunRayBuffer := nil;
 
-  if (UseSunShadows) or (UseBloom) then
+  if UseBloom then
     begin
-    fTmpShadowBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
-    fTmpShadowBuffer.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);  // Color, Distance
-    fTmpShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fTmpBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), true);
+    fTmpBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+    fTmpBloomBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
-    fTmpShadowBuffer := nil;
+    fTmpBloomBuffer := nil;
 
   if UseMotionBlur then
     begin
@@ -182,6 +187,26 @@ begin
     end
   else
     fMotionBlurBuffer := nil;
+
+  if UseSunShadows then
+    begin
+    fSunShadowBuffer := TFBO.Create(Round(2048 * ShadowBufferSamples), Round(2048 * ShadowBufferSamples), true);
+    fSunShadowBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+    fSunShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fSunShadowBuffer.AddTexture(GL_RGB32F_ARB, GL_LINEAR, GL_LINEAR);
+    fSunShadowBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
+    end
+  else
+    fSunShadowBuffer := nil;
+
+  if UseLightShadows then
+    begin
+    fTmpShadowBuffer := TFBO.Create(Round(1536 * ShadowBufferSamples), Round(1024 * ShadowBufferSamples), true);
+    fTmpShadowBuffer.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
+    fTmpShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    end
+  else
+    fTmpShadowBuffer := nil;
 
   fLightManager := TLightManager.Create;
   fRendererCamera := TRCamera.Create;
@@ -209,6 +234,7 @@ begin
   fSunShader.UniformI('GeometryTexture', 0);
   fSunShader.UniformI('NormalTexture', 1);
   fSunShader.UniformI('ShadowTexture', 2);
+  fSunShader.UniformI('ShadowColorTexture', 3);
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
@@ -225,6 +251,11 @@ begin
   fFocalBlurShader.UniformI('SceneTexture', 0);
   fFocalBlurShader.UniformI('GeometryTexture', 1);
 
+  fShadowDepthShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/shadowDepth.fs');
+  fShadowDepthShader.UniformI('AdvanceSamples', Round(FSAASamples / ShadowBufferSamples));
+  fShadowDepthShader.UniformI('GeometryTexture', 0);
+
+  fBlackShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/black.fs');
 
   fFrustum := TFrustum.Create;
 end;
@@ -235,6 +266,8 @@ var
 begin
   fFrustum.Free;
 
+  fBlackShader.Free;
+  fShadowDepthShader.Free;
   fFocalBlurShader.Free;
   fBloomBlurShader.Free;
   fBloomShader.Free;
@@ -254,12 +287,16 @@ begin
     fBloomBuffer.Free;
   if fSunRayBuffer <> nil then
     fSunRayBuffer.Free;
-  if fTmpShadowBuffer <> nil then
-    fTmpShadowBuffer.Free;
+  if fTmpBloomBuffer <> nil then
+    fTmpBloomBuffer.Free;
   if fFocalBlurBuffer <> nil then
     fFocalBlurBuffer.Free;
   if fMotionBlurBuffer <> nil then
     fMotionBlurBuffer.Free;
+  if fSunShadowBuffer <> nil then
+    fSunShadowBuffer.Free;
+  if fTmpShadowBuffer <> nil then
+    fTmpShadowBuffer.Free;
 
   fRendererAutoplants.Free;
   fRendererTerrain.Free;
@@ -328,13 +365,12 @@ begin
 
   // Opaque parts only
   GBuffer.Bind;
-    fTransparencyMask.Bind(7);
-
     glDisable(GL_BLEND);
     glDepthMask(true);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
 
     // Sky
     RSky.Render;
@@ -344,6 +380,7 @@ begin
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
     RTerrain.Render;
 
+    glDisable(GL_CULL_FACE);
   GBuffer.Unbind;
 
   // Save material buffer
@@ -366,6 +403,8 @@ begin
 
   // Transparent parts, fuck up the material buffer
   GBuffer.Bind;
+    fTransparencyMask.Bind(7);
+
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0);
     glColorMask(true, true, true, false);
@@ -383,7 +422,7 @@ begin
     glDisable(GL_ALPHA_TEST);
 
     // Get depth under mouse
-
+    // TO BE FIXED!
     glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
 
   GBuffer.Unbind;
@@ -401,7 +440,31 @@ begin
   fFocusDistance := Coord.W;
 
   // Lighting pass
-    // No shadow rendering yet
+  if UseSunShadows then
+    begin
+    fShadowSize := 100;
+    fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
+    fShadowOffset.Y := 64;
+
+    fSunShadowBuffer.Bind;
+    glDepthMask(true);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0);
+    glDisable(GL_BLEND);
+
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+
+    RTerrain.CurrentShader := RTerrain.ShadowPassShader;
+    RTerrain.CurrentShader.UniformF('ShadowSize', ShadowSize);
+    RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
+    RTerrain.Render;
+
+    fSunShadowBuffer.Unbind;
+    end;
+
   LightBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
@@ -409,15 +472,20 @@ begin
     glDisable(GL_BLEND);
 
     if UseSunShadows then
-      fTmpShadowBuffer.Textures[0].Bind(2);
+      begin
+      fSunShadowBuffer.Textures[0].Bind(3);
+      fSunShadowBuffer.Textures[1].Bind(2);
+      end;
 
     GBuffer.Textures[1].Bind(1);
     GBuffer.Textures[2].Bind(0);
 
     SunShader.Bind;
+    SunShader.UniformF('ShadowSize', ShadowSize);
+    SunShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
+    SunShader.UniformI('BlurSamples', ShadowBlurSamples);
     DrawFullscreenQuad;
     SunShader.Unbind;
-
   LightBuffer.Unbind;
 
   // Sun ray pass
@@ -554,13 +622,13 @@ begin
     fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width, 0.0);
     BloomBuffer.Textures[0].Bind(0);
 
-    fTmpShadowBuffer.Bind;
+    fTmpBloomBuffer.Bind;
     DrawFullscreenQuad;
-    fTmpShadowBuffer.Unbind;
+    fTmpBloomBuffer.Unbind;
 
     //...and use the bloom buffer again
     fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height);
-    fTmpShadowBuffer.Textures[0].Bind(0);
+    fTmpBloomBuffer.Textures[0].Bind(0);
 
     BloomBuffer.Bind;
     DrawFullscreenQuad;
@@ -642,7 +710,7 @@ begin
     SetConfVal('refractions', '1');
     SetConfVal('shadows', '2');
     SetConfVal('shadows.samples', '1');
-    SetConfVal('shadows.blursamples', '2');
+    SetConfVal('shadows.blursamples', '5');
     SetConfVal('shadows.maxpasses', '0');
     SetConfVal('bloom', '1');
     SetConfVal('focalblur', '1');
@@ -671,7 +739,7 @@ begin
   fUseFocalBlur := GetConfVal('focalblur') = '1';
   fUseScreenSpaceAmbientOcclusion := GetConfVal('ssao') = '1';
   fShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.samples'), 1);
-  fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.samples'), 2);
+  fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.blursamples'), 5);
   fMaxShadowPasses := StrToIntWD(GetConfVal('shadows.maxbuffers'), 100);
   fMotionBlurStrength := StrToFloatWD(GetConfVal('motionblur.strength'), 0.05);
   fTerrainTesselationDistance := StrToFloatWD(GetConfVal('terrain.tesselationdistance'), 25);

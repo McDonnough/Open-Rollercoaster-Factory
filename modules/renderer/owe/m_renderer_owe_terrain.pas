@@ -110,8 +110,8 @@ begin
   Changed := False;
   fMaxHeight := 0;
   fMinHeight := 256;
-  for i := 0 to 128 do
-    for j := 0 to 128 do
+  for i := 0 to 127 do
+    for j := 0 to 127 do
       begin
       fMaxHeight := Max(fMaxHeight, Park.pTerrain.ExactHeightMap[128 * fX + i, 128 * fY + j] / 256);
       fMinHeight := Min(fMinHeight, Park.pTerrain.ExactHeightMap[128 * fX + i, 128 * fY + j] / 256);
@@ -358,7 +358,7 @@ begin
   fGeometryPassShader.UniformI('HeightLine', -1);
   fGeometryPassShader.UniformI('TerrainTexture', 1);
 
-  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/shadow.fs', 'orcf-world-engine/scene/terrain/terrainShadow.gs', 240);
+  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/shadow.fs', 'orcf-world-engine/scene/terrain/terrainShadow.gs', 24);
   fShadowPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.TerrainTesselationDistance);
   fShadowPassShader.UniformI('TerrainMap', 0);
 

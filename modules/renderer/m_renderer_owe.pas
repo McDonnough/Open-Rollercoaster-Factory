@@ -32,11 +32,11 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
-      fTransparencyMask: TTexture;
+      fTransparencyMask, fLensFlareMask: TTexture;
       fShadowSize: Single;
       fShadowOffset: TVector3D;
     public
@@ -109,6 +109,11 @@ begin
   fTransparencyMask := TTexture.Create;
   fTransparencyMask.FromFile('orcf-world-engine/inferred/transparency-gradient.tga');
   fTransparencyMask.SetFilter(GL_LINEAR, GL_LINEAR);
+
+  fLensFlareMask := TTexture.Create;
+  fLensFlareMask.FromFile('orcf-world-engine/postprocess/images/lensflare.tga');
+//   fLensFlareMask.CreateMipmaps;
+  fLensFlareMask.SetFilter(GL_LINEAR, GL_LINEAR);
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBufferSizeX := ResX * FSAASamples;
@@ -226,7 +231,7 @@ begin
   fSunRayShader.UniformF('exposure', 0.0014);
   fSunRayShader.UniformF('decay', 1.0);
   fSunRayShader.UniformF('density', 0.5);
-  fSunRayShader.UniformF('weight', 4);
+  fSunRayShader.UniformF('weight', 5.2);
 
   fSunShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/sun.fs');
   fSunShader.UniformI('GeometryTexture', 0);
@@ -237,6 +242,10 @@ begin
   fCompositionShader.UniformI('MaterialTexture', 0);
   fCompositionShader.UniformI('LightTexture', 1);
   fCompositionShader.UniformI('GTexture', 2);
+
+  fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
+  fLensFlareShader.UniformI('Texture', 0);
+  fLensFlareShader.UniformF('AspectRatio', ResY / ResX, 1);
 
   fBloomShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/bloom.fs');
   fBloomShader.UniformI('Tex', 0);
@@ -253,6 +262,7 @@ begin
   fShadowDepthShader.UniformI('GeometryTexture', 0);
 
   fBlackShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/black.fs');
+  fBlackShader.Unbind;
 
   fFrustum := TFrustum.Create;
 end;
@@ -268,6 +278,7 @@ begin
   fFocalBlurShader.Free;
   fBloomBlurShader.Free;
   fBloomShader.Free;
+  fLensFlareShader.Free;
   fCompositionShader.Free;
   fSunShader.Free;
   fSunRayShader.Free;
@@ -301,6 +312,7 @@ begin
   fRendererCamera.Free;
   fLightManager.Free;
 
+  fLensFlareMask.Free;
   fTransparencyMask.Free;
 end;
 
@@ -694,6 +706,50 @@ begin
     fAAShader.Unbind;
     end;
 
+  // And finally add some lens flare
+
+  glDisable(GL_ALPHA_TEST);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  fLensFlareShader.Bind;
+  fLensFlareMask.Bind(0);
+  glBegin(GL_QUADS);
+    glColor4f(RSky.Sun.Color.X, RSky.Sun.Color.Y, RSky.Sun.Color.Z, 0.04);
+    glVertex3f(-1, -1, 0.1); glVertex3f( 1, -1, 0.1); glVertex3f( 1,  1, 0.1); glVertex3f(-1,  1, 0.1);
+
+    glVertex3f(-1, -1, 0.20); glVertex3f( 1, -1, 0.20); glVertex3f( 1,  1, 0.20); glVertex3f(-1,  1, 0.20);
+    glVertex3f(-1, -1, 0.21); glVertex3f( 1, -1, 0.21); glVertex3f( 1,  1, 0.21); glVertex3f(-1,  1, 0.21);
+
+    glVertex3f(-1, -1, 0.45); glVertex3f( 1, -1, 0.45); glVertex3f( 1,  1, 0.45); glVertex3f(-1,  1, 0.45);
+    glVertex3f(-1, -1, 0.46); glVertex3f( 1, -1, 0.46); glVertex3f( 1,  1, 0.46); glVertex3f(-1,  1, 0.46);
+    glVertex3f(-1, -1, 0.47); glVertex3f( 1, -1, 0.47); glVertex3f( 1,  1, 0.47); glVertex3f(-1,  1, 0.47);
+    glVertex3f(-1, -1, 0.48); glVertex3f( 1, -1, 0.48); glVertex3f( 1,  1, 0.48); glVertex3f(-1,  1, 0.48);
+
+    glVertex3f(-1, -1, 0.80); glVertex3f( 1, -1, 0.80); glVertex3f( 1,  1, 0.80); glVertex3f(-1,  1, 0.80);
+    glVertex3f(-1, -1, 0.82); glVertex3f( 1, -1, 0.82); glVertex3f( 1,  1, 0.82); glVertex3f(-1,  1, 0.82);
+    glVertex3f(-1, -1, 0.84); glVertex3f( 1, -1, 0.84); glVertex3f( 1,  1, 0.84); glVertex3f(-1,  1, 0.84);
+    glVertex3f(-1, -1, 0.86); glVertex3f( 1, -1, 0.86); glVertex3f( 1,  1, 0.86); glVertex3f(-1,  1, 0.86);
+    glVertex3f(-1, -1, 0.88); glVertex3f( 1, -1, 0.88); glVertex3f( 1,  1, 0.88); glVertex3f(-1,  1, 0.88);
+    glVertex3f(-1, -1, 0.90); glVertex3f( 1, -1, 0.90); glVertex3f( 1,  1, 0.90); glVertex3f(-1,  1, 0.90);
+    glVertex3f(-1, -1, 0.92); glVertex3f( 1, -1, 0.92); glVertex3f( 1,  1, 0.92); glVertex3f(-1,  1, 0.92);
+    glVertex3f(-1, -1, 0.94); glVertex3f( 1, -1, 0.94); glVertex3f( 1,  1, 0.94); glVertex3f(-1,  1, 0.94);
+
+    glColor4f(1, 1, 0.5, 0.04);
+    glVertex3f(-1, -1, 1.40); glVertex3f( 1, -1, 1.40); glVertex3f( 1,  1, 1.40); glVertex3f(-1,  1, 1.40);
+    glVertex3f(-1, -1, 1.43); glVertex3f( 1, -1, 1.43); glVertex3f( 1,  1, 1.43); glVertex3f(-1,  1, 1.43);
+    glVertex3f(-1, -1, 1.46); glVertex3f( 1, -1, 1.46); glVertex3f( 1,  1, 1.46); glVertex3f(-1,  1, 1.46);
+    glVertex3f(-1, -1, 1.49); glVertex3f( 1, -1, 1.49); glVertex3f( 1,  1, 1.49); glVertex3f(-1,  1, 1.49);
+
+    glColor4f(1, 0.5, 0.5, 0.04);
+    glVertex3f(-1, -1, 1.70); glVertex3f( 1, -1, 1.70); glVertex3f( 1,  1, 1.70); glVertex3f(-1,  1, 1.70);
+    glVertex3f(-1, -1, 1.74); glVertex3f( 1, -1, 1.74); glVertex3f( 1,  1, 1.74); glVertex3f(-1,  1, 1.74);
+    glVertex3f(-1, -1, 1.78); glVertex3f( 1, -1, 1.78); glVertex3f( 1,  1, 1.78); glVertex3f(-1,  1, 1.78);
+    glVertex3f(-1, -1, 1.82); glVertex3f( 1, -1, 1.82); glVertex3f( 1,  1, 1.82); glVertex3f(-1,  1, 1.82);
+  glEnd;
+  fLensFlareShader.Unbind;
+
+  glDisable(GL_BLEND);
 end;
 
 procedure TModuleRendererOWE.CheckModConf;

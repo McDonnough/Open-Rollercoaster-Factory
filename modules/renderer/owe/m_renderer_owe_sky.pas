@@ -47,7 +47,7 @@ procedure TRSky.Advance;
 var
   SunXAngle, SunYAngle: Single;
 begin
-  SunYAngle := 11 * (1 + cos(DegToRad(Park.pSky.Time / 86400 * 360))) + 1;
+  SunYAngle := 11 * (power(1 + cos(DegToRad(Park.pSky.Time / 86400 * 360)), 2)) + 1;
   SunXAngle := 180 - Park.pSky.Time / 86400 * 360;
   fSun.Position := Vector(28793 * sin(DegToRad((SunXAngle))) * sin(DegToRad(SunYAngle)), (cos(DegToRad(SunYAngle)) - cos(DegToRad(10))) * 32911, 28793 * cos(DegToRad((SunXAngle))) * sin(DegToRad(SunYAngle)), 1.0);
   fSun.AmbientColor := (Vector(0.05, 0.05, 0.05, 0.0) + Vector(0.32, 0.35, 0.5, 0.0) * Clamp(2 * (12 - SunYAngle) / 12, 0, 1) + Vector(0.00, 0.01, 0.05, 0.0) * Clamp(-2 * (12 - SunYAngle) / 12, 0, 1)) * 0.3;
@@ -67,6 +67,9 @@ constructor TRSky.Create;
 begin
   writeln('Hint: Initializing sky renderer');
   fShader := TShader.Create('orcf-world-engine/scene/sky/sky.vs', 'orcf-world-engine/scene/sky/sky.fs');
+  fShader.UniformF('Factor', 1.0);
+  if ModuleManager.ModRenderer.UseBloom then
+    fShader.UniformF('Factor', 0.8);
   fSun := TSun.Create;
   fSunColor := TexFromStream(ByteStreamFromFile('orcf-world-engine/scene/sky/sun-color/suncolor.tga'), '.tga');
 end;

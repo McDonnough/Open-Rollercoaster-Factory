@@ -8,13 +8,14 @@ uniform float density;
 uniform float weight;
 uniform sampler2D NormalTexture;
 uniform sampler2D MaterialTexture;
+uniform vec3 VecToFront;
 
 varying vec2 lightPositionOnScreen;
-varying float angleFactor;
 
 const int NUM_SAMPLES = 100;
 
 void main() {
+  float angleFactor = clamp(2.0 * dot(normalize(VecToFront), normalize(gl_LightSource[0].position.xyz)), 0.0, 1.0);
   if (angleFactor <= 0.0)
     discard;
 

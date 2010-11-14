@@ -92,6 +92,11 @@ type
         * Get the OpenGL Texture ID
         *)
       function GetBPP(Tex: Integer): Integer; virtual abstract;
+
+      (**
+        * Get the OpenGL Texture ID
+        *)
+      function CreateMipmaps(Tex: Integer): Integer; virtual abstract;
     end;
 
   TTexture = class
@@ -114,6 +119,7 @@ type
       function GetRealTexID: GLUInt;
       procedure FromTexImage(Tex: TTexImage);
       function BPP: Integer;
+      procedure CreateMipmaps;
       destructor Free;
     end;
 
@@ -194,6 +200,11 @@ end;
 function TTexture.BPP: Integer;
 begin
   Result := ModuleManager.ModTexMng.GetBPP(fID);
+end;
+
+procedure TTexture.CreateMipmaps;
+begin
+  ModuleManager.ModTexMng.CreateMipmaps(fID);
 end;
 
 destructor TTexture.Free;

@@ -39,6 +39,7 @@ type
       procedure SetPixel(Texture: Integer; X, Y: Integer; Color: DWord);
       function GetRealTexID(Tex: Integer): GLUInt;
       function GetBPP(Tex: Integer): Integer;
+      procedure CreateMipmaps(Tex: Integer);
       destructor Free;
     end;
 
@@ -245,6 +246,13 @@ begin
   Result := 3;
   if (fTexRefs[Tex].ExternalFormat = GL_RGBA) or (fTexRefs[Tex].ExternalFormat = GL_COMPRESSED_RGBA) or (fTexRefs[Tex].ExternalFormat = GL_BGRA) or (fTexRefs[Tex].ExternalFormat = GL_RGBA32F) or (fTexRefs[Tex].ExternalFormat = GL_RGBA16F) then
     Result := 4;
+end;
+
+procedure TModuleTextureManagerDefault.CreateMipmaps(Tex: Integer);
+begin
+  BindTexture(Tex);
+  SetFilter(Tex, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+  gluBuild2DMipmaps(GL_TEXTURE_2D, GetBPP(Tex), fTexRefs[Tex].Width, fTexRefs[Tex].Height, fTexRefs[Tex].InputFormat, GL_UNSIGNED_BYTE, @fTexRefs[Tex].Data[0]);
 end;
 
 destructor TModuleTextureManagerDefault.Free;

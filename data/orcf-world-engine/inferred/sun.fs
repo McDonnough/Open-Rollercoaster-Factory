@@ -22,7 +22,7 @@ void main(void) {
   gl_FragColor.rgb = max(0.0, dot(normalize(Normal), normalize(Sun - Vertex))) * gl_LightSource[0].diffuse.rgb;
   vec2 ShadowCoord = 0.5 + 0.5 * ProjectShadowVertex(Vertex);
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
-  if (ShadowColor.a > Vertex.y + 0.1) {
+  if (ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
     vec3 factor = vec3(2.0, 2.0, 2.0);
     float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize;
     int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);

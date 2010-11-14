@@ -22,14 +22,14 @@ void main(void) {
   gl_FragColor.rgb = max(0.0, dot(normalize(Normal), normalize(Sun - Vertex))) * gl_LightSource[0].diffuse.rgb;
   vec2 ShadowCoord = 0.5 + 0.5 * ProjectShadowVertex(Vertex);
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
-  if (ShadowColor.a > Vertex.y + 0.05) {
+  if (ShadowColor.a > Vertex.y + 0.1) {
     vec3 factor = vec3(2.0, 2.0, 2.0);
     float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize;
     int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);
     for (int i = -BlurSamples; i <= BlurSamples; i++)
       for (int j = -BlurSamples; j <= BlurSamples; j++) {
         ShadowColor = texture2D(ShadowTexture, ShadowCoord + 0.0004 * CoordFactor * vec2(i, j));
-        if (ShadowColor.a > Vertex.y + 0.05)
+        if (ShadowColor.a > Vertex.y + 0.1)
           factor -= 2.0 * ShadowColor.rgb / Samples;
       }
     factor = min(factor, vec3(1.0, 1.0, 1.0));

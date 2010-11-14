@@ -115,7 +115,7 @@ begin
   fBufferSizeY := ResY * FSAASamples;
 
   fGBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
-  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
+  fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Materials (opaque only) and specularity
   fGBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Normals and specular hardness
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
@@ -123,7 +123,7 @@ begin
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-  fSpareBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
+  fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Materials (opaque only) and specularity
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
@@ -226,7 +226,7 @@ begin
   fSunRayShader.UniformF('exposure', 0.0014);
   fSunRayShader.UniformF('decay', 1.0);
   fSunRayShader.UniformF('density', 0.5);
-  fSunRayShader.UniformF('weight', 5.65);
+  fSunRayShader.UniformF('weight', 4);
 
   fSunShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/sun.fs');
   fSunShader.UniformI('GeometryTexture', 0);
@@ -418,23 +418,7 @@ begin
     glDepthMask(false);
     glDisable(GL_ALPHA_TEST);
 
-    // Get depth under mouse
-    // TO BE FIXED!
-    glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
-
   GBuffer.Unbind;
-
-  // Set up selection rays
-
-  with ModuleManager.ModCamera do
-    fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
-                                   -Sin(DegToRad(ActiveCamera.Rotation.X)),
-                                   -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
-
-  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-
-  fSelectionRay := Vector3D(Coord) - fSelectionStart;
-  fFocusDistance := Coord.W;
 
   // Lighting pass
   if UseSunShadows then
@@ -535,6 +519,27 @@ begin
     glDepthMask(false);
 
   fSceneBuffer.Unbind;
+
+  GBuffer.Bind;
+    // Get depth under mouse
+    fFullscreenShader.Bind;
+    GBuffer.Textures[2].Bind(0);
+    DrawFullscreenQuad;
+    glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+    fFullscreenShader.Unbind;
+  GBuffer.Unbind;
+
+  // Set up selection rays
+
+  with ModuleManager.ModCamera do
+    fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+
+  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+
+  fSelectionRay := Vector3D(Coord) - fSelectionStart;
+  fFocusDistance := Coord.W;
 
   // Focal Blur pass
 

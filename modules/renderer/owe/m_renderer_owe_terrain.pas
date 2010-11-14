@@ -57,6 +57,7 @@ type
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
       procedure ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
+      function GetBlock(X, Y: Single): TTerrainBlock;
       constructor Create;
       destructor Free;
     end;
@@ -322,6 +323,22 @@ end;
 procedure TRTerrain.SetHeightLine(Event: String; Data, Result: Pointer);
 begin
 
+end;
+
+function TRTerrain.GetBlock(X, Y: Single): TTerrainBlock;
+var
+  i, r: Integer;
+  d: Single;
+begin
+  r := 0;
+  d := VecLength(Vector(Blocks[0].Center.X, Blocks[0].Center.Z) - Vector(X, Y));
+  for i := 0 to high(Blocks) do
+    if VecLength(Vector(Blocks[0].Center.X, Blocks[0].Center.Z) - Vector(X, Y)) < d then
+      begin
+      r := i;
+      d := VecLength(Vector(Blocks[0].Center.X, Blocks[0].Center.Z) - Vector(X, Y));
+      end;
+  Result := Blocks[i];
 end;
 
 constructor TRTerrain.Create;

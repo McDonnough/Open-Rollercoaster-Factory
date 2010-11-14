@@ -191,10 +191,8 @@ begin
   if UseSunShadows then
     begin
     fSunShadowBuffer := TFBO.Create(Round(2048 * ShadowBufferSamples), Round(2048 * ShadowBufferSamples), true);
-    fSunShadowBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
+    fSunShadowBuffer.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
     fSunShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
-    fSunShadowBuffer.AddTexture(GL_RGB32F_ARB, GL_LINEAR, GL_LINEAR);
-    fSunShadowBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
     end
   else
     fSunShadowBuffer := nil;
@@ -234,7 +232,6 @@ begin
   fSunShader.UniformI('GeometryTexture', 0);
   fSunShader.UniformI('NormalTexture', 1);
   fSunShader.UniformI('ShadowTexture', 2);
-  fSunShader.UniformI('ShadowColorTexture', 3);
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
@@ -442,9 +439,9 @@ begin
   // Lighting pass
   if UseSunShadows then
     begin
-    fShadowSize := 100;
     fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
-    fShadowOffset.Y := 64;
+    fShadowSize := 50 + 2 * (fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
+    fShadowOffset.Y := 0.5 * (fShadowOffset.Y + RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
 
     fSunShadowBuffer.Bind;
     glDepthMask(true);
@@ -472,10 +469,7 @@ begin
     glDisable(GL_BLEND);
 
     if UseSunShadows then
-      begin
-      fSunShadowBuffer.Textures[0].Bind(3);
-      fSunShadowBuffer.Textures[1].Bind(2);
-      end;
+      fSunShadowBuffer.Textures[0].Bind(2);
 
     GBuffer.Textures[1].Bind(1);
     GBuffer.Textures[2].Bind(0);
@@ -711,7 +705,7 @@ begin
     SetConfVal('shadows', '2');
     SetConfVal('shadows.samples', '1');
     SetConfVal('shadows.blursamples', '5');
-    SetConfVal('shadows.maxpasses', '0');
+    SetConfVal('shadows.maxpasses', '2');
     SetConfVal('bloom', '1');
     SetConfVal('focalblur', '1');
     SetConfVal('motionblur', '1');
@@ -740,7 +734,7 @@ begin
   fUseScreenSpaceAmbientOcclusion := GetConfVal('ssao') = '1';
   fShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.samples'), 1);
   fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.blursamples'), 5);
-  fMaxShadowPasses := StrToIntWD(GetConfVal('shadows.maxbuffers'), 100);
+  fMaxShadowPasses := StrToIntWD(GetConfVal('shadows.maxpasses'), 2);
   fMotionBlurStrength := StrToFloatWD(GetConfVal('motionblur.strength'), 0.05);
   fTerrainTesselationDistance := StrToFloatWD(GetConfVal('terrain.tesselationdistance'), 25);
   fTerrainDetailDistance := StrToFloatWD(GetConfVal('terrain.detaildistance'), 100);

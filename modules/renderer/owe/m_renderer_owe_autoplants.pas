@@ -62,13 +62,13 @@ begin
       fCanWork := false;
       fWorking := true;
       for i := 0 to high(fPositions) do
-        if (fPositions[i].Z < 0) or (VecLengthNoRoot(Vector2D(fPositions[i]) - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > ModuleManager.ModRenderer.AutoplantDistance * ModuleManager.ModRenderer.AutoplantDistance) or (Park.pTerrain.TexMap[fPositions[i].X, fPositions[i].Y] <> fMaterialID) then
+        if (fPositions[i].Z = -1) or (VecLengthNoRoot(Vector2D(fPositions[i]) - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > ModuleManager.ModRenderer.AutoplantDistance * ModuleManager.ModRenderer.AutoplantDistance) then
           begin
           fAngle := Random * 2 * 3.142;
           fPositions[i] := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * sin(fAngle), ModuleManager.ModCamera.ActiveCamera.Position.Z + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * cos(fAngle), 2 * 3.141 * Random);
           fChanged[i] := true;
           if (Park.pTerrain.TexMap[fPositions[i].X, fPositions[i].Y] <> fMaterialID) then
-            fPositions[i] := Vector(0, 0, -1);
+            fPositions[i].Z := -2;
           end;
       end;
     fWorking := false;

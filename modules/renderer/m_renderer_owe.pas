@@ -39,12 +39,19 @@ type
       fTransparencyMask, fLensFlareMask: TTexture;
       fShadowSize: Single;
       fShadowOffset: TVector3D;
+      fUseLensFlare: Boolean;
+      fWaterReflectionBufferSamples: Single;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
       property RSky: TRSky read fRendererSky;
       property RTerrain: TRTerrain read fRendererTerrain;
       property RAutoplants: TRAutoplants read fRendererAutoplants;
+      property FullscreenShader: TShader read fFullscreenShader;
+      property SunShader: TShader read fSunShader;
+      property CompositionShader: TShader read fCompositionShader;
+      property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
+      property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
       property GBuffer: TFBO read fGBuffer;
       property LightBuffer: TFBO read fLightBuffer;
       property SceneBuffer: TFBO read fSceneBuffer;
@@ -52,6 +59,7 @@ type
       property SunRayBuffer: TFBO read fSunRayBuffer;
       property BloomBuffer: TFBO read fBloomBuffer;
       property SpareBuffer: TFBO read fSpareBuffer;
+      property SunShadowBuffer: TFBO read fSunShadowBuffer;
       property FSAASamples: Integer read fFSAASamples;
       property ReflectionDepth: Integer read fReflectionDepth;
       property ReflectionUpdateInterval: Integer read fReflectionUpdateInterval;
@@ -63,6 +71,8 @@ type
       property UseFocalBlur: Boolean read fUseFocalBlur;
       property UseRefractions: Boolean read fUseRefractions;
       property UseScreenSpaceAmbientOcclusion: Boolean read fUseScreenSpaceAmbientOcclusion;
+      property UseLensFlare: Boolean read fUseLensFlare;
+      property WaterReflectionBufferSamples: Single read fWaterReflectionBufferSamples;
       property ShadowBufferSamples: Single read fShadowBufferSamples;
       property ShadowBlurSamples: Integer read fShadowBlurSamples;
       property SSAOSamples: Integer read fSSAOSamples;
@@ -78,11 +88,7 @@ type
       property TerrainTesselationDistance: Single read fTerrainTesselationDistance;
       property TerrainDetailDistance: Single read fTerrainDetailDistance;
       property TerrainBumpmapDistance: Single read fTerrainBumpmapDistance;
-      property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
-      property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
       property MotionBlurStrength: Single read fMotionBlurStrength;
-      property SunShader: TShader read fSunShader;
-      property CompositionShader: TShader read fCompositionShader;
       property FocusDistance: Single read fFocusDistance;
       property Frustum: TFrustum read fFrustum;
       property TransparencyMask: TTexture read fTransparencyMask;
@@ -100,7 +106,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events, main;
+  m_varlist, u_events, main, m_renderer_owe_water;
 
 procedure TModuleRendererOWE.PostInit;
 var
@@ -120,7 +126,7 @@ begin
   fBufferSizeY := ResY * FSAASamples;
 
   fGBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
-  fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Materials (opaque only) and specularity
+  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
   fGBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Normals and specular hardness
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
@@ -128,7 +134,7 @@ begin
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-  fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Materials (opaque only) and specularity
+  fSpareBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);     // Materials (opaque only) and specularity
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
@@ -245,6 +251,7 @@ begin
 
   fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
   fLensFlareShader.UniformI('Texture', 0);
+  fLensFlareShader.UniformI('GeometryTexture', 1);
   fLensFlareShader.UniformF('AspectRatio', ResY / ResX, 1);
 
   fBloomShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/bloom.fs');
@@ -329,6 +336,9 @@ begin
 end;
 
 procedure TModuleRendererOWE.RenderScene;
+var
+  LensFlareFactor: Single;
+
   procedure DrawFullscreenQuad;
   begin
     glBegin(GL_QUADS);
@@ -336,6 +346,43 @@ procedure TModuleRendererOWE.RenderScene;
       glVertex2f( 1, -1);
       glVertex2f( 1,  1);
       glVertex2f(-1,  1);
+    glEnd;
+  end;
+
+  procedure RenderLensFlare;
+  begin
+    glBegin(GL_QUADS);
+      glColor4f(RSky.Sun.Color.X, RSky.Sun.Color.Y, RSky.Sun.Color.Z, 0.04 * LensFlareFactor);
+      glVertex3f(-1, -1, 0.1); glVertex3f( 1, -1, 0.1); glVertex3f( 1,  1, 0.1); glVertex3f(-1,  1, 0.1);
+
+      glVertex3f(-1, -1, 0.20); glVertex3f( 1, -1, 0.20); glVertex3f( 1,  1, 0.20); glVertex3f(-1,  1, 0.20);
+      glVertex3f(-1, -1, 0.21); glVertex3f( 1, -1, 0.21); glVertex3f( 1,  1, 0.21); glVertex3f(-1,  1, 0.21);
+
+      glVertex3f(-1, -1, 0.45); glVertex3f( 1, -1, 0.45); glVertex3f( 1,  1, 0.45); glVertex3f(-1,  1, 0.45);
+      glVertex3f(-1, -1, 0.46); glVertex3f( 1, -1, 0.46); glVertex3f( 1,  1, 0.46); glVertex3f(-1,  1, 0.46);
+      glVertex3f(-1, -1, 0.47); glVertex3f( 1, -1, 0.47); glVertex3f( 1,  1, 0.47); glVertex3f(-1,  1, 0.47);
+      glVertex3f(-1, -1, 0.48); glVertex3f( 1, -1, 0.48); glVertex3f( 1,  1, 0.48); glVertex3f(-1,  1, 0.48);
+
+      glVertex3f(-1, -1, 0.80); glVertex3f( 1, -1, 0.80); glVertex3f( 1,  1, 0.80); glVertex3f(-1,  1, 0.80);
+      glVertex3f(-1, -1, 0.82); glVertex3f( 1, -1, 0.82); glVertex3f( 1,  1, 0.82); glVertex3f(-1,  1, 0.82);
+      glVertex3f(-1, -1, 0.84); glVertex3f( 1, -1, 0.84); glVertex3f( 1,  1, 0.84); glVertex3f(-1,  1, 0.84);
+      glVertex3f(-1, -1, 0.86); glVertex3f( 1, -1, 0.86); glVertex3f( 1,  1, 0.86); glVertex3f(-1,  1, 0.86);
+      glVertex3f(-1, -1, 0.88); glVertex3f( 1, -1, 0.88); glVertex3f( 1,  1, 0.88); glVertex3f(-1,  1, 0.88);
+      glVertex3f(-1, -1, 0.90); glVertex3f( 1, -1, 0.90); glVertex3f( 1,  1, 0.90); glVertex3f(-1,  1, 0.90);
+      glVertex3f(-1, -1, 0.92); glVertex3f( 1, -1, 0.92); glVertex3f( 1,  1, 0.92); glVertex3f(-1,  1, 0.92);
+      glVertex3f(-1, -1, 0.94); glVertex3f( 1, -1, 0.94); glVertex3f( 1,  1, 0.94); glVertex3f(-1,  1, 0.94);
+
+      glColor4f(1, 1, 0.5, 0.04 * LensFlareFactor);
+      glVertex3f(-1, -1, 1.40); glVertex3f( 1, -1, 1.40); glVertex3f( 1,  1, 1.40); glVertex3f(-1,  1, 1.40);
+      glVertex3f(-1, -1, 1.43); glVertex3f( 1, -1, 1.43); glVertex3f( 1,  1, 1.43); glVertex3f(-1,  1, 1.43);
+      glVertex3f(-1, -1, 1.46); glVertex3f( 1, -1, 1.46); glVertex3f( 1,  1, 1.46); glVertex3f(-1,  1, 1.46);
+      glVertex3f(-1, -1, 1.49); glVertex3f( 1, -1, 1.49); glVertex3f( 1,  1, 1.49); glVertex3f(-1,  1, 1.49);
+
+      glColor4f(1, 0.5, 0.5, 0.04 * LensFlareFactor);
+      glVertex3f(-1, -1, 1.70); glVertex3f( 1, -1, 1.70); glVertex3f( 1,  1, 1.70); glVertex3f(-1,  1, 1.70);
+      glVertex3f(-1, -1, 1.74); glVertex3f( 1, -1, 1.74); glVertex3f( 1,  1, 1.74); glVertex3f(-1,  1, 1.74);
+      glVertex3f(-1, -1, 1.78); glVertex3f( 1, -1, 1.78); glVertex3f( 1,  1, 1.78); glVertex3f(-1,  1, 1.78);
+      glVertex3f(-1, -1, 1.82); glVertex3f( 1, -1, 1.82); glVertex3f( 1,  1, 1.82); glVertex3f(-1,  1, 1.82);
     glEnd;
   end;
 var
@@ -353,10 +400,12 @@ begin
   glLoadIdentity;
 
   RSky.Advance;
+  glLoadIdentity;
   RSky.Sun.Bind(0);
 
   glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
+  glLoadIdentity;
   RCamera.ApplyRotation(Vector(1, 1, 1));
   RCamera.ApplyTransformation(Vector(1, 1, 1));
 
@@ -706,48 +755,22 @@ begin
     fAAShader.Unbind;
     end;
 
-  // And finally add some lens flare
+  if UseLensFlare then
+    begin
+    // And finally add some lens flare
 
-  glDisable(GL_ALPHA_TEST);
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    LensFlareFactor := Clamp(5 * DotProduct(Normalize(fVecToFront), Normalize(Vector3D(RSky.Sun.Position) - ModuleManager.ModCamera.ActiveCamera.Position)), 0, 1);
 
-  fLensFlareShader.Bind;
-  fLensFlareMask.Bind(0);
-  glBegin(GL_QUADS);
-    glColor4f(RSky.Sun.Color.X, RSky.Sun.Color.Y, RSky.Sun.Color.Z, 0.04);
-    glVertex3f(-1, -1, 0.1); glVertex3f( 1, -1, 0.1); glVertex3f( 1,  1, 0.1); glVertex3f(-1,  1, 0.1);
+    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glVertex3f(-1, -1, 0.20); glVertex3f( 1, -1, 0.20); glVertex3f( 1,  1, 0.20); glVertex3f(-1,  1, 0.20);
-    glVertex3f(-1, -1, 0.21); glVertex3f( 1, -1, 0.21); glVertex3f( 1,  1, 0.21); glVertex3f(-1,  1, 0.21);
-
-    glVertex3f(-1, -1, 0.45); glVertex3f( 1, -1, 0.45); glVertex3f( 1,  1, 0.45); glVertex3f(-1,  1, 0.45);
-    glVertex3f(-1, -1, 0.46); glVertex3f( 1, -1, 0.46); glVertex3f( 1,  1, 0.46); glVertex3f(-1,  1, 0.46);
-    glVertex3f(-1, -1, 0.47); glVertex3f( 1, -1, 0.47); glVertex3f( 1,  1, 0.47); glVertex3f(-1,  1, 0.47);
-    glVertex3f(-1, -1, 0.48); glVertex3f( 1, -1, 0.48); glVertex3f( 1,  1, 0.48); glVertex3f(-1,  1, 0.48);
-
-    glVertex3f(-1, -1, 0.80); glVertex3f( 1, -1, 0.80); glVertex3f( 1,  1, 0.80); glVertex3f(-1,  1, 0.80);
-    glVertex3f(-1, -1, 0.82); glVertex3f( 1, -1, 0.82); glVertex3f( 1,  1, 0.82); glVertex3f(-1,  1, 0.82);
-    glVertex3f(-1, -1, 0.84); glVertex3f( 1, -1, 0.84); glVertex3f( 1,  1, 0.84); glVertex3f(-1,  1, 0.84);
-    glVertex3f(-1, -1, 0.86); glVertex3f( 1, -1, 0.86); glVertex3f( 1,  1, 0.86); glVertex3f(-1,  1, 0.86);
-    glVertex3f(-1, -1, 0.88); glVertex3f( 1, -1, 0.88); glVertex3f( 1,  1, 0.88); glVertex3f(-1,  1, 0.88);
-    glVertex3f(-1, -1, 0.90); glVertex3f( 1, -1, 0.90); glVertex3f( 1,  1, 0.90); glVertex3f(-1,  1, 0.90);
-    glVertex3f(-1, -1, 0.92); glVertex3f( 1, -1, 0.92); glVertex3f( 1,  1, 0.92); glVertex3f(-1,  1, 0.92);
-    glVertex3f(-1, -1, 0.94); glVertex3f( 1, -1, 0.94); glVertex3f( 1,  1, 0.94); glVertex3f(-1,  1, 0.94);
-
-    glColor4f(1, 1, 0.5, 0.04);
-    glVertex3f(-1, -1, 1.40); glVertex3f( 1, -1, 1.40); glVertex3f( 1,  1, 1.40); glVertex3f(-1,  1, 1.40);
-    glVertex3f(-1, -1, 1.43); glVertex3f( 1, -1, 1.43); glVertex3f( 1,  1, 1.43); glVertex3f(-1,  1, 1.43);
-    glVertex3f(-1, -1, 1.46); glVertex3f( 1, -1, 1.46); glVertex3f( 1,  1, 1.46); glVertex3f(-1,  1, 1.46);
-    glVertex3f(-1, -1, 1.49); glVertex3f( 1, -1, 1.49); glVertex3f( 1,  1, 1.49); glVertex3f(-1,  1, 1.49);
-
-    glColor4f(1, 0.5, 0.5, 0.04);
-    glVertex3f(-1, -1, 1.70); glVertex3f( 1, -1, 1.70); glVertex3f( 1,  1, 1.70); glVertex3f(-1,  1, 1.70);
-    glVertex3f(-1, -1, 1.74); glVertex3f( 1, -1, 1.74); glVertex3f( 1,  1, 1.74); glVertex3f(-1,  1, 1.74);
-    glVertex3f(-1, -1, 1.78); glVertex3f( 1, -1, 1.78); glVertex3f( 1,  1, 1.78); glVertex3f(-1,  1, 1.78);
-    glVertex3f(-1, -1, 1.82); glVertex3f( 1, -1, 1.82); glVertex3f( 1,  1, 1.82); glVertex3f(-1,  1, 1.82);
-  glEnd;
-  fLensFlareShader.Unbind;
+    fLensFlareShader.Bind;
+    fLensFlareMask.Bind(0);
+    GBuffer.Textures[2].Bind(1);
+    RenderLensFlare;
+    fLensFlareShader.Unbind;
+    end;
 
   glDisable(GL_BLEND);
 end;
@@ -781,6 +804,8 @@ begin
     SetConfVal('terrain.bumpmapdistance', '60');
     SetConfVal('autoplants.distance', '30');
     SetConfVal('autoplants.count', '9000');
+    SetConfVal('lensflare', '1');
+    SetConfVal('water.samples', '1');
     end;
   fFSAASamples := StrToIntWD(GetConfVal('samples'), 4);
   fReflectionDepth := StrToIntWD(GetConfVal('reflections.depth'), 2);
@@ -793,6 +818,7 @@ begin
   fUseSunRays := GetConfVal('bloom') = '1';
   fUseFocalBlur := GetConfVal('focalblur') = '1';
   fUseScreenSpaceAmbientOcclusion := GetConfVal('ssao') = '1';
+  fUseLensFlare := GetConfVal('lensflare') = '1';
   fShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.samples'), 1);
   fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.blursamples'), 5);
   fMaxShadowPasses := StrToIntWD(GetConfVal('shadows.maxpasses'), 2);
@@ -800,6 +826,7 @@ begin
   fTerrainTesselationDistance := StrToFloatWD(GetConfVal('terrain.tesselationdistance'), 25);
   fTerrainDetailDistance := StrToFloatWD(GetConfVal('terrain.detaildistance'), 100);
   fTerrainBumpmapDistance := StrToFloatWD(GetConfVal('terrain.bumpmapdistance'), 60);
+  fWaterReflectionBufferSamples := StrToFloatWD(GetConfVal('water.samples'), 1);
   fSSAOSamples := StrToIntWD(GetConfVal('ssao.samples'), 100);
   fLODDistanceOffset := StrToIntWD(GetConfVal('lod.distanceoffset'), 0);
   fLODDistanceFactor := StrToIntWD(GetConfVal('lod.distancefactor'), 1);

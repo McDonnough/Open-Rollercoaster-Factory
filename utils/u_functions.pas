@@ -23,7 +23,7 @@ type
       procedure setValue(S, T: String);
     public
       property ItemStrings: AString read getItemStrings;
-      property Items[S: String]: String read getValue write setValue;
+      property Items[S: String]: String read getValue write setValue; default;
       property ItemID[S: String]: Integer read getID;
       procedure Assign(D: TDictionary);
     end;

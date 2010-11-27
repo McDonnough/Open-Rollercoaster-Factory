@@ -14,6 +14,7 @@ type
       fTexture: TTexture;
       fFiles: TStringList;
       fCurrentFile: Integer;
+      fLogo: TTexture;
       procedure SetValue(Sender: TGUIComponent);
       procedure SetTexture;
     public
@@ -180,6 +181,18 @@ begin
     glTexCoord2f(1, 0); glVertex3f(ResX, 0,    -255);
   glEnd;
   fTexture.Unbind;
+
+  fLogo.Bind;
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex3f(ResX - 220,  ResY - 120, -255);
+    glTexCoord2f(0, 1); glVertex3f(ResX - 220,  ResY - 20,  -255);
+    glTexCoord2f(1, 1); glVertex3f(ResX - 20,   ResY - 20,  -255);
+    glTexCoord2f(1, 0); glVertex3f(ResX - 20,   ResY - 120, -255);
+  glEnd;
+  glDisable(GL_BLEND);
+  fLogo.Unbind;
 end;
 
 constructor TModuleMainMenuScreenshots.Create;
@@ -247,6 +260,9 @@ begin
     Tag := MMVAL_QUIT;
     OnClick := @SetValue;
     end;
+
+  fLogo := TTexture.Create;
+  fLogo.FromFile('general/orcf-logo.tga');
 end;
 
 destructor TModuleMainMenuScreenshots.Free;
@@ -254,6 +270,7 @@ begin
   fFiles.Free;
   if fTexture <> nil then
     fTexture.Free;
+  fLogo.Free;
 end;
 
 procedure TModuleMainMenuScreenshots.CheckModConf;

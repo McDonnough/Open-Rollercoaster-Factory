@@ -13,7 +13,7 @@ type
       function GetValue(X: Integer): Integer;
       function GetLength: Integer;
     public
-      property Value[X: Integer]: Integer read getValue write setValue;
+      property Value[X: Integer]: Integer read getValue write setValue; default;
       property Length: Integer read GetLength;
       procedure Insert(X, V: Integer);
       procedure Delete(X: Integer);
@@ -40,7 +40,7 @@ type
     public
       property Height: Integer read getHeight;
       property Width: Integer read getWidth;
-      property Value[x, y: Integer]: Integer read getValue write setValue;
+      property Value[x, y: Integer]: Integer read getValue write setValue; default;
       procedure Resize(W, H: Integer);
       procedure InsertRow(Y: Integer; Items: TRow);
       procedure InsertCol(X: Integer; Items: TRow);

@@ -251,7 +251,7 @@ begin
       fTerrainMap.Free;
     fTerrainMap := TTexture.Create;
     fTerrainMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGB16);
-    fTerrainMap.SetClamp(GL_CLAMP, GL_CLAMP);
+    fTerrainMap.SetClamp(GL_MIRRORED_REPEAT, GL_MIRRORED_REPEAT);
     fTerrainMap.Unbind;
     SetLength(HasBlock, Park.pTerrain.SizeX div 128);
     for i := 0 to high(HasBlock) do
@@ -362,25 +362,25 @@ begin
   fShadowPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.TerrainTesselationDistance);
   fShadowPassShader.UniformI('TerrainMap', 0);
 
-  fFineVBO := TVBO.Create(32 * 32 * 4, GL_V3F, GL_QUADS);
-  for i := 0 to 31 do
-    for j := 0 to 31 do
+  fFineVBO := TVBO.Create(34 * 34 * 4, GL_V3F, GL_QUADS);
+  for i := 0 to 33 do
+    for j := 0 to 33 do
       begin
-      fFineVBO.Vertices[4 * (32 * i + j) + 3] := Vector(0.8 * i,       0.0, 0.8 * j);
-      fFineVBO.Vertices[4 * (32 * i + j) + 2] := Vector(0.8 * i + 0.8, 0.0, 0.8 * j);
-      fFineVBO.Vertices[4 * (32 * i + j) + 1] := Vector(0.8 * i + 0.8, 0.0, 0.8 * j + 0.8);
-      fFineVBO.Vertices[4 * (32 * i + j) + 0] := Vector(0.8 * i,       0.0, 0.8 * j + 0.8);
+      fFineVBO.Vertices[4 * (34 * i + j) + 3] := Vector(0.8 * i - 0.8, 0.0, 0.8 * j - 0.8);
+      fFineVBO.Vertices[4 * (34 * i + j) + 2] := Vector(0.8 * i + 0.0, 0.0, 0.8 * j - 0.8);
+      fFineVBO.Vertices[4 * (34 * i + j) + 1] := Vector(0.8 * i + 0.0, 0.0, 0.8 * j + 0.0);
+      fFineVBO.Vertices[4 * (34 * i + j) + 0] := Vector(0.8 * i - 0.8, 0.0, 0.8 * j + 0.0);
       end;
   fFineVBO.Unbind;
 
-  fRawVBO := TVBO.Create(16 * 16 * 4, GL_V3F, GL_QUADS);
-  for i := 0 to 15 do
-    for j := 0 to 15 do
+  fRawVBO := TVBO.Create(18 * 18 * 4, GL_V3F, GL_QUADS);
+  for i := 0 to 17 do
+    for j := 0 to 17 do
       begin
-      fRawVBO.Vertices[4 * (16 * i + j) + 3] := Vector(1.6 * i,       0.0, 1.6 * j);
-      fRawVBO.Vertices[4 * (16 * i + j) + 2] := Vector(1.6 * i + 1.6, 0.0, 1.6 * j);
-      fRawVBO.Vertices[4 * (16 * i + j) + 1] := Vector(1.6 * i + 1.6, 0.0, 1.6 * j + 1.6);
-      fRawVBO.Vertices[4 * (16 * i + j) + 0] := Vector(1.6 * i,       0.0, 1.6 * j + 1.6);
+      fRawVBO.Vertices[4 * (18 * i + j) + 3] := Vector(1.6 * i - 1.6, 0.0, 1.6 * j - 1.6);
+      fRawVBO.Vertices[4 * (18 * i + j) + 2] := Vector(1.6 * i + 0.0, 0.0, 1.6 * j - 1.6);
+      fRawVBO.Vertices[4 * (18 * i + j) + 1] := Vector(1.6 * i + 0.0, 0.0, 1.6 * j + 0.0);
+      fRawVBO.Vertices[4 * (18 * i + j) + 0] := Vector(1.6 * i - 1.6, 0.0, 1.6 * j + 0.0);
       end;
   fRawVBO.Unbind;
 

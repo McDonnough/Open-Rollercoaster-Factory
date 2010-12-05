@@ -32,9 +32,9 @@ void main(void) {
 
   if (Tesselation == 0 || TransformedBasePointDistanceValues[0] > qTerrainTesselationDistance || TransformedBasePointDistanceValues[1] > qTerrainTesselationDistance || TransformedBasePointDistanceValues[2] > qTerrainTesselationDistance) {
     // Simply output given vertices
-    Vertex = BasePoints[0]; gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[0], 1.0); EmitVertex();
-    Vertex = BasePoints[1]; gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[1], 1.0); EmitVertex();
-    Vertex = BasePoints[2]; gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[2], 1.0); EmitVertex();
+    Vertex = BasePoints[0]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[0], 1.0); EmitVertex();
+    Vertex = BasePoints[1]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[1], 1.0); EmitVertex();
+    Vertex = BasePoints[2]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[2], 1.0); EmitVertex();
     EndPrimitive();
   } else {
     vec3 Vertices[15];
@@ -114,36 +114,36 @@ void main(void) {
     Vertices[14].y = mix(owh[14], Vertices[14].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[14], 1.0)).xyz), 0.0, 5.0));
 
     // Output new triangles
-    Vertex = Vertices[ 0]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 0], 1.0); EmitVertex();
-    Vertex = Vertices[ 5]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
-    Vertex = Vertices[ 1]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 1], 1.0); EmitVertex();
-    Vertex = Vertices[ 6]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
-    Vertex = Vertices[ 2]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 2], 1.0); EmitVertex();
-    Vertex = Vertices[ 7]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
-    Vertex = Vertices[ 3]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 3], 1.0); EmitVertex();
-    Vertex = Vertices[ 8]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
-    Vertex = Vertices[ 4]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 4], 1.0); EmitVertex();
+    Vertex = Vertices[ 0]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 0], 1.0); EmitVertex();
+    Vertex = Vertices[ 5]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
+    Vertex = Vertices[ 1]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 1], 1.0); EmitVertex();
+    Vertex = Vertices[ 6]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
+    Vertex = Vertices[ 2]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 2], 1.0); EmitVertex();
+    Vertex = Vertices[ 7]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
+    Vertex = Vertices[ 3]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 3], 1.0); EmitVertex();
+    Vertex = Vertices[ 8]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
+    Vertex = Vertices[ 4]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 4], 1.0); EmitVertex();
     EndPrimitive();
 
-    Vertex = Vertices[ 5]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
-    Vertex = Vertices[ 9]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
-    Vertex = Vertices[ 6]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
-    Vertex = Vertices[10]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
-    Vertex = Vertices[ 7]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
-    Vertex = Vertices[11]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
-    Vertex = Vertices[ 8]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
+    Vertex = Vertices[ 5]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
+    Vertex = Vertices[ 9]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
+    Vertex = Vertices[ 6]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
+    Vertex = Vertices[10]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
+    Vertex = Vertices[ 7]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
+    Vertex = Vertices[11]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
+    Vertex = Vertices[ 8]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
     EndPrimitive();
 
-    Vertex = Vertices[ 9]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
-    Vertex = Vertices[12]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
-    Vertex = Vertices[10]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
-    Vertex = Vertices[13]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
-    Vertex = Vertices[11]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
+    Vertex = Vertices[ 9]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
+    Vertex = Vertices[12]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
+    Vertex = Vertices[10]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
+    Vertex = Vertices[13]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
+    Vertex = Vertices[11]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
     EndPrimitive();
 
-    Vertex = Vertices[12]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
-    Vertex = Vertices[14]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[14], 1.0); EmitVertex();
-    Vertex = Vertices[13]; gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
+    Vertex = Vertices[12]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
+    Vertex = Vertices[14]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[14], 1.0); EmitVertex();
+    Vertex = Vertices[13]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
     EndPrimitive();
   }
 }

@@ -71,6 +71,6 @@ void main(void) {
 
   gl_FragData[1] = vec4(normal, 2.0);
   gl_FragData[0] = mix(mix(texColors[0], texColors[1], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), mix(texColors[2], texColors[3], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), (Vertex.z * 5.0 - floor(Vertex.z * 5.0)));
-  gl_FragData[0].a = 0.5;
+  gl_FragData[0].a = 0.02;
   gl_FragData[0].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
 }

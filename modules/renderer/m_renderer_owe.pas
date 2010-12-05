@@ -120,7 +120,7 @@ begin
 
   fLensFlareMask := TTexture.Create;
   fLensFlareMask.FromFile('orcf-world-engine/postprocess/images/lensflare.tga');
-//   fLensFlareMask.CreateMipmaps;
+  fLensFlareMask.CreateMipmaps;
   fLensFlareMask.SetFilter(GL_LINEAR, GL_LINEAR);
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
@@ -136,7 +136,7 @@ begin
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-  fSpareBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);     // Materials (opaque only) and specularity
+  fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Materials (opaque only) and specularity
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
@@ -246,6 +246,7 @@ begin
   fSunShader.UniformI('GeometryTexture', 0);
   fSunShader.UniformI('NormalTexture', 1);
   fSunShader.UniformI('ShadowTexture', 2);
+  fSunShader.UniformI('MaterialTexture', 3);
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
@@ -425,6 +426,9 @@ begin
 
   // Geometry pass
 
+  // Do water renderpasses
+  RWater.RenderBuffers;
+
   // Opaque parts only
   GBuffer.Bind;
     glDisable(GL_BLEND);
@@ -442,7 +446,16 @@ begin
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
     RTerrain.Render;
 
+
     // Water
+    glColorMask(false, false, false, false);
+    glDepthMask(false);
+    RWater.Check;
+    glDepthMask(true);
+    glColorMask(true, true, true, true);
+//   GBuffer.Unbind;
+
+//   GBuffer.Bind;
     RWater.Render;
 
     glDisable(GL_CULL_FACE);
@@ -472,7 +485,7 @@ begin
 
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0);
-    glColorMask(true, true, true, false);
+//     glColorMask(true, true, true, false);
 
     // Autoplants
     RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
@@ -481,7 +494,7 @@ begin
 
     // End
 
-    glColorMask(true, true, true, true);
+//     glColorMask(true, true, true, true);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
     glDisable(GL_ALPHA_TEST);
@@ -523,6 +536,7 @@ begin
     if UseSunShadows then
       fSunShadowBuffer.Textures[0].Bind(2);
 
+    GBuffer.Textures[0].Bind(3);
     GBuffer.Textures[1].Bind(1);
     GBuffer.Textures[2].Bind(0);
 
@@ -608,7 +622,6 @@ begin
 
   fSelectionRay := Vector3D(Coord) - fSelectionStart;
   fFocusDistance := Coord.W;
-  writeln(fFocusDistance);
 
   // Focal Blur pass
 

@@ -16,6 +16,7 @@ type
       property Width: Integer read fWidth;
       property Height: Integer read fHeight;
       property Scene: TFBO read fSceneBuffer;
+      property GBuffer: TFBO read fGBuffer;
       procedure Render;
       constructor Create(X, Y: Integer);
       destructor Free;
@@ -37,6 +38,11 @@ procedure TRenderPass.Render;
     glEnd;
   end;
 begin
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+  glColorMask(true, true, true, true);
+  glDepthMask(true);
+
   // Opaque parts only
   fGBuffer.Bind;
     glDisable(GL_BLEND);
@@ -132,7 +138,6 @@ begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
     ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.MaterialPassShader;
     ModuleManager.ModRenderer.RAutoplants.Render;
 
@@ -142,6 +147,8 @@ begin
     glDepthMask(false);
 
   fSceneBuffer.Unbind;
+
+  glPopAttrib;
 end;
 
 constructor TRenderPass.Create(X, Y: Integer);
@@ -150,7 +157,7 @@ begin
   fHeight := Y;
 
   fGBuffer := TFBO.Create(X, Y, true);
-  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Materials (opaque only) and specularity
+  fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Materials (opaque only) and specularity
   fGBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Normals and specular hardness
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
@@ -158,15 +165,15 @@ begin
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSpareBuffer := TFBO.Create(X, Y, false);
-  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);
-  fGBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
+  fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fLightBuffer := TFBO.Create(X, Y, false);
   fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Colors, Specular
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSceneBuffer := TFBO.Create(X, Y, true);
-  fSceneBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);      // Composed image
+  fSceneBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);          // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 end;
 

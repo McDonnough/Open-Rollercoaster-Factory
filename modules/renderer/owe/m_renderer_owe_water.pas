@@ -29,9 +29,12 @@ type
       fWaterMap: TTable;
       fCheckShader, fRenderShader: TShader;
       fWaterLayers: Array of TWaterLayer;
+      fBumpMap: TTexture;
+      fBumpOffset: TVector2D;
     public
       property RenderShader: TShader read fRenderShader;
       property CheckShader: TShader read fCheckShader;
+      property BumpOffset: TVector2D read fBumpOffset;
       procedure Update(Event: String; Data, Result: Pointer);
       procedure Resize(Event: String; Data, Result: Pointer);
       procedure Check;
@@ -44,7 +47,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events, g_park;
+  m_varlist, u_events, g_park, main;
 
 procedure TRWater.Resize(Event: String; Data, Result: Pointer);
 begin
@@ -107,18 +110,31 @@ procedure TRWater.Render;
 var
   i: Integer;
 begin
+  fBumpOffset := fBumpOffset + Vector(0.1, 0.2) / 300 * FPSDisplay.MS;
   for i := 0 to high(fWaterLayers) do
-//     if fWaterLayers[i].Visible then
+    if fWaterLayers[i].Visible then
+      begin
+      fBumpMap.Bind(1);
       fWaterLayers[i].Render;
+      end;
 end;
 
 procedure TRWater.RenderBuffers;
 var
   i: Integer;
 begin
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix;
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix;
   for i := 0 to high(fWaterLayers) do
     if fWaterLayers[i].Visible then
       fWaterLayers[i].RenderBuffers;
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix;
+  glMatrixMode(GL_PROJECTION);
+  glPopMatrix;
+  glMatrixMode(GL_MODELVIEW);
 end;
 
 constructor TRWater.Create;
@@ -133,11 +149,20 @@ begin
   fRenderShader.UniformI('BumpMap', 1);
   fRenderShader.UniformI('RefractTex', 2);
   fRenderShader.UniformI('ReflectTex', 3);
+  fRenderShader.UniformI('GeometryMap', 4);
+  fRenderShader.UniformF('ScreenSize', ModuleManager.ModRenderer.BufferSizeX, ModuleManager.ModRenderer.BufferSizeY);
+  fRenderShader.UniformF('BumpOffset', 0, 0);
 
   fWaterMap := TTable.Create;
 
+  fBumpMap := TTexture.Create;
+  fBumpMap.FromFile('terrain/water-bumpmap.tga');
+  fBumpMap.CreateMipMaps;
+
   EventManager.AddCallback('TTerrain.ChangedWater', @Update);
   EventManager.AddCallback('TTerrain.Resize', @Resize);
+
+  fBumpOffset := Vector(0, 0);
 end;
 
 destructor TRWater.Free;
@@ -146,6 +171,8 @@ var
 begin
   EventManager.RemoveCallback(@Resize);
   EventManager.RemoveCallback(@Update);
+
+  fBumpMap.Free;
 
   fWaterMap.Free;
 
@@ -185,10 +212,12 @@ end;
 procedure TWaterLayer.Render;
 begin
   ModuleManager.ModRenderer.RWater.RenderShader.Bind;
+  ModuleManager.ModRenderer.RWater.RenderShader.UniformF('BumpOffset', ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Height', Height / 65535 * 256);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
   fRefractionPass.Scene.Textures[0].Bind(2);
   fReflectionPass.Scene.Textures[0].Bind(3);
+  fRefractionPass.GBuffer.Textures[2].Bind(4);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
 
   glBegin(GL_QUADS);
@@ -206,11 +235,14 @@ const
   ClipPlane: Array[0..3] of GLDouble = (0, -1, 0, 0);
 begin
   glEnable(GL_CLIP_PLANE0);
+
+  glMatrixMode(GL_MODELVIEW);
+
   glPushMatrix;
     glTranslatef(0, fHeight / 256, 0);
     glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
-    glScalef(0, -1, 0);
-    glTranslatef(0,-fHeight / 256, 0);
+    glScalef(1, -1, 1);
+    glTranslatef(0, -fHeight / 256, 0);
 
     glFrontFace(GL_CW);
     fReflectionPass.Render;
@@ -218,7 +250,7 @@ begin
   glPopMatrix;
 
   glPushMatrix;
-    glTranslatef(0, fHeight, 0);
+    glTranslatef(0, fHeight / 256 + 0.05, 0);
     glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
   glPopMatrix;
 

@@ -42,6 +42,7 @@ type
       fShadowOffset: TVector3D;
       fUseLensFlare: Boolean;
       fWaterReflectionBufferSamples: Single;
+      fFrameID: Integer;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -96,6 +97,7 @@ type
       property TransparencyMask: TTexture read fTransparencyMask;
       property ShadowSize: Single read fShadowSize;
       property ShadowOffset: TVector3D read fShadowOffset;
+      property FrameID: Integer read fFrameID;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -114,6 +116,8 @@ procedure TModuleRendererOWE.PostInit;
 var
   ResX, ResY: Integer;
 begin
+  fFrameID := 0;
+
   fTransparencyMask := TTexture.Create;
   fTransparencyMask.FromFile('orcf-world-engine/inferred/transparency-gradient.tga');
   fTransparencyMask.SetFilter(GL_LINEAR, GL_LINEAR);
@@ -770,6 +774,7 @@ begin
     fAAShader.Bind;
 
     glColor4f(1, 1, 1, 1);
+
     fSceneBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
 
@@ -794,6 +799,8 @@ begin
     end;
 
   glDisable(GL_BLEND);
+
+  inc(fFrameID);
 end;
 
 procedure TModuleRendererOWE.CheckModConf;

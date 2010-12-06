@@ -3,7 +3,7 @@ unit m_renderer_owe_sky;
 interface
 
 uses
-  SysUtils, Classes, DGLOpenGL, m_renderer_owe_lights, math, u_math, u_vectors, u_events, m_shdmng_class, u_graphics, u_files;
+  SysUtils, Classes, DGLOpenGL, m_renderer_owe_lights, math, u_math, u_vectors, u_events, m_shdmng_class, u_graphics, u_files, m_texmng_class;
 
 type
   TRSky = class
@@ -12,6 +12,7 @@ type
       fCameraLight, fCameraLight2: TLight;
       fShader: TShader;
       fSunColor: TTexImage;
+      fStarTexture: TTexture;
     public
       property Sun: TSun read fSun;
       procedure Render;
@@ -29,6 +30,7 @@ procedure TRSky.Render;
 var
   i, j: Integer;
 begin
+  fStarTexture.Bind;
   fShader.Bind;
   glBegin(GL_QUADS);
     for i := 0 to 17 do
@@ -63,15 +65,19 @@ constructor TRSky.Create;
 begin
   writeln('Hint: Initializing sky renderer');
   fShader := TShader.Create('orcf-world-engine/scene/sky/sky.vs', 'orcf-world-engine/scene/sky/sky.fs');
+  fShader.UniformI('StarTexture', 0);
   fShader.UniformF('Factor', 1.0);
   if ModuleManager.ModRenderer.UseBloom then
     fShader.UniformF('Factor', 0.8);
   fSun := TSun.Create;
   fSunColor := TexFromStream(ByteStreamFromFile('orcf-world-engine/scene/sky/sun-color/suncolor.tga'), '.tga');
+  fStarTexture := TTexture.Create;
+  fStarTexture.FromFile('orcf-world-engine/scene/sky/stars.tga');
 end;
 
 destructor TRSky.Free;
 begin
+  fStarTexture.Free;
   fSun.Free;
   fShader.Free;
 end;

@@ -3,7 +3,7 @@ unit m_renderer_owe_water;
 interface
 
 uses
-  SysUtils, Classes, m_renderer_owe_renderpass, m_renderer_owe_classes, u_arrays, m_shdmng_class, m_texmng_class, u_vectors, DGLOpenGL;
+  SysUtils, Classes, m_renderer_owe_renderpass, m_renderer_owe_classes, u_arrays, m_shdmng_class, m_texmng_class, u_vectors, DGLOpenGL, math;
 
 type
   TWaterLayer = class
@@ -31,10 +31,12 @@ type
       fWaterLayers: Array of TWaterLayer;
       fBumpMap: TTexture;
       fBumpOffset: TVector2D;
+      fWaterVBO: TVBO;
     public
       property RenderShader: TShader read fRenderShader;
       property CheckShader: TShader read fCheckShader;
       property BumpOffset: TVector2D read fBumpOffset;
+      property WaterVBO: TVBO read fWaterVBO;
       procedure Update(Event: String; Data, Result: Pointer);
       procedure Resize(Event: String; Data, Result: Pointer);
       procedure Check;
@@ -110,7 +112,7 @@ procedure TRWater.Render;
 var
   i: Integer;
 begin
-  fBumpOffset := fBumpOffset + Vector(0.1, 0.2) / 300 * FPSDisplay.MS;
+  fBumpOffset := fBumpOffset + Vector(0.1, 0.2) / 150 * FPSDisplay.MS;
   for i := 0 to high(fWaterLayers) do
     if fWaterLayers[i].Visible then
       begin
@@ -138,6 +140,10 @@ begin
 end;
 
 constructor TRWater.Create;
+var
+  Radius, OldRadius: Single;
+  Count: Integer;
+  i, j: Integer;
 begin
   writeln('Hint; Initializing water renderer');
 
@@ -163,6 +169,28 @@ begin
   EventManager.AddCallback('TTerrain.Resize', @Resize);
 
   fBumpOffset := Vector(0, 0);
+
+  OldRadius := 0;
+  Radius := 0.005;
+  Count := 0;
+
+  fWaterVBO := TVBO.Create(720000, GL_V3F, GL_QUADS);
+  for i := 0 to 1499 do
+    begin
+    if i = 1499 then
+      Radius := 7000;
+    for j := 0 to 119 do
+      begin
+      fWaterVBO.Vertices[Count + 0] := Vector(sin(DegToRad(3 * (j + 0))) * OldRadius, cos(DegToRad(3 * (j + 0))) * OldRadius, Min(1, 15 - 0.01 * (i + 0)));
+      fWaterVBO.Vertices[Count + 1] := Vector(sin(DegToRad(3 * (j + 0))) *    Radius, cos(DegToRad(3 * (j + 0))) *    Radius, Min(1, 15 - 0.01 * (i + 1)));
+      fWaterVBO.Vertices[Count + 2] := Vector(sin(DegToRad(3 * (j + 1))) *    Radius, cos(DegToRad(3 * (j + 1))) *    Radius, Min(1, 15 - 0.01 * (i + 1)));
+      fWaterVBO.Vertices[Count + 3] := Vector(sin(DegToRad(3 * (j + 1))) * OldRadius, cos(DegToRad(3 * (j + 1))) * OldRadius, Min(1, 15 - 0.01 * (i + 0)));
+      inc(Count, 4);
+      end;
+    OldRadius := Radius;
+    Radius := Radius + Max(0.005, i / 30000);
+    end;
+  fWaterVBO.Unbind;
 end;
 
 destructor TRWater.Free;
@@ -173,6 +201,8 @@ begin
   EventManager.RemoveCallback(@Update);
 
   fBumpMap.Free;
+
+  fWaterVBO.Free;
 
   fWaterMap.Free;
 
@@ -215,17 +245,24 @@ begin
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('BumpOffset', ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Height', Height / 65535 * 256);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+  ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Offset', ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
   fRefractionPass.Scene.Textures[0].Bind(2);
   fReflectionPass.Scene.Textures[0].Bind(3);
   fRefractionPass.GBuffer.Textures[2].Bind(4);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
 
-  glBegin(GL_QUADS);
-    glVertex2f(0, Park.pTerrain.SizeY / 5);
-    glVertex2f(Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-    glVertex2f(Park.pTerrain.SizeX / 5, 0);
-    glVertex2f(0, 0);
-  glEnd;
+
+  ModuleManager.ModRenderer.RWater.WaterVBO.Bind;
+  ModuleManager.ModRenderer.RWater.WaterVBO.Render;
+  ModuleManager.ModRenderer.RWater.WaterVBO.Unbind;
+
+
+//   glBegin(GL_QUADS);
+//     glVertex2f(0, Park.pTerrain.SizeY / 5);
+//     glVertex2f(Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+//     glVertex2f(Park.pTerrain.SizeX / 5, 0);
+//     glVertex2f(0, 0);
+//   glEnd;
 
   ModuleManager.ModRenderer.RWater.RenderShader.Unbind;
 end;

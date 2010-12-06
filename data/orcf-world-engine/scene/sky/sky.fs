@@ -1,10 +1,14 @@
 #version 120
 
+uniform sampler2D StarTexture;
+
 varying vec3 Vertex;
 
 void main(void) {
   gl_FragData[2] = vec4(0.0, 0.0, 0.0, 5000.0);
   gl_FragData[1] = vec4(0.0, 0.0, 0.0, 0.0);
+
+  float StarFac = 4.0 * clamp(0.2 + dot(normalize(gl_LightSource[0].position.rgb), vec3(0.0, -1.0, 0.0)), 0.0, 0.25);
 
   vec3 pos = gl_LightSource[0].position.xyz;
   float angle = max(0.0, dot(normalize(pos), normalize(Vertex)));
@@ -24,5 +28,6 @@ void main(void) {
   gl_FragData[0].rgb += gl_LightSource[0].diffuse.rgb * pow(angle, 20.0) * 0.2;
   gl_FragData[0].rgb += 1.5 * gl_LightSource[0].diffuse.rgb * pow(angle, 1000.0);
   gl_FragData[0].rgb *= 0.9;
+  gl_FragData[0].rgb += StarFac * texture2D(StarTexture, vec2(pow(abs(Vertex.x / 5000.0), 0.33), pow(abs(Vertex.z / 5000.0), 0.33)) * 3.0 * sign(Vertex.xz)).rgb;
   gl_FragData[0].a = 1.0;
 }

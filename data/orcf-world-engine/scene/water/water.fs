@@ -11,6 +11,7 @@ uniform vec2 ScreenSize;
 uniform vec2 BumpOffset;
 
 varying vec2 Vertex;
+varying float Displacement;
 
 float Fresnel(float x) {
   float Rs = pow((cos(x) - 1.33 * sqrt(1.0 - pow(1.0 / 1.33 * sin(x), 2.0))) / (cos(x) + 1.33 * sqrt(1.0 - pow(1.0 / 1.33 * sin(x), 2.0))), 2.0);
@@ -25,7 +26,7 @@ void main(void) {
 
   vec3 Position = vec3(Vertex.x, Height, Vertex.y);
 
-  vec4 bumpColor = (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset) / 15.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset.yx) / 7.5 + 0.5));
+  vec4 bumpColor = (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset) / 30.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset.yx) / 15.0 + 0.5));
   vec3 normal = normalize((bumpColor.rbg) + vec3(0.0, 1.0, 0.0));
   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Position, 1.0)).xyz);
 
@@ -42,12 +43,15 @@ void main(void) {
   vec4 ReflectedPosition = gl_ModelViewProjectionMatrix * vec4(Position + ReflectedOffset, 1.0);
 
   vec3 SceneVertex = texture2D(GeometryMap, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).xyz;
-  float HeightFactor = clamp(pow(0.82, distance(SceneVertex, vec3(Vertex.x, Height, Vertex.y))), 0.0, 1.0);
+  float HeightFactor = clamp(pow(0.75, distance(SceneVertex, vec3(Vertex.x, Height, Vertex.y))), 0.0, 1.0);
 
-  gl_FragData[2] = vec4(Vertex.x, Height, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height, Vertex.y, 1.0))));
-  gl_FragData[1] = vec4(normal, 150.0);
-  gl_FragData[0] = vec4(1.0, 1.0, 1.0, -0.90);
+  float WaterColorFactor = 0.9 + 0.1 * dot(normal, normalize(gl_LightSource[0].position.xyz));
+
+  gl_FragData[2] = vec4(Vertex.x, Height + Displacement, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height + Displacement, Vertex.y, 1.0))));
+  gl_FragData[1] = vec4(normal, 250.0);
+  gl_FragData[0] = vec4(1.0, 1.0, 1.0, -1.0);
   float ReflectionCoefficient = Fresnel(acos(dot(-Eye, normalize(gl_NormalMatrix * normal))));
   gl_FragData[0].rgb = ReflectionCoefficient * texture2D(ReflectTex, 0.5 + 0.5 * ReflectedPosition.xy / ReflectedPosition.w).rgb;
-  gl_FragData[0].rgb += mix(vec3(0.03, 0.24, 0.29) * 4.0 * gl_LightSource[0].ambient.rgb, (1.0 - ReflectionCoefficient) * texture2D(RefractTex, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).rgb, HeightFactor);
+  gl_FragData[0].rgb += mix(vec3(0.20, 0.30, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb, (1.0 - ReflectionCoefficient) * texture2D(RefractTex, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).rgb, HeightFactor);
+  gl_FragData[0].rgb *= WaterColorFactor;
 }

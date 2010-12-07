@@ -303,13 +303,13 @@ begin
         begin
         if Sender.Tag = 1 then
           begin
-          if fDirectory[length(fDirectory)] = '/' then
+          if fDirectory[length(fDirectory)] = ModuleManager.ModPathes.Delimiter then
             fDirectory := ExtractFilePath(SubString(fDirectory, 1, Length(fDirectory) - 1))
           else
             fDirectory := ExtractFilePath(fDirectory);
           end
         else
-          fDirectory := fDirList[Sender.Tag - 1] + '/';
+          fDirectory := fDirList[Sender.Tag - 1] + ModuleManager.ModPathes.Delimiter;
         end;
     Name.Caption := 'Selected file: ' + fDirectory;
 

@@ -33,9 +33,9 @@ function TModulePathesWindows.InitPathes: Boolean;
 begin
   fDelimiter := '\';
 
-  fDataPath := extractFilePath(paramStr(0)) + '\data\';
-  fConfigPath := extractFilePath(paramStr(0)) + '\config\';
-  fPersonalDataPath := fDataPath;
+  fDataPath := extractFilePath(paramStr(0)) + 'data\';
+  fConfigPath := extractFilePath(paramStr(0)) + 'config\';
+  fPersonalDataPath := fDataPath + 'personal\';
 end;
 
 end.

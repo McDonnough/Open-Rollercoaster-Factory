@@ -21,7 +21,8 @@ type
       fFSAASamples: Integer;
       fReflectionDepth, fReflectionUpdateInterval: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
-      fUseBloom, fUseScreenSpaceAmbientOcclusion, fUseMotionBlur, fUseFocalBlur: Boolean;
+      fUseScreenSpaceAmbientOcclusion, fUseMotionBlur, fUseFocalBlur: Boolean;
+      fBloomFactor: Single;
       fLODDistanceOffset, fLODDistanceFactor, fMotionBlurStrength: Single;
       fShadowBufferSamples: Single;
       fSubdivisionCuts: Integer;
@@ -68,7 +69,7 @@ type
       property ReflectionUpdateInterval: Integer read fReflectionUpdateInterval;
       property UseSunShadows: Boolean read fUseSunShadows;
       property UseLightShadows: Boolean read fUseLightShadows;
-      property UseBloom: Boolean read fUseBloom;
+      property BloomFactor: Single read fBloomFactor;
       property UseMotionBlur: Boolean read fUseMotionBlur;
       property UseSunRays: Boolean read fUseSunRays;
       property UseFocalBlur: Boolean read fUseFocalBlur;
@@ -160,7 +161,7 @@ begin
   else
     fSSAOBuffer := nil;
 
-  if UseBloom then
+  if BloomFactor > 0 then
     begin
     fBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
     fBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);    // Pseudo-HDR/Color Bleeding
@@ -187,7 +188,7 @@ begin
   else
     fSunRayBuffer := nil;
 
-  if UseBloom then
+  if BloomFactor > 0 then
     begin
     fTmpBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), true);
     fTmpBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
@@ -686,7 +687,7 @@ begin
 
   // Bloom pass
 
-  if UseBloom then
+  if BloomFactor > 0 then
     begin
     glDisable(GL_BLEND);
 
@@ -726,7 +727,7 @@ begin
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    glColor4f(1.0, 1.0, 1.0, 1.0);
+    glColor4f(BloomFactor, BloomFactor, BloomFactor, 1.0);
 
     fBloomBuffer.Textures[0].Bind(0);
 
@@ -818,7 +819,7 @@ begin
     SetConfVal('shadows.samples', '1');
     SetConfVal('shadows.blursamples', '5');
     SetConfVal('shadows.maxpasses', '2');
-    SetConfVal('bloom', '1');
+    SetConfVal('bloom', '0.5');
     SetConfVal('focalblur', '1');
     SetConfVal('motionblur', '1');
     SetConfVal('motionblur.strength', '0.05');
@@ -840,7 +841,7 @@ begin
   fReflectionUpdateInterval := StrToIntWD(GetConfVal('reflections.updateinterval'), 1);
   fUseSunShadows := GetConfVal('shadows') <> '0';
   fUseLightShadows := GetConfVal('shadows') = '2';
-  fUseBloom := GetConfVal('bloom') = '1';
+  fBloomFactor := StrToFloatWD(GetConfVal('bloom'), 0.5);
   fUseRefractions := GetConfVal('refractions') = '1';
   fUseMotionBlur := GetConfVal('motionblur') = '1';
   fUseSunRays := GetConfVal('bloom') = '1';

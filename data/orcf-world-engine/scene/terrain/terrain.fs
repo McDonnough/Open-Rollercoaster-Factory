@@ -81,6 +81,8 @@ void main(void) {
   float lf2 = clamp(1.0 - min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)), 0.0, 1.0);
   gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf1);
   gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf2);
+  if (clamp(Vertex.xz, Min, Max) != Vertex.xz)
+    gl_FragData[0].rgb *= 0.5;
   gl_FragData[0].a = mix(-0.5, gl_FragData[0].a, lf1);
   gl_FragData[0].a = mix(-0.5, gl_FragData[0].a, lf2);
 }

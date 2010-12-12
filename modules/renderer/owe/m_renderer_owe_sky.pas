@@ -66,9 +66,7 @@ begin
   writeln('Hint: Initializing sky renderer');
   fShader := TShader.Create('orcf-world-engine/scene/sky/sky.vs', 'orcf-world-engine/scene/sky/sky.fs');
   fShader.UniformI('StarTexture', 0);
-  fShader.UniformF('Factor', 1.0);
-  if ModuleManager.ModRenderer.UseBloom then
-    fShader.UniformF('Factor', 0.8);
+  fShader.UniformF('Factor', 1.0 - 0.2 * ModuleManager.ModRenderer.BloomFactor);
   fSun := TSun.Create;
   fSunColor := TexFromStream(ByteStreamFromFile('orcf-world-engine/scene/sky/sun-color/suncolor.tga'), '.tga');
   fStarTexture := TTexture.Create;

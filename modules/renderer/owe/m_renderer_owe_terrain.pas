@@ -33,6 +33,8 @@ type
 
   TRTerrain = class(TThread)
     protected
+      fForcedHeightLine: Single;
+      fTerrainEditorIsOpen: Boolean;
       fTerrainMap: TTexture;
       fCanWork, fWorking: Boolean;
       fGeometryPassShader, fShadowPassShader: TShader;
@@ -208,6 +210,24 @@ begin
         end;
 
   CurrentShader.Bind;
+  if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
+    CurrentShader.UniformF('PointToHighlight', Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
+  else
+    CurrentShader.UniformF('PointToHighlight', -1, -1);
+  if (Park.pTerrain.MarkMode = 1) then
+    CurrentShader.UniformF('HeightLine', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
+  else
+    CurrentShader.UniformF('HeightLine', fForcedHeightLine);
+  if fTerrainEditorIsOpen then
+    begin
+    CurrentShader.UniformF('Min', 0, 0);
+    CurrentShader.UniformF('Max', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+    end
+  else
+    begin
+    CurrentShader.UniformF('Min', -10000, -10000);
+    CurrentShader.UniformF('Max', 10000, 10000);
+    end;
   for i := 0 to high(Blocks) do
     if ((Blocks[BlockIDs[i]].Visible) and (CurrentShader = fGeometryPassShader)) or ((Blocks[BlockIDs[i]].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
       if Blocks[BlockIDs[i]].MinHeight = Blocks[BlockIDs[i]].MaxHeight then
@@ -317,12 +337,12 @@ end;
 
 procedure TRTerrain.ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
 begin
-
+  fTerrainEditorIsOpen := not fTerrainEditorIsOpen;
 end;
 
 procedure TRTerrain.SetHeightLine(Event: String; Data, Result: Pointer);
 begin
-
+  fForcedHeightLine := Single(Data^);
 end;
 
 function TRTerrain.GetBlock(X, Y: Single): TTerrainBlock;
@@ -347,6 +367,9 @@ var
 begin
   writeln('Hint; Initializing terrain renderer');
   fTerrainMap := nil;
+
+  fTerrainEditorIsOpen := false;
+  fForcedHeightLine := -1;
 
   fXBlocks := 0;
   fYBlocks := 0;

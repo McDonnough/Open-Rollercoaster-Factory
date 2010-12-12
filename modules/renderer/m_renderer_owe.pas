@@ -726,7 +726,7 @@ begin
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    glColor4f(0.3, 0.3, 0.3, 1.0);
+    glColor4f(1.0, 1.0, 1.0, 1.0);
 
     fBloomBuffer.Textures[0].Bind(0);
 

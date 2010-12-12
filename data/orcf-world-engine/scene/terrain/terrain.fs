@@ -8,6 +8,9 @@ uniform float TerrainTesselationDistance;
 uniform float TerrainBumpmapDistance;
 uniform float HeightLine;
 uniform vec2 TerrainSize;
+uniform vec2 Min;
+uniform vec2 Max;
+uniform vec2 PointToHighlight;
 
 varying vec3 Vertex;
 
@@ -31,6 +34,8 @@ float fetchHeightAtOffset(ivec2 O) {
 void main(void) {
   iVertex = ivec2(floor(5.0 * Vertex.xz + 0.001));
 
+  float VY = fetchHeightAtOffset(ivec2(0, 0));
+
   gl_FragData[2].rgb = Vertex;
   gl_FragData[2].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
 
@@ -40,7 +45,6 @@ void main(void) {
   TexIDs[2] = texelFetch2DOffset(TerrainMap, iVertex, 0, ivec2(0, 1)).r * 65536.0;
   TexIDs[3] = texelFetch2DOffset(TerrainMap, iVertex, 0, ivec2(1, 1)).r * 65536.0;
 
-  float VY = fetchHeightAtOffset(ivec2(0, 0));
   TexCoord = mat4(
     vec4((TexIDs[0] / 4.0 - floor(TexIDs[0] / 4.0)), floor(TexIDs[0] / 4.0) / 4.0, 0.0, 1.0),
     vec4((TexIDs[1] / 4.0 - floor(TexIDs[1] / 4.0)), floor(TexIDs[1] / 4.0) / 4.0, 0.0, 1.0),
@@ -73,4 +77,10 @@ void main(void) {
   gl_FragData[0] = mix(mix(texColors[0], texColors[1], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), mix(texColors[2], texColors[3], (Vertex.x * 5.0 - floor(Vertex.x * 5.0))), (Vertex.z * 5.0 - floor(Vertex.z * 5.0)));
   gl_FragData[0].a = 0.02;
   gl_FragData[0].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
+  float lf1 = clamp(pow(abs(VY - HeightLine) * 10.0, 4.0), 0.0, 1.0);
+  float lf2 = clamp(1.0 - min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)), 0.0, 1.0);
+  gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf1);
+  gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf2);
+  gl_FragData[0].a = mix(-0.5, gl_FragData[0].a, lf1);
+  gl_FragData[0].a = mix(-0.5, gl_FragData[0].a, lf2);
 }

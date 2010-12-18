@@ -14,6 +14,6 @@ void main(void) {
                    * 4.5 / (0.3 + 0.7 * (1.0 - pow(1.0 - dot(vec3(0.0, 1.0, 0.0), normalize(BaseVertex)), 16.0)));
   gl_FragColor += 10.0 * gl_LightSource[0].diffuse * pow(angle, 2048.0);
   gl_FragColor += 0.1 * gl_LightSource[0].diffuse * pow(angle, 20.0);
-  gl_FragColor.rgb *= factor;
+//   gl_FragColor.rgb *= factor;
   gl_FragColor.a = 1.0;
 }

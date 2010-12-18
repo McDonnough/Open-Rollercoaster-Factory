@@ -25,9 +25,9 @@ void main(void) {
     vec2 A = vec2(sin(gl_PositionIn[0].z), cos(gl_PositionIn[0].z));
     float VY2 = fetchHeightAtOffset(0, A);
     Positions[0] = vec3(gl_PositionIn[0].x, VY, gl_PositionIn[0].y);
-    Positions[1] = vec3(gl_PositionIn[0].x, VY, gl_PositionIn[0].y) + 0.4 * Normal;
-    Positions[2] = vec3(gl_PositionIn[0].x + 0.8 * A.x, VY2, gl_PositionIn[0].y + 0.8 * A.y);
-    Positions[3] = vec3(gl_PositionIn[0].x + 0.8 * A.x, VY2, gl_PositionIn[0].y + 0.8 * A.y) + 0.4 * Normal;
+    Positions[1] = vec3(gl_PositionIn[0].x, VY, gl_PositionIn[0].y) + 0.8 * Normal;
+    Positions[2] = vec3(gl_PositionIn[0].x + 1.6 * A.x, VY2, gl_PositionIn[0].y + 1.6 * A.y);
+    Positions[3] = vec3(gl_PositionIn[0].x + 1.6 * A.x, VY2, gl_PositionIn[0].y + 1.6 * A.y) + 0.8 * Normal;
     normal = Normal; Vertex = Positions[0]; texCoord = vec2(0.0, 1.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[0], 1.0); EmitVertex();
     normal = Normal; Vertex = Positions[1]; texCoord = vec2(0.0, 0.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[1], 1.0); EmitVertex();
     normal = Normal; Vertex = Positions[2]; texCoord = vec2(1.0, 1.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[2], 1.0); EmitVertex();
@@ -46,9 +46,9 @@ void main(void) {
     vec2 A = vec2(sin(gl_PositionIn[1].z), cos(gl_PositionIn[1].z));
     float VY2 = fetchHeightAtOffset(1, A);
     Positions[0] = vec3(gl_PositionIn[1].x, VY, gl_PositionIn[1].y);
-    Positions[1] = vec3(gl_PositionIn[1].x, VY, gl_PositionIn[1].y) + 0.4 * Normal;
-    Positions[2] = vec3(gl_PositionIn[1].x + 0.8 * A.x, VY2, gl_PositionIn[1].y + 0.8 * A.y);
-    Positions[3] = vec3(gl_PositionIn[1].x + 0.8 * A.x, VY2, gl_PositionIn[1].y + 0.8 * A.y) + 0.4 * Normal;
+    Positions[1] = vec3(gl_PositionIn[1].x, VY, gl_PositionIn[1].y) + 0.8 * Normal;
+    Positions[2] = vec3(gl_PositionIn[1].x + 1.6 * A.x, VY2, gl_PositionIn[1].y + 1.6 * A.y);
+    Positions[3] = vec3(gl_PositionIn[1].x + 1.6 * A.x, VY2, gl_PositionIn[1].y + 1.6 * A.y) + 0.8 * Normal;
     normal = Normal; Vertex = Positions[0]; texCoord = vec2(0.0, 1.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[0], 1.0); EmitVertex();
     normal = Normal; Vertex = Positions[1]; texCoord = vec2(0.0, 0.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[1], 1.0); EmitVertex();
     normal = Normal; Vertex = Positions[2]; texCoord = vec2(1.0, 1.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[2], 1.0); EmitVertex();
@@ -67,9 +67,9 @@ void main(void) {
     vec2 A = vec2(sin(gl_PositionIn[2].z), cos(gl_PositionIn[2].z));
     float VY2 = fetchHeightAtOffset(2, A);
     Positions[0] = vec3(gl_PositionIn[2].x, VY, gl_PositionIn[2].y);
-    Positions[1] = vec3(gl_PositionIn[2].x, VY, gl_PositionIn[2].y) + 0.4 * Normal;
-    Positions[2] = vec3(gl_PositionIn[2].x + 0.8 * A.x, VY2, gl_PositionIn[2].y + 0.8 * A.y);
-    Positions[3] = vec3(gl_PositionIn[2].x + 0.8 * A.x, VY2, gl_PositionIn[2].y + 0.8 * A.y) + 0.4 * Normal;
+    Positions[1] = vec3(gl_PositionIn[2].x, VY, gl_PositionIn[2].y) + 0.8 * Normal;
+    Positions[2] = vec3(gl_PositionIn[2].x + 1.6 * A.x, VY2, gl_PositionIn[2].y + 1.6 * A.y);
+    Positions[3] = vec3(gl_PositionIn[2].x + 1.6 * A.x, VY2, gl_PositionIn[2].y + 1.6 * A.y) + 0.8 * Normal;
     normal = Normal; Vertex = Positions[0]; texCoord = vec2(0.0, 1.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[0], 1.0); EmitVertex();
     normal = Normal; Vertex = Positions[1]; texCoord = vec2(0.0, 0.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[1], 1.0); EmitVertex();
     normal = Normal; Vertex = Positions[2]; texCoord = vec2(1.0, 1.0); gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Positions[2], 1.0); EmitVertex();

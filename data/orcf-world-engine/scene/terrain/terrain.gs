@@ -12,12 +12,15 @@ vec3 BasePoints[3];
 vec3 TransformedBasePoints[3];
 float TransformedBasePointDistanceValues[3];
 
+varying in vec2 FakeCoord[3];
+
 varying out vec3 Vertex;
+varying out vec2 FakeVertex;
 
 void main(void) {
-  BasePoints[0] = vec3(gl_PositionIn[0].x, texture2D(TerrainMap, gl_PositionIn[0].xz / TerrainSize + TOffset).b * 256.0, gl_PositionIn[0].z);
-  BasePoints[1] = vec3(gl_PositionIn[1].x, texture2D(TerrainMap, gl_PositionIn[1].xz / TerrainSize + TOffset).b * 256.0, gl_PositionIn[1].z);
-  BasePoints[2] = vec3(gl_PositionIn[2].x, texture2D(TerrainMap, gl_PositionIn[2].xz / TerrainSize + TOffset).b * 256.0, gl_PositionIn[2].z);
+  BasePoints[0] = vec3(gl_PositionIn[0].x, mix(64.0, texture2D(TerrainMap, FakeCoord[0] / TerrainSize + TOffset).b * 256.0, gl_PositionIn[0].y), gl_PositionIn[0].z);
+  BasePoints[1] = vec3(gl_PositionIn[1].x, mix(64.0, texture2D(TerrainMap, FakeCoord[1] / TerrainSize + TOffset).b * 256.0, gl_PositionIn[1].y), gl_PositionIn[1].z);
+  BasePoints[2] = vec3(gl_PositionIn[2].x, mix(64.0, texture2D(TerrainMap, FakeCoord[2] / TerrainSize + TOffset).b * 256.0, gl_PositionIn[2].y), gl_PositionIn[2].z);
 
   TransformedBasePoints[0] = (gl_ModelViewMatrix * vec4(BasePoints[0], 1.0)).xyz;
   TransformedBasePoints[1] = (gl_ModelViewMatrix * vec4(BasePoints[1], 1.0)).xyz;
@@ -32,9 +35,9 @@ void main(void) {
 
   if (Tesselation == 0 || TransformedBasePointDistanceValues[0] > qTerrainTesselationDistance || TransformedBasePointDistanceValues[1] > qTerrainTesselationDistance || TransformedBasePointDistanceValues[2] > qTerrainTesselationDistance) {
     // Simply output given vertices
-    Vertex = BasePoints[0]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[0], 1.0); EmitVertex();
-    Vertex = BasePoints[1]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[1], 1.0); EmitVertex();
-    Vertex = BasePoints[2]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[2], 1.0); EmitVertex();
+    Vertex = BasePoints[0]; FakeVertex = FakeCoord[0]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[0], 1.0); EmitVertex();
+    Vertex = BasePoints[1]; FakeVertex = FakeCoord[1]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[1], 1.0); EmitVertex();
+    Vertex = BasePoints[2]; FakeVertex = FakeCoord[2]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(BasePoints[2], 1.0); EmitVertex();
     EndPrimitive();
   } else {
     vec3 Vertices[15];
@@ -80,21 +83,21 @@ void main(void) {
     owh[14] = Vertices[14].y;
 
     // Get new height values
-    Vertices[ 0].y = 256.0 * texture2D(TerrainMap, Vertices[ 0].xz / TerrainSize + TOffset).b;
-    Vertices[ 1].y = 256.0 * texture2D(TerrainMap, Vertices[ 1].xz / TerrainSize + TOffset).b;
-    Vertices[ 2].y = 256.0 * texture2D(TerrainMap, Vertices[ 2].xz / TerrainSize + TOffset).b;
-    Vertices[ 3].y = 256.0 * texture2D(TerrainMap, Vertices[ 3].xz / TerrainSize + TOffset).b;
-    Vertices[ 4].y = 256.0 * texture2D(TerrainMap, Vertices[ 4].xz / TerrainSize + TOffset).b;
-    Vertices[ 5].y = 256.0 * texture2D(TerrainMap, Vertices[ 5].xz / TerrainSize + TOffset).b;
-    Vertices[ 6].y = 256.0 * texture2D(TerrainMap, Vertices[ 6].xz / TerrainSize + TOffset).b;
-    Vertices[ 7].y = 256.0 * texture2D(TerrainMap, Vertices[ 7].xz / TerrainSize + TOffset).b;
-    Vertices[ 8].y = 256.0 * texture2D(TerrainMap, Vertices[ 8].xz / TerrainSize + TOffset).b;
-    Vertices[ 9].y = 256.0 * texture2D(TerrainMap, Vertices[ 9].xz / TerrainSize + TOffset).b;
-    Vertices[10].y = 256.0 * texture2D(TerrainMap, Vertices[10].xz / TerrainSize + TOffset).b;
-    Vertices[11].y = 256.0 * texture2D(TerrainMap, Vertices[11].xz / TerrainSize + TOffset).b;
-    Vertices[12].y = 256.0 * texture2D(TerrainMap, Vertices[12].xz / TerrainSize + TOffset).b;
-    Vertices[13].y = 256.0 * texture2D(TerrainMap, Vertices[13].xz / TerrainSize + TOffset).b;
-    Vertices[14].y = 256.0 * texture2D(TerrainMap, Vertices[14].xz / TerrainSize + TOffset).b;
+    Vertices[ 0].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 0].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 1].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 1].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 2].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 2].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 3].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 3].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 4].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 4].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 5].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 5].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 6].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 6].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 7].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 7].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 8].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 8].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[ 9].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[ 9].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[10].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[10].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[11].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[11].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[12].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[12].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[13].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[13].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
+    Vertices[14].y = mix(64.0, 256.0 * texture2D(TerrainMap, Vertices[14].xz / TerrainSize + TOffset).b, gl_PositionIn[0].y);
 
     // Prevent black holes
     Vertices[ 0].y = mix(owh[ 0], Vertices[ 0].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[ 0], 1.0)).xyz), 0.0, 5.0));
@@ -114,36 +117,36 @@ void main(void) {
     Vertices[14].y = mix(owh[14], Vertices[14].y, 0.2 * clamp(TerrainTesselationDistance - 1.0 - length((gl_ModelViewMatrix * vec4(Vertices[14], 1.0)).xyz), 0.0, 5.0));
 
     // Output new triangles
-    Vertex = Vertices[ 0]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 0], 1.0); EmitVertex();
-    Vertex = Vertices[ 5]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
-    Vertex = Vertices[ 1]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 1], 1.0); EmitVertex();
-    Vertex = Vertices[ 6]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
-    Vertex = Vertices[ 2]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 2], 1.0); EmitVertex();
-    Vertex = Vertices[ 7]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
-    Vertex = Vertices[ 3]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 3], 1.0); EmitVertex();
-    Vertex = Vertices[ 8]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
-    Vertex = Vertices[ 4]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 4], 1.0); EmitVertex();
+    Vertex = Vertices[ 0]; FakeVertex = Vertices[ 0].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 0], 1.0); EmitVertex();
+    Vertex = Vertices[ 5]; FakeVertex = Vertices[ 5].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
+    Vertex = Vertices[ 1]; FakeVertex = Vertices[ 1].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 1], 1.0); EmitVertex();
+    Vertex = Vertices[ 6]; FakeVertex = Vertices[ 6].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
+    Vertex = Vertices[ 2]; FakeVertex = Vertices[ 2].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 2], 1.0); EmitVertex();
+    Vertex = Vertices[ 7]; FakeVertex = Vertices[ 7].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
+    Vertex = Vertices[ 3]; FakeVertex = Vertices[ 3].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 3], 1.0); EmitVertex();
+    Vertex = Vertices[ 8]; FakeVertex = Vertices[ 8].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
+    Vertex = Vertices[ 4]; FakeVertex = Vertices[ 4].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 4], 1.0); EmitVertex();
     EndPrimitive();
 
-    Vertex = Vertices[ 5]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
-    Vertex = Vertices[ 9]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
-    Vertex = Vertices[ 6]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
-    Vertex = Vertices[10]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
-    Vertex = Vertices[ 7]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
-    Vertex = Vertices[11]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
-    Vertex = Vertices[ 8]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
+    Vertex = Vertices[ 5]; FakeVertex = Vertices[ 5].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 5], 1.0); EmitVertex();
+    Vertex = Vertices[ 9]; FakeVertex = Vertices[ 9].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
+    Vertex = Vertices[ 6]; FakeVertex = Vertices[ 6].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 6], 1.0); EmitVertex();
+    Vertex = Vertices[10]; FakeVertex = Vertices[10].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
+    Vertex = Vertices[ 7]; FakeVertex = Vertices[ 7].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 7], 1.0); EmitVertex();
+    Vertex = Vertices[11]; FakeVertex = Vertices[11].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
+    Vertex = Vertices[ 8]; FakeVertex = Vertices[ 8].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 8], 1.0); EmitVertex();
     EndPrimitive();
 
-    Vertex = Vertices[ 9]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
-    Vertex = Vertices[12]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
-    Vertex = Vertices[10]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
-    Vertex = Vertices[13]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
-    Vertex = Vertices[11]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
+    Vertex = Vertices[ 9]; FakeVertex = Vertices[ 9].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[ 9], 1.0); EmitVertex();
+    Vertex = Vertices[12]; FakeVertex = Vertices[12].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
+    Vertex = Vertices[10]; FakeVertex = Vertices[10].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[10], 1.0); EmitVertex();
+    Vertex = Vertices[13]; FakeVertex = Vertices[13].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
+    Vertex = Vertices[11]; FakeVertex = Vertices[11].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[11], 1.0); EmitVertex();
     EndPrimitive();
 
-    Vertex = Vertices[12]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
-    Vertex = Vertices[14]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[14], 1.0); EmitVertex();
-    Vertex = Vertices[13]; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
+    Vertex = Vertices[12]; FakeVertex = Vertices[12].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[12], 1.0); EmitVertex();
+    Vertex = Vertices[14]; FakeVertex = Vertices[14].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[14], 1.0); EmitVertex();
+    Vertex = Vertices[13]; FakeVertex = Vertices[13].xz; gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0); gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertices[13], 1.0); EmitVertex();
     EndPrimitive();
   }
 }

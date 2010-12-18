@@ -16,7 +16,8 @@ void main(void) {
   gl_FragData[0] = texture2D(Texture, texCoord);
   float dist = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
   float alpha = clamp(MaxDist - dist, 0.0, 5.0) * 0.2;
-  if (gl_FragData[0].a * alpha < texture2D(TransparencyMask, (gl_FragCoord.xy) / MaskSize + MaskOffset).a)
+//   if (gl_FragData[0].a * alpha < texture2D(TransparencyMask, (gl_FragCoord.xy) / MaskSize + MaskOffset).a)
+  if (gl_FragData[0].a * alpha < 0.2)
     discard;
   gl_FragData[1] = vec4(normal, 2.0);
   gl_FragData[2].rgb = Vertex;

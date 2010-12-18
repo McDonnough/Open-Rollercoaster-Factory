@@ -17,7 +17,7 @@ type
       fRendererAutoplants: TRAutoplants;
       fRendererWater: TRWater;
       fLightManager: TLightManager;
-      fGBuffer, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer, fTmpShadowBuffer: TFBO;
+      fGBuffer, fHDRBuffer, fHDRBuffer2, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer, fTmpShadowBuffer: TFBO;
       fFSAASamples: Integer;
       fReflectionDepth, fReflectionUpdateInterval: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
@@ -34,7 +34,7 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
@@ -44,6 +44,7 @@ type
       fUseLensFlare: Boolean;
       fWaterReflectionBufferSamples: Single;
       fFrameID: Integer;
+      fGamma: Single;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -56,7 +57,10 @@ type
       property CompositionShader: TShader read fCompositionShader;
       property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
       property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
+      property HDRAverageShader: TShader read fHDRAverageShader;
       property GBuffer: TFBO read fGBuffer;
+      property HDRBuffer: TFBO read fHDRBuffer;
+      property HDRBuffer2: TFBO read fHDRBuffer2;
       property LightBuffer: TFBO read fLightBuffer;
       property SceneBuffer: TFBO read fSceneBuffer;
       property SSAOBuffer: TFBO read fSSAOBuffer;
@@ -99,6 +103,7 @@ type
       property ShadowSize: Single read fShadowSize;
       property ShadowOffset: TVector3D read fShadowOffset;
       property FrameID: Integer read fFrameID;
+      property Gamma: Single read fGamma;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -149,8 +154,14 @@ begin
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSceneBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
-  fSceneBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);      // Composed image
+  fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);      // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+
+  fHDRBuffer := TFBO.Create(BufferSizeX, 1, false);
+  fHDRBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
+
+  fHDRBuffer2 := TFBO.Create(1, 1, false);
+  fHDRBuffer2.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
 
   if UseScreenSpaceAmbientOcclusion then
     begin
@@ -234,8 +245,13 @@ begin
   fFullscreenShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fullscreen.fs');
   fFullscreenShader.UniformI('Texture', 0);
 
+  fHDRAverageShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/hdr.fs');
+  fHDRAverageShader.UniformI('Texture', 0);
+
   fAAShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fsaa.fs');
   fAAShader.UniformI('Texture', 0);
+  fAAShader.UniformI('HDRColor', 1);
+  fAAShader.UniformF('Gamma', Gamma);
   fAAShader.UniformI('ScreenSize', ResX, ResY);
   fAAShader.UniformI('Samples', FSAASamples);
 
@@ -265,6 +281,7 @@ begin
 
   fBloomShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/bloom.fs');
   fBloomShader.UniformI('Tex', 0);
+  fBloomShader.UniformI('HDRColor', 1);
 
   fBloomBlurShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/blur.fs');
   fBloomBlurShader.UniformI('Tex', 0);
@@ -299,6 +316,7 @@ begin
   fSunShader.Free;
   fSunRayShader.Free;
   fAAShader.Free;
+  fHDRAverageShader.Free;
   fFullscreenShader.Free;
 
   fGBuffer.Free;
@@ -321,6 +339,8 @@ begin
     fSunShadowBuffer.Free;
   if fTmpShadowBuffer <> nil then
     fTmpShadowBuffer.Free;
+  fHDRBuffer.Free;
+  fHDRBuffer2.Free;
 
   fRendererWater.Free;
   fRendererAutoplants.Free;
@@ -685,6 +705,32 @@ begin
     SceneBuffer.Unbind;
     end;
 
+  // Get average scene color
+  fHDRAverageShader.Bind;
+
+  glDisable(GL_ALPHA_TEST);
+  glDisable(GL_CULL_FACE);
+  glDisable(GL_BLEND);
+
+  fHDRBuffer.Bind;
+    fSceneBuffer.Textures[0].Bind(0);
+    fHDRAverageShader.UniformI('Size', BufferSizeY);
+    fHDRAverageShader.UniformI('Dir', 0, 1);
+    DrawFullscreenQuad;
+  fHDRBuffer.Unbind;
+
+  fHDRBuffer2.Bind;
+    fHDRBuffer.Textures[0].Bind(0);
+    fHDRAverageShader.UniformI('Size', BufferSizeX);
+    fHDRAverageShader.UniformI('Dir', 1, 0);
+//     DrawFullscreenQuad;
+    glBegin(GL_POINTS);
+      glVertex2f(-1, -1);
+    glEnd;
+  fHDRBuffer2.Unbind;
+
+  fHDRAverageShader.Unbind;
+
   // Bloom pass
 
   if BloomFactor > 0 then
@@ -696,6 +742,7 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     fBloomShader.Bind;
+    fHDRBuffer2.Textures[0].Bind(1);
     fSceneBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
     fBloomShader.Unbind;
@@ -753,6 +800,7 @@ begin
     fAAShader.Bind;
 
     glColor4f(1, 1, 1, 1 - power(2.7183, -(FPSDisplay.MS * fMotionBlurStrength)));
+    fHDRBuffer2.Textures[0].Bind(1);
     fSceneBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
 
@@ -776,6 +824,7 @@ begin
 
     glColor4f(1, 1, 1, 1);
 
+    fHDRBuffer2.Textures[0].Bind(1);
     fSceneBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
 
@@ -834,6 +883,7 @@ begin
     SetConfVal('autoplants.distance', '30');
     SetConfVal('autoplants.count', '9000');
     SetConfVal('lensflare', '1');
+    SetConfVal('gamma', '1.0');
     SetConfVal('water.samples', '1');
     end;
   fFSAASamples := StrToIntWD(GetConfVal('samples'), 4);
@@ -844,7 +894,7 @@ begin
   fBloomFactor := StrToFloatWD(GetConfVal('bloom'), 0.5);
   fUseRefractions := GetConfVal('refractions') = '1';
   fUseMotionBlur := GetConfVal('motionblur') = '1';
-  fUseSunRays := GetConfVal('bloom') = '1';
+  fUseSunRays := GetConfVal('sunrays') = '1';
   fUseFocalBlur := GetConfVal('focalblur') = '1';
   fUseScreenSpaceAmbientOcclusion := GetConfVal('ssao') = '1';
   fUseLensFlare := GetConfVal('lensflare') = '1';
@@ -863,6 +913,7 @@ begin
   fSubdivisionDistance := StrToIntWD(GetConfVal('subdiv.distance'), 10);
   fAutoplantCount := StrToIntWD(GetConfVal('autoplants.count'), 9000);
   fAutoplantDistance := StrToFloatWD(GetConfVal('autoplants.distance'), 30);
+  fGamma := StrToFloatWD(GetConfVal('gamma'), 1);
 end;
 
 constructor TModuleRendererOWE.Create;

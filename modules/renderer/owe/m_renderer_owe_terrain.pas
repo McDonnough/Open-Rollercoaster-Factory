@@ -38,7 +38,7 @@ type
       fTerrainMap: TTexture;
       fCanWork, fWorking: Boolean;
       fGeometryPassShader, fShadowPassShader: TShader;
-      fRawVBO, fFineVBO: TVBO;
+      fRawVBO, fFineVBO, fHDVBO, fBorderVBO: TVBO;
       fXBlocks, fYBlocks: Integer;
       procedure Execute; override;
     public
@@ -50,6 +50,7 @@ type
       property Working: Boolean read fWorking write fCanWork;
       property RawVBO: TVBO read fRawVBO;
       property FineVBO: TVBO read fFineVBO;
+      property HDVBO: TVBO read fHDVBO;
       property GeometryPassShader: TShader read fGeometryPassShader;
       property ShadowPassShader: TShader read fShadowPassShader;
       procedure CheckVisibility;
@@ -71,10 +72,11 @@ uses
 
 procedure TTerrainBlock.RenderRaw;
 begin
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 0);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Border', 0);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.3 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
   ModuleManager.ModRenderer.RTerrain.RawVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.RawVBO.Render;
   ModuleManager.ModRenderer.RTerrain.RawVBO.UnBind;
@@ -82,10 +84,11 @@ end;
 
 procedure TTerrainBlock.RenderFine;
 begin
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 1);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Border', 0);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.3 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
   ModuleManager.ModRenderer.RTerrain.FineVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.FineVBO.Render;
   ModuleManager.ModRenderer.RTerrain.FineVBO.UnBind;
@@ -93,10 +96,12 @@ end;
 
 procedure TTerrainBlock.RenderOneFace;
 begin
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Tesselation', 0);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Border', 0);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.3 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
+  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 1, 0, 1);
+
   glBegin(GL_QUADS);
     glVertex3f(0, 0, 25.6);
     glVertex3f(25.6, 0, 25.6);
@@ -210,10 +215,11 @@ begin
         end;
 
   CurrentShader.Bind;
-  if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
+  CurrentShader.UniformF('Camera', ModuleManager.ModCamera.ActiveCamera.Position.x, ModuleManager.ModCamera.ActiveCamera.Position.z);
+   if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
     CurrentShader.UniformF('PointToHighlight', Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
   else
-    CurrentShader.UniformF('PointToHighlight', -1, -1);
+    CurrentShader.UniformF('PointToHighlight', -10000, -10000);
   if (Park.pTerrain.MarkMode = 1) then
     CurrentShader.UniformF('HeightLine', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
   else
@@ -236,6 +242,27 @@ begin
         Blocks[BlockIDs[i]].RenderRaw
       else
         Blocks[BlockIDs[i]].RenderFine;
+
+  CurrentShader.UniformI('Border', 2);
+  CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+  CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  CurrentShader.UniformF('Offset', 0.2 * Round(5 * (-ModuleManager.ModRenderer.TerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.x)), 0.2 * Round(5 * (-ModuleManager.ModRenderer.TerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.z)));
+  CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
+
+  fHDVBO.Bind;
+  fHDVBO.Render;
+  fHDVBO.Unbind;
+
+  CurrentShader.UniformI('Border', 1);
+  CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+  CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+  CurrentShader.UniformF('Offset', 0, 0);
+  CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
+
+  fBorderVBO.Bind;
+  fBorderVBO.Render;
+  fBorderVBO.Unbind;
+
   CurrentShader.UnBind;
 end;
 
@@ -273,6 +300,103 @@ begin
     fTerrainMap.CreateNew(Park.pTerrain.SizeX, Park.pTerrain.SizeY, GL_RGB16);
     fTerrainMap.SetClamp(GL_MIRRORED_REPEAT, GL_MIRRORED_REPEAT);
     fTerrainMap.Unbind;
+    if fBorderVBO <> nil then
+      fBorderVBO.Free;
+    fBorderVBO := TVBO.Create(4 * (2 * Park.pTerrain.SizeX div 16 * 64 + 2 * Park.pTerrain.SizeY div 16 * 64 + 4 * 64 * 64), GL_T2F_V3F, GL_QUADS);
+    k := 0;
+    for i := 0 to (Park.pTerrain.SizeX div 16) - 1 do
+      for j := 0 to 63 do
+        begin
+        fBorderVBO.TexCoords[k + 0] := Vector(16 * (i + 0) / 5, Park.pTerrain.SizeY / 5 - (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 0] := Vector(3.2 * (i + 0), 1 - ((j + 1) / 70) * ((j + 1) / 70), (j + 1) * (j + 1) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 1] := Vector(16 * (i + 1) / 5, Park.pTerrain.SizeY / 5 - (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 1] := Vector(3.2 * (i + 1), 1 - ((j + 1) / 70) * ((j + 1) / 70), (j + 1) * (j + 1) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 2] := Vector(16 * (i + 1) / 5, Park.pTerrain.SizeY / 5 - (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 2] := Vector(3.2 * (i + 1), 1 - ((j + 0) / 70) * ((j + 0) / 70), (j + 0) * (j + 0) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 3] := Vector(16 * (i + 0) / 5, Park.pTerrain.SizeY / 5 - (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 3] := Vector(3.2 * (i + 0), 1 - ((j + 0) / 70) * ((j + 0) / 70), (j + 0) * (j + 0) / 20 + Park.pTerrain.SizeY / 5);
+        inc(k, 4);
+
+        fBorderVBO.TexCoords[k + 0] := Vector(16 * (i + 0) / 5, (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 0] := Vector(3.2 * (i + 0), 1 - ((j + 0) / 70) * ((j + 0) / 70), (j + 0) * (j + 0) / -20);
+        fBorderVBO.TexCoords[k + 1] := Vector(16 * (i + 1) / 5, (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 1] := Vector(3.2 * (i + 1), 1 - ((j + 0) / 70) * ((j + 0) / 70), (j + 0) * (j + 0) / -20);
+        fBorderVBO.TexCoords[k + 2] := Vector(16 * (i + 1) / 5, (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 2] := Vector(3.2 * (i + 1), 1 - ((j + 1) / 70) * ((j + 1) / 70), (j + 1) * (j + 1) / -20);
+        fBorderVBO.TexCoords[k + 3] := Vector(16 * (i + 0) / 5, (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 3] := Vector(3.2 * (i + 0), 1 - ((j + 1) / 70) * ((j + 1) / 70), (j + 1) * (j + 1) / -20);
+        inc(k, 4);
+        end;
+
+    for i := 0 to (Park.pTerrain.SizeY div 16) - 1 do
+      for j := 0 to 63 do
+        begin
+        fBorderVBO.TexCoords[k + 0] := Vector(Park.pTerrain.SizeX / 5 - (j + 0) / 5 * (j + 0) / 32, 16 * (i + 0) / 5);
+        fBorderVBO.Vertices[k + 0] := Vector((j + 0) * (j + 0) / 20 + Park.pTerrain.SizeX / 5, 1 - ((j + 0) / 70) * ((j + 0) / 70), 3.2 * (i + 0));
+        fBorderVBO.TexCoords[k + 1] := Vector(Park.pTerrain.SizeX / 5 - (j + 0) / 5 * (j + 0) / 32, 16 * (i + 1) / 5);
+        fBorderVBO.Vertices[k + 1] := Vector((j + 0) * (j + 0) / 20 + Park.pTerrain.SizeX / 5, 1 - ((j + 0) / 70) * ((j + 0) / 70), 3.2 * (i + 1));
+        fBorderVBO.TexCoords[k + 2] := Vector(Park.pTerrain.SizeX / 5 - (j + 1) / 5 * (j + 1) / 32, 16 * (i + 1) / 5);
+        fBorderVBO.Vertices[k + 2] := Vector((j + 1) * (j + 1) / 20 + Park.pTerrain.SizeX / 5, 1 - ((j + 1) / 70) * ((j + 1) / 70), 3.2 * (i + 1));
+        fBorderVBO.TexCoords[k + 3] := Vector(Park.pTerrain.SizeX / 5 - (j + 1) / 5 * (j + 1) / 32, 16 * (i + 0) / 5);
+        fBorderVBO.Vertices[k + 3] := Vector((j + 1) * (j + 1) / 20 + Park.pTerrain.SizeX / 5, 1 - ((j + 1) / 70) * ((j + 1) / 70), 3.2 * (i + 0));
+        inc(k, 4);
+
+        fBorderVBO.TexCoords[k + 0] := Vector((j + 1) / 5 * (j + 1) / 32, 16 * (i + 0) / 5);
+        fBorderVBO.Vertices[k + 0] := Vector((j + 1) * (j + 1) / -20, 1 - ((j + 1) / 70) * ((j + 1) / 70), 3.2 * (i + 0));
+        fBorderVBO.TexCoords[k + 1] := Vector((j + 1) / 5 * (j + 1) / 32, 16 * (i + 1) / 5);
+        fBorderVBO.Vertices[k + 1] := Vector((j + 1) * (j + 1) / -20, 1 - ((j + 1) / 70) * ((j + 1) / 70), 3.2 * (i + 1));
+        fBorderVBO.TexCoords[k + 2] := Vector((j + 0) / 5 * (j + 0) / 32, 16 * (i + 1) / 5);
+        fBorderVBO.Vertices[k + 2] := Vector((j + 0) * (j + 0) / -20, 1 - ((j + 0) / 70) * ((j + 0) / 70), 3.2 * (i + 1));
+        fBorderVBO.TexCoords[k + 3] := Vector((j + 0) / 5 * (j + 0) / 32, 16 * (i + 0) / 5);
+        fBorderVBO.Vertices[k + 3] := Vector((j + 0) * (j + 0) / -20, 1 - ((j + 0) / 70) * ((j + 0) / 70), 3.2 * (i + 0));
+        inc(k, 4);
+        end;
+
+    for i := 0 to 63 do
+      for j := 0 to 63 do
+        begin
+        fBorderVBO.TexCoords[k + 0] := Vector(Park.pTerrain.SizeX / 5 - (i + 0) / 5 * (i + 0) / 32, Park.pTerrain.SizeY / 5 - (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 0] := Vector((i + 0) * (i + 0) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 1] := Vector(Park.pTerrain.SizeX / 5 - (i + 1) / 5 * (i + 1) / 32, Park.pTerrain.SizeY / 5 - (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 1] := Vector((i + 1) * (i + 1) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 2] := Vector(Park.pTerrain.SizeX / 5 - (i + 1) / 5 * (i + 1) / 32, Park.pTerrain.SizeY / 5 - (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 2] := Vector((i + 1) * (i + 1) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 3] := Vector(Park.pTerrain.SizeX / 5 - (i + 0) / 5 * (i + 0) / 32, Park.pTerrain.SizeY / 5 - (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 3] := Vector((i + 0) * (i + 0) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / 20 + Park.pTerrain.SizeY / 5);
+        inc(k, 4);
+
+        fBorderVBO.TexCoords[k + 0] := Vector((i + 0) / 5 * (i + 0) / 32, (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 0] := Vector((i + 0) * (i + 0) / -20, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / -20);
+        fBorderVBO.TexCoords[k + 1] := Vector((i + 1) / 5 * (i + 1) / 32, (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 1] := Vector((i + 1) * (i + 1) / -20, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / -20);
+        fBorderVBO.TexCoords[k + 2] := Vector((i + 1) / 5 * (i + 1) / 32, (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 2] := Vector((i + 1) * (i + 1) / -20, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / -20);
+        fBorderVBO.TexCoords[k + 3] := Vector((i + 0) / 5 * (i + 0) / 32, (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 3] := Vector((i + 0) * (i + 0) / -20, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / -20);
+        inc(k, 4);
+
+        fBorderVBO.TexCoords[k + 0] := Vector((i + 0) / 5 * (i + 0) / 32, Park.pTerrain.SizeY / 5 - (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 0] := Vector((i + 0) * (i + 0) / -20, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 1] := Vector((i + 1) / 5 * (i + 1) / 32, Park.pTerrain.SizeY / 5 - (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 1] := Vector((i + 1) * (i + 1) / -20, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 2] := Vector((i + 1) / 5 * (i + 1) / 32, Park.pTerrain.SizeY / 5 - (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 2] := Vector((i + 1) * (i + 1) / -20, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / 20 + Park.pTerrain.SizeY / 5);
+        fBorderVBO.TexCoords[k + 3] := Vector((i + 0) / 5 * (i + 0) / 32, Park.pTerrain.SizeY / 5 - (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 3] := Vector((i + 0) * (i + 0) / -20, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / 20 + Park.pTerrain.SizeY / 5);
+        inc(k, 4);
+
+        fBorderVBO.TexCoords[k + 0] := Vector(Park.pTerrain.SizeX / 5 - (i + 0) / 5 * (i + 0) / 32, (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 0] := Vector((i + 0) * (i + 0) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / -20);
+        fBorderVBO.TexCoords[k + 1] := Vector(Park.pTerrain.SizeX / 5 - (i + 1) / 5 * (i + 1) / 32, (j + 0) / 5 * (j + 0) / 32);
+        fBorderVBO.Vertices[k + 1] := Vector((i + 1) * (i + 1) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 0) / 70) * ((j + 0) / 70)))), (j + 0) * (j + 0) / -20);
+        fBorderVBO.TexCoords[k + 2] := Vector(Park.pTerrain.SizeX / 5 - (i + 1) / 5 * (i + 1) / 32, (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 2] := Vector((i + 1) * (i + 1) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 1) / 70) * ((i + 1) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / -20);
+        fBorderVBO.TexCoords[k + 3] := Vector(Park.pTerrain.SizeX / 5 - (i + 0) / 5 * (i + 0) / 32, (j + 1) / 5 * (j + 1) / 32);
+        fBorderVBO.Vertices[k + 3] := Vector((i + 0) * (i + 0) / 20 + Park.pTerrain.SizeX / 5, Max(0.05, 1 - VecLength(Vector(((i + 0) / 70) * ((i + 0) / 70), ((j + 1) / 70) * ((j + 1) / 70)))), (j + 1) * (j + 1) / -20);
+        inc(k, 4);
+        end;
+
+    fBorderVBO.Unbind;
     SetLength(HasBlock, Park.pTerrain.SizeX div 128);
     for i := 0 to high(HasBlock) do
       begin
@@ -374,38 +498,63 @@ begin
   fXBlocks := 0;
   fYBlocks := 0;
 
-  fGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/scene/terrain/terrain.fs', 'orcf-world-engine/scene/terrain/terrain.gs', 24);
+  fGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/scene/terrain/terrain.fs');
   fGeometryPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.TerrainTesselationDistance);
   fGeometryPassShader.UniformF('TerrainBumpmapDistance', ModuleManager.ModRenderer.TerrainBumpmapDistance);
   fGeometryPassShader.UniformI('TerrainMap', 0);
   fGeometryPassShader.UniformI('HeightLine', -1);
   fGeometryPassShader.UniformI('TerrainTexture', 1);
 
-  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/shadow.fs', 'orcf-world-engine/scene/terrain/terrainShadow.gs', 24);
+  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainShadow.vs', 'orcf-world-engine/inferred/shadow.fs');
   fShadowPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.TerrainTesselationDistance);
   fShadowPassShader.UniformI('TerrainMap', 0);
 
-  fFineVBO := TVBO.Create(34 * 34 * 4, GL_V3F, GL_QUADS);
+  fFineVBO := TVBO.Create(34 * 34 * 4, GL_T2F_V3F, GL_QUADS);
   for i := 0 to 33 do
     for j := 0 to 33 do
       begin
-      fFineVBO.Vertices[4 * (34 * i + j) + 3] := Vector(0.8 * i - 0.8, 0.0, 0.8 * j - 0.8);
-      fFineVBO.Vertices[4 * (34 * i + j) + 2] := Vector(0.8 * i + 0.0, 0.0, 0.8 * j - 0.8);
-      fFineVBO.Vertices[4 * (34 * i + j) + 1] := Vector(0.8 * i + 0.0, 0.0, 0.8 * j + 0.0);
-      fFineVBO.Vertices[4 * (34 * i + j) + 0] := Vector(0.8 * i - 0.8, 0.0, 0.8 * j + 0.0);
+      fFineVBO.TexCoords[4 * (34 * i + j) + 3] := Vector(0.8 * i - 0.8,      0.8 * j - 0.8);
+      fFineVBO.Vertices[4 * (34 * i + j) + 3]  := Vector(0.8 * i - 0.8, 1.0, 0.8 * j - 0.8);
+      fFineVBO.TexCoords[4 * (34 * i + j) + 2] := Vector(0.8 * i - 0.0,      0.8 * j - 0.8);
+      fFineVBO.Vertices[4 * (34 * i + j) + 2]  := Vector(0.8 * i + 0.0, 1.0, 0.8 * j - 0.8);
+      fFineVBO.TexCoords[4 * (34 * i + j) + 1] := Vector(0.8 * i - 0.0,      0.8 * j - 0.0);
+      fFineVBO.Vertices[4 * (34 * i + j) + 1]  := Vector(0.8 * i + 0.0, 1.0, 0.8 * j + 0.0);
+      fFineVBO.TexCoords[4 * (34 * i + j) + 0] := Vector(0.8 * i - 0.8,      0.8 * j - 0.0);
+      fFineVBO.Vertices[4 * (34 * i + j) + 0]  := Vector(0.8 * i - 0.8, 1.0, 0.8 * j + 0.0);
       end;
   fFineVBO.Unbind;
 
-  fRawVBO := TVBO.Create(18 * 18 * 4, GL_V3F, GL_QUADS);
+  fRawVBO := TVBO.Create(18 * 18 * 4, GL_T2F_V3F, GL_QUADS);
   for i := 0 to 17 do
     for j := 0 to 17 do
       begin
-      fRawVBO.Vertices[4 * (18 * i + j) + 3] := Vector(1.6 * i - 1.6, 0.0, 1.6 * j - 1.6);
-      fRawVBO.Vertices[4 * (18 * i + j) + 2] := Vector(1.6 * i + 0.0, 0.0, 1.6 * j - 1.6);
-      fRawVBO.Vertices[4 * (18 * i + j) + 1] := Vector(1.6 * i + 0.0, 0.0, 1.6 * j + 0.0);
-      fRawVBO.Vertices[4 * (18 * i + j) + 0] := Vector(1.6 * i - 1.6, 0.0, 1.6 * j + 0.0);
+      fRawVBO.TexCoords[4 * (18 * i + j) + 3] := Vector(1.6 * i - 1.6,      1.6 * j - 1.6);
+      fRawVBO.Vertices[4 * (18 * i + j) + 3]  := Vector(1.6 * i - 1.6, 1.0, 1.6 * j - 1.6);
+      fRawVBO.TexCoords[4 * (18 * i + j) + 2] := Vector(1.6 * i + 0.0,      1.6 * j - 1.6);
+      fRawVBO.Vertices[4 * (18 * i + j) + 2]  := Vector(1.6 * i + 0.0, 1.0, 1.6 * j - 1.6);
+      fRawVBO.TexCoords[4 * (18 * i + j) + 1] := Vector(1.6 * i + 0.0,      1.6 * j + 0.0);
+      fRawVBO.Vertices[4 * (18 * i + j) + 1]  := Vector(1.6 * i + 0.0, 1.0, 1.6 * j + 0.0);
+      fRawVBO.TexCoords[4 * (18 * i + j) + 0] := Vector(1.6 * i - 1.6,      1.6 * j + 0.0);
+      fRawVBO.Vertices[4 * (18 * i + j) + 0]  := Vector(1.6 * i - 1.6, 1.0, 1.6 * j + 0.0);
       end;
   fRawVBO.Unbind;
+
+  fHDVBO := TVBO.Create(Round(ModuleManager.ModRenderer.TerrainTesselationDistance * 10) * Round(ModuleManager.ModRenderer.TerrainTesselationDistance * 10) * 4, GL_T2F_V3F, GL_QUADS);
+  for i := 0 to Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) - 1 do
+    for j := 0 to Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) - 1 do
+      begin
+      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 3] := Vector(0.2 * i - 0.2,      0.2 * j - 0.2);
+      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 3]  := Vector(0.2 * i - 0.2, 1.0, 0.2 * j - 0.2);
+      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 2] := Vector(0.2 * i + 0.0,      0.2 * j - 0.2);
+      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 2]  := Vector(0.2 * i + 0.0, 1.0, 0.2 * j - 0.2);
+      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 1] := Vector(0.2 * i + 0.0,      0.2 * j + 0.0);
+      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 1]  := Vector(0.2 * i + 0.0, 1.0, 0.2 * j + 0.0);
+      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 0] := Vector(0.2 * i - 0.2,      0.2 * j + 0.0);
+      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 0]  := Vector(0.2 * i - 0.2, 1.0, 0.2 * j + 0.0);
+      end;
+  fHDVBO.Unbind;
+
+  fBorderVBO := nil;
 
   CurrentShader := nil;
 
@@ -435,8 +584,10 @@ begin
   fGeometryPassShader.Free;
   if fTerrainMap <> nil then
     fTerrainMap.Free;
+  fBorderVBO.Free;
   fRawVBO.Free;
   fFineVBO.Free;
+  fHDVBO.Free;
   for i := 0 to high(Blocks) do
     Blocks[i].Free;
   sleep(100);

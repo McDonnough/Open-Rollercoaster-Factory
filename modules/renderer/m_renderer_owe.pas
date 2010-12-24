@@ -469,6 +469,7 @@ begin
     // Terrain
 
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
+    RTerrain.BorderEnabled := true;
     RTerrain.Render;
 
 
@@ -547,6 +548,7 @@ begin
     RTerrain.CurrentShader := RTerrain.ShadowPassShader;
     RTerrain.CurrentShader.UniformF('ShadowSize', ShadowSize);
     RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
+    RTerrain.BorderEnabled := false;
     RTerrain.Render;
 
     fSunShadowBuffer.Unbind;

@@ -282,6 +282,7 @@ begin
     glTranslatef(0, -fHeight / 256, 0);
 
     glFrontFace(GL_CW);
+    ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
     fReflectionPass.Render;
     glFrontFace(GL_CCW);
   glPopMatrix;
@@ -291,6 +292,7 @@ begin
     glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
   glPopMatrix;
 
+  ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
   fRefractionPass.Render;
 
   glDisable(GL_CLIP_PLANE0);

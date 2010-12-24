@@ -17,6 +17,7 @@ uniform int Border;
 
 varying vec3 Vertex;
 varying vec2 FakeVertex;
+varying vec3 NormalFactor;
 varying float YFactor;
 
 ivec2 iVertex;
@@ -71,7 +72,7 @@ void main(void) {
   + normalize(cross(vec3(+0.2, mix(0.0, fetchHeightAtOffset(ivec2(+1, +0)) - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, -1)) - VY, YFactor), -0.2)))
   + normalize(cross(vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, YFactor), +0.2), vec3(+0.2, mix(0.0, fetchHeightAtOffset(ivec2(+1, +0)) - VY, YFactor), -0.0)))
   + normalize(cross(vec3(-0.2, mix(0.0, fetchHeightAtOffset(ivec2(-1, +0)) - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, YFactor), +0.2))));
-  normal = mix(normal, NormalMod.xyz, NormalMod.a);
+  normal = normalize(mix(normal * NormalFactor, NormalMod.xyz, NormalMod.a));
   if (gl_FragData[2].a < TerrainBumpmapDistance) {
     bumpColors = mat4(
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy + vec2(0.0, 0.5)),

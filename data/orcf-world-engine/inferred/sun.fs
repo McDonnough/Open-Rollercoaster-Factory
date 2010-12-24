@@ -26,7 +26,7 @@ void main(void) {
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
   vec3 factor = vec3(2.0, 2.0, 2.0);
   if (ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
-    float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize;
+    float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);
     int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);
     for (int i = -BlurSamples; i <= BlurSamples; i++)
       for (int j = -BlurSamples; j <= BlurSamples; j++) {

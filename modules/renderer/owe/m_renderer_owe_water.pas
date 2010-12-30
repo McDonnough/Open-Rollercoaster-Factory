@@ -228,10 +228,10 @@ begin
   fQuery.StartCounter;
 
   glBegin(GL_QUADS);
-    glVertex2f(0, Park.pTerrain.SizeY / 5);
-    glVertex2f(Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-    glVertex2f(Park.pTerrain.SizeX / 5, 0);
-    glVertex2f(0, 0);
+    glVertex2f(-204.8, Park.pTerrain.SizeY / 5 + 204.8);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, Park.pTerrain.SizeY / 5 + 204.8);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, -204.8);
+    glVertex2f(-204.8, -204.8);
   glEnd;
 
   fQuery.EndCounter;

@@ -14,5 +14,6 @@ void main(void) {
   if (Light.a >= 0.0) {
     gl_FragColor.rgb *= Light.rgb;
     gl_FragColor.rgb += Light.rgb * Light.a * abs(Material.a);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
   }
 }

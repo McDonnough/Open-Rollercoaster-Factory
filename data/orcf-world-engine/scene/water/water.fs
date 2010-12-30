@@ -20,7 +20,17 @@ float Fresnel(float x) {
 }
 
 void main(void) {
-  vec2 hm = texture2D(HeightMap, Vertex / TerrainSize).gb;
+  vec2 FakeVertex = Vertex;
+  if (Vertex.x < 0.0) FakeVertex.x = Vertex.x * Vertex.x / 1638.4;
+  if (Vertex.y < 0.0) FakeVertex.y = Vertex.y * Vertex.y / 1638.4;
+  if (Vertex.x > TerrainSize.x) FakeVertex.x = TerrainSize.x - (Vertex.x - TerrainSize.x) * (Vertex.x - TerrainSize.x) / 1638.4;
+  if (Vertex.y > TerrainSize.y) FakeVertex.y = TerrainSize.y - (Vertex.y - TerrainSize.y) * (Vertex.y - TerrainSize.y) / 1638.4;
+  if (Vertex.x < -204.8) FakeVertex.x = 25.6;
+  if (Vertex.y < -204.8) FakeVertex.y = 25.6;
+  if (Vertex.x > TerrainSize.x + 204.8) FakeVertex.x = TerrainSize.x - 25.6;
+  if (Vertex.y > TerrainSize.y + 204.8) FakeVertex.y = TerrainSize.y - 25.6;
+
+  vec2 hm = texture2D(HeightMap, FakeVertex / TerrainSize).gb;
   if (abs(256.0 * hm.r - Height) > 0.1)
     discard;
 

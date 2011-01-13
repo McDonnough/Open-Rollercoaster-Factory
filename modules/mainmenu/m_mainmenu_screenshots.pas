@@ -186,10 +186,10 @@ begin
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex3f(ResX - 220,  ResY - 120, -255);
-    glTexCoord2f(0, 1); glVertex3f(ResX - 220,  ResY - 20,  -255);
+    glTexCoord2f(0, 0); glVertex3f(ResX - 440,  ResY - 230, -255);
+    glTexCoord2f(0, 1); glVertex3f(ResX - 440,  ResY - 20,  -255);
     glTexCoord2f(1, 1); glVertex3f(ResX - 20,   ResY - 20,  -255);
-    glTexCoord2f(1, 0); glVertex3f(ResX - 20,   ResY - 120, -255);
+    glTexCoord2f(1, 0); glVertex3f(ResX - 20,   ResY - 230, -255);
   glEnd;
   glDisable(GL_BLEND);
   fLogo.Unbind;
@@ -263,7 +263,7 @@ begin
 
   fLogo := TTexture.Create;
   fLogo.FromFile('general/orcf-logo.tga');
-  fLogo.GenerateMipmaps;
+  fLogo.CreateMipmaps;
 end;
 
 destructor TModuleMainMenuScreenshots.Free;

@@ -456,9 +456,9 @@ end;
 
 destructor TGeoMesh.Free;
 begin
-//   SetLength(Faces, 0);
-//   SetLength(Vertices, 0);
-//   SetLength(TextureVertices, 0);
+  SetLength(Faces, 0);
+  SetLength(Vertices, 0);
+  SetLength(TextureVertices, 0);
   EventManager.CallEvent('TGeoObject.DeletedMesh', ParentObject, Self);
 end;
 
@@ -479,7 +479,6 @@ begin
   Meshes[high(Meshes)] := TGeoMesh.Create;
   Result := Meshes[high(Meshes)];
   Result.ParentObject := Self;
-  EventManager.CallEvent('TGeoObject.AddedMesh', Self, Result);
 end;
 
 function TGeoObject.AddMaterial: TMaterial;
@@ -553,7 +552,6 @@ destructor TGeoObject.Free;
 var
   i: Integer;
 begin
-// Do not uncomment - seems to be an annoying bug in freepascal
   for i := 0 to high(Meshes) do
     Meshes[i].Free;
   for i := 0 to high(Materials) do

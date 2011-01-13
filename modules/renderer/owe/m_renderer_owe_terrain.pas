@@ -759,7 +759,7 @@ begin
   fGeometryPassShader.UniformI('HeightLine', -1);
   fGeometryPassShader.UniformI('TerrainTexture', 1);
 
-  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainShadow.vs', 'orcf-world-engine/inferred/shadow.fs');
+  fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainShadow.vs', 'orcf-world-engine/scene/terrain/terrainShadow.fs');
   fShadowPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.TerrainTesselationDistance);
   fShadowPassShader.UniformI('TerrainMap', 0);
 

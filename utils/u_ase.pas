@@ -400,7 +400,7 @@ begin
     with Result.AddMaterial do
       begin
       Color := Vector(F.Materials[i].Diffuse, 1 - F.Materials[i].Transprarency);
-      Specularity := 1 / F.Materials[F.GeomObjects[i].MaterialRef].Shine / F.Materials[F.GeomObjects[i].MaterialRef].ShineStrength;
+      Specularity := 1 / F.Materials[i].Shine / F.Materials[i].ShineStrength;
       end;
   for i := 0 to high(F.GeomObjects) do
     with Result.AddMesh do

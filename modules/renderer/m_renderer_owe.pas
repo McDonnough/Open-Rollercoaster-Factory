@@ -6,7 +6,7 @@ uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
   m_renderer_owe_camera, math, m_texmng_class, m_shdmng_class, u_functions, m_renderer_owe_frustum,
   m_renderer_owe_sky, m_renderer_owe_classes, u_scene, m_renderer_owe_lights, m_renderer_owe_terrain,
-  m_renderer_owe_autoplants, m_renderer_owe_water, u_files, u_graphics;
+  m_renderer_owe_autoplants, m_renderer_owe_water, m_renderer_owe_objects, u_files, u_graphics;
 
 type
   TModuleRendererOWE = class(TModuleRendererClass)
@@ -15,6 +15,7 @@ type
       fRendererCamera: TRCamera;
       fRendererTerrain: TRTerrain;
       fRendererAutoplants: TRAutoplants;
+      fRendererObjects: TRObjects;
       fRendererWater: TRWater;
       fLightManager: TLightManager;
       fGBuffer, fHDRBuffer, fHDRBuffer2, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer, fTmpShadowBuffer: TFBO;
@@ -51,6 +52,7 @@ type
       property RSky: TRSky read fRendererSky;
       property RTerrain: TRTerrain read fRendererTerrain;
       property RAutoplants: TRAutoplants read fRendererAutoplants;
+      property RObjects: TRObjects read fRendererObjects;
       property RWater: TRWater read fRendererWater;
       property FullscreenShader: TShader read fFullscreenShader;
       property SunShader: TShader read fSunShader;
@@ -240,6 +242,7 @@ begin
   fRendererSky := TRSky.Create;
   fRendererTerrain := TRTerrain.Create;
   fRendererAutoplants := TRAutoplants.Create;
+  fRendererObjects := TRObjects.Create;
   fRendererWater := TRWater.Create;
 
   fFullscreenShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fullscreen.fs');
@@ -343,6 +346,7 @@ begin
   fHDRBuffer2.Free;
 
   fRendererWater.Free;
+  fRendererObjects.Free;
   fRendererAutoplants.Free;
   fRendererTerrain.Free;
   fRendererSky.Free;

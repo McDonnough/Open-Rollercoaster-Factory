@@ -263,6 +263,7 @@ begin
 
   fLogo := TTexture.Create;
   fLogo.FromFile('general/orcf-logo.tga');
+  fLogo.GenerateMipmaps;
 end;
 
 destructor TModuleMainMenuScreenshots.Free;

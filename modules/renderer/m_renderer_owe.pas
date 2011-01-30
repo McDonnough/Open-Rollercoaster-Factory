@@ -470,6 +470,9 @@ begin
     // Sky
     RSky.Render;
 
+    // Objects
+    RObjects.RenderOpaque;
+
     // Terrain
 
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
@@ -521,6 +524,8 @@ begin
     RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
     RAutoplants.Render;
 
+    RObjects.MaterialMode := False;
+    RObjects.RenderTransparent;
 
     // End
 
@@ -554,6 +559,11 @@ begin
     RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
     RTerrain.BorderEnabled := false;
     RTerrain.Render;
+
+    RObjects.ShadowMode := True;
+    RObjects.RenderOpaque;
+    RObjects.RenderTransparent;
+    RObjects.ShadowMode := False;
 
     fSunShadowBuffer.Unbind;
     end;
@@ -625,6 +635,9 @@ begin
 
     RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
     RAutoplants.Render;
+
+    RObjects.MaterialMode := True;
+    RObjects.RenderTransparent;
 
     glDisable(GL_BLEND);
 

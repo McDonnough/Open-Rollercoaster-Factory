@@ -117,12 +117,13 @@ type
 
   TMaterial = class
     public
-      Color: TVector4D;
+      Color, Emission: TVector4D;
       Reflectivity: Single;
       RefractionValue: Single;
-      Specularity: Single;
+      Hardness, Specularity: Single;
       BumpMapFactor: Single;
-      Texture, BumpMap: TTexture;
+      Texture, BumpMap, LightFactorMap: TTexture;
+      function Transparent: Boolean;
       function Duplicate: TMaterial;
       constructor Create;
     end;
@@ -306,15 +307,26 @@ function TMaterial.Duplicate: TMaterial;
 begin
 end;
 
+function TMaterial.Transparent: Boolean;
+begin
+  if Color.w < 1 then
+    exit(true);
+  if Texture <> nil then
+    Result := Texture.BPP = 4;
+end;
+
 constructor TMaterial.Create;
 begin
   Color := Vector(1, 1, 1, 1);
+  Emission := Vector(0, 0, 0, 1);
   Reflectivity := 0;
   RefractionValue := 0;
-  Specularity := 20;
+  Specularity := 1;
+  Hardness := 20;
   BumpMapFactor := 1;
   Texture := nil;
   BumpMap := nil;
+  LightFactorMap := nil;
 end;
 
 

@@ -55,6 +55,9 @@ begin
     // Sky
     ModuleManager.ModRenderer.RSky.Render;
 
+    // Objects
+    ModuleManager.ModRenderer.RObjects.RenderOpaque;
+
     // Terrain
 
     ModuleManager.ModRenderer.RTerrain.CurrentShader := ModuleManager.ModRenderer.RTerrain.GeometryPassShader;

@@ -30,7 +30,7 @@ void main() {
       textCoo -= deltaTextCoord;
       vec4 sample = texture2D(MaterialTexture, textCoo) * 0.2;
       vec3 a = texture2D(NormalTexture, textCoo).rgb;
-      if (max(max(a.r, a.g), a.b) > 0.0)
+      if (abs(max(max(a.r, a.g), a.b)) > 0.0)
         sample *= 0.0;
       sample *= illuminationDecay * weight * 100.0 / float(NUM_SAMPLES);
       gl_FragColor += sample;

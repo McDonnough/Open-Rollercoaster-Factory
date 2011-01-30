@@ -11,6 +11,7 @@ type
     GeoMesh: TGeoMesh;
     VBO: TObjectVBO;
     Transparent: Boolean;
+    Visible: Boolean;
     SphereRadius: Single;
     Reflection: TFBO;
     nFrame: Integer;
@@ -31,9 +32,10 @@ type
       fLastManagedObject: Integer;
       fTest: TGeoObject;
       fReflectionPass: TRenderPass;
+      fCurrentShader: TShader;
     public
       MinY, MaxY: Single;
-      ShadowMode: Boolean;
+      ShadowMode, MaterialMode: Boolean;
       property OpaqueShader: TShader read fOpaqueShader;
       property OpaqueShadowShader: TShader read fOpaqueShadowShader;
       property TransparentShader: TShader read fTransparentShader;
@@ -43,10 +45,12 @@ type
       procedure DeleteObject(Event: String; Data, Result: Pointer);
       procedure AddMesh(Event: String; Data, Result: Pointer);
       procedure DeleteMesh(Event: String; Data, Result: Pointer);
-      procedure RenderTransparent;
       procedure CheckVisibility;
+      procedure BindMaterial(Material: TMaterial);
+      procedure Render(Mesh: TManagedMesh);
       procedure RenderReflections;
       procedure RenderOpaque;
+      procedure RenderTransparent;
       constructor Create;
       destructor Free;
     end;
@@ -89,6 +93,7 @@ begin
   setLength(fManagedObjects[fLastManagedObject].Meshes, length(fManagedObjects[fLastManagedObject].Meshes) + 1);
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].GeoMesh := TGeoMesh(Result);
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].VBO := TObjectVBO.Create(TGeoMesh(Result));
+  fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Transparent := TGeoMesh(Result).Material.Transparent;
 end;
 
 procedure TRObjects.DeleteMesh(Event: String; Data, Result: Pointer);
@@ -112,40 +117,111 @@ begin
   SetLength(fManagedObjects[fLastManagedObject].Meshes, length(fManagedObjects[fLastManagedObject].Meshes) - 1);
 end;
 
+procedure TRObjects.BindMaterial(Material: TMaterial);
+var
+  Spec: TVector4D;
+begin
+  with Material do
+    begin
+    if LightFactorMap <> nil then
+      begin
+      LightFactorMap.Bind(2);
+      fCurrentShader.UniformI('HasLightFactorMap', 1);
+      end
+    else
+      begin
+      ModuleManager.ModTexMng.ActivateTexUnit(2);
+      ModuleManager.ModTexMng.BindTexture(-1);
+      fCurrentShader.UniformI('HasLightFactorMap', 0);
+      end;
+    if BumpMap <> nil then
+      begin
+      BumpMap.Bind(1);
+      fCurrentShader.UniformI('HasNormalMap', 1);
+      end
+    else
+      begin
+      ModuleManager.ModTexMng.ActivateTexUnit(1);
+      ModuleManager.ModTexMng.BindTexture(-1);
+      fCurrentShader.UniformI('HasNormalMap', 0);
+      end;
+    if Texture <> nil then
+      begin
+      Texture.Bind(0);
+      fCurrentShader.UniformI('HasTexture', 1);
+      end
+    else
+      begin
+      ModuleManager.ModTexMng.ActivateTexUnit(0);
+      ModuleManager.ModTexMng.BindTexture(-1);
+      fCurrentShader.UniformI('HasTexture', 0);
+      end;
+    Spec := Vector(Specularity, 0, 0, 0);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, @Color.X);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, @Emission.X);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, @Spec.X);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, @Hardness);
+    end;
+end;
+
+procedure TRObjects.Render(Mesh: TManagedMesh);
+var
+  Matrix: Array[0..15] of Single;
+begin
+  fCurrentShader.Bind;
+  if ShadowMode then
+    begin
+    fCurrentShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
+    fCurrentShader.UniformF('ShadowOffset', ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
+    end;
+
+  BindMaterial(Mesh.GeoMesh.Material);
+
+  MakeOGLCompatibleMatrix(Mesh.GeoMesh.CalculatedMatrix, @Matrix[0]);
+
+  fCurrentShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
+
+  Mesh.VBO.Bind;
+  Mesh.VBO.Render;
+  Mesh.VBO.UnBind;
+
+  fCurrentShader.Unbind;
+end;
+
 procedure TRObjects.RenderTransparent;
 var
   i, j: Integer;
-  fCurrentShader: TShader;
 begin
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
       if fManagedObjects[i].Meshes[j].Transparent then
         begin
+        if ShadowMode then
+          fCurrentShader := fTransparentShadowShader
+        else if MaterialMode then
+          fCurrentShader := fTransparentMaterialShader
+        else
+          begin
+          fCurrentShader := fTransparentShader;
+          fCurrentShader.UniformF('MaskOffset', Round(16 * Random) / 16, Round(16 * Random) / 16);
+          end;
+        Render(fManagedObjects[i].Meshes[j]);
         end;
 end;
 
 procedure TRObjects.RenderOpaque;
 var
   i, j: Integer;
-  Matrix: Array[0..15] of Single;
-  fMeshMatrix: TMatrix4D;
-  fCurrentShader: TShader;
 begin
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
       if not fManagedObjects[i].Meshes[j].Transparent then
         begin
         if not ShadowMode then
-          begin
-          fCurrentShader := fOpaqueShader;
-          fCurrentShader.Bind;
-          end
+          fCurrentShader := fOpaqueShader
         else
-          begin
           fCurrentShader := fOpaqueShadowShader;
-          fCurrentShader.Bind;
-          end;
-
+        Render(fManagedObjects[i].Meshes[j]);
         end;
 end;
 
@@ -170,7 +246,43 @@ begin
 
   fLastManagedObject := -1;
 
+
+  fOpaqueShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadow.vs', 'orcf-world-engine/scene/objects/shadow-opaque.fs');
+
+  fTransparentShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadow.vs', 'orcf-world-engine/scene/objects/shadow-transparent.fs');
+  fTransparentShadowShader.UniformI('Texture', 0);
+
+  fOpaqueShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-opaque.fs');
+  fOpaqueShader.UniformI('Texture', 0);
+  fOpaqueShader.UniformI('NormalMap', 1);
+  fOpaqueShader.UniformI('LightFactorMap', 2);
+
+  fTransparentShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-transparent.fs');
+  fTransparentShader.UniformI('Texture', 0);
+  fTransparentShader.UniformI('NormalMap', 1);
+  fTransparentShader.UniformI('LightFactorMap', 2);
+  fTransparentShader.UniformI('TransparencyMask', 7);
+  fTransparentShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
+
+  fTransparentMaterialShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-material.fs');
+  fTransparentMaterialShader.UniformI('Texture', 0);
+  fTransparentMaterialShader.UniformI('LightTexture', 7);
+
   fTest := ASEFileToMeshArray(LoadASEFile('scenery/untitled.ase'));
+  with fTest.AddArmature do
+    begin
+    with AddBone do
+      begin
+      SourcePosition := Vector(0, -5, 0);
+      DestinationPosition := Vector(0, -6, 0);
+      end;
+    end;
+  fTest.Meshes[1].AddBoneToAll(fTest.Armatures[0].Bones[0]);
+  fTest.Armatures[0].Bones[0].Matrix := TranslationMatrix(Vector(2, 10, 4));
+  fTest.UpdateArmatures;
+  fTest.UpdateVertexPositions;
+  fTest.Meshes[1].RecalcFaceNormals;
+  fTest.Meshes[1].RecalcVertexNormals;
   fTest.Materials[0].Reflectivity := 0.8;
   fTest.Materials[1].Reflectivity := 0.2;
   fTest.Materials[2].Reflectivity := 0.2;

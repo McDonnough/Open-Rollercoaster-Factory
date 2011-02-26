@@ -12,11 +12,14 @@ uniform int HasTexture;
 uniform int HasNormalMap;
 uniform int HasLightFactorMap;
 
+uniform ivec3 MaterialID;
+
 varying vec3 Vertex;
 varying vec3 Normal;
 varying vec4 Color;
 
 void main(void) {
+  gl_FragData[3].rgb = MaterialID / 255.0;
   gl_FragData[0] = gl_FrontMaterial.diffuse;
   if (HasTexture == 1)
     gl_FragData[0] *= texture2D(Texture, gl_TexCoord[0].xy);

@@ -22,4 +22,5 @@ void main(void) {
   gl_FragData[1] = vec4(normal, 2.0);
   gl_FragData[2].rgb = Vertex;
   gl_FragData[2].a = dist;
+  gl_FragData[3].rgb = vec3(0.0, 0.0, 0.0);
 }

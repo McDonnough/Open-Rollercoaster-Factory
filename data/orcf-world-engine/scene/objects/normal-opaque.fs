@@ -13,6 +13,7 @@ varying vec3 Normal;
 varying vec4 Color;
 
 void main(void) {
+  gl_FragData[3].rgb = vec3(0.0, 0.0, 0.0);
   gl_FragData[2].rgb = Vertex;
   gl_FragData[2].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
   vec3 normal = Normal;

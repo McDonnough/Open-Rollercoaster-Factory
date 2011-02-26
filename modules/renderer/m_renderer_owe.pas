@@ -146,13 +146,15 @@ begin
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);          // Transparency Material ID
+  fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
   fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Materials (opaque only) and specularity
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-  fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Colors, Specular
+  fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Colors, Specular
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSceneBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);

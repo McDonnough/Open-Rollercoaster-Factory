@@ -396,7 +396,7 @@ begin
   H := Min(H, Height - OfsY);
   Result := TTable.Create;
   for i := 0 to W - 1 do
-    Result.InsertCol(i, GetCol(OfsX + i).Extract(OfsY, Height));
+    Result.InsertCol(i, GetCol(OfsX + i).Extract(OfsY, H));
 end;
 
 procedure TTable.FastCopy(D: Pointer); // WARNING: NOT FAILSAFE

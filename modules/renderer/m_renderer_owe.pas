@@ -278,6 +278,7 @@ begin
   fCompositionShader.UniformI('MaterialTexture', 0);
   fCompositionShader.UniformI('LightTexture', 1);
   fCompositionShader.UniformI('GTexture', 2);
+  fCompositionShader.UniformI('MaterialMap', 4);
 
   fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
   fLensFlareShader.UniformI('Texture', 0);
@@ -620,6 +621,7 @@ begin
 
     CompositionShader.Bind;
 
+    GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);
     LightBuffer.Textures[0].Bind(1);
     SpareBuffer.Textures[0].Bind(0);

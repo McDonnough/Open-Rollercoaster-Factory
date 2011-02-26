@@ -33,6 +33,7 @@ type
       fTest: TGeoObject;
       fReflectionPass: TRenderPass;
       fCurrentShader: TShader;
+      fCurrentMaterialCount: Integer;
     public
       MinY, MaxY: Single;
       ShadowMode, MaterialMode: Boolean;
@@ -192,6 +193,9 @@ procedure TRObjects.RenderTransparent;
 var
   i, j: Integer;
 begin
+  fCurrentMaterialCount := 1;
+  if MaterialMode then
+    ModuleManager.ModRenderer.GBuffer.Textures[3].Bind(6);
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
       if fManagedObjects[i].Meshes[j].Transparent then
@@ -205,7 +209,9 @@ begin
           fCurrentShader := fTransparentShader;
           fCurrentShader.UniformF('MaskOffset', Round(16 * Random) / 16, Round(16 * Random) / 16);
           end;
+        fCurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
         Render(fManagedObjects[i].Meshes[j]);
+        inc(fCurrentMaterialCount);
         end;
 end;
 
@@ -266,6 +272,7 @@ begin
 
   fTransparentMaterialShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-material.fs');
   fTransparentMaterialShader.UniformI('Texture', 0);
+  fTransparentMaterialShader.UniformI('MaterialMap', 6);
   fTransparentMaterialShader.UniformI('LightTexture', 7);
 
   fTest := ASEFileToMeshArray(LoadASEFile('scenery/untitled.ase'));

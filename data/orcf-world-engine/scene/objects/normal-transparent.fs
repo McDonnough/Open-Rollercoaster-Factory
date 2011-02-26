@@ -19,7 +19,9 @@ varying vec3 Normal;
 varying vec4 Color;
 
 void main(void) {
-  gl_FragData[3].rgb = MaterialID / 255.0;
+  gl_FragData[3].a = 1.0;
+  gl_FragData[3].rgb = MaterialID;
+  gl_FragData[3].rgb /= 255.0;
   gl_FragData[0] = gl_FrontMaterial.diffuse;
   if (HasTexture == 1)
     gl_FragData[0] *= texture2D(Texture, gl_TexCoord[0].xy);

@@ -281,10 +281,10 @@ begin
     glScalef(1, -1, 1);
     glTranslatef(0, -fHeight / 256, 0);
 
-    glFrontFace(GL_CW);
+    ModuleManager.ModRenderer.InvertFrontFace;
     ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
     fReflectionPass.Render;
-    glFrontFace(GL_CCW);
+    ModuleManager.ModRenderer.InvertFrontFace;
   glPopMatrix;
 
   glPushMatrix;

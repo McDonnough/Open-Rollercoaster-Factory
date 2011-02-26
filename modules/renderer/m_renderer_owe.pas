@@ -46,6 +46,7 @@ type
       fWaterReflectionBufferSamples: Single;
       fFrameID: Integer;
       fGamma: Single;
+      fFrontFace: GLEnum;
     public
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -110,6 +111,7 @@ type
       procedure Unload;
       procedure RenderScene;
       procedure CheckModConf;
+      procedure InvertFrontFace;
       function GetRay(MX, MY: Single): TVector3D;
       constructor Create;
       destructor Free;
@@ -124,6 +126,8 @@ procedure TModuleRendererOWE.PostInit;
 var
   ResX, ResY: Integer;
 begin
+  fFrontFace := GL_CCW;
+
   fFrameID := 0;
 
   fTransparencyMask := TTexture.Create;
@@ -527,6 +531,7 @@ begin
     RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
     RAutoplants.Render;
 
+    // Objects
     RObjects.MaterialMode := False;
     RObjects.RenderTransparent;
 
@@ -636,12 +641,13 @@ begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
     RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
     RAutoplants.Render;
 
     RObjects.MaterialMode := True;
+    glEnable(GL_CULL_FACE);
     RObjects.RenderTransparent;
+    glDisable(GL_CULL_FACE);
 
     glDisable(GL_BLEND);
 
@@ -937,6 +943,15 @@ begin
   fAutoplantCount := StrToIntWD(GetConfVal('autoplants.count'), 9000);
   fAutoplantDistance := StrToFloatWD(GetConfVal('autoplants.distance'), 30);
   fGamma := StrToFloatWD(GetConfVal('gamma'), 1);
+end;
+
+procedure TModuleRendererOWE.InvertFrontFace;
+begin
+  if fFrontFace = GL_CCW then
+    fFrontFace := GL_CW
+  else
+    fFrontFace := GL_CCW;
+  glFrontFace(fFrontFace);
 end;
 
 constructor TModuleRendererOWE.Create;

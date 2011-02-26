@@ -210,6 +210,14 @@ begin
           fCurrentShader.UniformF('MaskOffset', Round(16 * Random) / 16, Round(16 * Random) / 16);
           end;
         fCurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
+        if not ShadowMode then
+          begin
+          // Render back sides first
+          ModuleManager.ModRenderer.InvertFrontFace;
+          Render(fManagedObjects[i].Meshes[j]);
+          ModuleManager.ModRenderer.InvertFrontFace;
+          end;
+        // Final render, front sides
         Render(fManagedObjects[i].Meshes[j]);
         inc(fCurrentMaterialCount);
         end;

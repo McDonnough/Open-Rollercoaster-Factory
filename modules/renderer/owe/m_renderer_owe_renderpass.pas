@@ -80,16 +80,19 @@ begin
 
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0);
-    glColorMask(true, true, true, false);
+//     glColorMask(true, true, true, false);
 
     // Autoplants
     ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.GeometryPassShader;
     ModuleManager.ModRenderer.RAutoplants.Render;
 
+    // Objects
+    ModuleManager.ModRenderer.RObjects.MaterialMode := false;
+    ModuleManager.ModRenderer.RObjects.RenderTransparent;
 
     // End
 
-    glColorMask(true, true, true, true);
+//     glColorMask(true, true, true, true);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
     glDisable(GL_ALPHA_TEST);
@@ -106,6 +109,7 @@ begin
     if ModuleManager.ModRenderer.UseSunShadows then
       ModuleManager.ModRenderer.SunShadowBuffer.Textures[0].Bind(2);
 
+    fGBuffer.Textures[0].Bind(3);
     fGBuffer.Textures[1].Bind(1);
     fGBuffer.Textures[2].Bind(0);
 
@@ -127,6 +131,7 @@ begin
 
     ModuleManager.ModRenderer.CompositionShader.Bind;
 
+    fGBuffer.Textures[3].Bind(4);
     fGBuffer.Textures[2].Bind(2);
     fLightBuffer.Textures[0].Bind(1);
     fSpareBuffer.Textures[0].Bind(0);
@@ -143,6 +148,11 @@ begin
 
     ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.MaterialPassShader;
     ModuleManager.ModRenderer.RAutoplants.Render;
+
+    ModuleManager.ModRenderer.RObjects.MaterialMode := true;
+    glEnable(GL_CULL_FACE);
+    ModuleManager.ModRenderer.RObjects.RenderTransparent;
+    glDisable(GL_CULL_FACE);
 
     glDisable(GL_BLEND);
 
@@ -166,6 +176,8 @@ begin
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Material IDs
+  fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSpareBuffer := TFBO.Create(X, Y, false);
   fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);

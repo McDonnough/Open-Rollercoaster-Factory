@@ -65,7 +65,7 @@ begin
         if (fPositions[i].Z = -1) or (VecLengthNoRoot(Vector2D(fPositions[i]) - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > ModuleManager.ModRenderer.AutoplantDistance * ModuleManager.ModRenderer.AutoplantDistance) then
           begin
           fAngle := Random * 2 * 3.142;
-          fPositions[i] := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * sin(fAngle), ModuleManager.ModCamera.ActiveCamera.Position.Z + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * cos(fAngle), 2 * 3.141 * Random);
+          fPositions[i] := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * sin(fAngle), ModuleManager.ModCamera.ActiveCamera.Position.Z + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * cos(fAngle), 2 * 3.142 * Random);
           fChanged[i] := true;
           if (Park.pTerrain.TexMap[fPositions[i].X, fPositions[i].Y] <> fMaterialID) then
             fPositions[i].Z := -2;
@@ -99,7 +99,20 @@ begin
   for i := 0 to fCount - 1 do
     if fChanged[i] then
       begin
-      fVBO.Vertices[i] := fPositions[i];
+      if (fPositions[i].z <> -2) and (Clamp(fPositions[i].x, 0, Park.pTerrain.SizeX / 5) = fPositions[i].x) and (Clamp(fPositions[i].y, 0, Park.pTerrain.SizeY / 5) = fPositions[i].y) then
+        begin
+        fVBO.Vertices[4 * i + 0] := Vector(fPositions[i].X, fPositions[i].Y, 0.0);
+        fVBO.Vertices[4 * i + 1] := Vector(fPositions[i].X, fPositions[i].Y, 1.0);
+        fVBO.Vertices[4 * i + 2] := Vector(fPositions[i].X + 1.6 * sin(fPositions[i].Z), fPositions[i].Y + 1.6 * cos(fPositions[i].Z), 1.0);
+        fVBO.Vertices[4 * i + 3] := Vector(fPositions[i].X + 1.6 * sin(fPositions[i].Z), fPositions[i].Y + 1.6 * cos(fPositions[i].Z), 0.0);
+        end
+      else
+        begin
+        fVBO.Vertices[4 * i + 0] := Vector(0.0, 0.0, 0.0);
+        fVBO.Vertices[4 * i + 1] := Vector(0.0, 0.0, 0.0);
+        fVBO.Vertices[4 * i + 2] := Vector(0.0, 0.0, 0.0);
+        fVBO.Vertices[4 * i + 3] := Vector(0.0, 0.0, 0.0);
+        end;
       fChanged[i] := false;
       end;
   fVBO.Unbind;
@@ -112,7 +125,7 @@ begin
   inherited Create(false);
 
   fMaterialID := MaterialID;
-  fCount := 3 * Round(ModuleManager.ModRenderer.AutoplantCount / 3 * Park.pTerrain.Collection.Materials[fMaterialID].AutoplantProperties.Factor);
+  fCount := Round(ModuleManager.ModRenderer.AutoplantCount * Park.pTerrain.Collection.Materials[fMaterialID].AutoplantProperties.Factor);
   fTexture := Park.pTerrain.Collection.Materials[fMaterialID].AutoplantProperties.Texture;
 
   setLength(fChanged, fCount);
@@ -124,7 +137,18 @@ begin
     fPositions[i] := Vector(0, 0, -1);
     end;
 
-  fVBO := TVBO.Create(fCount, GL_V3F, GL_TRIANGLES);
+  fVBO := TVBO.Create(4 * fCount, GL_T2F_V3F, GL_QUADS);
+  for i := 0 to fCount - 1 do
+    begin
+    fVBO.TexCoords[4 * i + 0] := Vector(0.0, 1.0);
+    fVBO.TexCoords[4 * i + 1] := Vector(0.0, 0.0);
+    fVBO.TexCoords[4 * i + 2] := Vector(1.0, 0.0);
+    fVBO.TexCoords[4 * i + 3] := Vector(1.0, 1.0);
+    fVBO.Vertices[4 * i + 0] := Vector(0.0, 0.0, 0.0);
+    fVBO.Vertices[4 * i + 1] := Vector(0.0, 0.0, 0.0);
+    fVBO.Vertices[4 * i + 2] := Vector(0.0, 0.0, 0.0);
+    fVBO.Vertices[4 * i + 3] := Vector(0.0, 0.0, 0.0);
+    end;
   fVBO.Unbind;
 end;
 
@@ -184,14 +208,14 @@ begin
 
   CurrentShader := nil;
 
-  fGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/autoplants.vs', 'orcf-world-engine/scene/terrain/autoplantsGeometry.fs', 'orcf-world-engine/scene/terrain/autoplants.gs', 12);
+  fGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/autoplants.vs', 'orcf-world-engine/scene/terrain/autoplantsGeometry.fs');
   fGeometryPassShader.UniformI('Texture', 0);
   fGeometryPassShader.UniformI('TerrainMap', 1);
   fGeometryPassShader.UniformI('TransparencyMask', 7);
   fGeometryPassShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
   fGeometryPassShader.UniformF('MaxDist', ModuleManager.ModRenderer.AutoplantDistance);
 
-  fMaterialPassShader := TShader.Create('orcf-world-engine/scene/terrain/autoplants.vs', 'orcf-world-engine/scene/terrain/autoplantsMaterial.fs', 'orcf-world-engine/scene/terrain/autoplants.gs', 12);
+  fMaterialPassShader := TShader.Create('orcf-world-engine/scene/terrain/autoplants.vs', 'orcf-world-engine/scene/terrain/autoplantsMaterial.fs');
   fMaterialPassShader.UniformI('Texture', 0);
   fMaterialPassShader.UniformI('TerrainMap', 1);
   fMaterialPassShader.UniformI('LightTexture', 7);

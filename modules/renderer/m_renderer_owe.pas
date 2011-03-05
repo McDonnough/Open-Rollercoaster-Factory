@@ -20,7 +20,9 @@ type
       fLightManager: TLightManager;
       fGBuffer, fHDRBuffer, fHDRBuffer2, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer, fTmpShadowBuffer: TFBO;
       fFSAASamples: Integer;
-      fReflectionDepth, fReflectionUpdateInterval: Integer;
+      fReflectionRealtimeMinimum: Single;
+      fReflectionRenderTerrain, fReflectionRenderAutoplants, fReflectionRenderObjects, fReflectionRenderParticles: Boolean;
+      fReflectionUpdateInterval: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
       fUseScreenSpaceAmbientOcclusion, fUseMotionBlur, fUseFocalBlur: Boolean;
       fBloomFactor: Single;
@@ -72,7 +74,6 @@ type
       property SpareBuffer: TFBO read fSpareBuffer;
       property SunShadowBuffer: TFBO read fSunShadowBuffer;
       property FSAASamples: Integer read fFSAASamples;
-      property ReflectionDepth: Integer read fReflectionDepth;
       property ReflectionUpdateInterval: Integer read fReflectionUpdateInterval;
       property UseSunShadows: Boolean read fUseSunShadows;
       property UseLightShadows: Boolean read fUseLightShadows;
@@ -888,7 +889,11 @@ begin
     begin
     SetConfVal('used', '1');
     SetConfVal('samples', '4');
-    SetConfVal('reflections.depth', '2');
+    SetConfVal('reflections.realtime.minimum', '0.0');
+    SetConfVal('reflections.render.terrain', '1');
+    SetConfVal('reflections.render.autoplants', '1');
+    SetConfVal('reflections.render.objects', '1');
+    SetConfVal('reflections.render.particles', '1');
     SetConfVal('reflections.updateinterval', '1');
     SetConfVal('ssao', '1');
     SetConfVal('ssao.samples', '100');
@@ -897,7 +902,7 @@ begin
     SetConfVal('shadows.samples', '1');
     SetConfVal('shadows.blursamples', '5');
     SetConfVal('shadows.maxpasses', '2');
-    SetConfVal('bloom', '0.5');
+    SetConfVal('bloom', '1.0');
     SetConfVal('focalblur', '1');
     SetConfVal('motionblur', '1');
     SetConfVal('motionblur.strength', '0.05');
@@ -916,11 +921,15 @@ begin
     SetConfVal('water.samples', '1');
     end;
   fFSAASamples := StrToIntWD(GetConfVal('samples'), 4);
-  fReflectionDepth := StrToIntWD(GetConfVal('reflections.depth'), 2);
   fReflectionUpdateInterval := StrToIntWD(GetConfVal('reflections.updateinterval'), 1);
+  fReflectionRealtimeMinimum := StrToFloatWD(GetConfVal('reflections.realtime.minimum'), 0.0);
+  fReflectionRenderAutoplants := GetConfVal('reflections.render.autoplants') = '1';
+  fReflectionRenderTerrain := GetConfVal('reflections.render.terrain') = '1';
+  fReflectionRenderParticles := GetConfVal('reflections.render.particles') = '1';
+  fReflectionRenderObjects := GetConfVal('reflections.render.objects') = '1';
   fUseSunShadows := GetConfVal('shadows') <> '0';
   fUseLightShadows := GetConfVal('shadows') = '2';
-  fBloomFactor := StrToFloatWD(GetConfVal('bloom'), 0.5);
+  fBloomFactor := StrToFloatWD(GetConfVal('bloom'), 1.0);
   fUseRefractions := GetConfVal('refractions') = '1';
   fUseMotionBlur := GetConfVal('motionblur') = '1';
   fUseSunRays := GetConfVal('sunrays') = '1';

@@ -14,8 +14,8 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure AddError(s: String; sFile: String = ''; sLine: Integer = 0);
-      procedure AddWarning(s: String; sFile: String = ''; sLine: Integer = 0);
+      procedure AddError(s: String);
+      procedure AddWarning(s: String);
       procedure CheckModConf;
     end;
 
@@ -33,18 +33,18 @@ end;
 
 destructor TModuleLogFile.Free;
 begin
-  fSL.SaveToFile(Self.GetConfVal('LogFile'));
+  fSL.SaveToFile(ModuleManager.ModPathes.ConfigPath + 'log.txt');
   fSL.free;
 end;
 
-procedure TModuleLogFile.AddError(s: String; sFile: String = ''; sLine: Integer = 0);
+procedure TModuleLogFile.AddError(s: String);
 begin
   writeln('Error: ' + s);
   fSL.Add('Error: ' + s);
-  fSL.SaveToFile(GetConfVal('LogFile'));
+  fSL.SaveToFile(ModuleManager.ModPathes.ConfigPath + 'log.txt');
 end;
 
-procedure TModuleLogFile.AddWarning(s: String; sFile: String = ''; sLine: Integer = 0);
+procedure TModuleLogFile.AddWarning(s: String);
 begin
   writeln('Warning: ' + s);
   fSL.Add('Warning: ' + s);
@@ -52,8 +52,6 @@ end;
 
 procedure TModuleLogFile.CheckModConf;
 begin
-  if GetConfVal('used') = '' then
-    SetConfVal('LogFile', ModuleManager.ModPathes.ConfigPath + 'log.txt');
   SetConfVal('used', '1');
 end;
 

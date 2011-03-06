@@ -87,7 +87,7 @@ begin
   writeln('Loading Shader ' + VSFile + ', ' + FSFile + ', ' + GSFile);
   if (not FileExists(VSFile)) or (not FileExists(FSFile)) or ((not FileExists(GSFile)) and (GSFile <> '')) then
     begin
-    ModuleManager.ModLog.AddWarning('Shader files ' + VSFile + ', ' + FSFile + ', ' + GSFile + ' do not exist', 'm_shdmng_default', 87);
+    ModuleManager.ModLog.AddWarning('Shader files ' + VSFile + ', ' + FSFile + ', ' + GSFile + ' do not exist');
     exit(-1);
     end;
 
@@ -150,7 +150,7 @@ begin
 
   glLinkProgram(fShdRef[Result].ID);
   if glSlang_getInfoLog(fShdRef[Result].ID) <> '' then
-    ModuleManager.ModLog.AddWarning('Shader Info (' + VSFile + ', ' + FSFile + ', ' + GSFile + '):' + #10 + glSlang_getInfoLog(fShdRef[Result].ID), 'm_shdmng_default.pas', 97);
+    ModuleManager.ModLog.AddWarning('Shader Info (' + VSFile + ', ' + FSFile + ', ' + GSFile + '):' + #10 + glSlang_getInfoLog(fShdRef[Result].ID));
 
   fShdRef[Result].Name := VSFile + ':' + FSFile;
 

@@ -67,7 +67,7 @@ begin
       FileName := ModuleManager.ModPathes.PersonalDataPath + 'langtextfile/' + fLang + '.lang';
     if FileName = '' then
       begin
-      ModuleManager.ModLog.AddWarning('Language file for ' + fLang + ' not found', 'm_language_textfile', 48);
+      ModuleManager.ModLog.AddWarning('Language file for ' + fLang + ' not found');
       exit(false);
       end
     else

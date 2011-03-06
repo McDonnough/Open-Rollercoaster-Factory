@@ -40,7 +40,7 @@ begin
   fSurface := SDL_SetVideoMode(w, h, 32, fVFlags or flag);
   result := fSurface <> nil;
   if not result then
-    ModuleManager.ModLog.AddWarning('Could not create surface: ' + SDL_GetError, 'm_glcontext_sdl.pas', 36);
+    ModuleManager.ModLog.AddWarning('Could not create surface: ' + SDL_GetError);
 end;
 
 constructor TModuleGLContextSDL.Create;
@@ -53,12 +53,12 @@ begin
 
   // Init SDL
   if SDL_Init(SDL_INIT_VIDEO) < 0 then
-    ModuleManager.ModLog.AddError('Initialization of SDL failed: ' + SDL_GetError, 'm_glcontext_sdl.pas', 35);
+    ModuleManager.ModLog.AddError('Initialization of SDL failed: ' + SDL_GetError);
 
   // Poll video card
   fVInfo := SDL_GetVideoInfo;
   if fVInfo = nil then
-    ModuleManager.ModLog.AddError('Initialization of graphics hardware failed: ' + SDL_GetError, 'm_glcontext_sdl.pas', 38);
+    ModuleManager.ModLog.AddError('Initialization of graphics hardware failed: ' + SDL_GetError);
 
   // Set initial flags
   fVFlags := SDL_OPENGL or
@@ -155,7 +155,7 @@ begin
     begin
     GetResolution(ResX, ResY);
     if not CreateSurface(ResX, ResY, FullscreenFlag) then
-      ModuleManager.ModLog.AddError('Could not create surface: ' + SDL_GetError, 'm_glcontext_sdl.pas', 132);
+      ModuleManager.ModLog.AddError('Could not create surface: ' + SDL_GetError);
     end;
 end;
 
@@ -176,14 +176,14 @@ begin
     SetConfVal('Fullscreen', '1');
     if not CreateSurface(ResX, ResY, SDL_FULLSCREEN) then
       if not CreateSurface(ResX, ResY, 0) then
-        ModuleManager.ModLog.AddError('Could not create surface: ' + SDL_GetError, 'm_glcontext_sdl.pas', 153);
+        ModuleManager.ModLog.AddError('Could not create surface: ' + SDL_GetError);
     end
   else
     begin
     SetConfVal('Fullscreen', '0');
     if not CreateSurface(ResX, ResY, 0) then
       if not CreateSurface(ResX, ResY, SDL_FULLSCREEN) then
-        ModuleManager.ModLog.AddError('Could not create surface: ' + SDL_GetError, 'm_glcontext_sdl.pas', 160);
+        ModuleManager.ModLog.AddError('Could not create surface: ' + SDL_GetError);
     end;
 end;
 

@@ -77,7 +77,7 @@ begin
   Y := -1;
   if not FileExists(Filename) then
     begin
-    ModuleManager.ModLog.AddWarning('Texture ' + filename + ' does not exist', 'm_texmng_default', 133);
+    ModuleManager.ModLog.AddWarning('Texture ' + filename + ' does not exist');
     exit;
     end;
   if not FileExists(FileName) then
@@ -102,7 +102,7 @@ begin
     for i := 0 to high(Texture.Data) do
       Texture.Data[i] := TexImage.Data[i];
   except
-    ModuleManager.ModLog.AddWarning('File ' + filename + ' not loadable', 'm_texmng_default.pas', 122);
+    ModuleManager.ModLog.AddWarning('File ' + filename + ' not loadable');
   end;
   if VertexTexture then
     FileName := 'vertex:' + FileName;

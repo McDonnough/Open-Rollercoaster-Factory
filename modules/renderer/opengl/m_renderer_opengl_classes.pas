@@ -298,7 +298,7 @@ begin
       fDataSize := SizeOf(TVector2D) + SizeOf(TVector4D) + 2 * SizeOf(TVector3D);
       end;
     else
-      ModuleManager.ModLog.AddError('Unknown Vertex Format', 'm_renderer_opengl_classes', 103);
+      ModuleManager.ModLog.AddError('Unknown Vertex Format');
     end;
   Bind;
   glBufferDataARB(GL_ARRAY_BUFFER, fVertexCount * fDataSize, nil, GL_DYNAMIC_DRAW);

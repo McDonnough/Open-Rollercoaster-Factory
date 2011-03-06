@@ -72,7 +72,10 @@ end;
 procedure TTabBar.AddTab(Caption: String; MinWidth: Integer = 150);
 begin
   SetLength(Tabs, length(Tabs) + 1);
-  Tabs[high(Tabs)].Caption := Caption;
+  if TranslateContent then
+    Tabs[high(Tabs)].Caption := ModuleManager.ModLanguage.Translate(Caption)
+  else
+    Tabs[high(Tabs)].Caption := Caption;
   Tabs[high(Tabs)].MinWidth := MinWidth;
 end;
 

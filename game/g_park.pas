@@ -146,7 +146,7 @@ begin
     104:
       begin
       ModuleManager.ModLoadScreen.Progress := Round(10 + 88 * (ModuleManager.ModOCFManager.LoadedFiles / Max(1, ModuleManager.ModOCFManager.FileCount)));
-      ModuleManager.ModLoadScreen.Text := 'Loading resource ' + IntToStr(ModuleManager.ModOCFManager.LoadedFiles + 1) + '/' + IntToStr(ModuleManager.ModOCFManager.FileCount);
+      ModuleManager.ModLoadScreen.Text := 'Loading resource $' + IntToStr(ModuleManager.ModOCFManager.LoadedFiles + 1) + '/' + IntToStr(ModuleManager.ModOCFManager.FileCount) + '$';
       if ModuleManager.ModOCFManager.LoadedFiles < ModuleManager.ModOCFManager.FileCount then
         dec(fLoadState);
       end;

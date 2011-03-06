@@ -9,9 +9,12 @@ uses
 
 type
   TButton = class(TGUIComponent)
+    protected
+      fCaption: String;
+      procedure setCaption(C: String);
     public
       fHoverFactor, fClickFactor: GLFloat;
-      Caption: String;
+      property Caption: String read fCaption write setCaption;
       constructor Create(mParent: TGUIComponent);
       procedure Render;
     end;
@@ -36,6 +39,14 @@ begin
   Caption := '';
   fHoverFactor := 0;
   fClickFactor := 0;
+end;
+
+procedure TButton.setCaption(C: String);
+begin
+  if TranslateContent then
+    fCaption := ModuleManager.ModLanguage.Translate(C)
+  else
+    fCaption := C;
 end;
 
 procedure TButton.Render;

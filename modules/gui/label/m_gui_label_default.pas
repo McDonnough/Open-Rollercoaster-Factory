@@ -80,7 +80,7 @@ begin
     if (Size <> Lbl.Size) or (Width <> Lbl.Width) or (Align <> Lbl.Align) or (Caption <> Lbl.Caption) then
       begin
       n := 0;
-      Lines := Explode(#10, ModuleManager.ModLanguage.Translate(Lbl.Caption));
+      Lines := Explode(#10, Lbl.Caption);
       Size := Lbl.Size;
       Width := Lbl.Width;
       Align := Lbl.Align;

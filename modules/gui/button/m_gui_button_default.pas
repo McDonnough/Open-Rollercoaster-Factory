@@ -90,7 +90,7 @@ begin
     RenderButton(0, 0.5);
   glEnd;
   glDisable(GL_BLEND);
-  ModuleManager.ModFont.Write(ModuleManager.ModLanguage.Translate(Button.Caption), Button.Height - 16, Button.Left + Round(Button.Width - ModuleManager.ModFont.CalculateTextWidth(Button.Caption, Round(Button.Height - 16))) div 2, Button.Top + 8, 0, 0, 0, Button.Alpha, 0);
+  ModuleManager.ModFont.Write(Button.Caption, Button.Height - 16, Button.Left + Round(Button.Width - ModuleManager.ModFont.CalculateTextWidth(Button.Caption, Round(Button.Height - 16))) div 2, Button.Top + 8, 0, 0, 0, Button.Alpha, 0);
   fTexture.Unbind;
 end;
 

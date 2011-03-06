@@ -41,6 +41,7 @@ type
     public
       Tag: Integer;
       Name: String;
+      TranslateContent: Boolean;
       OnClick: TCallbackProcedure;
       OnGainFocus: TCallbackProcedure;
       OnRelease: TCallbackProcedure;
@@ -276,6 +277,8 @@ begin
     fChildID := fParent.AddChild(Self);
   fAlpha := 0;
   fDestAlpha := 1;
+
+  TranslateContent := true;
 
   fPosX := 0;
   fPosY := 0;

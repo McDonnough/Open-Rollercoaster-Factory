@@ -39,7 +39,7 @@ end;
 
 function TModuleGUITabBarDefault.GetTabWidth(Lbl: TTabBar; I: Integer): Integer;
 begin
-  Result := Max(Lbl.Tabs[i].MinWidth, ModuleManager.ModFont.CalculateTextWidth(ModuleManager.ModLanguage.Translate(Lbl.Tabs[i].Caption), Round(Lbl.Height) - 8) + 40) - 24;
+  Result := Max(Lbl.Tabs[i].MinWidth, ModuleManager.ModFont.CalculateTextWidth(Lbl.Tabs[i].Caption, Round(Lbl.Height) - 8) + 40) - 24;
 end;
 
 procedure TModuleGUITabBarDefault.CheckModConf;
@@ -111,7 +111,7 @@ begin
   for i := 0 to high(Lbl.Tabs) do
     begin
     TabWidth := GetTabWidth(Lbl, i) + 24;
-    ModuleManager.ModFont.Write(ModuleManager.ModLanguage.Translate(Lbl.Tabs[i].Caption), Lbl.Height - 8, Lbl.Left + Offset + (TabWidth - ModuleManager.ModFont.CalculateTextWidth(ModuleManager.ModLanguage.Translate(Lbl.Tabs[i].Caption), Round(Lbl.Height) - 8)) / 2, Lbl.Top + 8, 0, 0, 0, Lbl.Alpha, 0);
+    ModuleManager.ModFont.Write(Lbl.Tabs[i].Caption, Lbl.Height - 8, Lbl.Left + Offset + (TabWidth - ModuleManager.ModFont.CalculateTextWidth(Lbl.Tabs[i].Caption, Round(Lbl.Height) - 8)) / 2, Lbl.Top + 8, 0, 0, 0, Lbl.Alpha, 0);
     Offset := Offset + TabWidth - 24;
     end;
 end;

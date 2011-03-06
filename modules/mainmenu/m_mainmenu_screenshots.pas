@@ -60,7 +60,7 @@ procedure TMainMenuButton.SetCaption(C: String);
 begin
   fCaption := C;
   fButton.Caption := '    ' + C;
-  fButton.Width := ModuleManager.ModFont.CalculateTextWidth('    ' + C, 24) + 16;
+  fButton.Width := ModuleManager.ModFont.CalculateTextWidth(ModuleManager.ModLanguage.Translate('    ' + C), 24) + 16;
 end;
 
 procedure TMainMenuButton.SetLeft(A: Integer);
@@ -138,11 +138,11 @@ begin
   fCurrentFile := 0;
 
   GetFilesInDirectory(ModuleManager.ModPathes.DataPath + 'screenshots', '*.tga', fFiles, true, true);
-  GetFilesInDirectory(ModuleManager.ModPathes.DataPath + 'screenshots', '*.ocg', fFiles, true, false);
+  GetFilesInDirectory(ModuleManager.ModPathes.DataPath + 'screenshots', '*.dbcg', fFiles, true, false);
   if ModuleManager.ModPathes.DataPath <> ModuleManager.ModPathes.PersonalDataPath then
     begin
     GetFilesInDirectory(ModuleManager.ModPathes.PersonalDataPath + 'screenshots', '*.tga', fFiles, true, false);
-    GetFilesInDirectory(ModuleManager.ModPathes.PersonalDataPath + 'screenshots', '*.ocg', fFiles, true, false);
+    GetFilesInDirectory(ModuleManager.ModPathes.PersonalDataPath + 'screenshots', '*.dbcg', fFiles, true, false);
     end;
 
   SetTexture;
@@ -206,7 +206,7 @@ begin
 
   fWindow := TGUIComponent.Create(nil, CLabel);
   fWindow.Height := 400;
-  fWindow.Width := 200;
+  fWindow.Width := 400;
   fWindow.Left := -200;
   fWindow.Top := 100;
   fWindow.Render;

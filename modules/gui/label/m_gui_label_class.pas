@@ -9,11 +9,14 @@ uses
 
 type
   TLabel = class(TGUIComponent)
+    protected
+      fCaption: String;
+      procedure setCaption(C: String);
     public
-      Caption: String;
       Size: Integer;
       Align: Integer;
       Color: TVector4D;
+      property Caption: String read fCaption write setCaption;
       procedure Render;
       constructor Create(mParent: TGUIComponent);
     end;
@@ -40,6 +43,14 @@ uses
 procedure TLabel.Render;
 begin
   ModuleManager.ModGUILabel.Render(Self);
+end;
+
+procedure TLabel.setCaption(C: String);
+begin
+  if TranslateContent then
+    fCaption := ModuleManager.ModLanguage.Translate(C)
+  else
+    fCaption := C;
 end;
 
 constructor TLabel.Create(mParent: TGUIComponent);

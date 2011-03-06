@@ -83,7 +83,7 @@ begin
   fMSHistory[1] := fMSHistory[0];
   fMSHistory[0] := fMS;
   fFPS := 1000 / fMS;
-  fLabel.Caption := 'FPS: ' + IntToStr(Round(fFPS));
+  fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 
 constructor TFPSDisplay.Create;

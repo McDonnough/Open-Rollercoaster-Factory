@@ -286,7 +286,7 @@ procedure TFileDialog.SelectFile(Sender: TGUIComponent);
 begin
   fFileName := fFileList.Strings[Sender.Tag];
   if fRO then
-    Name.Caption := 'Selected file: ' + fFileName
+    Name.Caption := 'Selected file: $' + fFileName + '$'
   else
     SaveName.Text := ExtractFileName(fFileName);
 end;
@@ -311,7 +311,7 @@ begin
         else
           fDirectory := fDirList[Sender.Tag - 1] + ModuleManager.ModPathes.Delimiter;
         end;
-    Name.Caption := 'Selected file: ' + fDirectory;
+    Name.Caption := 'Selected file: $' + fDirectory + '$';
 
     DirArea.VScrollPosition := 0;
     FileArea.VScrollPosition := 0;
@@ -331,6 +331,7 @@ begin
     for i := 0 to high(Dirs) do
       begin
       Dirs[i] := TButton.Create(DirArea.Surface);
+      Dirs[i].TranslateContent := False;
       Dirs[i].Left := 0;
       Dirs[i].Top := 32 * i;
       Dirs[i].Width := 144;
@@ -358,6 +359,7 @@ begin
         BG.Color := Vector(0, 0, 0, 0.1 - 0.1 * (i mod 2));
 
         Name := TLabel.Create(BG);
+        Name.TranslateContent := False;
         Name.Left := 104;
         Name.Width := 396;
         Name.Top := 0;
@@ -366,6 +368,7 @@ begin
         Name.Caption := ExtractFileName(fFileList.Strings[i]);
 
         Description := TLabel.Create(BG);
+        Description.TranslateContent := False;
         Description.Left := 104;
         Description.Top := 24;
         Description.Height := 72;
@@ -459,7 +462,7 @@ begin
   Name.Size := 16;
   Name.Width := 592;
   Name.Top := 376;
-  Name.Caption := 'Selected file: ' + InitialDirectory;
+  Name.Caption := 'Selected file: $' + InitialDirectory + '$';
 
   OpenSave := TIconifiedButton.Create(Window);
   OpenSave.Left := 600;

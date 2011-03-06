@@ -137,7 +137,7 @@ begin
   except
     ModuleManager.ModLog.AddError('Error loading description of an OCF file: Internal error');
   end;
-  Result := Result + #10 + 'By ' + TDOMElement(fXMLSection.Document.FirstChild).GetAttribute('author');
+  Result := Result + #10 + ModuleManager.ModLanguage.Translate('By') + ' ' + TDOMElement(fXMLSection.Document.FirstChild).GetAttribute('author');
   fDescription := Result;
 end;
 

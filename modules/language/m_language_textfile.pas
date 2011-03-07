@@ -162,9 +162,18 @@ begin
     CurrString2 := Explode(' ', fStrings[i].Key);
     c := 0;
     for j := 0 to high(CurrString1) do
-      for k := 0 to high(CurrString2) do
-        if Lowercase(CurrString1[j]) = Lowercase(CurrString2[k]) then
-          inc(c, 10);
+      if CurrString1[j] <> '' then
+        for k := 0 to high(CurrString2) do
+          begin
+          if Lowercase(CurrString1[j]) = Lowercase(CurrString2[k]) then
+            begin
+            inc(c, 10);
+            break;
+            end;
+          if CurrString2[k] <> '' then
+            if CurrString2[k][1] <> '$' then
+              dec(c, 8);
+          end;
     if c = 10 * length(CurrString1) then
       inc(c, 50);
     if length(CurrString2) = length(CurrString1) then

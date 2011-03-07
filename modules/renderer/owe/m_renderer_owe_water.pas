@@ -145,7 +145,7 @@ var
   Count: Integer;
   i, j: Integer;
 begin
-  writeln('Hint; Initializing water renderer');
+  writeln('Hint: Initializing water renderer');
 
   fCheckShader := TShader.Create('orcf-world-engine/scene/water/water.vs', 'orcf-world-engine/scene/water/waterCheck.fs');
   fCheckShader.UniformI('HeightMap', 0);

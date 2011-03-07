@@ -148,6 +148,7 @@ var
     fAutoplantTextures[high(fAutoplantTextures)] := Result;
   end;
 begin
+  writeln('Hint: Creating TerrainCollection object');
   fName := fOCF.FileName;
   try
     fTexture := TTexture.Create;
@@ -208,6 +209,7 @@ destructor TTerrainCollection.Free;
 var
   i: Integer;
 begin
+  writeln('Hint: Deleting TerrainCollection object');
   for i := 0 to high(fAutoplantTextures) do
     fAutoplantTextures[i].Free;
   fTexture.Free;
@@ -874,6 +876,7 @@ end;
 
 constructor TTerrain.Create;
 begin
+  writeln('Hint: Creating Terrain object');
   try
     fCanAdvance := false;
     fAdvancing := false;
@@ -890,6 +893,7 @@ end;
 
 destructor TTerrain.Free;
 begin
+  writeln('Hint: Deleting Terrain object');
   EventManager.RemoveCallback(@LoadedCollection);
   if fCollection <> nil then
     fCollection.Free;

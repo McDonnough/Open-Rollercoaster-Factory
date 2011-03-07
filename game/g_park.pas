@@ -86,6 +86,7 @@ end;
 
 constructor TPark.Create(FileName: String);
 begin
+  writeln('Hint: Creating Park object');
   EventManager.AddCallback('TPark.ParkFileLoaded', @StartLoading);
 
   fAuthor := '';
@@ -262,6 +263,7 @@ end;
 
 destructor TPark.Free;
 begin
+  writeln('Hint: Deleting Park object');
   EventManager.RemoveCallback(@StartLoading);
   fSelectionEngine := nil;
   fNormalSelectionEngine.Free;

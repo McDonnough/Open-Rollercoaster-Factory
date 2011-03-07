@@ -66,6 +66,10 @@ begin
   SetLength(fManagedObjects, length(fManagedObjects) + 1);
   fManagedObjects[high(fManagedObjects)].GeoObject := TGeoObject(Data);
   fLastManagedObject := high(fManagedObjects);
+  with fManagedObjects[fLastManagedObject] do
+    begin
+    SetLength(Meshes, 0);
+    end;
 end;
 
 procedure TRObjects.DeleteObject(Event: String; Data, Result: Pointer);
@@ -251,7 +255,7 @@ end;
 
 constructor TRObjects.Create;
 begin
-  writeln('Hint; Initializing object renderer');
+  writeln('Hint: Initializing object renderer');
 
   EventManager.AddCallback('TGeoObject.Created', @AddObject);
   EventManager.AddCallback('TGeoObject.Deleted', @DeleteObject);
@@ -259,7 +263,6 @@ begin
   EventManager.AddCallback('TGeoObject.DeletedMesh', @DeleteMesh);
 
   fLastManagedObject := -1;
-
 
   fOpaqueShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadow.vs', 'orcf-world-engine/scene/objects/shadow-opaque.fs');
 
@@ -323,8 +326,8 @@ destructor TRObjects.Free;
 begin
   fTest.Free;
   EventManager.RemoveCallback(@AddObject);
-  EventManager.RemoveCallback(@DeleteMesh);
-  EventManager.RemoveCallback(@AddObject);
+  EventManager.RemoveCallback(@DeleteObject);
+  EventManager.RemoveCallback(@AddMesh);
   EventManager.RemoveCallback(@DeleteMesh);
 end;
 

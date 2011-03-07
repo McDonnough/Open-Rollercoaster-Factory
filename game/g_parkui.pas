@@ -505,6 +505,7 @@ constructor TParkUI.Create;
 var
   ResX, ResY: Integer;
 begin
+  writeln('Hint: Creating ParkUI object');
   WindowList.fLeaveWindow := TGameLeave.Create('ui/leave.xml', self);
   WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
   WindowList.fTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
@@ -513,6 +514,7 @@ end;
 
 destructor TParkUI.Free;
 begin
+  writeln('Hint: Deleting ParkUI object');
   WindowList.fLeaveWindow.Free;
   WindowList.fInfoWindow.Free;
   WindowList.fTerrainEdit.Free;

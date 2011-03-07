@@ -35,11 +35,13 @@ end;
 
 constructor TSky.Create;
 begin
+  writeln('Hint: Creating Sky object');
   LoadDefaults;
 end;
 
 destructor TSky.Free;
 begin
+  writeln('Hint: Deleting Sky object');
 end;
 
 end.

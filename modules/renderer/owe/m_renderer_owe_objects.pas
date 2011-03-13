@@ -35,7 +35,9 @@ type
       fReflectionPass: TRenderPass;
       fCurrentShader: TShader;
       fCurrentMaterialCount: Integer;
+      fExcludedMeshObject, fExcludedMesh: Integer;
     public
+      CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
       ShadowMode, MaterialMode: Boolean;
       property OpaqueShader: TShader read fOpaqueShader;
@@ -211,10 +213,14 @@ var
 begin
   fCurrentMaterialCount := 1;
   if MaterialMode then
-    ModuleManager.ModRenderer.GBuffer.Textures[3].Bind(6);
+    begin
+    CurrentGBuffer.Textures[1].Bind(5);
+    CurrentGBuffer.Textures[3].Bind(6);
+    end;
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
-      if fManagedObjects[i].Meshes[j].Visible then
+      begin
+      if (fManagedObjects[i].Meshes[j].Visible) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
         if fManagedObjects[i].Meshes[j].Transparent then
           begin
           if ShadowMode then
@@ -236,8 +242,9 @@ begin
             end;
           // Final render, front sides
           Render(fManagedObjects[i].Meshes[j]);
-          inc(fCurrentMaterialCount);
           end;
+      inc(fCurrentMaterialCount);
+      end;
 end;
 
 procedure TRObjects.RenderOpaque;
@@ -246,7 +253,7 @@ var
 begin
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
-      if fManagedObjects[i].Meshes[j].Visible then
+      if (fManagedObjects[i].Meshes[j].Visible) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
         if not fManagedObjects[i].Meshes[j].Transparent then
           begin
           if not ShadowMode then
@@ -282,6 +289,8 @@ begin
             begin
             if fManagedObjects[i].Meshes[j].Reflection = nil then
               fManagedObjects[i].Meshes[j].Reflection := TCubeMap.Create(ModuleManager.ModRenderer.ReflectionSize, ModuleManager.ModRenderer.ReflectionSize, GL_RGB16F_ARB);
+            fExcludedMeshObject := i;
+            fExcludedMesh := j;
             ModuleManager.ModRenderer.ViewPoint := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
             fManagedObjects[i].Meshes[j].Reflection.Render(fReflectionPass, ModuleManager.ModRenderer.ViewPoint);
             fManagedObjects[i].Meshes[j].ReflectionFramesToGo := ModuleManager.ModRenderer.ReflectionUpdateInterval - 1;
@@ -294,6 +303,8 @@ begin
           fManagedObjects[i].Meshes[j].Reflection.Free;
           fManagedObjects[i].Meshes[j].Reflection := nil;
           end;
+  fExcludedMeshObject := -1;
+  fExcludedMesh := -1;
 end;
 
 constructor TRObjects.Create;
@@ -322,12 +333,13 @@ begin
   fTransparentShader.UniformI('Texture', 0);
   fTransparentShader.UniformI('NormalMap', 1);
   fTransparentShader.UniformI('LightFactorMap', 2);
-  fTransparentShader.UniformI('ReflectionMap', 3);
   fTransparentShader.UniformI('TransparencyMask', 7);
   fTransparentShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
 
   fTransparentMaterialShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-material.fs');
   fTransparentMaterialShader.UniformI('Texture', 0);
+  fTransparentMaterialShader.UniformI('NormalMap', 5);
+  fTransparentMaterialShader.UniformI('ReflectionMap', 3);
   fTransparentMaterialShader.UniformI('MaterialMap', 6);
   fTransparentMaterialShader.UniformI('LightTexture', 7);
 
@@ -336,6 +348,10 @@ begin
   fReflectionPass.RenderObjects := ModuleManager.ModRenderer.ReflectionRenderObjects;
   fReflectionPass.RenderParticles := ModuleManager.ModRenderer.ReflectionRenderParticles;
   fReflectionPass.RenderAutoplants := ModuleManager.ModRenderer.ReflectionRenderAutoplants;
+
+  fExcludedMeshObject := -1;
+  fExcludedMesh := -1;
+  CurrentGBuffer := ModuleManager.ModRenderer.GBuffer;
 
   fTest := ASEFileToMeshArray(LoadASEFile('scenery/untitled.ase'));
   with fTest.AddArmature do

@@ -43,6 +43,7 @@ type
       procedure Resize(Event: String; Data, Result: Pointer);
       procedure Check;
       procedure Render;
+      procedure Advance;
       procedure RenderBuffers;
       constructor Create;
       destructor Free;
@@ -52,6 +53,11 @@ implementation
 
 uses
   m_varlist, u_events, g_park, main;
+
+procedure TRWater.Advance;
+begin
+  fBumpOffset := fBumpOffset + Vector(0.1, 0.2) / 150 * FPSDisplay.MS;
+end;
 
 procedure TRWater.Resize(Event: String; Data, Result: Pointer);
 begin
@@ -114,7 +120,6 @@ procedure TRWater.Render;
 var
   i: Integer;
 begin
-  fBumpOffset := fBumpOffset + Vector(0.1, 0.2) / 150 * FPSDisplay.MS;
   for i := 0 to high(fWaterLayers) do
     if fWaterLayers[i].Visible then
       begin

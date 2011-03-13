@@ -65,8 +65,6 @@ begin
   glPopMatrix;
   
   glMatrixMode(GL_MODELVIEW);
-  
-  ModuleManager.ModRenderer.Frustum.Calculate;
 end;
 
 procedure TCubeMap.Render(Orientation: Integer; RenderPass: TRenderPass; Position: TVector3D);
@@ -105,6 +103,7 @@ begin
   Render(CUBE_RIGHT, RenderPass, Position);
   Render(CUBE_BOTTOM, RenderPass, Position);
   Render(CUBE_TOP, RenderPass, Position);
+  ModuleManager.ModRenderer.Frustum.Calculate;
 end;
 
 constructor TCubeMap.Create(Width, Height: Integer; Format: GLEnum);

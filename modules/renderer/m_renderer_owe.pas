@@ -510,6 +510,10 @@ begin
   ModuleManager.ModRenderer.RObjects.CheckVisibility;
 
   RAutoplants.Update;
+  RWater.Advance;
+
+  // Do water renderpasses
+  RWater.RenderBuffers;
 
   // Create object reflections
   DynamicSettingsSetReflection;
@@ -534,9 +538,6 @@ begin
   RObjects.CheckVisibility;
 
   // Geometry pass
-
-  // Do water renderpasses
-  RWater.RenderBuffers;
 
   // Opaque parts only
   GBuffer.Bind;
@@ -597,7 +598,7 @@ begin
     fTransparencyMask.Bind(7);
 
     glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0);
+    glAlphaFunc(GL_NOTEQUAL, 0.0);
 //     glColorMask(true, true, true, false);
 
     // Autoplants
@@ -628,7 +629,7 @@ begin
     glDepthMask(true);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0);
+    glAlphaFunc(GL_NOTEQUAL, 0.0);
     glDisable(GL_BLEND);
 
     glClearColor(0.0, 0.0, 0.0, 0.0);

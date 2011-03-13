@@ -39,6 +39,8 @@ procedure TRenderPass.Render;
     glEnd;
   end;
 begin
+  ModuleManager.ModRenderer.RObjects.CurrentGBuffer := fGBuffer;
+
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 
   glColorMask(true, true, true, true);
@@ -70,17 +72,17 @@ begin
 
     glDisable(GL_CULL_FACE);
 
-    // Water
-    if (RenderWater) and (RenderTerrain) then
-      begin
-      glColorMask(false, false, false, false);
-      glDepthMask(false);
-      ModuleManager.ModRenderer.RWater.Check;
-      glDepthMask(true);
-      glColorMask(true, true, true, true);
-
-      ModuleManager.ModRenderer.RWater.Render;
-      end;
+//     // Water
+//     if (RenderWater) and (RenderTerrain) then
+//       begin
+//       glColorMask(false, false, false, false);
+//       glDepthMask(false);
+//       ModuleManager.ModRenderer.RWater.Check;
+//       glDepthMask(true);
+//       glColorMask(true, true, true, true);
+// 
+//       ModuleManager.ModRenderer.RWater.Render;
+//       end;
 
   fGBuffer.Unbind;
 
@@ -97,7 +99,7 @@ begin
     ModuleManager.ModRenderer.TransparencyMask.Bind(7);
 
     glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.0);
+    glAlphaFunc(GL_NOTEQUAL, 0.0);
 //     glColorMask(true, true, true, false);
 
     // Autoplants
@@ -194,6 +196,8 @@ begin
   fSceneBuffer.Unbind;
 
   glPopAttrib;
+
+  ModuleManager.ModRenderer.RObjects.CurrentGBuffer := ModuleManager.ModRenderer.GBuffer;
 end;
 
 constructor TRenderPass.Create(X, Y: Integer);
@@ -228,6 +232,7 @@ begin
   RenderSky := True;
   RenderTerrain := True;
   RenderObjects := True;
+  RenderWater := True;
 end;
 
 destructor TRenderPass.Free;

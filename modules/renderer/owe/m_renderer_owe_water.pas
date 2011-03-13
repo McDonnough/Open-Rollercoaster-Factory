@@ -28,7 +28,6 @@ type
     protected
       fWaterMap: TTable;
       fCheckShader, fRenderShader: TShader;
-      fRenderPass: TRenderPass;
       fWaterLayers: Array of TWaterLayer;
       fBumpMap: TTexture;
       fBumpOffset: TVector2D;
@@ -145,11 +144,8 @@ var
   Radius, OldRadius: Single;
   Count: Integer;
   i, j: Integer;
-  ResX, ResY: Integer;
 begin
   writeln('Hint: Initializing water renderer');
-
-  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 
   fCheckShader := TShader.Create('orcf-world-engine/scene/water/water.vs', 'orcf-world-engine/scene/water/waterCheck.fs');
   fCheckShader.UniformI('HeightMap', 0);
@@ -195,16 +191,12 @@ begin
     Radius := Radius + Max(0.005, i / 30000);
     end;
   fWaterVBO.Unbind;
-
-  fRenderPass := TRenderPass.Create(Round(ResX * ModuleManager.ModRenderer.WaterReflectionBufferSamples), Round(ResY * ModuleManager.ModRenderer.WaterReflectionBufferSamples));
 end;
 
 destructor TRWater.Free;
 var
   i: Integer;
 begin
-  fRenderPass.Free;
-
   EventManager.RemoveCallback(@Resize);
   EventManager.RemoveCallback(@Update);
 

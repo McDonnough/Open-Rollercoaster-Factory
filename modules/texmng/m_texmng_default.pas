@@ -40,7 +40,6 @@ type
       function GetRealTexID(Tex: Integer): GLUInt;
       function GetBPP(Tex: Integer): Integer;
       procedure CreateMipmaps(Tex: Integer);
-      procedure Copy(Tex: Integer);
       destructor Free;
     end;
 
@@ -254,12 +253,6 @@ begin
   BindTexture(Tex);
   SetFilter(Tex, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
   gluBuild2DMipmaps(GL_TEXTURE_2D, GetBPP(Tex), fTexRefs[Tex].Width, fTexRefs[Tex].Height, fTexRefs[Tex].InputFormat, GL_UNSIGNED_BYTE, @fTexRefs[Tex].Data[0]);
-end;
-
-procedure TModuleTextureManagerDefault.Copy(Tex: Integer);
-begin
-  BindTexture(Tex);
-  glCopyTexImage2D(GL_TEXTURE_2D, 0, fTexRefs[Tex].ExternalFormat, 0, 0, fTexRefs[Tex].Width, fTexRefs[Tex].Height, 0);
 end;
 
 destructor TModuleTextureManagerDefault.Free;

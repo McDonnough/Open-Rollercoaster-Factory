@@ -97,11 +97,6 @@ type
         * Get the OpenGL Texture ID
         *)
       function CreateMipmaps(Tex: Integer): Integer; virtual abstract;
-
-      (**
-        * Copy one texture to another
-        *)
-      procedure Copy(Tex: Integer); virtual abstract;
     end;
 
   TTexture = class
@@ -125,7 +120,6 @@ type
       procedure FromTexImage(Tex: TTexImage);
       function BPP: Integer;
       procedure CreateMipmaps;
-      procedure Copy;
       destructor Free;
     end;
 
@@ -211,11 +205,6 @@ end;
 procedure TTexture.CreateMipmaps;
 begin
   ModuleManager.ModTexMng.CreateMipmaps(fID);
-end;
-
-procedure TTexture.Copy;
-begin
-  ModuleManager.ModTexMng.Copy(fID);
 end;
 
 destructor TTexture.Free;

@@ -9,7 +9,7 @@ type
   TWaterLayer = class
     protected
       fHeight: Word;
-      fRefractionPass, fReflectionPass: TRenderPass;
+      fRefractionPass, fRefractionGeo, fReflectionPass: TFBO;
       fQuery: TOcclusionQuery;
       fVisible: Boolean;
     private
@@ -32,11 +32,13 @@ type
       fBumpMap: TTexture;
       fBumpOffset: TVector2D;
       fWaterVBO: TVBO;
+      fRenderPass: TRenderPass;
     public
       property RenderShader: TShader read fRenderShader;
       property CheckShader: TShader read fCheckShader;
       property BumpOffset: TVector2D read fBumpOffset;
       property WaterVBO: TVBO read fWaterVBO;
+      property RenderPass: TRenderPass read fRenderPass;
       procedure Update(Event: String; Data, Result: Pointer);
       procedure Resize(Event: String; Data, Result: Pointer);
       procedure Check;
@@ -144,8 +146,11 @@ var
   Radius, OldRadius: Single;
   Count: Integer;
   i, j: Integer;
+  ResX, ResY: Integer;
 begin
   writeln('Hint: Initializing water renderer');
+
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 
   fCheckShader := TShader.Create('orcf-world-engine/scene/water/water.vs', 'orcf-world-engine/scene/water/waterCheck.fs');
   fCheckShader.UniformI('HeightMap', 0);
@@ -191,12 +196,17 @@ begin
     Radius := Radius + Max(0.005, i / 30000);
     end;
   fWaterVBO.Unbind;
+
+  fRenderPass := TRenderPass.Create(Round(ResX * ModuleManager.ModRenderer.WaterReflectionBufferSamples), Round(ResY * ModuleManager.ModRenderer.WaterReflectionBufferSamples));
+  fRenderPass.RenderWater := False;
 end;
 
 destructor TRWater.Free;
 var
   i: Integer;
 begin
+  fRenderPass.Free;
+
   EventManager.RemoveCallback(@Resize);
   EventManager.RemoveCallback(@Update);
 
@@ -246,23 +256,15 @@ begin
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Height', Height / 65535 * 256);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Offset', ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
-  fRefractionPass.Scene.Textures[0].Bind(2);
-  fReflectionPass.Scene.Textures[0].Bind(3);
-  fRefractionPass.GBuffer.Textures[2].Bind(4);
+  fRefractionPass.Textures[0].Bind(2);
+  fReflectionPass.Textures[0].Bind(3);
+  fRefractionGeo.Textures[0].Bind(4);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
 
 
   ModuleManager.ModRenderer.RWater.WaterVBO.Bind;
   ModuleManager.ModRenderer.RWater.WaterVBO.Render;
   ModuleManager.ModRenderer.RWater.WaterVBO.Unbind;
-
-
-//   glBegin(GL_QUADS);
-//     glVertex2f(0, Park.pTerrain.SizeY / 5);
-//     glVertex2f(Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-//     glVertex2f(Park.pTerrain.SizeX / 5, 0);
-//     glVertex2f(0, 0);
-//   glEnd;
 
   ModuleManager.ModRenderer.RWater.RenderShader.Unbind;
 end;
@@ -283,7 +285,9 @@ begin
 
     ModuleManager.ModRenderer.InvertFrontFace;
     ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
-    fReflectionPass.Render;
+    ModuleManager.ModRenderer.RWater.RenderPass.Render;
+    fReflectionPass.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.Scene.Textures[0]);
+    
     ModuleManager.ModRenderer.InvertFrontFace;
   glPopMatrix;
 
@@ -293,7 +297,9 @@ begin
   glPopMatrix;
 
   ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
-  fRefractionPass.Render;
+  ModuleManager.ModRenderer.RWater.RenderPass.Render;
+  fRefractionPass.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.Scene.Textures[0]);
+  fRefractionGeo.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.GBuffer.Textures[2]);
 
   glDisable(GL_CLIP_PLANE0);
 end;
@@ -303,8 +309,15 @@ var
   ResX, ResY: Integer;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
-  fReflectionPass := TRenderPass.Create(Round(ResX * ModuleManager.ModRenderer.WaterReflectionBufferSamples), Round(ResY * ModuleManager.ModRenderer.WaterReflectionBufferSamples));
-  fRefractionPass := TRenderPass.Create(Round(ResX * ModuleManager.ModRenderer.WaterReflectionBufferSamples), Round(ResY * ModuleManager.ModRenderer.WaterReflectionBufferSamples));
+  fReflectionPass := TFBO.Create(Round(ResX * ModuleManager.ModRenderer.WaterReflectionBufferSamples), Round(ResY * ModuleManager.ModRenderer.WaterReflectionBufferSamples), False);
+  fReflectionPass.AddTexture(GL_RGB16F_ARB, GL_LINEAR, GL_LINEAR);
+  fReflectionPass.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fRefractionPass := TFBO.Create(Round(ResX * ModuleManager.ModRenderer.WaterReflectionBufferSamples), Round(ResY * ModuleManager.ModRenderer.WaterReflectionBufferSamples), False);
+  fRefractionPass.AddTexture(GL_RGB16F_ARB, GL_LINEAR, GL_LINEAR);
+  fRefractionPass.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fRefractionGeo := TFBO.Create(Round(ResX * ModuleManager.ModRenderer.WaterReflectionBufferSamples), Round(ResY * ModuleManager.ModRenderer.WaterReflectionBufferSamples), False);
+  fRefractionGeo.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
+  fRefractionGeo.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fQuery := TOcclusionQuery.Create;
   fHeight := H;
 end;
@@ -313,6 +326,7 @@ destructor TWaterLayer.Free;
 begin
   fQuery.Free;
   fRefractionPass.Free;
+  fRefractionGeo.Free;
   fReflectionPass.Free;
 end;
 

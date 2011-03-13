@@ -3,6 +3,9 @@
 uniform sampler2D Texture;
 uniform sampler2D NormalMap;
 uniform sampler2D LightFactorMap;
+uniform sampler2D ReflectionMap;
+
+uniform vec3 ViewPoint;
 
 uniform int HasTexture;
 uniform int HasNormalMap;
@@ -11,6 +14,27 @@ uniform int HasLightFactorMap;
 varying vec3 Vertex;
 varying vec3 Normal;
 varying vec4 Color;
+
+vec3 GetReflectionColor(vec3 vector) {
+  vector = reflect(normalize(Vertex - ViewPoint), -vector);
+  float mx = max(abs(vector.x), max(abs(vector.y), abs(vector.z)));
+  vector = vector / mx;
+  vec2 texCoord = vec2(0, 0);
+  if (vector.z <= -0.99)
+    texCoord = 0.5 + 0.5 * vector.xy * vec2(0.99, 0.99);
+  if (vector.z >= 0.99)
+    texCoord = 0.5 + 0.5 * vector.xy * vec2(-0.99, 0.99) + vec2(2.0, 0.0);
+  if (vector.x <= -0.99)
+    texCoord = 0.5 + 0.5 * vector.zy * vec2(-0.99, 0.99) + vec2(0.0, 1.0);
+  if (vector.x >= 0.99)
+    texCoord = 0.5 + 0.5 * vector.zy * vec2(0.99, 0.99) + vec2(1.0, 0.0);
+  if (vector.y <= -0.99)
+    texCoord = 0.5 + 0.5 * vector.xz * vec2(0.99, -0.99) + vec2(1.0, 1.0);
+  if (vector.y >= 0.99)
+    texCoord = 0.5 + 0.5 * vector.xz * vec2(0.99, 0.99) + vec2(2.0, 1.0);
+  texCoord /= vec2(3.0, 2.0);
+  return texture2D(ReflectionMap, texCoord).rgb;
+}
 
 void main(void) {
   gl_FragData[3].rgb = vec3(0.0, 0.0, 0.0);
@@ -30,8 +54,8 @@ void main(void) {
     normal = normalize(M * (vec3(texture2D(NormalMap, gl_TexCoord[0].xy)) - vec3(0.5, 0.5, 0.5)));
   }
   gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
-  gl_FragData[0].rgb = gl_FrontMaterial.diffuse.rgb;
+  gl_FragData[0].rgb = mix(gl_FrontMaterial.diffuse.rgb, GetReflectionColor(normal), gl_FrontMaterial.specular.g);
   if (HasTexture == 1)
     gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;
-  gl_FragData[0].a = gl_FrontMaterial.specular.r;
+  gl_FragData[0].a = gl_FrontMaterial.specular.r - gl_FrontMaterial.specular.g;
 }

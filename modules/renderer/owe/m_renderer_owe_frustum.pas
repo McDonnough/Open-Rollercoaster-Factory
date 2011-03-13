@@ -189,6 +189,9 @@ begin
   Frustum[Front][C] := clip[11] + clip[10];
   Frustum[Front][D] := clip[15] + clip[14];
   NormalizePlane(self, Front);
+
+  ModuleManager.ModRenderer.RTerrain.CheckVisibility;
+  ModuleManager.ModRenderer.RObjects.CheckVisibility;
 end;
 
 end.

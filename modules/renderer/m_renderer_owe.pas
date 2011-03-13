@@ -6,7 +6,8 @@ uses
   Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
   m_renderer_owe_camera, math, m_texmng_class, m_shdmng_class, u_functions, m_renderer_owe_frustum,
   m_renderer_owe_sky, m_renderer_owe_classes, u_scene, m_renderer_owe_lights, m_renderer_owe_terrain,
-  m_renderer_owe_autoplants, m_renderer_owe_water, m_renderer_owe_objects, u_files, u_graphics;
+  m_renderer_owe_autoplants, m_renderer_owe_water, m_renderer_owe_objects, m_renderer_owe_cubemaps,
+  m_renderer_owe_renderpass, u_files, u_graphics;
 
 type
   TModuleRendererOWE = class(TModuleRendererClass)
@@ -23,10 +24,13 @@ type
       fReflectionRealtimeMinimum: Single;
       fReflectionRenderTerrain, fReflectionRenderAutoplants, fReflectionRenderObjects, fReflectionRenderParticles: Boolean;
       fReflectionUpdateInterval: Integer;
+      fReflectionSize, fEnvMapSize: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
       fUseScreenSpaceAmbientOcclusion, fUseMotionBlur, fUseFocalBlur: Boolean;
       fBloomFactor: Single;
       fLODDistanceOffset, fLODDistanceFactor, fMotionBlurStrength: Single;
+      fReflectionRenderDistanceOffset, fReflectionRenderDistanceFactor: Single;
+      fReflectionTerrainDetailDistance, fReflectionTerrainTesselationDistance, fReflectionTerrainBumpmapDistance: Single;
       fShadowBufferSamples: Single;
       fSubdivisionCuts: Integer;
       fSubdivisionDistance: Single;
@@ -49,7 +53,13 @@ type
       fFrameID: Integer;
       fGamma: Single;
       fFrontFace: GLEnum;
+      fEnvironmentMap: TCubeMap;
+      fEnvironmentPass: TRenderPass;
+      fEnvironmentMapFrames, fEnvironmentMapInterval: Integer;
     public
+      CurrentTerrainBumpmapDistance, CurrentTerrainDetailDistance, CurrentTerrainTesselationDistance: Single;
+      CurrentLODDistanceFactor, CurrentLODDistanceOffset: Single;
+      ViewPoint: TVector3D;
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
       property RSky: TRSky read fRendererSky;
@@ -75,6 +85,8 @@ type
       property SunShadowBuffer: TFBO read fSunShadowBuffer;
       property FSAASamples: Integer read fFSAASamples;
       property ReflectionUpdateInterval: Integer read fReflectionUpdateInterval;
+      property ReflectionSize: Integer read fReflectionSize;
+      property EnvMapSize: Integer read fEnvMapSize;
       property UseSunShadows: Boolean read fUseSunShadows;
       property UseLightShadows: Boolean read fUseLightShadows;
       property BloomFactor: Single read fBloomFactor;
@@ -90,6 +102,8 @@ type
       property SSAOSamples: Integer read fSSAOSamples;
       property LODDistanceOffset: Single read fLODDistanceOffset;
       property LODDistanceFactor: Single read fLODDistanceFactor;
+      property ReflectionLODDistanceOffset: Single read fReflectionRenderDistanceOffset;
+      property ReflectionLODDistanceFactor: Single read fReflectionRenderDistanceFactor;
       property SubdivisionCuts: Integer read fSubdivisionCuts;
       property SubdivisionDistance: Single read fSubdivisionDistance;
       property BufferSizeX: Integer read fBufferSizeX;
@@ -100,6 +114,14 @@ type
       property TerrainTesselationDistance: Single read fTerrainTesselationDistance;
       property TerrainDetailDistance: Single read fTerrainDetailDistance;
       property TerrainBumpmapDistance: Single read fTerrainBumpmapDistance;
+      property ReflectionTerrainTesselationDistance: Single read fReflectionTerrainTesselationDistance;
+      property ReflectionTerrainDetailDistance: Single read fReflectionTerrainDetailDistance;
+      property ReflectionTerrainBumpmapDistance: Single read fReflectionTerrainBumpmapDistance;
+      property ReflectionRenderTerrain: Boolean read fReflectionRenderTerrain;
+      property ReflectionRenderObjects: Boolean read fReflectionRenderObjects;
+      property ReflectionRenderParticles: Boolean read fReflectionRenderParticles;
+      property ReflectionRenderAutoplants: Boolean read fReflectionRenderAutoplants;
+      property ReflectionRealtimeMinimum: Single read fReflectionRealtimeMinimum;
       property MotionBlurStrength: Single read fMotionBlurStrength;
       property FocusDistance: Single read fFocusDistance;
       property Frustum: TFrustum read fFrustum;
@@ -108,6 +130,9 @@ type
       property ShadowOffset: TVector3D read fShadowOffset;
       property FrameID: Integer read fFrameID;
       property Gamma: Single read fGamma;
+      property EnvironmentMap: TCubeMap read fEnvironmentMap;
+      procedure DynamicSettingsSetNormal;
+      procedure DynamicSettingsSetReflection;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
@@ -122,6 +147,24 @@ implementation
 
 uses
   m_varlist, u_events, main;
+
+procedure TModuleRendererOWE.DynamicSettingsSetNormal;
+begin
+  CurrentLODDistanceFactor := LODDistanceFactor;
+  CurrentLODDistanceOffset := LODDistanceOffset;
+  CurrentTerrainBumpmapDistance := TerrainBumpmapDistance;
+  CurrentTerrainDetailDistance := TerrainDetailDistance;
+  CurrentTerrainTesselationDistance := TerrainTesselationDistance;
+end;
+
+procedure TModuleRendererOWE.DynamicSettingsSetReflection;
+begin
+  CurrentLODDistanceFactor := ReflectionLODDistanceFactor;
+  CurrentLODDistanceOffset := ReflectionLODDistanceOffset;
+  CurrentTerrainBumpmapDistance := ReflectionTerrainBumpmapDistance;
+  CurrentTerrainDetailDistance := ReflectionTerrainDetailDistance;
+  CurrentTerrainTesselationDistance := ReflectionTerrainTesselationDistance;
+end;
 
 procedure TModuleRendererOWE.PostInit;
 var
@@ -252,6 +295,12 @@ begin
   fRendererObjects := TRObjects.Create;
   fRendererWater := TRWater.Create;
 
+  fEnvironmentMap := TCubeMap.Create(EnvMapSize, EnvMapSize, GL_RGB16F_ARB);
+  fEnvironmentPass := TRenderPass.Create(EnvMapSize, EnvMapSize);
+  fEnvironmentPass.RenderAutoplants := False;
+  fEnvironmentPass.RenderObjects := False;
+  fEnvironmentPass.RenderParticles := False;
+
   fFullscreenShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fullscreen.fs');
   fFullscreenShader.UniformI('Texture', 0);
 
@@ -309,6 +358,8 @@ begin
   fBlackShader.Unbind;
 
   fFrustum := TFrustum.Create;
+
+  fEnvironmentMapFrames := 0;
 end;
 
 procedure TModuleRendererOWE.Unload;
@@ -329,6 +380,9 @@ begin
   fAAShader.Free;
   fHDRAverageShader.Free;
   fFullscreenShader.Free;
+
+  fEnvironmentPass.Free;
+  fEnvironmentMap.Free;
 
   fGBuffer.Free;
   fSpareBuffer.Free;
@@ -452,14 +506,32 @@ begin
   RCamera.ApplyTransformation(Vector(1, 1, 1));
 
   // Do some scene preparation
-
   Frustum.Calculate;
+  ModuleManager.ModRenderer.RObjects.CheckVisibility;
 
   RAutoplants.Update;
 
-  // Check some visibilities
+  // Create object reflections
+  DynamicSettingsSetReflection;
+    RTerrain.BorderEnabled := False;
+    RObjects.RenderReflections;
+    RTerrain.BorderEnabled := True;
 
+    ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
+
+    if fEnvironmentMapFrames <= 0 then
+      begin
+      fEnvironmentMap.Render(fEnvironmentPass, ModuleManager.ModCamera.ActiveCamera.Position);
+      fEnvironmentMapFrames := fEnvironmentMapInterval;
+      end
+    else
+      dec(fEnvironmentMapFrames);
+
+  DynamicSettingsSetNormal;
+
+  // Check some visibilities
   RTerrain.CheckVisibility;
+  RObjects.CheckVisibility;
 
   // Geometry pass
 
@@ -888,13 +960,21 @@ begin
   if GetConfVal('used') <> '1' then
     begin
     SetConfVal('used', '1');
-    SetConfVal('samples', '4');
+    SetConfVal('samples', '2');
     SetConfVal('reflections.realtime.minimum', '0.0');
+    SetConfVal('reflections.realtime.size', '512');
+    SetConfVal('reflections.envmap.size', '512');
     SetConfVal('reflections.render.terrain', '1');
+    SetConfVal('reflections.render.terrain.tesselationdistance', '25');
+    SetConfVal('reflections.render.terrain.detaildistance', '100');
+    SetConfVal('reflections.render.terrain.bumpmapdistance', '60');
     SetConfVal('reflections.render.autoplants', '1');
     SetConfVal('reflections.render.objects', '1');
     SetConfVal('reflections.render.particles', '1');
+    SetConfVal('reflections.render.distanceoffset', '0');
+    SetConfVal('reflections.render.distancefactor', '1');
     SetConfVal('reflections.updateinterval', '1');
+    SetConfVal('reflections.environmentmap.interval', '1');
     SetConfVal('ssao', '1');
     SetConfVal('ssao.samples', '100');
     SetConfVal('refractions', '1');
@@ -920,13 +1000,21 @@ begin
     SetConfVal('gamma', '1.0');
     SetConfVal('water.samples', '1');
     end;
-  fFSAASamples := StrToIntWD(GetConfVal('samples'), 4);
+  fFSAASamples := StrToIntWD(GetConfVal('samples'), 2);
+  fReflectionSize := StrToIntWD(GetConfVal('reflections.realtime.size'), 512);
+  fEnvMapSize := StrToIntWD(GetConfVal('reflections.envmap.size'), 512);
   fReflectionUpdateInterval := StrToIntWD(GetConfVal('reflections.updateinterval'), 1);
   fReflectionRealtimeMinimum := StrToFloatWD(GetConfVal('reflections.realtime.minimum'), 0.0);
   fReflectionRenderAutoplants := GetConfVal('reflections.render.autoplants') = '1';
   fReflectionRenderTerrain := GetConfVal('reflections.render.terrain') = '1';
   fReflectionRenderParticles := GetConfVal('reflections.render.particles') = '1';
   fReflectionRenderObjects := GetConfVal('reflections.render.objects') = '1';
+  fReflectionRenderDistanceOffset := StrToFloatWD(GetConfVal('reflections.render.distanceoffset'), 0.0);
+  fReflectionRenderDistanceFactor := StrToFloatWD(GetConfVal('reflections.render.distancefactor'), 1.0);
+  fReflectionTerrainTesselationDistance := StrToFloatWD(GetConfVal('reflections.render.terrain.tesselationdistance'), 25);
+  fReflectionTerrainDetailDistance := StrToFloatWD(GetConfVal('reflections.render.terrain.detaildistance'), 100);
+  fReflectionTerrainBumpmapDistance := StrToFloatWD(GetConfVal('reflections.render.terrain.bumpmapdistance'), 60);
+  fEnvironmentMapInterval := StrToIntWD(GetConfVal('reflections.environmentmap.interval'), 1);
   fUseSunShadows := GetConfVal('shadows') <> '0';
   fUseLightShadows := GetConfVal('shadows') = '2';
   fBloomFactor := StrToFloatWD(GetConfVal('bloom'), 1.0);
@@ -945,8 +1033,8 @@ begin
   fTerrainBumpmapDistance := StrToFloatWD(GetConfVal('terrain.bumpmapdistance'), 60);
   fWaterReflectionBufferSamples := StrToFloatWD(GetConfVal('water.samples'), 1);
   fSSAOSamples := StrToIntWD(GetConfVal('ssao.samples'), 100);
-  fLODDistanceOffset := StrToIntWD(GetConfVal('lod.distanceoffset'), 0);
-  fLODDistanceFactor := StrToIntWD(GetConfVal('lod.distancefactor'), 1);
+  fLODDistanceOffset := StrToFloatWD(GetConfVal('lod.distanceoffset'), 0.0);
+  fLODDistanceFactor := StrToFloatWD(GetConfVal('lod.distancefactor'), 1.0);
   fSubdivisionCuts := StrToIntWD(GetConfVal('subdiv.cuts'), 2);
   fSubdivisionDistance := StrToIntWD(GetConfVal('subdiv.distance'), 10);
   fAutoplantCount := StrToIntWD(GetConfVal('autoplants.count'), 9000);

@@ -13,6 +13,7 @@ type
       fWidth, fHeight: Integer;
     public
       MinY, MaxY: Integer;
+      RenderAutoplants, RenderTerrain, RenderObjects, RenderParticles, RenderSky, RenderWater: Boolean;
       property Width: Integer read fWidth;
       property Height: Integer read fHeight;
       property Scene: TFBO read fSceneBuffer;
@@ -53,17 +54,34 @@ begin
     glEnable(GL_CULL_FACE);
 
     // Sky
-    ModuleManager.ModRenderer.RSky.Render;
+    if RenderSky then
+      ModuleManager.ModRenderer.RSky.Render;
 
     // Objects
-    ModuleManager.ModRenderer.RObjects.RenderOpaque;
+    if RenderObjects then
+      ModuleManager.ModRenderer.RObjects.RenderOpaque;
 
     // Terrain
-
-    ModuleManager.ModRenderer.RTerrain.CurrentShader := ModuleManager.ModRenderer.RTerrain.GeometryPassShader;
-    ModuleManager.ModRenderer.RTerrain.Render;
+    if RenderTerrain then
+      begin
+      ModuleManager.ModRenderer.RTerrain.CurrentShader := ModuleManager.ModRenderer.RTerrain.GeometryPassShader;
+      ModuleManager.ModRenderer.RTerrain.Render;
+      end;
 
     glDisable(GL_CULL_FACE);
+
+    // Water
+    if (RenderWater) and (RenderTerrain) then
+      begin
+      glColorMask(false, false, false, false);
+      glDepthMask(false);
+      ModuleManager.ModRenderer.RWater.Check;
+      glDepthMask(true);
+      glColorMask(true, true, true, true);
+
+      ModuleManager.ModRenderer.RWater.Render;
+      end;
+
   fGBuffer.Unbind;
 
   // Save material buffer
@@ -83,12 +101,18 @@ begin
 //     glColorMask(true, true, true, false);
 
     // Autoplants
-    ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.GeometryPassShader;
-    ModuleManager.ModRenderer.RAutoplants.Render;
+    if RenderAutoplants then
+      begin
+      ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.GeometryPassShader;
+      ModuleManager.ModRenderer.RAutoplants.Render;
+      end;
 
     // Objects
-    ModuleManager.ModRenderer.RObjects.MaterialMode := false;
-    ModuleManager.ModRenderer.RObjects.RenderTransparent;
+    if RenderObjects then
+      begin
+      ModuleManager.ModRenderer.RObjects.MaterialMode := false;
+      ModuleManager.ModRenderer.RObjects.RenderTransparent;
+      end;
 
     // End
 
@@ -146,13 +170,21 @@ begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.MaterialPassShader;
-    ModuleManager.ModRenderer.RAutoplants.Render;
+    // Autoplants
+    if RenderAutoplants then
+      begin
+      ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.MaterialPassShader;
+      ModuleManager.ModRenderer.RAutoplants.Render;
+      end;
 
-    ModuleManager.ModRenderer.RObjects.MaterialMode := true;
-    glEnable(GL_CULL_FACE);
-    ModuleManager.ModRenderer.RObjects.RenderTransparent;
-    glDisable(GL_CULL_FACE);
+    // Objects
+    if RenderObjects then
+      begin
+      ModuleManager.ModRenderer.RObjects.MaterialMode := true;
+      glEnable(GL_CULL_FACE);
+      ModuleManager.ModRenderer.RObjects.RenderTransparent;
+      glDisable(GL_CULL_FACE);
+      end;
 
     glDisable(GL_BLEND);
 
@@ -176,7 +208,7 @@ begin
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
-  fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Material IDs
+  fGBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);          // Material IDs
   fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSpareBuffer := TFBO.Create(X, Y, false);
@@ -190,6 +222,12 @@ begin
   fSceneBuffer := TFBO.Create(X, Y, true);
   fSceneBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);          // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+
+  RenderAutoplants := True;
+  RenderParticles := True;
+  RenderSky := True;
+  RenderTerrain := True;
+  RenderObjects := True;
 end;
 
 destructor TRenderPass.Free;

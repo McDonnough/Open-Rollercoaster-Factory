@@ -111,6 +111,7 @@ type
       property Height: Integer read fSizeY;
       procedure Bind;
       procedure Unbind;
+      procedure CopyFrom(Texture: TTexture);
       procedure AddTexture(TexFormat, MinFilter, MagFilter: GLEnum);
       constructor Create(SizeX, SizeY: Integer; DepthBuffer: Boolean);
       destructor Free;
@@ -444,6 +445,8 @@ procedure TObjectVBO.ApplyChanges;
 var
   i: Integer;
 begin
+  if (fChangedTrianglesCount = 0) and (fChangedVerticesCount = 0) then
+    exit;
   Map(GL_WRITE_ONLY);
   for i := 0 to fChangedVerticesCount - 1 do
     begin
@@ -502,73 +505,9 @@ begin
 end;
 
 constructor TObjectVBO.Create(Mesh: TGeoMesh);
-// type
-//   TSomething = record
-//     OrigVertex: Integer;
-//     TVert: Integer;
-//     Facenormal, Used: Boolean;
-//     FaceIDs: Array of Integer;
-//     end;
 var
   i, j, k, l, VC: Integer;
-//   f: Boolean;
-//   VertexTVertexAssoc: Array of Array of TSomething;
-//   FaceVertexAssoc: Array of Array[0..2] of Integer;
-//   FaceVertexCount: Array of Integer;
 begin
-//   SetLength(VertexTVertexAssoc, Length(Mesh.Vertices));
-//   VC := 0;
-//   for i := 0 to high(Mesh.Vertices) do
-//     for j := 0 to high(Mesh.Vertices[i].FaceIDs) do
-//       begin
-//       F := False;
-//       if Mesh.Vertices[i].UseFaceNormal then
-//         for k := 0 to 2 do
-//           if Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].Vertices[k] = i then
-//             for l := 0 to high(VertexTVertexAssoc[i]) do
-//               if (VertexTVertexAssoc[i, l].TVert = Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].TexCoords[k]) and not (VertexTVertexAssoc[i, l].Facenormal) then
-//                 F := True;
-//       if F then
-//         begin
-//         SetLength(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs, length(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs));
-//         VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs[high(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs)] := Mesh.Vertices[i].FaceIDs[j];
-//         end
-//       else
-//         for k := 0 to 2 do
-//           if Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].Vertices[k] = i then
-//             begin
-//             SetLength(VertexTVertexAssoc[i], length(VertexTVertexAssoc[i]) + 1);
-//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].TVert := Mesh.Faces[Mesh.Vertices[i].FaceIDs[j]].TexCoords[k];
-//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].Facenormal := Mesh.Vertices[i].UseFaceNormal;
-//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].Used := False;
-//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].OrigVertex := i;
-//             SetLength(VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs, 1);
-//             VertexTVertexAssoc[i, high(VertexTVertexAssoc[i])].FaceIDs[0] := Mesh.Vertices[i].FaceIDs[j];
-//             inc(VC);
-//             end;
-//       end;
-//   Create(VC, Length(Mesh.Faces), Mesh);
-//   SetLength(FaceVertexAssoc, Length(Mesh.Faces));
-//   SetLength(FaceVertexCount, Length(Mesh.Faces));
-//   VC := 0;
-//   for i := 0 to high(VertexTVertexAssoc) do
-//    for j := 0 to high(VertexTVertexAssoc[i]) do
-//       begin
-//       Vertices[VC] := Mesh.Vertices[VertexTVertexAssoc[i, j].OrigVertex].Position;
-//       TexCoords[VC] := Mesh.TextureVertices[VertexTVertexAssoc[i, j].TVert].Position;
-//       if Mesh.Vertices[i].UseFaceNormal then
-//         Normals[VC] := Mesh.Faces[VertexTVertexAssoc[i, j].FaceIDs[0]].Facenormal
-//       else
-//         Normals[VC] := Mesh.Vertices[VertexTVertexAssoc[i, j].OrigVertex].Vertexnormal;
-//       Colors[i] := Mesh.Vertices[i].Color;
-//       for k := 0 to high(VertexTVertexAssoc[i, j].FaceIDs) do
-//         begin
-//         inc(FaceVertexCount[VertexTVertexAssoc[i, j].FaceIDs[k]]);
-//         if FaceVertexCount[VertexTVertexAssoc[i, j].FaceIDs[k]] = 3 then
-//           Finish me
-//         end;
-//       end;
-
   SetLength(fMeshVertexIDList, 3 * Length(Mesh.Faces));
   SetLength(fMeshTextureVertexIDList, 3 * Length(Mesh.Faces));
 
@@ -664,6 +603,21 @@ begin
     glPopAttrib;
     end;
   fCurrentFBO := nil;
+end;
+
+procedure TFBO.CopyFrom(Texture: TTexture);
+begin
+  Bind;
+  Texture.Bind(0);
+  ModuleManager.ModRenderer.FullscreenShader.Bind;
+  glBegin(GL_QUADS);
+    glVertex2f(-1, -1);
+    glVertex2f( 1, -1);
+    glVertex2f( 1,  1);
+    glVertex2f(-1,  1);
+  glEnd;
+  ModuleManager.ModRenderer.FullscreenShader.UnBind;
+  UnBind;
 end;
 
 procedure TFBO.AddTexture(TexFormat, MinFilter, MagFilter: GLEnum);

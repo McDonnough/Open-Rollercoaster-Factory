@@ -331,7 +331,6 @@ begin
     for i := 0 to high(Dirs) do
       begin
       Dirs[i] := TButton.Create(DirArea.Surface);
-      Dirs[i].TranslateContent := False;
       Dirs[i].Left := 0;
       Dirs[i].Top := 32 * i;
       Dirs[i].Width := 144;
@@ -339,7 +338,10 @@ begin
       Dirs[i].Tag := i + 1;
       Dirs[i].OnClick := @UpdateFileList;
       if ExtractFileName(fDirList.Strings[i]) <> '..' then
-        Dirs[i].Caption := ExtractFileName(fDirList.Strings[i])
+        begin
+        Dirs[i].TranslateContent := False;
+        Dirs[i].Caption := ExtractFileName(fDirList.Strings[i]);
+        end
       else
         Dirs[i].Caption := '<< Up <<';
       end;

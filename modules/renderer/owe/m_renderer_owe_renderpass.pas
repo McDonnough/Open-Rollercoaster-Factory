@@ -43,17 +43,20 @@ begin
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
 
+  glDisable(GL_BLEND);
+  glDisable(GL_ALPHA_TEST);
+
   glColorMask(true, true, true, true);
   glDepthMask(true);
 
   // Opaque parts only
-  fGBuffer.Bind;
+  GBuffer.Bind;
     glDisable(GL_BLEND);
     glDepthMask(true);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     // Sky
     if RenderSky then
@@ -70,32 +73,34 @@ begin
       ModuleManager.ModRenderer.RTerrain.Render;
       end;
 
-    glDisable(GL_CULL_FACE);
-
-//     // Water
-//     if (RenderWater) and (RenderTerrain) then
-//       begin
+    // Water
+    if RenderWater then
+      begin
 //       glColorMask(false, false, false, false);
 //       glDepthMask(false);
 //       ModuleManager.ModRenderer.RWater.Check;
 //       glDepthMask(true);
 //       glColorMask(true, true, true, true);
-// 
 //       ModuleManager.ModRenderer.RWater.Render;
-//       end;
+      end;
+//   GBuffer.Unbind;
 
-  fGBuffer.Unbind;
+//   GBuffer.Bind;
+
+    glDisable(GL_CULL_FACE);
+  GBuffer.Unbind;
 
   // Save material buffer
   fSpareBuffer.Bind;
-    fGBuffer.Textures[0].Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    GBuffer.Textures[0].Bind;
     ModuleManager.ModRenderer.FullscreenShader.Bind;
     DrawFullscreenQuad;
     ModuleManager.ModRenderer.FullscreenShader.Unbind;
   fSpareBuffer.Unbind;
 
   // Transparent parts, fuck up the material buffer
-  fGBuffer.Bind;
+  GBuffer.Bind;
     ModuleManager.ModRenderer.TransparencyMask.Bind(7);
 
     glEnable(GL_ALPHA_TEST);
@@ -112,8 +117,8 @@ begin
     // Objects
     if RenderObjects then
       begin
+      ModuleManager.ModRenderer.RObjects.MaterialMode := False;
       glEnable(GL_CULL_FACE);
-      ModuleManager.ModRenderer.RObjects.MaterialMode := false;
       ModuleManager.ModRenderer.RObjects.RenderTransparent;
       glDisable(GL_CULL_FACE);
       end;
@@ -125,7 +130,7 @@ begin
     glDepthMask(false);
     glDisable(GL_ALPHA_TEST);
 
-  fGBuffer.Unbind;
+  GBuffer.Unbind;
 
   // Lighting pass
   fLightBuffer.Bind;
@@ -137,9 +142,9 @@ begin
     if ModuleManager.ModRenderer.UseSunShadows then
       ModuleManager.ModRenderer.SunShadowBuffer.Textures[0].Bind(2);
 
-    fGBuffer.Textures[0].Bind(3);
-    fGBuffer.Textures[1].Bind(1);
-    fGBuffer.Textures[2].Bind(0);
+    GBuffer.Textures[0].Bind(3);
+    GBuffer.Textures[1].Bind(1);
+    GBuffer.Textures[2].Bind(0);
 
     ModuleManager.ModRenderer.SunShader.Bind;
     ModuleManager.ModRenderer.SunShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
@@ -159,8 +164,8 @@ begin
 
     ModuleManager.ModRenderer.CompositionShader.Bind;
 
-    fGBuffer.Textures[3].Bind(4);
-    fGBuffer.Textures[2].Bind(2);
+    GBuffer.Textures[3].Bind(4);
+    GBuffer.Textures[2].Bind(2);
     fLightBuffer.Textures[0].Bind(1);
     fSpareBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
@@ -174,17 +179,15 @@ begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Autoplants
     if RenderAutoplants then
       begin
       ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.MaterialPassShader;
       ModuleManager.ModRenderer.RAutoplants.Render;
       end;
 
-    // Objects
     if RenderObjects then
       begin
-      ModuleManager.ModRenderer.RObjects.MaterialMode := true;
+      ModuleManager.ModRenderer.RObjects.MaterialMode := True;
       glEnable(GL_CULL_FACE);
       ModuleManager.ModRenderer.RObjects.RenderTransparent;
       glDisable(GL_CULL_FACE);
@@ -198,6 +201,15 @@ begin
   fSceneBuffer.Unbind;
 
   glPopAttrib;
+
+  ModuleManager.ModTexMng.ActivateTexUnit(7); ModuleManager.ModTexMng.BindTexture(-1);
+  ModuleManager.ModTexMng.ActivateTexUnit(6); ModuleManager.ModTexMng.BindTexture(-1);
+  ModuleManager.ModTexMng.ActivateTexUnit(5); ModuleManager.ModTexMng.BindTexture(-1);
+  ModuleManager.ModTexMng.ActivateTexUnit(4); ModuleManager.ModTexMng.BindTexture(-1);
+  ModuleManager.ModTexMng.ActivateTexUnit(3); ModuleManager.ModTexMng.BindTexture(-1);
+  ModuleManager.ModTexMng.ActivateTexUnit(2); ModuleManager.ModTexMng.BindTexture(-1);
+  ModuleManager.ModTexMng.ActivateTexUnit(1); ModuleManager.ModTexMng.BindTexture(-1);
+  ModuleManager.ModTexMng.ActivateTexUnit(0); ModuleManager.ModTexMng.BindTexture(-1);
 
   ModuleManager.ModRenderer.RObjects.CurrentGBuffer := ModuleManager.ModRenderer.GBuffer;
 end;
@@ -226,7 +238,7 @@ begin
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   fSceneBuffer := TFBO.Create(X, Y, true);
-  fSceneBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);          // Composed image
+  fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_LINEAR, GL_LINEAR);   // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
 
   RenderAutoplants := True;

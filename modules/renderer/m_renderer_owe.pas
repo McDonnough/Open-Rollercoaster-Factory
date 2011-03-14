@@ -519,10 +519,13 @@ begin
 
   // Do some scene preparation
   Frustum.Calculate;
-  ModuleManager.ModRenderer.RObjects.CheckVisibility;
 
   RAutoplants.Update;
   RWater.Advance;
+
+  RObjects.ShadowMode := False;
+
+  RTerrain.BorderEnabled := True;
 
   // Do water renderpasses
   RWater.RenderBuffers;
@@ -545,8 +548,9 @@ begin
   DynamicSettingsSetNormal;
 
   // Check some visibilities
-  RTerrain.CheckVisibility;
-  RObjects.CheckVisibility;
+  Frustum.Calculate;
+//   RTerrain.CheckVisibility;
+//   RObjects.CheckVisibility;
 
   // Geometry pass
 
@@ -566,11 +570,9 @@ begin
     RObjects.RenderOpaque;
 
     // Terrain
-
     RTerrain.CurrentShader := RTerrain.GeometryPassShader;
     RTerrain.BorderEnabled := true;
     RTerrain.Render;
-
 
     // Water
     glColorMask(false, false, false, false);
@@ -738,6 +740,7 @@ begin
 
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
+
 
   fSceneBuffer.Unbind;
 
@@ -921,6 +924,7 @@ begin
     fAAShader.Unbind;
 
     glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
     MotionBlurBuffer.Unbind;
 
     // Render new buffer contents

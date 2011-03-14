@@ -15,7 +15,7 @@ void main(void) {
       vec3 diff = 255.0 * texelFetch2D(MaterialMap, Coords + ivec2(i, j), 0).rgb;
       if (max(max(diff.x, diff.y), diff.z) < 0.5)
         Offset = ivec2(i, j);
-      }
+    }
   Coords += Offset;
 
   gl_FragDepth = texelFetch2D(GTexture, Coords, 0).a / 10000.0;

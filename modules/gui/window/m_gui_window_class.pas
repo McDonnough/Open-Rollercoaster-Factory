@@ -31,7 +31,8 @@ uses
 
 procedure TWindow.Render;
 begin
-  ModuleManager.ModGUIWindow.Render(Self);
+  if Width * Height > 0 then
+    ModuleManager.ModGUIWindow.Render(Self);
 end;
 
 constructor TWindow.Create(mParent: TGUIComponent);

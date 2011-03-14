@@ -101,8 +101,10 @@ begin
   Render(CUBE_BACK, RenderPass, Position);
   Render(CUBE_LEFT, RenderPass, Position);
   Render(CUBE_RIGHT, RenderPass, Position);
+  ModuleManager.ModRenderer.RTerrain.BorderEnabled := False;
   Render(CUBE_BOTTOM, RenderPass, Position);
   Render(CUBE_TOP, RenderPass, Position);
+  ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
   ModuleManager.ModRenderer.Frustum.Calculate;
 end;
 

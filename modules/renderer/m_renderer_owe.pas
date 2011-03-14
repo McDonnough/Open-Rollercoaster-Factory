@@ -529,9 +529,8 @@ begin
 
   // Create object reflections
   DynamicSettingsSetReflection;
-    RTerrain.BorderEnabled := False;
-    RObjects.RenderReflections;
     RTerrain.BorderEnabled := True;
+    RObjects.RenderReflections;
 
     ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
 

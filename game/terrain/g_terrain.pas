@@ -309,8 +309,8 @@ var
         end;
   end;
 begin
-  RemoveWater(X, Y, false);
   BeginUpdate;
+  RemoveWater(X, Y, false);
   setLength(a, 1);
   a[0, 0] := Round(5 * X);
   a[0, 1] := Round(5 * Y);

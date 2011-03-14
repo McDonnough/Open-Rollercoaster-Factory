@@ -291,6 +291,8 @@ begin
     ModuleManager.ModRenderer.InvertFrontFace;
     ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
 
+    ModuleManager.ModRenderer.Frustum.Calculate;
+
     ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := ModuleManager.ModRenderer.WaterReflectSky;
     ModuleManager.ModRenderer.RWater.RenderPass.RenderTerrain := ModuleManager.ModRenderer.WaterReflectTerrain;
     ModuleManager.ModRenderer.RWater.RenderPass.RenderObjects := ModuleManager.ModRenderer.WaterReflectObjects;
@@ -307,6 +309,8 @@ begin
     glTranslatef(0, fHeight / 256 + 0.05, 0);
     glClipPlane(GL_CLIP_PLANE0, @ClipPlane[0]);
   glPopMatrix;
+
+  ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := False;

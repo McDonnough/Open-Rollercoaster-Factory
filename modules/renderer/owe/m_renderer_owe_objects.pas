@@ -188,11 +188,10 @@ begin
 
   BindMaterial(Mesh.GeoMesh.Material);
 
-  if (Mesh.GeoMesh.Material.Reflectivity > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil) then
+  if (Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil) then
     Mesh.Reflection.Map.Textures[0].Bind(3)
   else
     ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(3);
-
 
   MakeOGLCompatibleMatrix(Mesh.GeoMesh.CalculatedMatrix, @Matrix[0]);
 
@@ -279,10 +278,13 @@ end;
 procedure TRObjects.RenderReflections;
 var
   i, j: Integer;
+  MeshPosition: TVector3D;
 begin
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
-      if fManagedObjects[i].Meshes[j].GeoMesh.Material.Reflectivity > ModuleManager.ModRenderer.ReflectionRealtimeMinimum then
+      begin
+      MeshPosition := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
+      if fManagedObjects[i].Meshes[j].GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - MeshPosition) - fManagedObjects[i].Meshes[j].VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum then
         begin
         if fManagedObjects[i].Meshes[j].ReflectionFramesToGo > 0 then
           dec(fManagedObjects[i].Meshes[j].ReflectionFramesToGo)
@@ -294,18 +296,19 @@ begin
               fManagedObjects[i].Meshes[j].Reflection := TCubeMap.Create(ModuleManager.ModRenderer.ReflectionSize, ModuleManager.ModRenderer.ReflectionSize, GL_RGB16F_ARB);
             fExcludedMeshObject := i;
             fExcludedMesh := j;
-            ModuleManager.ModRenderer.ViewPoint := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
-            fManagedObjects[i].Meshes[j].Reflection.Render(fReflectionPass, ModuleManager.ModRenderer.ViewPoint);
+            ModuleManager.ModRenderer.ViewPoint := MeshPosition;
+            fManagedObjects[i].Meshes[j].Reflection.Render(fReflectionPass, MeshPosition);
             fManagedObjects[i].Meshes[j].ReflectionFramesToGo := ModuleManager.ModRenderer.ReflectionUpdateInterval - 1;
             end;
           end;
         end
-      else
+      else if fManagedObjects[i].Meshes[j].GeoMesh.Material.Reflectivity <= ModuleManager.ModRenderer.ReflectionRealtimeMinimum then
         if fManagedObjects[i].Meshes[j].Reflection <> nil then
           begin
           fManagedObjects[i].Meshes[j].Reflection.Free;
           fManagedObjects[i].Meshes[j].Reflection := nil;
           end;
+      end;
   fExcludedMeshObject := -1;
   fExcludedMesh := -1;
 end;
@@ -364,16 +367,23 @@ begin
       SourcePosition := Vector(0, -5, 0);
       DestinationPosition := Vector(0, -6, 0);
       end;
+    with AddBone do
+      begin
+      SourcePosition := Vector(0, 0, 0);
+      DestinationPosition := Vector(0, 1, 0);
+      end;
     end;
-  fTest.Meshes[1].AddBoneToAll(fTest.Armatures[0].Bones[0]);
-  fTest.Armatures[0].Bones[0].Matrix := TranslationMatrix(Vector(2, 10, 4));
+  fTest.Meshes[0].Matrix := TranslationMatrix(Vector(0, 4, 0));
+  fTest.Meshes[1].Matrix := TranslationMatrix(Vector(2, 10, 4));
   fTest.UpdateArmatures;
   fTest.UpdateVertexPositions;
+  fTest.Meshes[0].RecalcFaceNormals;
+  fTest.Meshes[0].RecalcVertexNormals;
   fTest.Meshes[1].RecalcFaceNormals;
   fTest.Meshes[1].RecalcVertexNormals;
   fTest.Materials[0].Reflectivity := 0.8;
-  fTest.Materials[1].Reflectivity := 0.2;
-  fTest.Materials[2].Reflectivity := 0.2;
+  fTest.Materials[1].Reflectivity := 0.7;
+  fTest.Materials[2].Reflectivity := 0.6;
   fTest.Materials[2].BumpMap := TTexture.Create;
   fTest.Materials[2].BumpMap.FromFile('scenery/testbump.tga');
   fTest.Matrix := TranslationMatrix(Vector(160, 70, 160));

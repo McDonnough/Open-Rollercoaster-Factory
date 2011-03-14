@@ -290,7 +290,14 @@ begin
 
     ModuleManager.ModRenderer.InvertFrontFace;
     ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
+
+    ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := ModuleManager.ModRenderer.WaterReflectSky;
+    ModuleManager.ModRenderer.RWater.RenderPass.RenderTerrain := ModuleManager.ModRenderer.WaterReflectTerrain;
+    ModuleManager.ModRenderer.RWater.RenderPass.RenderObjects := ModuleManager.ModRenderer.WaterReflectObjects;
+    ModuleManager.ModRenderer.RWater.RenderPass.RenderParticles := ModuleManager.ModRenderer.WaterReflectParticles;
+    ModuleManager.ModRenderer.RWater.RenderPass.RenderAutoplants := ModuleManager.ModRenderer.WaterReflectAutoplants;
     ModuleManager.ModRenderer.RWater.RenderPass.Render;
+
     fReflectionPass.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.Scene.Textures[0]);
     
     ModuleManager.ModRenderer.InvertFrontFace;
@@ -302,6 +309,11 @@ begin
   glPopMatrix;
 
   ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
+  ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := False;
+  ModuleManager.ModRenderer.RWater.RenderPass.RenderTerrain := ModuleManager.ModRenderer.WaterRefractTerrain;
+  ModuleManager.ModRenderer.RWater.RenderPass.RenderObjects := ModuleManager.ModRenderer.WaterRefractObjects;
+  ModuleManager.ModRenderer.RWater.RenderPass.RenderParticles := ModuleManager.ModRenderer.WaterRefractParticles;
+  ModuleManager.ModRenderer.RWater.RenderPass.RenderAutoplants := ModuleManager.ModRenderer.WaterRefractAutoplants;
   ModuleManager.ModRenderer.RWater.RenderPass.Render;
   fRefractionPass.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.Scene.Textures[0]);
   fRefractionGeo.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.GBuffer.Textures[2]);

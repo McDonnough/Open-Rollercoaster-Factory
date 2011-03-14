@@ -12,7 +12,6 @@ type
     VBO: TObjectVBO;
     Transparent: Boolean;
     Visible: Boolean;
-    SphereRadius: Single;
     Reflection: TCubeMap;
     ReflectionFramesToGo: Integer;
     nFrame: Integer;
@@ -211,16 +210,16 @@ procedure TRObjects.RenderTransparent;
 var
   i, j: Integer;
 begin
-  fCurrentMaterialCount := 1;
   if MaterialMode then
     begin
     CurrentGBuffer.Textures[1].Bind(5);
     CurrentGBuffer.Textures[3].Bind(6);
     end;
+  fCurrentMaterialCount := 1;
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
       begin
-      if (fManagedObjects[i].Meshes[j].Visible) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
+      if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
         if fManagedObjects[i].Meshes[j].Transparent then
           begin
           if ShadowMode then
@@ -253,7 +252,7 @@ var
 begin
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
-      if (fManagedObjects[i].Meshes[j].Visible) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
+      if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
         if not fManagedObjects[i].Meshes[j].Transparent then
           begin
           if not ShadowMode then
@@ -267,10 +266,14 @@ end;
 procedure TRObjects.CheckVisibility;
 var
   i, j: Integer;
+  Pos: TVector3D;
 begin
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
-      fManagedObjects[i].Meshes[j].Visible := True;
+      begin
+      Pos := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
+      fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius);
+      end;
 end;
 
 procedure TRObjects.RenderReflections;

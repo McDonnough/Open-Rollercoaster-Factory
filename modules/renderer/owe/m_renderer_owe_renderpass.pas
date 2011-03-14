@@ -112,8 +112,10 @@ begin
     // Objects
     if RenderObjects then
       begin
+      glEnable(GL_CULL_FACE);
       ModuleManager.ModRenderer.RObjects.MaterialMode := false;
       ModuleManager.ModRenderer.RObjects.RenderTransparent;
+      glDisable(GL_CULL_FACE);
       end;
 
     // End

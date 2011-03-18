@@ -8,9 +8,9 @@ uses
 type
   TModuleGUIImageDefault = class(TModuleGUIImageClass)
     public
-      procedure Render(Img: TImage); override;
+      procedure Render(Img: TImage);
       constructor Create;
-      procedure CheckModConf; override;
+      procedure CheckModConf;
     end;
 
 implementation

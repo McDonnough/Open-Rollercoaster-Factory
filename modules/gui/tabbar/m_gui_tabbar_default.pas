@@ -14,9 +14,9 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure CheckModConf; override;
-      function GetTabWidth(Lbl: TTabBar; I: Integer): Integer; override;
-      procedure Render(Lbl: TTabBar); override;
+      procedure CheckModConf;
+      function GetTabWidth(Lbl: TTabBar; I: Integer): Integer;
+      procedure Render(Lbl: TTabBar);
     end;
 
 implementation

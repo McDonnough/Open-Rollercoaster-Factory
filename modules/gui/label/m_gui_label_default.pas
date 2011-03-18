@@ -21,8 +21,8 @@ type
       LblResources: Array of TLblResource;
     public
       constructor Create;
-      procedure CheckModConf; override;
-      procedure Render(Lbl: TLabel); override;
+      procedure CheckModConf;
+      procedure Render(Lbl: TLabel);
     end;
 
 implementation

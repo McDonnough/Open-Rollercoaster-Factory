@@ -12,8 +12,8 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure CheckModConf; override;
-      procedure Render(Button: TButton); override;
+      procedure CheckModConf;
+      procedure Render(Button: TButton);
     end;
 
 implementation

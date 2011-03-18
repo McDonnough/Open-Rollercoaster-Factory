@@ -10,9 +10,9 @@ type
     protected
       fTexture: TTexture;
     public
-      procedure CheckModConf; override;
-      procedure Render(Edit: TEdit); override;
-      procedure HandleKeypress(Edit: TEdit; Key: Integer); override;
+      procedure CheckModConf;
+      procedure Render(Edit: TEdit);
+      procedure HandleKeypress(Edit: TEdit; Key: Integer);
       constructor Create;
       destructor Free;
     end;

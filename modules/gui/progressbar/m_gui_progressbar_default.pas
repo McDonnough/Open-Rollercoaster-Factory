@@ -12,8 +12,8 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure CheckModConf; override;
-      procedure Render(pb: TProgressBar); override;
+      procedure CheckModConf;
+      procedure Render(pb: TProgressBar);
     end;
 
 implementation

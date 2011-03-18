@@ -12,9 +12,9 @@ type
     protected
       fKeys: array[0..321] of Boolean;
     public
-      procedure Render; override;
-      procedure CallSignals; override;
-      procedure CheckModConf; override;
+      procedure Render;
+      procedure CallSignals;
+      procedure CheckModConf;
       constructor Create;
       destructor Free;
     end;

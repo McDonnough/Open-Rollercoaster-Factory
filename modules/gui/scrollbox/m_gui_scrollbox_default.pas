@@ -12,8 +12,8 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure CheckModConf; override;
-      procedure Render(sb: TScrollBox); override;
+      procedure CheckModConf;
+      procedure Render(sb: TScrollBox);
     end;
 
 implementation

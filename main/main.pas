@@ -181,6 +181,7 @@ begin
             ParkFileName := '';
             ModuleManager.ModMainMenu.Reset;
             end;
+//         MMVAL_SETTINGS: ModuleManager.ModSettings.CreateInterface;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;
         end;
       end;

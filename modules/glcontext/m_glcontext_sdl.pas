@@ -18,16 +18,16 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure CheckModConf;
-      procedure ChangeWindowTitle(Text: String);
-      procedure GetResolution(var ResX: Integer; var ResY: Integer);
-      procedure SwapBuffers;
-      procedure StartMainLoop;
-      procedure EndMainLoop;
-      procedure InitGL;
-      function SetResolution(ResX, ResY: Integer): Boolean;
-      function IsFullscreen: Boolean;
-      function SetFullscreenState(Fullscreen: Boolean): Boolean;
+      procedure CheckModConf; override;
+      procedure ChangeWindowTitle(Text: String); override;
+      procedure GetResolution(var ResX: Integer; var ResY: Integer); override;
+      procedure SwapBuffers; override;
+      procedure StartMainLoop; override;
+      procedure EndMainLoop; override;
+      procedure InitGL; override;
+      function SetResolution(ResX, ResY: Integer): Boolean; override;
+      function IsFullscreen: Boolean; override;
+      function SetFullscreenState(Fullscreen: Boolean): Boolean; override;
     end;
 
 implementation

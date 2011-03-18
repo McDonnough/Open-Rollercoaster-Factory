@@ -13,9 +13,9 @@ type
       fTexture: TTexture;
       function ConvertText(Input: String): String;
     public
-      procedure Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte);
-      function CalculateTextWidth(text: String; Size: Integer): Integer;
-      procedure CheckModConf;
+      procedure Write(Text: String; Size, Left, Top: GLFLoat; R, G, B, A: GLFloat; Flags: Byte); override;
+      function CalculateTextWidth(text: String; Size: Integer): Integer; override;
+      procedure CheckModConf; override;
       constructor Create;
       destructor Free;
     end;

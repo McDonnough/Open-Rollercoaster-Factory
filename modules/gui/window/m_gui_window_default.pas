@@ -17,8 +17,8 @@ type
     public
       constructor Create;
       destructor Free;
-      procedure CheckModConf;
-      procedure Render(Window: TWindow);
+      procedure CheckModConf; override;
+      procedure Render(Window: TWindow); override;
     end;
 
 implementation

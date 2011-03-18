@@ -13,11 +13,11 @@ type
       fTexture: TTexture;
       function FindIconByName(s: String): TTexture;
     public
-      procedure Render(Button: TIconifiedButton);
-      procedure SetIcon(Button: TIconifiedButton; var Icon: String);
+      procedure Render(Button: TIconifiedButton); override;
+      procedure SetIcon(Button: TIconifiedButton; var Icon: String); override;
       constructor Create;
       destructor Free;
-      procedure CheckModConf;
+      procedure CheckModConf; override;
     end;
 
 implementation

@@ -11,8 +11,8 @@ type
       fSpeed: Single;
       fHSpeed: Single;
     public
-      procedure AdvanceActiveCamera;
-      procedure CheckModConf;
+      procedure AdvanceActiveCamera; override;
+      procedure CheckModConf; override;
       constructor Create;
     end;
 

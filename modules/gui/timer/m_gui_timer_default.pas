@@ -8,9 +8,9 @@ uses
 type
   TModuleGUITimerDefault = class(TModuleGUITimerClass)
     public
-      function GetTime: UInt64;
-      function GetTimeDifference(Time: UInt64): UInt64;
-      procedure CheckModConf;
+      function GetTime: UInt64; override;
+      function GetTimeDifference(Time: UInt64): UInt64; override;
+      procedure CheckModConf; override;
       constructor Create;
     end;
 

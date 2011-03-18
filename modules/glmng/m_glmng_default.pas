@@ -15,11 +15,11 @@ type
       fMatrixMode: TMatrixMode;
     public
       constructor Create;
-      procedure CheckModConf;
-      procedure SetUp2DMatrix;
-      procedure SetUp3DMatrix;
-      procedure SetUpIdentityMatrix;
-      procedure SetUpScreen;
+      procedure CheckModConf; override;
+      procedure SetUp2DMatrix; override;
+      procedure SetUp3DMatrix; override;
+      procedure SetUpIdentityMatrix; override;
+      procedure SetUpScreen; override;
     end;
 
 implementation

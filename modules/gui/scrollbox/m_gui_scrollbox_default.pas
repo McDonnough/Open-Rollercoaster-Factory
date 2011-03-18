@@ -59,6 +59,8 @@ var
 begin
   HThrobberOffset := 0;
   VThrobberOffset := 0;
+  HThrobberOffset2 := 0;
+  VThrobberOffset2 := 0;
   if sb.VScrollBar = sbmNormal then
     VThrobberOffset := Round(sb.Width - 15)
   else if sb.VScrollBar = sbmInverted then

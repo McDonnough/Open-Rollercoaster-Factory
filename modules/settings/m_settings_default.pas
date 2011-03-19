@@ -102,18 +102,18 @@ begin
 
   fApplyButton := TIconifiedButton.Create(fWindow);
   fApplyButton.Icon := 'dialog-ok-apply.tga';
-  fApplyButton.Top := 400 - 36;
-  fApplyButton.Left := 700 - 68;
-  fApplyButton.Width := 32;
-  fApplyButton.Height := 32;
+  fApplyButton.Top := 400 - 52;
+  fApplyButton.Left := 700 - 100;
+  fApplyButton.Width := 48;
+  fApplyButton.Height := 48;
   fApplyButton.OnClick := @Apply;
 
   fCancelButton := TIconifiedButton.Create(fWindow);
   fCancelButton.Icon := 'dialog-cancel.tga';
-  fCancelButton.Top := 400 - 36;
-  fCancelButton.Left := 700 - 36;
-  fCancelButton.Width := 32;
-  fCancelButton.Height := 32;
+  fCancelButton.Top := 400 - 52;
+  fCancelButton.Left := 700 - 52;
+  fCancelButton.Width := 48;
+  fCancelButton.Height := 48;
   fCancelButton.OnClick := @Close;
 
   fMessageLabel := TLabel.Create(fWindow);

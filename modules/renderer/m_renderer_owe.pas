@@ -1016,7 +1016,7 @@ begin
     SetConfVal('terrain.tesselationdistance', '15');
     SetConfVal('terrain.detaildistance', '60');
     SetConfVal('terrain.bumpmapdistance', '60');
-    SetConfVal('autoplants.distance', '0');
+    SetConfVal('autoplants.distance', '20');
     SetConfVal('autoplants.count', '0');
     SetConfVal('lensflare', '0');
     SetConfVal('gamma', '1.0');
@@ -1070,7 +1070,7 @@ begin
   fSubdivisionCuts := StrToIntWD(GetConfVal('subdiv.cuts'), 0);
   fSubdivisionDistance := StrToIntWD(GetConfVal('subdiv.distance'), 0);
   fAutoplantCount := StrToIntWD(GetConfVal('autoplants.count'), 0);
-  fAutoplantDistance := StrToFloatWD(GetConfVal('autoplants.distance'), 0);
+  fAutoplantDistance := StrToFloatWD(GetConfVal('autoplants.distance'), 20);
   fGamma := StrToFloatWD(GetConfVal('gamma'), 1);
   fWaterReflectTerrain := GetConfVal('water.reflect.terrain') = '1';
   fWaterReflectAutoplants := GetConfVal('water.reflect.autoplants') = '1';

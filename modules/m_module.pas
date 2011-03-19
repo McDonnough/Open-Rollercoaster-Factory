@@ -33,6 +33,9 @@ type
         *@return true on success, otherwise false
         *)
       function SetConfVal(Key, Value: String): Boolean;
+      function SetConfVal(Key: String; Value: Integer): Boolean;
+      function SetConfVal(Key: String; Value: Single): Boolean;
+      function SetConfVal(Key: String; Value: Boolean): Boolean;
     public
       /// Set module name and type
       constructor create; virtual abstract;
@@ -69,6 +72,24 @@ begin
   result := false;
   if ModuleManager.ModModuleConfig <> nil then
     result := ModuleManager.ModModuleConfig.SetOption(fModName, Key, Value);
+end;
+
+function TBasicModule.SetConfVal(Key: String; Value: Integer): Boolean;
+begin
+  SetConfVal(Key, IntToStr(Value));
+end;
+
+function TBasicModule.SetConfVal(Key: String; Value: Single): Boolean;
+begin
+  SetConfVal(Key, FloatToStr(Value));
+end;
+
+function TBasicModule.SetConfVal(Key: String; Value: Boolean): Boolean;
+begin
+  if Value then
+    SetConfVal(Key, '1')
+  else
+    SetConfVal(Key, '0');
 end;
 
 end.

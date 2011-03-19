@@ -1094,6 +1094,61 @@ end;
 
 procedure TModuleRendererOWE.ApplyChanges(Event: String; Data, Result: Pointer);
 begin
+  SetConfVal('samples', Round(fOWEConfigInterface.fSamples.Value));
+  SetConfVal('reflections.realtime.size', Round(fOWEConfigInterface.fReflectionRealtimeSize.Value));
+  SetConfVal('reflections.envmap.size', Round(fOWEConfigInterface.fReflectionEnvMapSize.Value));
+  SetConfVal('reflections.updateinterval', Round(fOWEConfigInterface.fReflectionRealtimeUpdateInterval.Value));
+  SetConfVal('reflections.realtime.minimum', fOWEConfigInterface.fReflectionRealtimeMinimum.Value);
+  SetConfVal('reflections.realtime.distanceexponent', fOWEConfigInterface.fReflectionRealtimeDistanceExponent.Value);
+  SetConfVal('reflections.render.autoplants', fOWEConfigInterface.fReflectionRenderAutoplants.Checked);
+  SetConfVal('reflections.render.terrain', fOWEConfigInterface.fReflectionRenderTerrain.Checked);
+  SetConfVal('reflections.render.particles', fOWEConfigInterface.fReflectionRenderParticles.Checked);
+  SetConfVal('reflections.render.objects', fOWEConfigInterface.fReflectionRenderObjects.Checked);
+  SetConfVal('reflections.render.distanceoffset', fOWEConfigInterface.fReflectionRenderDistanceOffset.Value);
+  SetConfVal('reflections.render.distancefactor', fOWEConfigInterface.fReflectionRenderDistanceFactor.Value);
+  SetConfVal('reflections.render.terrain.tesselationdistance', fOWEConfigInterface.fReflectionRenderTerrainTesselationDistance.Value);
+  SetConfVal('reflections.render.terrain.detaildistance', fOWEConfigInterface.fReflectionRenderTerrainDetailDistance.Value);
+  SetConfVal('reflections.render.terrain.bumpmapdistance', fOWEConfigInterface.fTerrainBumpmapDistance.Value);
+  SetConfVal('reflections.environmentmap.interval', Round(fOWEConfigInterface.fReflectionEnvMapUpdateInterval.Value));
+  SetConfVal('shadows', 0);
+  if fOWEConfigInterface.fUseSunShadows.Checked then
+    begin
+    SetConfVal('shadows', 1);
+    if fOWEConfigInterface.fUseLightShadows.Checked then
+      SetConfVal('shadows', 2);
+    end;
+  SetConfVal('bloom', fOWEConfigInterface.fBloom.Value);
+//     SetConfVal('refractions', fOWEConfigInterface.fUseRefractions) = '1';
+  SetConfVal('motionblur', fOWEConfigInterface.fMotionBlur.Checked);
+  SetConfVal('sunrays', fOWEConfigInterface.fSunRays.Checked);
+  SetConfVal('focalblur', fOWEConfigInterface.fFocalBlur.Checked);
+  SetConfVal('ssao', fOWEConfigInterface.fSSAO.Checked);
+  SetConfVal('lensflare', fOWEConfigInterface.fLensFlare.Checked);
+  SetConfVal('shadows.samples', Round(fOWEConfigInterface.fShadowSamples.Value));
+  SetConfVal('shadows.blursamples', Round(fOWEConfigInterface.fShadowBlurSamples.Value));
+//     SetConfVal('shadows.maxpasses', fOWEConfigInterface.fMaxShadowPasses);
+  SetConfVal('motionblur.strength', fOWEConfigInterface.fMotionBlurStrength.Value);
+  SetConfVal('terrain.tesselationdistance', fOWEConfigInterface.fTerrainTesselationDistance.Value);
+  SetConfVal('terrain.detaildistance', fOWEConfigInterface.fTerrainDetailDistance.Value);
+  SetConfVal('terrain.bumpmapdistance', fOWEConfigInterface.fTerrainBumpmapDistance.Value);
+  SetConfVal('water.samples', fOWEConfigInterface.fWaterSamples.Value);
+  SetConfVal('ssao.samples', Round(fOWEConfigInterface.fSSAOSamples.Value));
+  SetConfVal('lod.distanceoffset', fOWEConfigInterface.fLODDistanceOffset.Value);
+  SetConfVal('lod.distancefactor', fOWEConfigInterface.fLODDistanceFactor.Value);
+//     SetConfVal('subdiv.cuts', fOWEConfigInterface.fSubdivisionCuts);
+//     SetConfVal('subdiv.distance', fOWEConfigInterface.fSubdivisionDistance);
+  SetConfVal('autoplants.count', Round(fOWEConfigInterface.fAutoplantCount.Value));
+  SetConfVal('autoplants.distance', fOWEConfigInterface.fAutoplantDistance.Value);
+  SetConfVal('gamma', fOWEConfigInterface.fGamma.Value);
+  SetConfVal('water.reflect.terrain', fOWEConfigInterface.fWaterReflectTerrain.Checked);
+  SetConfVal('water.reflect.autoplants', fOWEConfigInterface.fWaterReflectAutoplants.Checked);
+  SetConfVal('water.reflect.sky', fOWEConfigInterface.fWaterReflectSky.Checked);
+  SetConfVal('water.reflect.objects', fOWEConfigInterface.fWaterReflectObjects.Checked);
+  SetConfVal('water.reflect.particles', fOWEConfigInterface.fWaterReflectParticles.Checked);
+  SetConfVal('water.refract.terrain', fOWEConfigInterface.fWaterRefractTerrain.Checked);
+  SetConfVal('water.refract.objects', fOWEConfigInterface.fWaterRefractObjects.Checked);
+  SetConfVal('water.refract.particles', fOWEConfigInterface.fWaterRefractParticles.Checked);
+  SetConfVal('water.refract.autoplants', fOWEConfigInterface.fWaterRefractAutoplants.Checked);
   CheckModConf;
 end;
 

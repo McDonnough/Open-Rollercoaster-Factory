@@ -574,8 +574,8 @@ begin
     Size := 16;
     Caption := 'Motion blur strength:';
     end;
-  fSSAOSamples := TSlider.Create(fEffectPanel);
-  with fSSAOSamples do
+  fMotionBlurStrength := TSlider.Create(fEffectPanel);
+  with fMotionBlurStrength do
     begin
     Top := 120;
     Left := 538;
@@ -836,7 +836,7 @@ begin
     Left := 208;
     Width := 122;
     Height := 32;
-    Digits := -1;
+    Digits := 1;
     Min := 0;
     Max := 4;
     Value := ModuleManager.ModRenderer.WaterReflectionBufferSamples;

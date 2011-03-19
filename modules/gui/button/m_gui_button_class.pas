@@ -23,7 +23,7 @@ type
     public
       (**
         * Render a button
-        *@param button bar to render
+        *@param button to render
         *)
       procedure Render(Button: TButton); virtual abstract;
     end;

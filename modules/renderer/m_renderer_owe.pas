@@ -7,11 +7,12 @@ uses
   m_renderer_owe_camera, math, m_texmng_class, m_shdmng_class, u_functions, m_renderer_owe_frustum,
   m_renderer_owe_sky, m_renderer_owe_classes, u_scene, m_renderer_owe_lights, m_renderer_owe_terrain,
   m_renderer_owe_autoplants, m_renderer_owe_water, m_renderer_owe_objects, m_renderer_owe_cubemaps,
-  m_renderer_owe_renderpass, u_files, u_graphics;
+  m_renderer_owe_renderpass, u_files, u_graphics, m_gui_class, m_renderer_owe_config, m_settings_class;
 
 type
   TModuleRendererOWE = class(TModuleRendererClass)
     protected
+      fOWEConfigInterface: TOWEConfigInterface;
       fRendererSky: TRSky;
       fRendererCamera: TRCamera;
       fRendererTerrain: TRTerrain;
@@ -87,6 +88,7 @@ type
       property SunShadowBuffer: TFBO read fSunShadowBuffer;
       property FSAASamples: Integer read fFSAASamples;
       property ReflectionUpdateInterval: Integer read fReflectionUpdateInterval;
+      property EnvironmentMapInterval: Integer read fEnvironmentMapInterval;
       property ReflectionSize: Integer read fReflectionSize;
       property EnvMapSize: Integer read fEnvMapSize;
       property UseSunShadows: Boolean read fUseSunShadows;
@@ -150,6 +152,9 @@ type
       procedure RenderScene;
       procedure CheckModConf;
       procedure InvertFrontFace;
+      procedure ApplyChanges(Event: String; Data, Result: Pointer);
+      procedure CreateConfigInterface(Event: String; Data, Result: Pointer);
+      procedure DestroyConfigInterface(Event: String; Data, Result: Pointer);
       function GetRay(MX, MY: Single): TVector3D;
       constructor Create;
       destructor Free;
@@ -1087,14 +1092,37 @@ begin
   glFrontFace(fFrontFace);
 end;
 
+procedure TModuleRendererOWE.ApplyChanges(Event: String; Data, Result: Pointer);
+begin
+  CheckModConf;
+end;
+
+procedure TModuleRendererOWE.CreateConfigInterface(Event: String; Data, Result: Pointer);
+begin
+  fOWEConfigInterface := TOWEConfigInterface.Create(TGUIComponent(Data));
+  TConfigurationInterfaceList(Result).Add('Graphics', fOWEConfigInterface.fConfigurationInterface);
+end;
+
+procedure TModuleRendererOWE.DestroyConfigInterface(Event: String; Data, Result: Pointer);
+begin
+  fOWEConfigInterface.Free;
+end;
+
 constructor TModuleRendererOWE.Create;
 begin
   fModName := 'RendererOWE';
   fModType := 'Renderer';
+
+  EventManager.AddCallback('TSettings.CreateConfigurationInterface', @CreateConfigInterface);
+  EventManager.AddCallback('TSettings.DestroyConfigurationInterface', @DestroyConfigInterface);
+  EventManager.AddCallback('TSettings.ApplyConfigurationChanges', @ApplyChanges);
 end;
 
 destructor TModuleRendererOWE.Free;
 begin
+  EventManager.RemoveCallback(@CreateConfigInterface);
+  EventManager.RemoveCallback(@DestroyConfigInterface);
+  EventManager.RemoveCallback(@ApplyChanges);
 end;
 
 end.

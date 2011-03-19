@@ -3,7 +3,7 @@ unit m_language_textfile;
 interface
 
 uses
-  SysUtils, Classes, m_language_class;
+  SysUtils, Classes, m_language_class, m_settings_class, m_gui_class, m_gui_label_class, m_gui_edit_class;
 
 type
   TLanguageString = record
@@ -14,10 +14,17 @@ type
 
   TModuleLanguageTextfile = class(TModuleLanguageClass)
     protected
+      fConfigInterface: TConfigurationInterfaceBase;
+      fLanguage: TEdit;
+      
       fLang: String;
       fStrings: ALanguageString;
     public
       constructor Create;
+      destructor Free;
+      procedure ApplyChanges(Event: String; Data, Result: Pointer);
+      procedure CreateConfigInterface(Event: String; Data, Result: Pointer);
+      procedure DestroyConfigInterface(Event: String; Data, Result: Pointer);
       procedure CheckModConf;
       function ChangeLanguage(Language: String): Boolean;
       function GetLanguage: String;
@@ -27,7 +34,7 @@ type
 implementation
 
 uses
-  u_functions, m_varlist;
+  u_functions, m_varlist, u_events;
 
 constructor TModuleLanguageTextfile.Create;
 begin
@@ -39,6 +46,56 @@ begin
   fLang := GetConfVal('lang');
 
   ChangeLanguage(fLang);
+
+  EventManager.AddCallback('TSettings.ApplyConfigurationChanges', @ApplyChanges);
+  EventManager.AddCallback('TSettings.CreateConfigurationInterface', @CreateConfigInterface);
+  EventManager.AddCallback('TSettings.DestroyConfigurationInterface', @DestroyConfigInterface);
+end;
+
+destructor TModuleLanguageTextfile.Free;
+begin
+  EventManager.RemoveCallback(@ApplyChanges);
+  EventManager.RemoveCallback(@CreateConfigInterface);
+  EventManager.RemoveCallback(@DestroyConfigInterface);
+end;
+
+procedure TModuleLanguageTextfile.ApplyChanges(Event: String; Data, Result: Pointer);
+begin
+  SetConfVal('lang', fLanguage.Text);
+  fLang := fLanguage.Text;
+  ChangeLanguage(fLang);
+end;
+
+procedure TModuleLanguageTextfile.CreateConfigInterface(Event: String; Data, Result: Pointer);
+begin
+  fConfigInterface := TConfigurationInterfaceBase.Create(TGUIComponent(Data));
+
+  with TLabel.Create(fConfigInterface.Surface) do
+    begin
+    Left := 8;
+    Top := 8;
+    Width := 200;
+    Height := 16;
+    Size := 16;
+    Caption := 'Language:';
+    end;
+
+  fLanguage := TEdit.Create(fConfigInterface.Surface);
+  with fLanguage do
+    begin
+    Left := 208;
+    Top := 0;
+    Width := 64;
+    Height := 32;
+    Text := GetConfVal('lang');
+    end;
+
+  TConfigurationInterfaceList(Result).Add('Language', fConfigInterface);
+end;
+
+procedure TModuleLanguageTextfile.DestroyConfigInterface(Event: String; Data, Result: Pointer);
+begin
+  fConfigInterface.Free;
 end;
 
 procedure TModuleLanguageTextfile.CheckModConf;
@@ -204,7 +261,6 @@ begin
       end;
     Result := a + Result + e;
     end;
-  // TODO: Translate substrings by relevance
 end;
 
 end.

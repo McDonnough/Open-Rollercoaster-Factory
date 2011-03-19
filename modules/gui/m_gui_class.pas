@@ -13,7 +13,7 @@ type
   TCallbackProcedure = procedure(Sender: TGUIComponent) of object;
   TKeyCallbackProcedure = procedure(Sender: TGUIComponent; Key: Integer) of object;
 
-  TComponentType = (CNothing, CWindow, CLabel, CButton, CIconifiedButton, CTimer, CTabBar, CEdit, CProgressBar, CScrollBox, CImage);
+  TComponentType = (CNothing, CWindow, CLabel, CButton, CIconifiedButton, CTimer, CTabBar, CEdit, CProgressBar, CScrollBox, CImage, CCheckBox, CSlider);
 
   AGUIComponent = array of TGUIComponent;
 

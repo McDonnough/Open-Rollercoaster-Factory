@@ -23,7 +23,7 @@ implementation
 
 uses
   m_gui_window_class, m_gui_label_class, m_gui_progressbar_class, m_varlist, m_inputhandler_class, m_gui_button_class, m_gui_iconifiedbutton_class,
-  m_gui_edit_class, m_gui_timer_class, m_gui_tabbar_class, m_gui_scrollbox_class, m_gui_image_class;
+  m_gui_edit_class, m_gui_timer_class, m_gui_tabbar_class, m_gui_scrollbox_class, m_gui_image_class, m_gui_checkbox_class, m_gui_slider_class;
 
 procedure TModuleGUIDefault.Render;
 var
@@ -47,9 +47,11 @@ var
       CButton: TButton(Component).Render;
       CIconifiedButton: TIconifiedButton(Component).Render;
       CEdit: TEdit(Component).Render;
+      CSlider: TSlider(Component).Render;
       CScrollBox: TScrollBox(Component).Render;
       CTimer: TTimer(Component).Render;
       CImage: TImage(Component).Render;
+      CCheckBox: TCheckBox(Component).Render;
     else
       Component.Render;
       end;

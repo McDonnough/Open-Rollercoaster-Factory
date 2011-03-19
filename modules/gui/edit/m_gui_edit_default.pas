@@ -62,7 +62,7 @@ begin
     Edit.fClickFactor := Edit.fClickFactor + (1 - Edit.fClickFactor) / 10
   else
     Edit.fClickFactor := Edit.fClickFactor - Edit.fClickFactor / 10;
-  fTexture.Bind;
+  fTexture.Bind(0);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBegin(GL_QUADS);
@@ -84,6 +84,8 @@ begin
   else
     i := Length(Edit.Text) - Edit.MovedChars;
   ModuleManager.ModFont.Write(SubString(Edit.Text, Edit.MovedChars + 1, i), Edit.Height - 16, Edit.Left + 8, Edit.Top + 8, 0, 0, 0, 1, 0);
+  ModuleManager.ModTexMng.ActivateTexUnit(0);
+  ModuleManager.ModTexMng.BindTexture(-1);
   glBegin(GL_LINES);
     glColor4f(1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, Edit.fClickFactor);
     glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) + 8, Edit.Top + 8);

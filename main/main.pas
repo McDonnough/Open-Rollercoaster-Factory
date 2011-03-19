@@ -150,6 +150,9 @@ begin
   ModuleManager.ModGUI.CallSignals;
   ModuleManager.ModOCFManager.CheckLoaded;
 
+  if ModuleManager.ModSettings.CanBeDestroyed then
+    ModuleManager.ModSettings.HideConfigurationInterface;
+
   if (Park = nil) and (ParkUI <> nil) then
     begin
     ParkUI.Free;
@@ -181,6 +184,11 @@ begin
             ParkFileName := '';
             ModuleManager.ModMainMenu.Reset;
             end;
+        MMVAL_SETTINGS:
+          begin
+          ModuleManager.ModSettings.ShowConfigurationInterface;
+          ModuleManager.ModMainMenu.Reset;
+          end;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;
         end;
       end;

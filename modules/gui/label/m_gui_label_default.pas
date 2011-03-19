@@ -51,7 +51,8 @@ begin
   glEnable(GL_BLEND);
   glDisable(GL_ALPHA_TEST);
   glColor4f(Lbl.Color.X, Lbl.Color.Y, Lbl.Color.Z, Lbl.Color.W * Lbl.Alpha);
-  glBindTexture(GL_TEXTURE_2D, 0);
+  ModuleManager.ModTexMng.ActivateTexUnit(0);
+  ModuleManager.ModTexMng.BindTexture(-1);
   glBegin(GL_QUADS);
     glVertex2f(Lbl.Left, Lbl.Top);
     glVertex2f(Lbl.Left + Lbl.Width, Lbl.Top);

@@ -140,7 +140,7 @@ begin
   for i := 0 to high(fTextures) do
     if (Size >= fTextures[i].MinSize) and (Size < fTextures[i].MaxSize) then
       begin
-      fTextures[i].Texture.Bind(0);
+//       fTextures[i].Texture.Bind(0);
       BoundTexture := i;
       end;
   A := TRow.Create;
@@ -155,6 +155,7 @@ begin
   A.Insert(0, Result);
   Result := A.Max;
   A.Free;
+//   fTextures[BoundTexture].Texture.Unbind;
 end;
 
 function TModuleFontTextureVariableWidth.ConvertText(Input: String): String;

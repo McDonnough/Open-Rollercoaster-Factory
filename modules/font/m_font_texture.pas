@@ -52,7 +52,7 @@ begin
   X := Left;
   Y := Top;
 
-  fTexture.Bind();
+  fTexture.Bind(0);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -25,6 +25,7 @@ uses
   m_camera_default,
   m_gui_image_default,
   m_gui_scrollbox_default,
+  m_settings_default,
   SysUtils,
   Classes;
 type
@@ -54,3 +55,4 @@ type
   TModuleCamera = TModuleCameraDefault;
   TModuleGUIImage = TModuleGUIImageDefault;
   TModuleGUIScrollBox = TModuleGUIScrollBoxDefault;
+  TModuleSettings = TModuleSettingsDefault;

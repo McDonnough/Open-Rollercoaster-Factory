@@ -29,14 +29,17 @@ interface
       fModGUIScrollBox: TModuleGUIScrollBox;
       fModGUIProgressBar: TModuleGUIProgressBar;
       fModGUIButton: TModuleGUIButton;
+      fModGUICheckBox: TModuleGUICheckBox;
       fModGUIIconifiedButton: TModuleGUIIconifiedButton;
       fModGUIEdit: TModuleGUIEdit;
+      fModGUISlider: TModuleGUISlider;
       fModGUITimer: TModuleGUITimer;
       fModLoadScreen: TModuleLoadScreen;
       fModMainMenu: TModuleMainMenu;
       fModOCFManager: TModuleOCFManager;
       fModRenderer: TModuleRenderer;
       fModCamera: TModuleCamera;
+      fModSettings: TModuleSettings;
     public
       property ModModuleConfig: TModuleConfig read fModModuleConfig;
       property ModPathes: TModulePathes read fModPathes;
@@ -56,14 +59,17 @@ interface
       property ModGUIScrollBox: TModuleGUIScrollBox read fModGUIScrollBox;
       property ModGUIProgressBar: TModuleGUIProgressBar read fModGUIProgressBar;
       property ModGUIButton: TModuleGUIButton read fModGUIButton;
+      property ModGUICheckBox: TModuleGUICheckBox read fModGUICheckBox;
       property ModGUIIconifiedButton: TModuleGUIIconifiedButton read fModGUIIconifiedButton;
       property ModGUIEdit: TModuleGUIEdit read fModGUIEdit;
+      property ModGUISlider: TModuleGUISlider read fModGUISlider;
       property ModGUITimer: TModuleGUITimer read fModGUITimer;
       property ModLoadScreen: TModuleLoadScreen read fModLoadScreen;
       property ModMainMenu: TModuleMainMenu read fModMainMenu;
       property ModOCFManager: TModuleOCFManager read fModOCFManager;
       property ModRenderer: TModuleRenderer read fModRenderer;
       property ModCamera: TModuleCamera read fModCamera;
+      property ModSettings: TModuleSettings read fModSettings;
 
       /// Create all module instances
       procedure LoadModules;
@@ -136,11 +142,17 @@ begin
   fModGUIButton := TModuleGUIButton.Create;
   fModGUIButton.CheckModConf;
 
+  fModGUICheckBox := TModuleGUICheckBox.Create;
+  fModGUICheckBox.CheckModConf;
+
   fModGUIIconifiedButton := TModuleGUIIconifiedButton.Create;
   fModGUIIconifiedButton.CheckModConf;
 
   fModGUIEdit := TModuleGUIEdit.Create;
   fModGUIEdit.CheckModConf;
+
+  fModGUISlider := TModuleGUISlider.Create;
+  fModGUISlider.CheckModConf;
 
   fModGUITimer := TModuleGUITimer.Create;
   fModGUITimer.CheckModConf;
@@ -159,18 +171,24 @@ begin
 
   fModCamera := TModuleCamera.Create;
   fModCamera.CheckModConf;
+
+  fModSettings := TModuleSettings.Create;
+  fModSettings.CheckModConf;
 end;
 
 procedure TModuleManager.UnloadModules;
 begin
+  fModSettings.Free;
   fModCamera.Free;
   fModRenderer.Free;
   fModOCFManager.Free;
   fModMainMenu.Free;
   fModLoadScreen.Free;
   fModGUITimer.Free;
+  fModGUISlider.Free;
   fModGUIEdit.Free;
   fModGUIIconifiedButton.Free;
+  fModGUICheckBox.Free;
   fModGUIButton.Free;
   fModGUIProgressBar.Free;
   fModGUIImage.Free;

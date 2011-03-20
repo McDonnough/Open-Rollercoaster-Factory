@@ -121,9 +121,9 @@ begin
   if GetOCFType = 'terraincollection' then
     begin
     ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
-    Result := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
+    fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
+    Result := fPreview;
     end;
-  fPreview := Result;
 end;
 
 function TOCFFile.GetDescription: String;

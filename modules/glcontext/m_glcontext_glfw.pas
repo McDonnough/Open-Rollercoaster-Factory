@@ -6,14 +6,22 @@ unit m_glcontext_glfw;
 interface
 
 uses
-  Classes, SysUtils, m_glcontext_class, glfw, dglOpenGL;
+  Classes, SysUtils, m_glcontext_class, glfw, dglOpenGL, m_gui_class, m_settings_class, m_gui_label_class, m_gui_edit_class,
+  m_gui_checkbox_class;
 
 type
   TModuleGLContextGLFW = class(TModuleGLContextClass)
     protected
+      sResX, sResY: TEdit;
+      cFullscreen: TCheckBox;
+      fConfigInterface: TConfigurationInterfaceBase;
+      fResX, fResY: Integer;
     public
       constructor Create;
       destructor Free;
+      procedure ApplyChanges(Event: String; Data, Result: Pointer);
+      procedure CreateConfigInterface(Event: String; Data, Result: Pointer);
+      procedure DestroyConfigInterface(Event: String; Data, Result: Pointer);
       procedure CheckModConf;
       procedure ChangeWindowTitle(Text: String);
       procedure GetResolution(var ResX: Integer; var ResY: Integer);
@@ -29,13 +37,17 @@ type
 implementation
 
 uses
-  m_varlist, main;
+  m_varlist, main, u_events;
 
 constructor TModuleGLContextGLFW.Create;
 begin
   fModName := 'GLContextGLFW';
   fModType := 'GLContext';
   CheckModConf;
+
+  EventManager.AddCallback('TSettings.CreateConfigurationInterface', @CreateConfigInterface);
+  EventManager.AddCallback('TSettings.DestroyConfigurationInterface', @DestroyConfigInterface);
+  EventManager.AddCallback('TSettings.ApplyConfigurationChanges', @ApplyChanges);
 
   //Init GLFW
   glfwInit;
@@ -60,6 +72,9 @@ end;
 
 destructor TModuleGLContextGLFW.Free;
 begin
+  EventManager.RemoveCallback(@CreateConfigInterface);
+  EventManager.RemoveCallback(@DestroyConfigInterface);
+  EventManager.RemoveCallback(@ApplyChanges);
   glfwCloseWindow;
 end;
 
@@ -72,6 +87,8 @@ begin
     SetConfVal('Fullscreen', '0');
     SetConfVal('used', '1');
     end;
+  fResX := StrToIntWD(GetConfVal('ResX'), 800);
+  fResY := StrToIntWD(GetConfVal('ResY'), 600);
 end;
 
 procedure TModuleGLContextGLFW.ChangeWindowTitle(Text: String);
@@ -81,8 +98,8 @@ end;
 
 procedure TModuleGLContextGLFW.GetResolution(var ResX: Integer; var ResY: Integer);
 begin
-  ResX := StrToInt(GetConfVal('ResX'));
-  ResY := StrToInt(GetConfVal('ResY'));
+  ResX := fResX;
+  ResY := fResY
 end;
 
 procedure TModuleGLContextGLFW.SwapBuffers;
@@ -109,8 +126,86 @@ begin
   ReadImplementationProperties;
 end;
 
+procedure TModuleGLContextGLFW.ApplyChanges(Event: String; Data, Result: Pointer);
+begin
+  SetConfVal('ResX', StrToIntWD(sResX.Text, 800));
+  SetConfVal('ResY', StrToIntWD(sResY.Text, 600));
+  SetConfVal('Fullscreen', cFullscreen.Checked);
+end;
+
+procedure TModuleGLContextGLFW.CreateConfigInterface(Event: String; Data, Result: Pointer);
+begin
+  fConfigInterface := TConfigurationInterfaceBase.Create(TGUIComponent(Data));
+
+  with TLabel.Create(fConfigInterface.Surface) do
+    begin
+    Top := 8;
+    Left := 8;
+    Height := 32;
+    Size := 16;
+    Width := 200;
+    Caption := 'Screen width:';
+    end;
+  sResX := TEdit.Create(fConfigInterface.Surface);
+  with sResX do
+    begin
+    Top := 0;
+    Left := 208;
+    Width := 64;
+    Height := 32;
+    Text := GetConfVal('ResX');
+    end;
+
+  with TLabel.Create(fConfigInterface.Surface) do
+    begin
+    Top := 8;
+    Left := 338;
+    Height := 32;
+    Size := 16;
+    Width := 200;
+    Caption := 'Screen height:';
+    end;
+  sResY:= TEdit.Create(fConfigInterface.Surface);
+  with sResY do
+    begin
+    Top := 0;
+    Left := 538;
+    Width := 64;
+    Height := 32;
+    Text := GetConfVal('ResY');
+    end;
+
+  with TLabel.Create(fConfigInterface.Surface) do
+    begin
+    Top := 40;
+    Left := 48;
+    Height := 32;
+    Size := 16;
+    Width := 200;
+    Caption := 'Fullscreen mode';
+    end;
+  cFullscreen := TCheckBox.Create(fConfigInterface.Surface);
+  with cFullscreen do
+    begin
+    Top := 32;
+    Left := 8;
+    Height := 32;
+    Width := 32;
+    Checked := GetConfVal('Fullscreen') = '1';
+    end;
+
+  TConfigurationInterfaceList(Result).Add('Screen', fConfigInterface);
+end;
+
+procedure TModuleGLContextGLFW.DestroyConfigInterface(Event: String; Data, Result: Pointer);
+begin
+  fConfigInterface.Free;
+end;
+
 function TModuleGLContextGLFW.SetResolution(ResX, ResY: Integer): Boolean;
 begin
+  fResX := ResX;
+  fResY := ResY;
   glfwSetWindowSize(ResX, ResY);
   SetConfVal('ResX', IntToStr(ResX));
   SetConfVal('ResY', IntToStr(ResY));

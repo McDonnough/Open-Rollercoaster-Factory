@@ -830,7 +830,7 @@ var
 
   procedure UpdateVertexSD(X, Y: Word);
   begin
-    if (x mod 4 <> 0) or (y mod 4 = 0) then exit;
+    if (x and 3 <> 0) or (y and 3 = 0) then exit;
     Pixel := Vector(Park.pTerrain.TexMap[X / 5, Y / 5] / 8, Park.pTerrain.WaterMap[X / 5, Y / 5] / 256, 0.0, Park.pTerrain.HeightMap[X / 5, Y / 5] / 256);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X div 4, Y div 4, 1, 1, GL_RGBA, GL_FLOAT, @Pixel.X);
   end;

@@ -59,6 +59,9 @@ type
       fEnvironmentMapFrames, fEnvironmentMapInterval: Integer;
       fWaterReflectTerrain, fWaterReflectAutoplants, fWaterReflectObjects, fWaterReflectParticles, fWaterReflectSky: Boolean;
       fWaterRefractTerrain, fWaterRefractAutoplants, fWaterRefractObjects, fWaterRefractParticles: Boolean;
+      fIsUnderWater: Boolean;
+      fWaterHeight: Single;
+      fUnderWaterShader: TShader;
     public
       CurrentTerrainBumpmapDistance, CurrentTerrainDetailDistance, CurrentTerrainTesselationDistance: Single;
       CurrentLODDistanceFactor, CurrentLODDistanceOffset: Single;
@@ -374,6 +377,11 @@ begin
   fBlackShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/black.fs');
   fBlackShader.Unbind;
 
+  fUnderWaterShader := TShader.Create('orcf-world-engine/postprocess/underWater.vs', 'orcf-world-engine/postprocess/underWater.fs');
+  fUnderWaterShader.UniformI('GeometryMap', 0);
+  fUnderWaterShader.UniformI('RenderedScene', 1);
+  fUnderWaterShader.Unbind;
+
   fFrustum := TFrustum.Create;
 
   fEnvironmentMapFrames := 0;
@@ -385,6 +393,7 @@ var
 begin
   fFrustum.Free;
 
+  fUnderWaterShader.Free;
   fBlackShader.Free;
   fShadowDepthShader.Free;
   fFocalBlurShader.Free;
@@ -504,6 +513,12 @@ var
   Coord: TVector4D;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+
+  fIsUnderWater := False;
+
+  fWaterHeight := Park.pTerrain.WaterMap[ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z];
+  if ModuleManager.ModCamera.ActiveCamera.Position.Y < fWaterHeight + 0.05 then
+    fIsUnderWater := True;
 
   // Set up camera
 
@@ -745,8 +760,6 @@ begin
 
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
-
-
   fSceneBuffer.Unbind;
 
   GBuffer.Bind;
@@ -757,6 +770,40 @@ begin
     glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
     fFullscreenShader.Unbind;
   GBuffer.Unbind;
+
+  // Under-water view
+
+  if fIsUnderWater then
+    begin
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    fSpareBuffer.Bind;
+    fUnderWaterShader.Bind;
+    fUnderWaterShader.UniformF('Height', fWaterHeight);
+    fUnderWaterShader.UniformF('ViewPoint', ViewPoint.X, ViewPoint.Y, ViewPoint.Z);
+    fUnderWaterShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
+
+    fSceneBuffer.Textures[0].Bind(1);
+    GBuffer.Textures[2].Bind(0);
+
+    DrawFullscreenQuad;
+
+    fUnderWaterShader.Unbind;
+    fSpareBuffer.Unbind;
+
+    glDisable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+
+
+    fSceneBuffer.Bind;
+    fFullscreenShader.Bind;
+
+    fSpareBuffer.Textures[0].Bind(0);
+
+    DrawFullscreenQuad;
+
+    fFullscreenShader.UnBind;
+    fSceneBuffer.Bind;
+    end;
 
   // Set up selection rays
 

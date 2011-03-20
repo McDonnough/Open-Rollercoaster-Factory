@@ -9,14 +9,16 @@ uniform float Height;
 uniform vec2 TerrainSize;
 uniform vec2 ScreenSize;
 uniform vec2 BumpOffset;
+uniform float UnderWaterFactor;
+uniform vec2 Mediums;
 
 varying vec2 Vertex;
 varying float Displacement;
 
 float Fresnel(float x) {
-  float Rs = pow((cos(x) - 1.33 * sqrt(1.0 - pow(1.0 / 1.33 * sin(x), 2.0))) / (cos(x) + 1.33 * sqrt(1.0 - pow(1.0 / 1.33 * sin(x), 2.0))), 2.0);
-  float Rp = pow((sqrt(1.0 - pow(1.0 / 1.33 * sin(x), 2.0)) - 1.33 * cos(x)) / (sqrt(1.0 - pow(1.0 / 1.33 * sin(x), 2.0)) + 1.33 * cos(x)), 2.0);
-  return 0.5 * (Rs + Rp);
+  float Rs = pow((Mediums.x * cos(x) - Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))) / (Mediums.x * cos(x) + Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))), 2.0);
+  float Rp = pow((Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) - Mediums.y * cos(x)) / (Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) + Mediums.y * cos(x)), 2.0);
+  return 0.5 * (min(1.0, Rs) + min(1.0, Rp));
 }
 
 void main(void) {
@@ -44,7 +46,7 @@ void main(void) {
   float PixelSceneHeight = texture2D(GeometryMap, 0.5 + 0.5 * RealPosition.xy / RealPosition.w).y;
   float OffsetFactor = 1.0 - clamp(pow(0.5, Height - PixelSceneHeight), 0.0, 1.0);
 
-  normal = mix(vec3(0.0, 1.0, 0.0), normal, OffsetFactor);
+  normal = UnderWaterFactor * mix(vec3(0.0, 1.0, 0.0), normal, OffsetFactor);
 
   vec3 RefractedOffset = normal * vec3(1.0, 0.0, 1.0);
   vec4 RefractedPosition = gl_ModelViewProjectionMatrix * vec4(Position + RefractedOffset, 1.0);

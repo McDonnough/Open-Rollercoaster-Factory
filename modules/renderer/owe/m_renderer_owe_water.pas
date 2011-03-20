@@ -123,12 +123,14 @@ procedure TRWater.Render;
 var
   i: Integer;
 begin
+  glDisable(GL_CULL_FACE);
   for i := 0 to high(fWaterLayers) do
     if fWaterLayers[i].Visible then
       begin
       fBumpMap.Bind(1);
       fWaterLayers[i].Render;
       end;
+  glEnable(GL_CULL_FACE);
 end;
 
 procedure TRWater.RenderSimple;
@@ -257,6 +259,8 @@ end;
 
 procedure TWaterLayer.CheckVisibility;
 begin
+  glDisable(GL_CULL_FACE);
+
   ModuleManager.ModRenderer.RWater.CheckShader.Bind;
   ModuleManager.ModRenderer.RWater.CheckShader.UniformF('Height', Height / 65535 * 256);
   ModuleManager.ModRenderer.RWater.CheckShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
@@ -274,6 +278,8 @@ begin
   fQuery.EndCounter;
 
   ModuleManager.ModRenderer.RWater.CheckShader.Unbind;
+
+  glEnable(GL_CULL_FACE);
 end;
 
 procedure TWaterLayer.Render;
@@ -283,11 +289,20 @@ begin
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Height', Height / 65535 * 256);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
   ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Offset', ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
+  if ModuleManager.ModCamera.ActiveCamera.Position.Y < fHeight / 256 then
+    begin
+    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('UnderWaterFactor', -1);
+    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Mediums', 1.33, 1.0);
+    end
+  else
+    begin
+    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('UnderWaterFactor', 1);
+    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Mediums', 1.0, 1.33);
+    end;
   fRefractionPass.Textures[0].Bind(2);
   fReflectionPass.Textures[0].Bind(3);
   fRefractionGeo.Textures[0].Bind(4);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
-
 
   ModuleManager.ModRenderer.RWater.WaterVBO.Bind;
   ModuleManager.ModRenderer.RWater.WaterVBO.Render;
@@ -331,10 +346,15 @@ begin
 end;
 
 procedure TWaterLayer.RenderBuffers;
-const
+var
   ClipPlane: Array[0..3] of GLDouble = (0, -1, 0, 0);
 begin
   glEnable(GL_CLIP_PLANE0);
+
+  if ModuleManager.ModCamera.ActiveCamera.Position.Y < fHeight / 256 then
+    ClipPlane[1] := 1
+  else
+    ClipPlane[1] := -1;
 
   glMatrixMode(GL_MODELVIEW);
 
@@ -349,7 +369,7 @@ begin
 
     ModuleManager.ModRenderer.Frustum.Calculate;
 
-    ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := ModuleManager.ModRenderer.WaterReflectSky;
+    ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := ModuleManager.ModRenderer.WaterReflectSky and (ClipPlane[1] = -1);
     ModuleManager.ModRenderer.RWater.RenderPass.RenderTerrain := ModuleManager.ModRenderer.WaterReflectTerrain;
     ModuleManager.ModRenderer.RWater.RenderPass.RenderObjects := ModuleManager.ModRenderer.WaterReflectObjects;
     ModuleManager.ModRenderer.RWater.RenderPass.RenderParticles := ModuleManager.ModRenderer.WaterReflectParticles;
@@ -369,7 +389,7 @@ begin
   ModuleManager.ModRenderer.Frustum.Calculate;
 
   ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
-  ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := False;
+  ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := ClipPlane[1] = 1;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderTerrain := ModuleManager.ModRenderer.WaterRefractTerrain;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderObjects := ModuleManager.ModRenderer.WaterRefractObjects;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderParticles := ModuleManager.ModRenderer.WaterRefractParticles;

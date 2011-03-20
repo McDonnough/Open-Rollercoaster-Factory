@@ -218,14 +218,14 @@ begin
       if PaletteLength > 8192 then
         raise EUnsupportedStream.Create('Unsupported palette length');
       BPPPalette := Byte(TGA^); Inc(TGA);
-      if BPPPalette mod 8 <> 0 then
+      if BPPPalette and 7 <> 0 then
         raise EUnsupportedStream.Create('Unsupported BPP value');
       OriginX := Word(TGA^); Inc(TGA, 2);
       OriginY := Word(TGA^); Inc(TGA, 2);
       Width := Word(TGA^); Inc(TGA, 2);
       Height := Word(TGA^); Inc(TGA, 2);
       BPP := Byte(TGA^); Inc(TGA);
-      if BPPPalette mod 8 <> 0 then
+      if BPPPalette and 7 <> 0 then
         raise EUnsupportedStream.Create('Unsupported BPP value');
       Flags := Byte(TGA^); Inc(TGA);
       SetLength(ImgID, ImgIDLen);

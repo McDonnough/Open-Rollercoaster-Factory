@@ -107,7 +107,7 @@ begin
   for i := 1 to length(Text) do
     begin
     py := Ord(Text[i]) div 16;
-    px := Ord(Text[i]) mod 16;
+    px := Ord(Text[i]) and 15;
 
     LO := Round(fTextures[BoundTexture].LetterPositions[Ord(Text[i])].FirstPixel * Size / (fTextures[BoundTexture].Texture.Width / 16));
 

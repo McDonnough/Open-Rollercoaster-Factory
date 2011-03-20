@@ -67,7 +67,7 @@ begin
   for i := SX to SX + 19 do
     for j := SY to SY + 19 do
       begin
-      if (i mod 2 <> 0) or (j mod 2 <> 0) then continue;
+      if (i and 1 <> 0) or (j and 1 <> 0) then continue;
       DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i))^) := GetColorAtPixel(i, j);
       DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i + 1))^) := DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i))^);
       DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * (j + 1) + i + 1))^) := DWord(Pointer(PixelMap + SizeOf(Integer) * (ResX * j + i))^);

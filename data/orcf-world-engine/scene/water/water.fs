@@ -61,7 +61,7 @@ void main(void) {
 
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[2] = vec4(Vertex.x, Height + Displacement, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height + Displacement, Vertex.y, 1.0))));
-  gl_FragData[1] = vec4(normal, 250.0);
+  gl_FragData[1] = vec4(UnderWaterFactor * normal, 250.0);
   gl_FragData[0] = vec4(1.0, 1.0, 1.0, -1.0);
   float ReflectionCoefficient = Fresnel(acos(dot(-Eye, normalize(gl_NormalMatrix * normal))));
   gl_FragData[0].rgb = ReflectionCoefficient * texture2D(ReflectTex, 0.5 + 0.5 * ReflectedPosition.xy / ReflectedPosition.w).rgb;

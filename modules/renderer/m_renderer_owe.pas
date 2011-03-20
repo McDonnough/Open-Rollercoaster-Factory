@@ -801,6 +801,8 @@ begin
 
     DrawFullscreenQuad;
 
+    fSpareBuffer.Textures[0].UnBind;
+
     fFullscreenShader.UnBind;
     fSceneBuffer.Bind;
     end;

@@ -42,8 +42,9 @@ void main(void) {
 //   if (clamp(Vertex.xz, vec2(0.0, 0.0), TerrainSize) != Vertex.xz && Border != 1)
 //     discard;
 
-//   if (Border == 0 && max(abs(Camera.x - Vertex.x), abs(Camera.y - Vertex.z)) < TerrainTesselationDistance - 1.0)
-//     discard;
+  if (Vertex.x > 1.0 && Vertex.z > 1.0 && Vertex.x < TerrainSize.x - 1.0 && Vertex.z < TerrainSize.y - 1.0)
+    if (Border == 0 && max(abs(Camera.x - Vertex.x), abs(Camera.y - Vertex.z)) < TerrainTesselationDistance - 2.0)
+      discard;
 
   iVertex = ivec2(floor(5.0 * FakeVertex + 0.001));
 

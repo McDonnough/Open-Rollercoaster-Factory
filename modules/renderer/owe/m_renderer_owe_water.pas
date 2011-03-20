@@ -269,10 +269,10 @@ begin
   fQuery.StartCounter;
 
   glBegin(GL_QUADS);
-    glVertex2f(-204.8, Park.pTerrain.SizeY / 5 + 204.8);
-    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, Park.pTerrain.SizeY / 5 + 204.8);
-    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, -204.8);
-    glVertex2f(-204.8, -204.8);
+    glVertex2f(-2048, Park.pTerrain.SizeY / 5 + 2048);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 2048, Park.pTerrain.SizeY / 5 + 2048);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 2048, -2048);
+    glVertex2f(-2048, -2048);
   glEnd;
 
   fQuery.EndCounter;
@@ -333,10 +333,10 @@ begin
 //   ModuleManager.ModRenderer.RWater.WaterVBO.Unbind;
 
   glBegin(GL_QUADS);
-    glVertex2f(-204.8, Park.pTerrain.SizeY / 5 + 204.8);
-    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, Park.pTerrain.SizeY / 5 + 204.8);
-    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, -204.8);
-    glVertex2f(-204.8, -204.8);
+    glVertex2f(-2048, Park.pTerrain.SizeY / 5 + 2048);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 2048, Park.pTerrain.SizeY / 5 + 2048);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 2048, -2048);
+    glVertex2f(-2048, -2048);
   glEnd;
 
   ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].UnBind;

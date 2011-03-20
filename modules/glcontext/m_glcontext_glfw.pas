@@ -37,7 +37,7 @@ type
 implementation
 
 uses
-  m_varlist, main, u_events;
+  m_varlist, main, u_events, u_functions;
 
 constructor TModuleGLContextGLFW.Create;
 begin

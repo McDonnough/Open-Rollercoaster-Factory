@@ -5,25 +5,25 @@ interface
 uses
   SysUtils, Classes, Math, u_vectors;
 
-function Mix(A, B, C: Single): Single;
-function Mix(A, B: TVector2D; C: Single): TVector2D;
-function Mix(A, B: TVector3D; C: Single): TVector3D;
-function Mix(A, B: TVector4D; C: Single): TVector4D;
+function Mix(A, B, C: Single): Single; inline;
+function Mix(A, B: TVector2D; C: Single): TVector2D; inline;
+function Mix(A, B: TVector3D; C: Single): TVector3D; inline;
+function Mix(A, B: TVector4D; C: Single): TVector4D; inline;
 
-function Ceil(A: Single): Integer;
-function Ceil(A: TVector2D): TVector2D;
-function Ceil(A: TVector3D): TVector3D;
-function Ceil(A: TVector4D): TVector4D;
+function Ceil(A: Single): Integer; inline;
+function Ceil(A: TVector2D): TVector2D; inline;
+function Ceil(A: TVector3D): TVector3D; inline;
+function Ceil(A: TVector4D): TVector4D; inline;
 
-function Floor(A: Single): Integer;
-function Floor(A: TVector2D): TVector2D;
-function Floor(A: TVector3D): TVector3D;
-function Floor(A: TVector4D): TVector4D;
+function Floor(A: Single): Integer; inline;
+function Floor(A: TVector2D): TVector2D; inline;
+function Floor(A: TVector3D): TVector3D; inline;
+function Floor(A: TVector4D): TVector4D; inline;
 
-function FPart(A: Single): Single;
-function FPart(A: TVector2D): TVector2D;
-function FPart(A: TVector3D): TVector3D;
-function FPart(A: TVector4D): TVector4D;
+function FPart(A: Single): Single; inline;
+function FPart(A: TVector2D): TVector2D; inline;
+function FPart(A: TVector3D): TVector3D; inline;
+function FPart(A: TVector4D): TVector4D; inline;
 
 function Clamp(A, Min, Max: Single): Single;
 

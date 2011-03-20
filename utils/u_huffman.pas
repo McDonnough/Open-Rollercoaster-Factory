@@ -202,7 +202,7 @@ var
   CodeSubgroup: Word;
   MinLength: Integer;
 
-  function Decode(Code: DWord; Length: Byte): Integer;
+  function Decode(Code: DWord; Length: Byte): Integer; inline;
   begin
     Result := -1;
     CodeGroup := (Code shr 16);
@@ -234,7 +234,7 @@ begin
   CurrDestByte := 0;
   while BitCount > CurrBit do
     begin
-    if CurrByte and (1 shl (CurrBit mod 32)) <> 0 then
+    if CurrByte and (1 shl (CurrBit and 31)) <> 0 then
       CurrCode := CurrCode or (1 shl BitOffset);
     LastByte := -1;
     inc(BitOffset);
@@ -249,9 +249,8 @@ begin
         BitOffset := 0;
         end;
       end;
-
     inc(CurrBit);
-    if CurrBit mod 32 = 0 then
+    if CurrBit and 31 = 0 then
       begin
       CurrByte := DWord(StreamPos^);
       inc(StreamPos, 4);

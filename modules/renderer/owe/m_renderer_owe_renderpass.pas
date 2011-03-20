@@ -81,7 +81,7 @@ begin
 //       ModuleManager.ModRenderer.RWater.Check;
 //       glDepthMask(true);
 //       glColorMask(true, true, true, true);
-//       ModuleManager.ModRenderer.RWater.Render;
+      ModuleManager.ModRenderer.RWater.RenderSimple;
       end;
 //   GBuffer.Unbind;
 

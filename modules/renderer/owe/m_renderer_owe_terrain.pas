@@ -307,6 +307,7 @@ var
   begin
     fTerrainMap.Unbind;
   end;
+
 begin
   if Event = 'TTerrain.Resize' then
     begin

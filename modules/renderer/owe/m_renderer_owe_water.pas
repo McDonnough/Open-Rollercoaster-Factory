@@ -19,6 +19,7 @@ type
       function Visible: Boolean;
       procedure CheckVisibility;
       procedure Render;
+      procedure RenderSimple;
       procedure RenderBuffers;
       constructor Create(H: Word);
       destructor Free;
@@ -27,7 +28,7 @@ type
   TRWater = class
     protected
       fWaterMap: TTable;
-      fCheckShader, fRenderShader: TShader;
+      fCheckShader, fSimpleShader, fRenderShader: TShader;
       fWaterLayers: Array of TWaterLayer;
       fBumpMap: TTexture;
       fBumpOffset: TVector2D;
@@ -35,6 +36,7 @@ type
       fRenderPass: TRenderPass;
     public
       property RenderShader: TShader read fRenderShader;
+      property SimpleShader: TShader read fSimpleShader;
       property CheckShader: TShader read fCheckShader;
       property BumpOffset: TVector2D read fBumpOffset;
       property WaterVBO: TVBO read fWaterVBO;
@@ -43,6 +45,7 @@ type
       procedure Resize(Event: String; Data, Result: Pointer);
       procedure Check;
       procedure Render;
+      procedure RenderSimple;
       procedure Advance;
       procedure RenderBuffers;
       constructor Create;
@@ -128,6 +131,18 @@ begin
       end;
 end;
 
+procedure TRWater.RenderSimple;
+var
+  i: Integer;
+begin
+  for i := 0 to high(fWaterLayers) do
+//     if fWaterLayers[i].Visible then
+      begin
+      fBumpMap.Bind(1);
+      fWaterLayers[i].RenderSimple;
+      end;
+end;
+
 procedure TRWater.RenderBuffers;
 var
   i: Integer;
@@ -157,7 +172,7 @@ begin
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 
-  fCheckShader := TShader.Create('orcf-world-engine/scene/water/water.vs', 'orcf-world-engine/scene/water/waterCheck.fs');
+  fCheckShader := TShader.Create('orcf-world-engine/scene/water/waterSimple.vs', 'orcf-world-engine/scene/water/waterCheck.fs');
   fCheckShader.UniformI('HeightMap', 0);
 
   fRenderShader := TShader.Create('orcf-world-engine/scene/water/water.vs', 'orcf-world-engine/scene/water/water.fs');
@@ -168,6 +183,12 @@ begin
   fRenderShader.UniformI('GeometryMap', 4);
   fRenderShader.UniformF('ScreenSize', ModuleManager.ModRenderer.BufferSizeX, ModuleManager.ModRenderer.BufferSizeY);
   fRenderShader.UniformF('BumpOffset', 0, 0);
+
+  fSimpleShader := TShader.Create('orcf-world-engine/scene/water/waterSimple.vs', 'orcf-world-engine/scene/water/waterSimple.fs');
+  fSimpleShader.UniformI('HeightMap', 0);
+  fSimpleShader.UniformI('BumpMap', 1);
+  fSimpleShader.UniformI('EvironmentMap', 3);
+  fSimpleShader.UniformF('BumpOffset', 0, 0);
 
   fWaterMap := TTable.Create;
 
@@ -223,6 +244,7 @@ begin
 
   fRenderShader.Free;
   fCheckShader.Free;
+  fSimpleShader.Free;
 
   for i := 0 to high(fWaterLayers) do
     fWaterLayers[i].Free;
@@ -271,7 +293,41 @@ begin
   ModuleManager.ModRenderer.RWater.WaterVBO.Render;
   ModuleManager.ModRenderer.RWater.WaterVBO.Unbind;
 
+  fRefractionGeo.Textures[0].UnBind;
+  fReflectionPass.Textures[0].UnBind;
+  fRefractionPass.Textures[0].UnBind;
+  ModuleManager.ModRenderer.RTerrain.TerrainMap.UnBind;
+
   ModuleManager.ModRenderer.RWater.RenderShader.Unbind;
+end;
+
+procedure TWaterLayer.RenderSimple;
+begin
+  ModuleManager.ModRenderer.RWater.SimpleShader.Bind;
+  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('BumpOffset', ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
+  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('Height', Height / 65535 * 256);
+  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('Offset', ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
+  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('ViewPoint', ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
+
+  ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(2);
+  ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
+
+//   ModuleManager.ModRenderer.RWater.WaterVBO.Bind;
+//   ModuleManager.ModRenderer.RWater.WaterVBO.Render;
+//   ModuleManager.ModRenderer.RWater.WaterVBO.Unbind;
+
+  glBegin(GL_QUADS);
+    glVertex2f(-204.8, Park.pTerrain.SizeY / 5 + 204.8);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, Park.pTerrain.SizeY / 5 + 204.8);
+    glVertex2f(Park.pTerrain.SizeX / 5 + 204.8, -204.8);
+    glVertex2f(-204.8, -204.8);
+  glEnd;
+
+  ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].UnBind;
+  ModuleManager.ModRenderer.RTerrain.TerrainMap.UnBind;
+
+  ModuleManager.ModRenderer.RWater.SimpleShader.Unbind;
 end;
 
 procedure TWaterLayer.RenderBuffers;

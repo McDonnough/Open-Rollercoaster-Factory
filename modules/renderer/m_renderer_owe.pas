@@ -572,7 +572,7 @@ begin
   if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight then
     begin
     fIsUnderWater := True;
-    MaxRenderDistance := 20;
+    MaxRenderDistance := 55;
     end;
 
   // Set up camera
@@ -603,7 +603,7 @@ begin
   RTerrain.BorderEnabled := True;
 
   if fIsUnderWater then
-    MaxRenderDistance := 20
+    MaxRenderDistance := 55
   else
     MaxRenderDistance := MaxFogDistance;
 
@@ -634,7 +634,7 @@ begin
   // Render final scene
 
   if fIsUnderWater then
-    MaxRenderDistance := 20
+    MaxRenderDistance := 55
   else
     MaxRenderDistance := MaxFogDistance;
 
@@ -824,7 +824,7 @@ begin
     if fIsUnderWater then
       begin
       FogColor := Vector(0.20, 0.30, 0.27) * Vector3D(RSky.Sun.AmbientColor) * 3.0;
-      FogStrength := 0.41503; // log(0.75) / log(0.5);
+      FogStrength := 0.152; // log(0.9) / log(0.5);
       end
     else
       begin

@@ -74,7 +74,7 @@ void main(void) {
     XZPos *= XZPos;
     XZPos *= XZPos;
     XZPos *= XZPos;
-    XZPos *= pow(0.4, (Height.r - Vertex.y)) * lf;
+    XZPos *= pow(0.6, (Height.r - Vertex.y)) * lf;
     gl_FragColor.rgb *= (1.0 - 0.2 * lf + XZPos.x);
     gl_FragColor.rgb *= (1.0 - 0.2 * lf + XZPos.y);
   }

@@ -62,7 +62,7 @@ begin
   if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight then
     begin
     fIsUnderWater := True;
-    ModuleManager.ModRenderer.MaxRenderDistance := 20;
+    ModuleManager.ModRenderer.MaxRenderDistance := 55;
     end;
 
   // Opaque parts only
@@ -193,7 +193,7 @@ begin
     if fIsUnderWater then
       begin
       ModuleManager.ModRenderer.FogColor := Vector(0.20, 0.30, 0.27) * Vector3D(ModuleManager.ModRenderer.RSky.Sun.AmbientColor) * 3.0;
-      ModuleManager.ModRenderer.FogStrength := 0.41503; // log(0.75) / log(0.5);
+      ModuleManager.ModRenderer.FogStrength := 0.152; // log(0.9) / log(0.5);
       end
     else if EnableFog then
       begin

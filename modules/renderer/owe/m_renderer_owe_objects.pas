@@ -189,6 +189,8 @@ begin
     begin
     fCurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
     fCurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
+    fCurrentShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
+    fCurrentShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
     end;
 
   BindMaterial(Mesh.GeoMesh.Material);

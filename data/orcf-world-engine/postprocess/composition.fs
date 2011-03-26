@@ -7,6 +7,9 @@ uniform sampler2D LightTexture;
 uniform sampler2D GTexture;
 uniform sampler2D MaterialMap;
 
+uniform float WaterHeight;
+uniform float WaterRefractionMode;
+
 uniform float FogStrength;
 uniform vec3 FogColor;
 
@@ -31,5 +34,5 @@ void main(void) {
     gl_FragColor.rgb += Light.rgb * Light.a * abs(Material.a);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
   }
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, FogColor, 1.0 - pow(0.5, Vertex.a * FogStrength));  
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, FogColor, 1.0 - pow(0.5, mix(Vertex.a * FogStrength, max(0.0, WaterHeight - Vertex.y), WaterRefractionMode)));
 }

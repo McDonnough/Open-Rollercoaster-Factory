@@ -69,7 +69,7 @@ type
       CurrentLODDistanceFactor, CurrentLODDistanceOffset: Single;
       ViewPoint: TVector3D;
       MaxRenderDistance: Single;
-      FogStrength: Single;
+      FogStrength, FogRefractMode: Single;
       FogColor: TVector3D;
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
@@ -560,6 +560,7 @@ var
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   FogStrength := RSky.FogStrength;
+  FogRefractMode := 0;
   fMaxFogDistance := Log10(0.003) / (Log10(0.5) * FogStrength);
   
   MaxRenderDistance := MaxFogDistance;
@@ -833,6 +834,8 @@ begin
       end;
     CompositionShader.UniformF('FogColor', FogColor);
     CompositionShader.UniformF('FogStrength', FogStrength);
+    CompositionShader.UniformF('WaterHeight', 0);
+    CompositionShader.UniformF('WaterRefractionMode', 0);
 
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);

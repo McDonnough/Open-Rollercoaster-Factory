@@ -14,7 +14,7 @@ type
       fIsUnderWater: Boolean;
     public
       MinY, MaxY: Integer;
-      RenderAutoplants, RenderTerrain, RenderObjects, RenderParticles, RenderSky, RenderWater, EnableFog: Boolean;
+      RenderAutoplants, RenderTerrain, RenderObjects, RenderParticles, RenderSky, RenderWater, EnableFog, EnableRefractionFog: Boolean;
       property Width: Integer read fWidth;
       property Height: Integer read fHeight;
       property Scene: TFBO read fSceneBuffer;
@@ -42,6 +42,9 @@ procedure TRenderPass.Render;
 var
   fWaterHeight: Single;
 begin
+  if EnableRefractionFog then
+    ModuleManager.ModRenderer.FogRefractMode := 1;
+
   ModuleManager.ModRenderer.RObjects.CurrentGBuffer := fGBuffer;
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -71,6 +74,7 @@ begin
     glDepthMask(true);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+    glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     glDepthMask(false);
@@ -190,7 +194,7 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     ModuleManager.ModRenderer.CompositionShader.Bind;
-    if fIsUnderWater then
+    if (fIsUnderWater) or (EnableRefractionFog) then
       begin
       ModuleManager.ModRenderer.FogColor := Vector(0.20, 0.30, 0.27) * Vector3D(ModuleManager.ModRenderer.RSky.Sun.AmbientColor) * 3.0;
       ModuleManager.ModRenderer.FogStrength := 0.152; // log(0.9) / log(0.5);
@@ -207,6 +211,8 @@ begin
       end;
     ModuleManager.ModRenderer.CompositionShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
     ModuleManager.ModRenderer.CompositionShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
+    ModuleManager.ModRenderer.CompositionShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
+    ModuleManager.ModRenderer.CompositionShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
 
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);
@@ -256,6 +262,8 @@ begin
   ModuleManager.ModTexMng.ActivateTexUnit(0); ModuleManager.ModTexMng.BindTexture(-1);
 
   ModuleManager.ModRenderer.RObjects.CurrentGBuffer := ModuleManager.ModRenderer.GBuffer;
+
+  ModuleManager.ModRenderer.FogRefractMode := 0;
 end;
 
 constructor TRenderPass.Create(X, Y: Integer);
@@ -292,6 +300,7 @@ begin
   RenderObjects := True;
   RenderWater := True;
   EnableFog := True;
+  EnableRefractionFog := False;
 end;
 
 destructor TRenderPass.Free;

@@ -190,6 +190,8 @@ begin
     begin
     CurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
     CurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
+    CurrentShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
+    CurrentShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
     end;
   for i := 0 to high(fAutoplantGroups) do
     fAutoplantGroups[i].Render;

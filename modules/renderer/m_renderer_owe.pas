@@ -355,6 +355,7 @@ begin
   fSunShader.UniformI('NormalTexture', 1);
   fSunShader.UniformI('ShadowTexture', 2);
   fSunShader.UniformI('MaterialTexture', 3);
+  fSunShader.UniformI('HeightMap', 4);
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
@@ -568,7 +569,7 @@ begin
   fIsUnderWater := False;
 
   fWaterHeight := Park.pTerrain.WaterMap[ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Z];
-  if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight + 0.05 then
+  if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight then
     begin
     fIsUnderWater := True;
     MaxRenderDistance := 20;
@@ -727,7 +728,8 @@ begin
 
   GBuffer.Unbind;
 
-  // Lighting pass
+  // Shadow pass
+  
   if UseSunShadows then
     begin
     fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
@@ -759,11 +761,15 @@ begin
     fSunShadowBuffer.Unbind;
     end;
 
+  // Lighting pass
+
   LightBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
+
+    RTerrain.TerrainMap.Bind(4);
 
     if UseSunShadows then
       fSunShadowBuffer.Textures[0].Bind(2);
@@ -773,11 +779,18 @@ begin
     GBuffer.Textures[2].Bind(0);
 
     SunShader.Bind;
+    SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
     SunShader.UniformF('ShadowSize', ShadowSize);
     SunShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
     SunShader.UniformI('BlurSamples', ShadowBlurSamples);
+    SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
     DrawFullscreenQuad;
     SunShader.Unbind;
+
+    RTerrain.TerrainMap.UnBind;
+    GBuffer.Textures[0].UnBind;
+    GBuffer.Textures[1].UnBind;
+    GBuffer.Textures[2].UnBind;
   LightBuffer.Unbind;
 
   // Sun ray pass

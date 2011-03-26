@@ -59,7 +59,7 @@ begin
     
   fWaterHeight := Park.pTerrain.WaterMap[ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Z];
   fIsUnderWater := False;
-  if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight + 0.05 then
+  if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight then
     begin
     fIsUnderWater := True;
     ModuleManager.ModRenderer.MaxRenderDistance := 20;
@@ -159,6 +159,8 @@ begin
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
 
+    ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(4);
+
     if ModuleManager.ModRenderer.UseSunShadows then
       ModuleManager.ModRenderer.SunShadowBuffer.Textures[0].Bind(2);
 
@@ -172,6 +174,11 @@ begin
     ModuleManager.ModRenderer.SunShader.UniformI('BlurSamples', ModuleManager.ModRenderer.ShadowBlurSamples);
     DrawFullscreenQuad;
     ModuleManager.ModRenderer.SunShader.Unbind;
+
+    ModuleManager.ModRenderer.RTerrain.TerrainMap.UnBind;
+    GBuffer.Textures[0].UnBind;
+    GBuffer.Textures[1].UnBind;
+    GBuffer.Textures[2].UnBind;
   fLightBuffer.Unbind;
 
   // Composition

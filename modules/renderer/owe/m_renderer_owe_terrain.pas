@@ -131,7 +131,9 @@ end;
 procedure TTerrainBlock.CheckVisibility;
 begin
   fShadowsVisible := true;
-  fVisible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(fBlockCenter.X, fBlockCenter.Y, fBlockCenter.Z, fRadius);
+  fVisible := false;
+  if VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Center) - Radius * Radius < ModuleManager.ModRenderer.MaxRenderDistance * ModuleManager.ModRenderer.MaxRenderDistance then
+    fVisible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(fBlockCenter.X, fBlockCenter.Y, fBlockCenter.Z, fRadius);
 end;
 
 constructor TTerrainBlock.Create(iX, iY: Integer);
@@ -268,17 +270,19 @@ begin
     end;
 
   if BorderEnabled then
-    begin
-    CurrentShader.UniformI('Border', 1);
-    CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-    CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
-    CurrentShader.UniformF('Offset', 0, 0);
-    CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
+    if (ModuleManager.ModRenderer.ViewPoint.X < ModuleManager.ModRenderer.MaxRenderDistance) or (ModuleManager.ModRenderer.ViewPoint.Z < ModuleManager.ModRenderer.MaxRenderDistance) or
+       (0.2 * Park.pTerrain.SizeX - ModuleManager.ModRenderer.ViewPoint.X < ModuleManager.ModRenderer.MaxRenderDistance) or (0.2 * Park.pTerrain.SizeY - ModuleManager.ModRenderer.ViewPoint.Z < ModuleManager.ModRenderer.MaxRenderDistance) then
+      begin
+      CurrentShader.UniformI('Border', 1);
+      CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+      CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+      CurrentShader.UniformF('Offset', 0, 0);
+      CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
 
-    fBorderVBO.Bind;
-    fBorderVBO.Render;
-    fBorderVBO.Unbind;
-    end;
+      fBorderVBO.Bind;
+      fBorderVBO.Render;
+      fBorderVBO.Unbind;
+      end;
 
   CurrentShader.UnBind;
 end;

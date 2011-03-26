@@ -7,6 +7,9 @@ uniform sampler2D LightTexture;
 uniform sampler2D GTexture;
 uniform sampler2D MaterialMap;
 
+uniform float FogStrength;
+uniform vec3 FogColor;
+
 void main(void) {
   ivec2 Offset = ivec2(0, 0);
   ivec2 Coords = ivec2(floor(gl_FragCoord.xy));
@@ -18,7 +21,8 @@ void main(void) {
     }
   Coords += Offset;
 
-  gl_FragDepth = texelFetch2D(GTexture, Coords, 0).a / 10000.0;
+  vec4 Vertex = texelFetch2D(GTexture, Coords, 0);
+  gl_FragDepth = Vertex.a / 10000.0;
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
   vec4 Light = texelFetch2D(LightTexture, Coords, 0);
   gl_FragColor = vec4(Material.rgb, 1.0);
@@ -27,4 +31,5 @@ void main(void) {
     gl_FragColor.rgb += Light.rgb * Light.a * abs(Material.a);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
   }
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, FogColor, 1.0 - pow(0.5, Vertex.a * FogStrength));  
 }

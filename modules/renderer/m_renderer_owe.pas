@@ -62,10 +62,15 @@ type
       fIsUnderWater: Boolean;
       fWaterHeight: Single;
       fUnderWaterShader: TShader;
+      fSimpleShader: TShader;
+      fMaxFogDistance: Single;
     public
       CurrentTerrainBumpmapDistance, CurrentTerrainDetailDistance, CurrentTerrainTesselationDistance: Single;
       CurrentLODDistanceFactor, CurrentLODDistanceOffset: Single;
       ViewPoint: TVector3D;
+      MaxRenderDistance: Single;
+      FogStrength: Single;
+      FogColor: TVector3D;
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
       property RSky: TRSky read fRendererSky;
@@ -79,6 +84,7 @@ type
       property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
       property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
       property HDRAverageShader: TShader read fHDRAverageShader;
+      property SimpleShader: TShader read fSimpleShader;
       property GBuffer: TFBO read fGBuffer;
       property HDRBuffer: TFBO read fHDRBuffer;
       property HDRBuffer2: TFBO read fHDRBuffer2;
@@ -148,11 +154,13 @@ type
       property FrameID: Integer read fFrameID;
       property Gamma: Single read fGamma;
       property EnvironmentMap: TCubeMap read fEnvironmentMap;
+      property MaxFogDistance: Single read fMaxFogDistance;
       procedure DynamicSettingsSetNormal;
       procedure DynamicSettingsSetReflection;
       procedure PostInit;
       procedure Unload;
       procedure RenderScene;
+      procedure RenderMaxVisibilityQuad;
       procedure CheckModConf;
       procedure InvertFrontFace;
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
@@ -382,6 +390,9 @@ begin
   fUnderWaterShader.UniformI('RenderedScene', 1);
   fUnderWaterShader.Unbind;
 
+  fSimpleShader := TShader.Create('orcf-world-engine/inferred/simple.vs', 'orcf-world-engine/inferred/simple.fs');
+  fSimpleShader.Unbind;
+
   fFrustum := TFrustum.Create;
 
   fEnvironmentMapFrames := 0;
@@ -393,6 +404,7 @@ var
 begin
   fFrustum.Free;
 
+  fSimpleShader.Free;
   fUnderWaterShader.Free;
   fBlackShader.Free;
   fShadowDepthShader.Free;
@@ -457,6 +469,39 @@ begin
   Result := normalize(fVecToFront + VecUp * (MY / pMatrix[5]) + VecLeft * (MX / pMatrix[0]));
 end;
 
+procedure TModuleRendererOWE.RenderMaxVisibilityQuad;
+begin
+  glDisable(GL_CULL_FACE);
+  fSimpleShader.Bind;
+  glBegin(GL_QUADS);
+    glVertex3f(-MaxRenderDistance,  MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance, -MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f( MaxRenderDistance, -MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f( MaxRenderDistance,  MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance,  MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance, -MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance, -MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance,  MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance, -MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance, -MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance, -MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance, -MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance,  MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance,  MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance,  MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance,  MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f( MaxRenderDistance, -MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f( MaxRenderDistance, -MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance,  MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f( MaxRenderDistance,  MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance, -MaxRenderDistance,  MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance, -MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance,  MaxRenderDistance, -MaxRenderDistance);
+    glVertex3f(-MaxRenderDistance,  MaxRenderDistance,  MaxRenderDistance);
+  glEnd;
+  fSimpleShader.Unbind;
+end;
+
 procedure TModuleRendererOWE.RenderScene;
 var
   LensFlareFactor: Single;
@@ -474,7 +519,7 @@ var
   procedure RenderLensFlare;
   begin
     glBegin(GL_QUADS);
-      glColor4f(RSky.Sun.Color.X, RSky.Sun.Color.Y, RSky.Sun.Color.Z, 0.04 * LensFlareFactor);
+      glColor4f(RSky.Sun.Color.X, RSky.Sun.Color.Y, RSky.Sun.Color.Z, 0.04 * LensFlareFactor * Power(0.5, 100.0 * FogStrength));
       glVertex3f(-1, -1, 0.1); glVertex3f( 1, -1, 0.1); glVertex3f( 1,  1, 0.1); glVertex3f(-1,  1, 0.1);
 
       glVertex3f(-1, -1, 0.20); glVertex3f( 1, -1, 0.20); glVertex3f( 1,  1, 0.20); glVertex3f(-1,  1, 0.20);
@@ -494,13 +539,13 @@ var
       glVertex3f(-1, -1, 0.92); glVertex3f( 1, -1, 0.92); glVertex3f( 1,  1, 0.92); glVertex3f(-1,  1, 0.92);
       glVertex3f(-1, -1, 0.94); glVertex3f( 1, -1, 0.94); glVertex3f( 1,  1, 0.94); glVertex3f(-1,  1, 0.94);
 
-      glColor4f(1, 1, 0.5, 0.04 * LensFlareFactor);
+      glColor4f(1, 1, 0.5, 0.04 * LensFlareFactor * Power(0.5, 100.0 * FogStrength));
       glVertex3f(-1, -1, 1.40); glVertex3f( 1, -1, 1.40); glVertex3f( 1,  1, 1.40); glVertex3f(-1,  1, 1.40);
       glVertex3f(-1, -1, 1.43); glVertex3f( 1, -1, 1.43); glVertex3f( 1,  1, 1.43); glVertex3f(-1,  1, 1.43);
       glVertex3f(-1, -1, 1.46); glVertex3f( 1, -1, 1.46); glVertex3f( 1,  1, 1.46); glVertex3f(-1,  1, 1.46);
       glVertex3f(-1, -1, 1.49); glVertex3f( 1, -1, 1.49); glVertex3f( 1,  1, 1.49); glVertex3f(-1,  1, 1.49);
 
-      glColor4f(1, 0.5, 0.5, 0.04 * LensFlareFactor);
+      glColor4f(1, 0.5, 0.5, 0.04 * LensFlareFactor * Power(0.5, 100.0 * FogStrength));
       glVertex3f(-1, -1, 1.70); glVertex3f( 1, -1, 1.70); glVertex3f( 1,  1, 1.70); glVertex3f(-1,  1, 1.70);
       glVertex3f(-1, -1, 1.74); glVertex3f( 1, -1, 1.74); glVertex3f( 1,  1, 1.74); glVertex3f(-1,  1, 1.74);
       glVertex3f(-1, -1, 1.78); glVertex3f( 1, -1, 1.78); glVertex3f( 1,  1, 1.78); glVertex3f(-1,  1, 1.78);
@@ -513,12 +558,21 @@ var
   Coord: TVector4D;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  FogStrength := RSky.FogStrength;
+  fMaxFogDistance := Log10(0.003) / (Log10(0.5) * FogStrength);
+  
+  MaxRenderDistance := MaxFogDistance;
+
+  ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
 
   fIsUnderWater := False;
 
-  fWaterHeight := Park.pTerrain.WaterMap[ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z];
-  if ModuleManager.ModCamera.ActiveCamera.Position.Y < fWaterHeight + 0.05 then
+  fWaterHeight := Park.pTerrain.WaterMap[ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Z];
+  if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight + 0.05 then
+    begin
     fIsUnderWater := True;
+    MaxRenderDistance := 20;
+    end;
 
   // Set up camera
 
@@ -547,6 +601,13 @@ begin
 
   RTerrain.BorderEnabled := True;
 
+  if fIsUnderWater then
+    MaxRenderDistance := 20
+  else
+    MaxRenderDistance := MaxFogDistance;
+
+  ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
+
   // Do water renderpasses
   RWater.RenderBuffers;
 
@@ -567,6 +628,15 @@ begin
 
   DynamicSettingsSetNormal;
 
+  ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
+
+  // Render final scene
+
+  if fIsUnderWater then
+    MaxRenderDistance := 20
+  else
+    MaxRenderDistance := MaxFogDistance;
+
   // Check some visibilities
   Frustum.Calculate;
 //   RTerrain.CheckVisibility;
@@ -581,6 +651,11 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+
+    glDepthMask(false);
+    RenderMaxVisibilityQuad;
+    glDepthMask(true);
+    
     glEnable(GL_CULL_FACE);
 
     // Sky
@@ -614,6 +689,7 @@ begin
     fFullscreenShader.Bind;
     DrawFullscreenQuad;
     fFullscreenShader.Unbind;
+    GBuffer.Textures[0].UnBind;
   SpareBuffer.Unbind;
 
   // SSAO pass
@@ -732,6 +808,18 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     CompositionShader.Bind;
+    if fIsUnderWater then
+      begin
+      FogColor := Vector(0.20, 0.30, 0.27) * Vector3D(RSky.Sun.AmbientColor) * 3.0;
+      FogStrength := 0.41503; // log(0.75) / log(0.5);
+      end
+    else
+      begin
+      FogColor := Vector3D(Pow(RSky.Sun.AmbientColor + RSky.Sun.Color, 0.33)) * 0.5;
+      FogStrength := RSky.FogStrength;
+      end;
+    CompositionShader.UniformF('FogColor', FogColor);
+    CompositionShader.UniformF('FogStrength', FogStrength);
 
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);
@@ -775,8 +863,8 @@ begin
 
   if fIsUnderWater then
     begin
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     fSpareBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
     fUnderWaterShader.Bind;
     fUnderWaterShader.UniformF('Height', fWaterHeight);
     fUnderWaterShader.UniformF('ViewPoint', ViewPoint.X, ViewPoint.Y, ViewPoint.Z);
@@ -866,7 +954,7 @@ begin
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    glColor4f(1, 1, 1, 1);
+    glColor4f(Power(0.5, 100.0 * FogStrength), Power(0.5, 100.0 * FogStrength), Power(0.5, 100.0 * FogStrength), 1);
     SunRayBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
     glDisable(GL_BLEND);

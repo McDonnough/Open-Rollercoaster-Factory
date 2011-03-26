@@ -183,8 +183,14 @@ begin
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(1);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
   CurrentShader.Bind;
+  CurrentShader.UniformF('BumpOffset', ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
   CurrentShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
   CurrentShader.UniformF('MaskOffset', Round(16 * Random) / 16, Round(16 * Random) / 16);
+  if CurrentShader = MaterialPassShader then
+    begin
+    CurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
+    CurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
+    end;
   for i := 0 to high(fAutoplantGroups) do
     fAutoplantGroups[i].Render;
   CurrentShader.Unbind;

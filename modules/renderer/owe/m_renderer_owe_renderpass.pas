@@ -11,9 +11,10 @@ type
     protected
       fGBuffer, fLightBuffer, fSpareBuffer, fSceneBuffer: TFBO;
       fWidth, fHeight: Integer;
+      fIsUnderWater: Boolean;
     public
       MinY, MaxY: Integer;
-      RenderAutoplants, RenderTerrain, RenderObjects, RenderParticles, RenderSky, RenderWater: Boolean;
+      RenderAutoplants, RenderTerrain, RenderObjects, RenderParticles, RenderSky, RenderWater, EnableFog: Boolean;
       property Width: Integer read fWidth;
       property Height: Integer read fHeight;
       property Scene: TFBO read fSceneBuffer;
@@ -26,7 +27,7 @@ type
 implementation
 
 uses
-  m_varlist, m_renderer_owe;
+  m_varlist, m_renderer_owe, g_park;
 
 procedure TRenderPass.Render;
   procedure DrawFullscreenQuad;
@@ -38,6 +39,8 @@ procedure TRenderPass.Render;
       glVertex2f(-1,  1);
     glEnd;
   end;
+var
+  fWaterHeight: Single;
 begin
   ModuleManager.ModRenderer.RObjects.CurrentGBuffer := fGBuffer;
 
@@ -49,14 +52,31 @@ begin
   glColorMask(true, true, true, true);
   glDepthMask(true);
 
+  if EnableFog then
+    ModuleManager.ModRenderer.MaxRenderDistance := ModuleManager.ModRenderer.MaxFogDistance
+  else
+    ModuleManager.ModRenderer.MaxRenderDistance := 10000;
+    
+  fWaterHeight := Park.pTerrain.WaterMap[ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Z];
+  fIsUnderWater := False;
+  if ModuleManager.ModRenderer.ViewPoint.Y < fWaterHeight + 0.05 then
+    begin
+    fIsUnderWater := True;
+    ModuleManager.ModRenderer.MaxRenderDistance := 20;
+    end;
+
   // Opaque parts only
   GBuffer.Bind;
     glDisable(GL_BLEND);
     glDepthMask(true);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glEnable(GL_CULL_FACE);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+
+    glDepthMask(false);
+    ModuleManager.ModRenderer.RenderMaxVisibilityQuad;
+    glDepthMask(true);
+    glEnable(GL_CULL_FACE);
 
     // Sky
     if RenderSky then
@@ -163,6 +183,23 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     ModuleManager.ModRenderer.CompositionShader.Bind;
+    if fIsUnderWater then
+      begin
+      ModuleManager.ModRenderer.FogColor := Vector(0.20, 0.30, 0.27) * Vector3D(ModuleManager.ModRenderer.RSky.Sun.AmbientColor) * 3.0;
+      ModuleManager.ModRenderer.FogStrength := 0.41503; // log(0.75) / log(0.5);
+      end
+    else if EnableFog then
+      begin
+      ModuleManager.ModRenderer.FogColor := Vector3D(Pow(ModuleManager.ModRenderer.RSky.Sun.AmbientColor + ModuleManager.ModRenderer.RSky.Sun.Color, 0.33)) * 0.5;
+      ModuleManager.ModRenderer.FogStrength := ModuleManager.ModRenderer.RSky.FogStrength;
+      end
+    else
+      begin
+      ModuleManager.ModRenderer.FogColor := Vector(1.0, 1.0, 1.0);
+      ModuleManager.ModRenderer.FogStrength := 0.0;
+      end;
+    ModuleManager.ModRenderer.CompositionShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
+    ModuleManager.ModRenderer.CompositionShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
 
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);
@@ -247,6 +284,7 @@ begin
   RenderTerrain := True;
   RenderObjects := True;
   RenderWater := True;
+  EnableFog := True;
 end;
 
 destructor TRenderPass.Free;

@@ -8,6 +8,9 @@ uniform sampler2D MaterialMap;
 uniform sampler2D NormalMap;
 uniform sampler2D ReflectionMap;
 
+uniform vec3 FogColor;
+uniform float FogStrength;
+
 uniform int HasTexture;
 uniform vec3 ViewPoint;
 
@@ -61,4 +64,5 @@ void main(void) {
     gl_FragColor.rgb = gl_FragColor.rgb * Light.rgb;
     gl_FragColor.rgb += Light.rgb * Light.a * (gl_FrontMaterial.specular.r + gl_FrontMaterial.specular.g);
   }
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, FogColor, 1.0 - pow(0.5, dist * FogStrength));
 }

@@ -5,7 +5,7 @@ unit m_shdmng_class;
 interface
 
 uses
-  Classes, SysUtils, m_module, DGLOpenGL;
+  Classes, SysUtils, m_module, DGLOpenGL, u_vectors;
 
 type
   TModuleShaderManagerClass = class(TBasicModule)
@@ -81,6 +81,10 @@ type
       procedure UniformF(VName: String; V1, V2: GLFloat);
       procedure UniformF(VName: String; V1, V2, V3: GLFloat);
       procedure UniformF(VName: String; V1, V2, V3, V4: GLFloat);
+
+      procedure UniformF(VName: String; V: TVector2D);
+      procedure UniformF(VName: String; V: TVector3D);
+      procedure UniformF(VName: String; V: TVector4D);
 
       (**
         * Set a matrix uniform variable
@@ -174,6 +178,21 @@ procedure TShader.UniformMatrix4D(VName: String; V: Pointer);
 begin
   Bind;
   ModuleManager.ModShdMng.UniformMatrix4D(VName, V);
+end;
+
+procedure TShader.UniformF(VName: String; V: TVector2D); inline;
+begin
+  UniformF(VName, V.X, V.Y);
+end;
+
+procedure TShader.UniformF(VName: String; V: TVector3D); inline;
+begin
+  UniformF(VName, V.X, V.Y, V.Z);
+end;
+
+procedure TShader.UniformF(VName: String; V: TVector4D); inline;
+begin
+  UniformF(VName, V.X, V.Y, V.Z, V.W);
 end;
 
 constructor TShader.Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP);

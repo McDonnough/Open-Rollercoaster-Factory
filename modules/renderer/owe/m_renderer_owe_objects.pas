@@ -185,6 +185,11 @@ begin
     fCurrentShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
     fCurrentShader.UniformF('ShadowOffset', ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
     end;
+  if MaterialMode then
+    begin
+    fCurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
+    fCurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
+    end;
 
   BindMaterial(Mesh.GeoMesh.Material);
 
@@ -271,7 +276,9 @@ begin
     for j := 0 to high(fManagedObjects[i].Meshes) do
       begin
       Pos := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
-      fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius);
+      fManagedObjects[i].Meshes[j].Visible := false;
+      if VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Pos) - fManagedObjects[i].Meshes[j].VBO.Radius * fManagedObjects[i].Meshes[j].VBO.Radius < ModuleManager.ModRenderer.MaxRenderDistance * ModuleManager.ModRenderer.MaxRenderDistance then
+        fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius);
       end;
 end;
 

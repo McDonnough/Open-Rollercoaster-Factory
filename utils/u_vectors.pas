@@ -101,7 +101,9 @@ function VecRound(A: TVector2D): TVector2D;
 function VecRound(A: TVector3D): TVector3D;
 function VecRound(A: TVector4D): TVector4D;
 
-
+function Pow(A: TVector2D; B: Single): TVector2D;
+function Pow(A: TVector3D; B: Single): TVector3D;
+function Pow(A: TVector4D; B: Single): TVector4D;
 
 function VecLength(A: TVector2D): Single;
 function VecLength(A: TVector3D): Single;
@@ -398,6 +400,21 @@ begin
   Result := Vector(Round(A.X), Round(A.Y), ROund(A.Z), Round(A.W));
 end;
 
+
+function Pow(A: TVector2D; B: Single): TVector2D;
+begin
+  Result := Vector(Power(A.X, B), Power(A.Y, B));
+end;
+
+function Pow(A: TVector3D; B: Single): TVector3D;
+begin
+  Result := Vector(Power(A.X, B), Power(A.Y, B), Power(A.Z, B));
+end;
+
+function Pow(A: TVector4D; B: Single): TVector4D;
+begin
+  Result := Vector(Power(A.X, B), Power(A.Y, B), Power(A.Z, B), Power(A.W, B));
+end;
 
 
 function MixVec(A, B: TVector2D; F: Single): TVector2D;

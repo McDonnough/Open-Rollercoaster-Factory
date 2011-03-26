@@ -13,7 +13,9 @@ type
       fShader: TShader;
       fSunColor: TTexImage;
       fStarTexture: TTexture;
+      fFogStrength: Single;
     public
+      property FogStrength: Single read fFogStrength;
       property Sun: TSun read fSun;
       procedure Render;
       procedure Advance;
@@ -49,6 +51,7 @@ procedure TRSky.Advance;
 var
   SunXAngle, SunYAngle: Single;
 begin
+  fFogStrength := 0.0;
   SunYAngle := 11 * (power(1 + cos(DegToRad(Park.pSky.Time / 86400 * 360)), 2)) + 1;
   SunXAngle := 180 - Park.pSky.Time / 86400 * 360;
   fSun.Position := Vector(28793 * sin(DegToRad((SunXAngle))) * sin(DegToRad(SunYAngle)), (cos(DegToRad(SunYAngle)) - cos(DegToRad(10))) * 32911, 28793 * cos(DegToRad((SunXAngle))) * sin(DegToRad(SunYAngle)), 1.0);

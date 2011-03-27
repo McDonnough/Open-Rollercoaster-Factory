@@ -13,7 +13,6 @@ uniform int HasLightFactorMap;
 
 varying vec3 Vertex;
 varying vec3 Normal;
-varying vec4 Color;
 
 vec3 GetReflectionColor(vec3 vector) {
   vector = reflect(normalize(Vertex - ViewPoint), -vector);

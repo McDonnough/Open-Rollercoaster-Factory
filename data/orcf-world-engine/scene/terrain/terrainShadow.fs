@@ -5,7 +5,6 @@ uniform vec2 TerrainSize;
 uniform vec2 Camera;
 uniform float TerrainTesselationDistance;
 
-varying vec3 Vertex;
 varying vec3 VData;
 varying vec3 Source;
 

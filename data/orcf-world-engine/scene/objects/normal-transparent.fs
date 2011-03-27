@@ -16,7 +16,6 @@ uniform ivec3 MaterialID;
 
 varying vec3 Vertex;
 varying vec3 Normal;
-varying vec4 Color;
 
 void main(void) {
   gl_FragData[3].a = 1.0;

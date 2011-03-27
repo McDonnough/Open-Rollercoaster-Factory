@@ -12,7 +12,6 @@ uniform float FogStrength;
 uniform float WaterHeight;
 uniform float WaterRefractionMode;
 
-varying vec3 normal;
 varying vec3 Vertex;
 varying vec2 texCoord;
 

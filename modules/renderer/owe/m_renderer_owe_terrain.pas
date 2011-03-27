@@ -693,14 +693,16 @@ begin
     for i := 0 to 3 do
       begin
       Radius1 := 1500 * Power(1.5, i);
-      Radius2 := 1500 * Power(1.5, i + 1);
-      Random2 := Random;
+      Radius2 := 1500 * Power(1.5, i + 0.5);
+      Random2 := 0;
       for j := 0 to 89 do
         begin
         Random1 := Random2;
         Random2 := Random;
-        fOuterHillVBO.Vertices[k + 0] := Center + Vector(sin(DegToRad(4 * (j + 0))), 0, cos(DegToRad(4 * (j + 0)))) * Radius2 + Vector(0, Power(2, i) * 27, 0) * (0.8 + 0.4 * Random1);
-        fOuterHillVBO.Vertices[k + 1] := Center + Vector(sin(DegToRad(4 * (j + 1))), 0, cos(DegToRad(4 * (j + 1)))) * Radius2 + Vector(0, Power(2, i) * 27, 0) * (0.8 + 0.4 * Random2);
+        if j = 89 then
+          Random2 := 0;
+        fOuterHillVBO.Vertices[k + 0] := Center + Vector(sin(DegToRad(4 * (j + 0))), 0, cos(DegToRad(4 * (j + 0)))) * Radius2 + Vector(0, Power(2.3, i) * 18, 0) * (0.8 + 0.4 * Random1);
+        fOuterHillVBO.Vertices[k + 1] := Center + Vector(sin(DegToRad(4 * (j + 1))), 0, cos(DegToRad(4 * (j + 1)))) * Radius2 + Vector(0, Power(2.3, i) * 18, 0) * (0.8 + 0.4 * Random2);
         fOuterHillVBO.Vertices[k + 2] := Center + Vector(sin(DegToRad(4 * (j + 1))), 0, cos(DegToRad(4 * (j + 1)))) * Radius1;
         fOuterHillVBO.Vertices[k + 3] := Center + Vector(sin(DegToRad(4 * (j + 0))), 0, cos(DegToRad(4 * (j + 0)))) * Radius1;
         

@@ -106,35 +106,21 @@ begin
   Result := high(fShdRef);
 
   fShdRef[Result].ID := glCreateProgram();
+  fShdRef[Result].Uniforms := TDictionary.Create;
 
   VSObject := glCreateShader(GL_VERTEX_SHADER);
   FSObject := glCreateShader(GL_FRAGMENT_SHADER);
 
-//   with TFileStream.create(VSFile, fmOpenRead) do
-//     begin
-//     setlength(str, size);
-//     read(str[1], size);
-//     s := size;
-//     glShaderSource(VSObject, 1, @str, @s);
-//     free;
-//     end;
-// 
-//   with TFileStream.create(FSFile, fmOpenRead) do
-//     begin
-//     setlength(str, size);
-//     read(str[1], size);
-//     s := size;
-//     glShaderSource(FSObject, 1, @str, @s);
-//     free;
-//     end;
-
   Shaders := TShaderConstellation.Create(VSFile, FSFile);
-  Str := Shaders.VertexShader.ToString; S := Length(Str);
-//   writeln(Str);
-  glShaderSource(VSObject, 1, @Str, @S);
-  Str := Shaders.FragmentShader.ToString; S := Length(Str);
-  glShaderSource(FSObject, 1, @Str, @S);
-//   writeln(Str);
+    fShdRef[Result].Uniforms.Assign(Shaders.VertexShader.Uniforms);
+    fShdRef[Result].Uniforms.Assign(Shaders.FragmentShader.Uniforms);
+
+    Str := Shaders.VertexShader.ToString; S := Length(Str);
+//     writeln(Str);
+    glShaderSource(VSObject, 1, @Str, @S);
+    Str := Shaders.FragmentShader.ToString; S := Length(Str);
+    glShaderSource(FSObject, 1, @Str, @S);
+//     writeln(Str);
   Shaders.Free;
 
   glCompileShader(VSObject);
@@ -179,61 +165,71 @@ end;
 procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0: GLfloat); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform1f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform1f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0);
 end;
 
 procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0, v1: GLfloat); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform2f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform2f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1);
 end;
 
 procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0, v1, v2: GLfloat); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform3f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform3f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2);
 end;
 
 procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0, v1, v2, v3: GLfloat); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform4f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2, v3);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform4f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2, v3);
 end;
 
 procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0: GLint); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform1i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform1i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0);
 end;
 
 procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0, v1: GLint); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform2i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform2i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1);
 end;
 
 procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0, v1, v2: GLint); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform3i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform3i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2);
 end;
 
 procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0, v1, v2, v3: GLint); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniform4i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2, v3);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniform4i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2, v3);
 end;
 
 procedure TModuleShaderManagerDynamic.UniformMatrix4D(VName: String; V: Pointer); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniformMatrix4fv(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniformMatrix4fv(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
 end;
 
 procedure TModuleShaderManagerDynamic.UniformMatrix3D(VName: String; V: Pointer); inline;
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    glUniformMatrix3fv(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
+    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
+      glUniformMatrix3fv(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
 end;
 
 end.

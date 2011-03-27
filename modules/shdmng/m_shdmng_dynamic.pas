@@ -20,7 +20,9 @@ type
     protected
       fShdRef: AShdRef;
       fCurrentShader: Integer;
+      fVars: TDictionary;
     public
+      property Vars: TDictionary read fVars;
       constructor Create;
       destructor Free;
       procedure CheckModConf;
@@ -37,6 +39,7 @@ type
       procedure Uniformi(VName: String; v0, v1, v2, v3: GLint);
       procedure UniformMatrix3D(VName: String; V: Pointer);
       procedure UniformMatrix4D(VName: String; V: Pointer);
+      procedure SetVar(Name: String; Value: Integer);
     end;
 
 implementation
@@ -50,6 +53,8 @@ begin
   fModType := 'ShaderManager';
 
   fCurrentShader := -1;
+
+  fVars := TDictionary.Create;
 end;
 
 destructor TModuleShaderManagerDynamic.Free;
@@ -61,6 +66,12 @@ begin
     fShdRef[i].Uniforms.Free;
     DeleteShader(i);
     end;
+  fVars.Free;
+end;
+
+procedure TModuleShaderManagerDynamic.SetVar(Name: String; Value: Integer);
+begin
+  fVars[Name] := IntToStr(Value);
 end;
 
 procedure TModuleShaderManagerDynamic.CheckModConf;

@@ -22,6 +22,7 @@ type
       property Varyings: TDictionary read fVaryings;
       function ToString: String;
       procedure EliminateVarying(Varying: String);
+      procedure Preprocess;
       procedure GetVariables;
       procedure CleanUp;
       constructor Create(FileName: String);
@@ -40,6 +41,9 @@ type
 
 implementation
 
+uses
+  m_varlist;
+
 procedure TShaderFile.EliminateVarying(Varying: String);
 var
   i: Integer;
@@ -52,6 +56,120 @@ begin
         fTokens[i].TType := ttUnknown;
         end;
   writeln('Hint: Removed varying ' + Varying);
+end;
+
+procedure TShaderFile.Preprocess;
+  procedure CheckBlock(tStart, tEnd: Integer);
+    function Evaluate(ID: Integer): Boolean;
+      function StatementGroup(A: String): Boolean;
+        function SingleStatement(B: String): Boolean;
+        var
+          T: AString;
+        begin
+          T := Explode(' ', B);
+          if Length(T) = 3 then
+            begin
+            if T[0] = 'EQ' then
+              Result := ModuleManager.ModShdMng.Vars[T[1]] = T[2]
+            else if T[0] = 'NEQ' then
+              Result := ModuleManager.ModShdMng.Vars[T[1]] <> T[2];
+            end
+          else
+            begin
+            ModuleManager.ModLog.AddError('Invalid statement: ' + B);
+            exit(True);
+            end;
+        end;
+      var
+        S: AString;
+        FinalStatements: Array[0..1] of String;
+        ConditionType: String;
+        i, CurrentStatement, BlockDepth: Integer;
+      begin
+        S := Explode(' ', A);
+        Result := True;
+        if (S[0] = '[') and (S[High(S)] = ']') then
+          begin
+          FinalStatements[0] := '';
+          FinalStatements[1] := '';
+          ConditionType := '';
+          CurrentStatement := 0;
+          BlockDepth := 0;
+          for i := 1 to high(S) - 1 do
+            if ((S[i] = 'AND') or (S[i] = 'OR') or (S[i] = 'NOT')) and (BlockDepth = 0) then
+              begin
+              if FinalStatements[CurrentStatement] <> '' then
+                SetLength(FinalStatements[CurrentStatement], length(FinalStatements[CurrentStatement]) - 1);
+              ConditionType := S[i];
+              inc(CurrentStatement);
+              if CurrentStatement > 1 then
+                begin
+                ModuleManager.ModLog.AddError('Too many conditions');
+                exit(True);
+                end;
+              end
+            else
+              begin
+              if S[i] = '[' then
+                inc(BlockDepth)
+              else if S[i] = ']' then
+                dec(BlockDepth);
+              FinalStatements[CurrentStatement] := FinalStatements[CurrentStatement] + S[i] + ' ';
+              end;
+          if FinalStatements[CurrentStatement] <> '' then
+            SetLength(FinalStatements[CurrentStatement], length(FinalStatements[CurrentStatement]) - 1);
+          if ConditionType = '' then
+            Result := SingleStatement(FinalStatements[0])
+          else if ConditionType = 'NOT' then
+            Result := not StatementGroup(FinalStatements[1])
+          else if ConditionType = 'AND' then
+            Result := StatementGroup(FinalStatements[0]) and StatementGroup(FinalStatements[1])
+          else if ConditionType = 'OR' then
+            Result := StatementGroup(FinalStatements[0]) or StatementGroup(FinalStatements[1]);
+          end
+        else
+          ModuleManager.ModLog.AddError('Invalid statement group');
+      end;
+    begin
+      if ID = -1 then
+        begin
+        ModuleManager.ModLog.AddError('No IF block open for END');
+        exit(True);
+        end;
+      Result := StatementGroup(SubString(fTokens[ID].Value, 7, length(fTokens[ID].Value) - 6));
+    end;
+    
+  var
+    i, j: Integer;
+    BlockCount: Integer;
+    mStart, mEnd: Integer;
+  begin
+    mStart := -1;
+    mEnd := -1;
+    for i := tStart to tEnd do
+      if (fTokens[i].TType = ttSingleLineComment) and (SubString(fTokens[i].Value, 1, 6) = '// IF ') then
+        begin
+        mStart := i;
+        inc(BlockCount);
+        end
+      else if (fTokens[i].TType = ttSingleLineComment) and (SubString(fTokens[i].Value, 1, 6) = '// END') then
+        begin
+        dec(BlockCount);
+        mEnd := i;
+        if not Evaluate(mStart) then
+          begin
+          for j := mStart to mEnd do
+            begin
+            fTokens[j].Value := '';
+            fTokens[j].TType := ttUnknown;
+            end;
+          end
+        else
+          CheckBlock(mStart + 1, mEnd - 1);
+        end;
+  end;
+begin
+  CheckBlock(0, high(fTokens));
 end;
 
 procedure TShaderFile.GetVariables;
@@ -309,6 +427,9 @@ begin
   
   fFragmentShaderFile := TShaderFile.Create(FS);
   fFragmentShaderFile.GetVariables;
+
+  fVertexShaderFile.Preprocess;
+  fFragmentShaderFile.Preprocess;
 
   VertexVaryings := fVertexShaderFile.Varyings.ItemStrings;
   for i := 0 to high(VertexVaryings) do

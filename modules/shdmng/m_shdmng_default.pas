@@ -36,6 +36,7 @@ type
       procedure Uniformi(VName: String; v0, v1, v2, v3: GLint);
       procedure UniformMatrix3D(VName: String; V: Pointer);
       procedure UniformMatrix4D(VName: String; V: Pointer);
+      procedure SetVar(Name: String; Value: Integer);
     end;
 
 implementation
@@ -241,6 +242,10 @@ procedure TModuleShaderManagerDefault.UniformMatrix3D(VName: String; V: Pointer)
 begin
   if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
     glUniformMatrix3fv(glGetUniformLocationARB(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
+end;
+
+procedure TModuleShaderManagerDefault.SetVar(Name: String; Value: Integer);
+begin
 end;
 
 end.

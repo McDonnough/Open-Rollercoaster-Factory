@@ -46,6 +46,13 @@ type
       procedure Uniformi(VName: String; v0, v1, v2, v3: GLint); virtual abstract;
       procedure UniformMatrix3D(VName: String; V: Pointer); virtual abstract;
       procedure UniformMatrix4D(VName: String; V: Pointer); virtual abstract;
+
+      (**
+        * Set custom variable that may affect shaders
+        *@param Name of variable
+        *@param Value of variable
+        *)
+      procedure SetVar(Name: String; Value: Integer); virtual abstract;
     end;
 
   TShader = class

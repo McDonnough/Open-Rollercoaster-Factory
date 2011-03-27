@@ -1094,6 +1094,7 @@ begin
     fFullscreenShader.Bind;
 
     MotionBlurBuffer.Textures[0].Bind(0);
+//     ModuleManager.ModRenderer.RWater.RenderPass.Scene.Textures[0].Bind(0);
     DrawFullscreenQuad;
 
     fFullscreenShader.Unbind;

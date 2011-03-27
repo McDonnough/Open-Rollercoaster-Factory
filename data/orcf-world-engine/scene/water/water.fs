@@ -18,7 +18,7 @@ varying float Displacement;
 float Fresnel(float x) {
   float Rs = pow((Mediums.x * cos(x) - Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))) / (Mediums.x * cos(x) + Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))), 2.0);
   float Rp = pow((Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) - Mediums.y * cos(x)) / (Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) + Mediums.y * cos(x)), 2.0);
-  return 0.5 * (min(1.0, Rs) + min(1.0, Rp));
+  return 0.5 * (clamp(Rs, 0.0, 1.0) + clamp(Rp, 0.0, 1.0));
 }
 
 void main(void) {
@@ -63,7 +63,8 @@ void main(void) {
   gl_FragData[2] = vec4(Vertex.x, Height + Displacement, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height + Displacement, Vertex.y, 1.0))));
   gl_FragData[1] = vec4(UnderWaterFactor * normal, 250.0);
   gl_FragData[0] = vec4(1.0, 1.0, 1.0, -1.0);
-  float ReflectionCoefficient = Fresnel(acos(dot(-Eye, normalize(gl_NormalMatrix * normal))));
+  float ReflectionCoefficient;
+  ReflectionCoefficient = Fresnel(acos(dot(vec3(0.0, 0.0, 0.0) - Eye, normalize(gl_NormalMatrix * normal))));
   gl_FragData[0].rgb = ReflectionCoefficient * texture2D(ReflectTex, 0.5 + 0.5 * ReflectedPosition.xy / ReflectedPosition.w).rgb;
   gl_FragData[0].rgb += (1.0 - ReflectionCoefficient) * texture2D(RefractTex, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).rgb;
   gl_FragData[0].rgb *= WaterColorFactor;

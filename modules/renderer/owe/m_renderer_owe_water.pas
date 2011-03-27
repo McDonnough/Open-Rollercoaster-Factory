@@ -404,6 +404,7 @@ begin
   ModuleManager.ModRenderer.RWater.RenderPass.RenderParticles := ModuleManager.ModRenderer.WaterRefractParticles;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderAutoplants := ModuleManager.ModRenderer.WaterRefractAutoplants;
   ModuleManager.ModRenderer.RWater.RenderPass.Render;
+  
   fRefractionPass.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.Scene.Textures[0]);
   fRefractionGeo.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.GBuffer.Textures[2]);
 

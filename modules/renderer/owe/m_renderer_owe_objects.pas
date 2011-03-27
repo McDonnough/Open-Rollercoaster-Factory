@@ -54,6 +54,7 @@ type
       procedure RenderReflections;
       procedure RenderOpaque;
       procedure RenderTransparent;
+      procedure UpdateObjects;
       constructor Create;
       destructor Free;
     end;
@@ -195,7 +196,7 @@ begin
 
   BindMaterial(Mesh.GeoMesh.Material);
 
-  if (Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil) then
+  if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
     Mesh.Reflection.Map.Textures[0].Bind(3)
   else
     ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(3);
@@ -322,6 +323,16 @@ begin
   fExcludedMesh := -1;
 end;
 
+procedure TRObjects.UpdateObjects;
+begin
+  fTest.Armatures[0].Bones[0].Matrix := fTest.Armatures[0].Bones[0].Matrix * RotationMatrix(1, Vector(0, 1, 0));
+  fTest.UpdateArmatures;
+  fTest.UpdateMatrix;
+//   fTest.UpdateVertexPositions;
+//   fTest.RecalcFaceNormals;
+//   fTest.RecalcVertexNormals;
+end;
+
 constructor TRObjects.Create;
 begin
   writeln('Hint: Initializing object renderer');
@@ -373,41 +384,30 @@ begin
     begin
     with AddBone do
       begin
-      SourcePosition := Vector(0, -5, 0);
-      DestinationPosition := Vector(0, -6, 0);
+      SourcePosition := Vector(-1, -5, 0);
+      DestinationPosition := Vector(-1, -6, 0);
+      Matrix := TranslationMatrix(Vector(2, 10, 4));
       end;
     with AddBone do
       begin
       SourcePosition := Vector(0, 0, 0);
       DestinationPosition := Vector(0, 1, 0);
+      Matrix := TranslationMatrix(Vector(0, 4, 0));
       end;
     end;
-  fTest.Meshes[0].Matrix := TranslationMatrix(Vector(0, 4, 0));
-  fTest.Meshes[1].Matrix := TranslationMatrix(Vector(2, 10, 4));
-  fTest.UpdateArmatures;
-  fTest.UpdateVertexPositions;
-  fTest.Meshes[0].RecalcFaceNormals;
-  fTest.Meshes[0].RecalcVertexNormals;
-  fTest.Meshes[1].RecalcFaceNormals;
-  fTest.Meshes[1].RecalcVertexNormals;
+  fTest.Meshes[0].AddBone(fTest.Armatures[0].Bones[1]);
+  fTest.Meshes[1].AddBone(fTest.Armatures[0].Bones[0]);
   fTest.Materials[0].Reflectivity := 0.8;
   fTest.Materials[1].Reflectivity := 0.7;
   fTest.Materials[2].Reflectivity := 0.6;
   fTest.Materials[2].BumpMap := TTexture.Create;
   fTest.Materials[2].BumpMap.FromFile('scenery/testbump.tga');
   fTest.Matrix := TranslationMatrix(Vector(160, 70, 160));
+  fTest.UpdateArmatures;
+  fTest.UpdateVertexPositions;
   fTest.UpdateMatrix;
   fTest.RecalcFaceNormals;
   fTest.RecalcVertexNormals;
-  with fTest.AddArmature do
-    begin
-    with AddBone do
-      begin
-      SourcePosition := Vector(0, -5, 0);
-      DestinationPosition := Vector(0, -6, 0);
-      end;
-    end;
-  fTest.Meshes[1].AddBoneToAll(fTest.Armatures[0].Bones[0]);
   fTest.Register;
 end;
 

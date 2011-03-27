@@ -123,6 +123,7 @@ type
       Hardness, Specularity: Single;
       BumpMapFactor: Single;
       Texture, BumpMap, LightFactorMap: TTexture;
+      OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
       function Duplicate: TMaterial;
       constructor Create;
@@ -131,6 +132,7 @@ type
   TGeoMesh = class
     public
       Name: String;
+      Bone: TBone;
       Changed: Boolean;
       MinDistance, MaxDistance: Single;
       Vertices: Array of TVertex;
@@ -143,6 +145,7 @@ type
       ParentObject: TGeoObject;
       Material: TMaterial;
       procedure AddBoneToAll(B: TBone);
+      procedure AddBone(B: TBone);
       procedure RecalcFaceNormals;
       procedure RecalcVertexNormals;
       function Duplicate: TGeoMesh;
@@ -324,6 +327,7 @@ begin
   Specularity := 1;
   Hardness := 20;
   BumpMapFactor := 1;
+  OnlyEnvironmentMapHint := false;
   Texture := nil;
   BumpMap := nil;
   LightFactorMap := nil;
@@ -394,6 +398,11 @@ begin
     end;
 end;
 
+procedure TGeoMesh.AddBone(B: TBone);
+begin
+  Bone := B;
+end;
+
 procedure TGeoMesh.AddChild(Mesh: TGeoMesh);
 begin
   Mesh.Parent := Self;
@@ -429,6 +438,12 @@ begin
     CalculatedMatrix := ParentObject.Matrix * Matrix
   else
     CalculatedMatrix := Matrix;
+  if Bone <> nil then
+    begin
+    CalculatedMatrix := CalculatedMatrix * TranslationMatrix(Bone.SourcePosition);
+    CalculatedMatrix := CalculatedMatrix * Bone.Matrix;
+    CalculatedMatrix := CalculatedMatrix * TranslationMatrix(Bone.SourcePosition * -1);
+    end;
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
 end;
@@ -447,7 +462,7 @@ begin
       begin
       CalculatedVertexPosition := Vector3D(Vector(Vertices[i].OriginalPosition, 1)) + RelativeMeshOffset;
       for j := 0 to high(Vertices[i].Bones) do
-        CalculatedVertexPosition := MixVec(CalculatedVertexPosition, Vector3D(Vector(CalculatedVertexPosition - Vertices[i].Bones[j].Bone.SourcePosition, 1) * Vertices[i].Bones[j].Bone.CalculatedMatrix) + Vertices[i].Bones[j].Bone.SourcePosition, Vertices[i].Bones[j].Weight);
+        CalculatedVertexPosition := MixVec(CalculatedVertexPosition, Vector3D(Vector(CalculatedVertexPosition - Vertices[i].Bones[j].Bone.CalculatedSourcePosition, 1) * Vertices[i].Bones[j].Bone.CalculatedMatrix) + Vertices[i].Bones[j].Bone.SourcePosition, Vertices[i].Bones[j].Weight);
       Vertices[i].Position := CalculatedVertexPosition - RelativeMeshOffset;
       Vertices[i].Changed := True;
       end;
@@ -463,6 +478,7 @@ begin
   MaxDistance := 10000;
   Matrix := Identity4D;
   CalculatedMatrix := Identity4D;
+  Bone := nil;
   Material := nil;
 end;
 

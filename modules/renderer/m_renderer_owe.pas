@@ -560,6 +560,8 @@ var
 begin
 //   glGetError();
 
+  RObjects.UpdateObjects;
+
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   FogStrength := RSky.FogStrength;
   FogRefractMode := 0;

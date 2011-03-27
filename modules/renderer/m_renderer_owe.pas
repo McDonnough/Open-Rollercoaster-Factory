@@ -1237,6 +1237,22 @@ begin
   fWaterRefractObjects := GetConfVal('water.refract.objects') = '1';
   fWaterRefractParticles := GetConfVal('water.refract.particles') = '1';
   fWaterRefractAutoplants := GetConfVal('water.refract.autoplants') = '1';
+
+  ModuleManager.ModShdMng.SetVar('owe.samples', fFSAASamples);
+  if fUseSunShadows then
+    ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 1);
+  if fUseLightShadows then
+    ModuleManager.ModShdMng.SetVar('owe.shadows.light', 1);
+  if fUseScreenSpaceAmbientOcclusion then
+    ModuleManager.ModShdMng.SetVar('owe.ssao', 1);
+  if fShadowBlurSamples > 0 then
+    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1);
+  if fTerrainTesselationDistance > 0 then
+    ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 1);
+  if fTerrainBumpmapDistance > 0 then
+    ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 1);
+  if fGamma <> 1 then
+    ModuleManager.ModShdMng.SetVar('owe.gamma', 1);
 end;
 
 procedure TModuleRendererOWE.InvertFrontFace;

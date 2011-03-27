@@ -88,47 +88,52 @@ procedure TShaderFile.Preprocess;
       begin
         S := Explode(' ', A);
         Result := True;
-        if (S[0] = '[') and (S[High(S)] = ']') then
+        if Length(S) > 2 then
           begin
-          FinalStatements[0] := '';
-          FinalStatements[1] := '';
-          ConditionType := '';
-          CurrentStatement := 0;
-          BlockDepth := 0;
-          for i := 1 to high(S) - 1 do
-            if ((S[i] = 'AND') or (S[i] = 'OR') or (S[i] = 'NOT')) and (BlockDepth = 0) then
-              begin
-              if FinalStatements[CurrentStatement] <> '' then
-                SetLength(FinalStatements[CurrentStatement], length(FinalStatements[CurrentStatement]) - 1);
-              ConditionType := S[i];
-              inc(CurrentStatement);
-              if CurrentStatement > 1 then
+          if (S[0] = '[') and (S[High(S)] = ']') then
+            begin
+            FinalStatements[0] := '';
+            FinalStatements[1] := '';
+            ConditionType := '';
+            CurrentStatement := 0;
+            BlockDepth := 0;
+            for i := 1 to high(S) - 1 do
+              if ((S[i] = 'AND') or (S[i] = 'OR') or (S[i] = 'NOT')) and (BlockDepth = 0) then
                 begin
-                ModuleManager.ModLog.AddError('Too many conditions');
-                exit(True);
+                if FinalStatements[CurrentStatement] <> '' then
+                  SetLength(FinalStatements[CurrentStatement], length(FinalStatements[CurrentStatement]) - 1);
+                ConditionType := S[i];
+                inc(CurrentStatement);
+                if CurrentStatement > 1 then
+                  begin
+                  ModuleManager.ModLog.AddError('Too many conditions');
+                  exit(True);
+                  end;
+                end
+              else
+                begin
+                if S[i] = '[' then
+                  inc(BlockDepth)
+                else if S[i] = ']' then
+                  dec(BlockDepth);
+                FinalStatements[CurrentStatement] := FinalStatements[CurrentStatement] + S[i] + ' ';
                 end;
-              end
-            else
-              begin
-              if S[i] = '[' then
-                inc(BlockDepth)
-              else if S[i] = ']' then
-                dec(BlockDepth);
-              FinalStatements[CurrentStatement] := FinalStatements[CurrentStatement] + S[i] + ' ';
-              end;
-          if FinalStatements[CurrentStatement] <> '' then
-            SetLength(FinalStatements[CurrentStatement], length(FinalStatements[CurrentStatement]) - 1);
-          if ConditionType = '' then
-            Result := SingleStatement(FinalStatements[0])
-          else if ConditionType = 'NOT' then
-            Result := not StatementGroup(FinalStatements[1])
-          else if ConditionType = 'AND' then
-            Result := StatementGroup(FinalStatements[0]) and StatementGroup(FinalStatements[1])
-          else if ConditionType = 'OR' then
-            Result := StatementGroup(FinalStatements[0]) or StatementGroup(FinalStatements[1]);
+            if FinalStatements[CurrentStatement] <> '' then
+              SetLength(FinalStatements[CurrentStatement], length(FinalStatements[CurrentStatement]) - 1);
+            if ConditionType = '' then
+              Result := SingleStatement(FinalStatements[0])
+            else if ConditionType = 'NOT' then
+              Result := not StatementGroup(FinalStatements[1])
+            else if ConditionType = 'AND' then
+              Result := StatementGroup(FinalStatements[0]) and StatementGroup(FinalStatements[1])
+            else if ConditionType = 'OR' then
+              Result := StatementGroup(FinalStatements[0]) or StatementGroup(FinalStatements[1]);
+            end
+          else
+            ModuleManager.ModLog.AddError('Invalid statement group ' + A);
           end
         else
-          ModuleManager.ModLog.AddError('Invalid statement group');
+          ModuleManager.ModLog.AddError('Invalid statement group ' + A);
       end;
     begin
       if ID = -1 then
@@ -146,26 +151,31 @@ procedure TShaderFile.Preprocess;
   begin
     mStart := -1;
     mEnd := -1;
+    BlockCount := 0;
     for i := tStart to tEnd do
       if (fTokens[i].TType = ttSingleLineComment) and (SubString(fTokens[i].Value, 1, 6) = '// IF ') then
         begin
-        mStart := i;
+        if BlockCount = 0 then
+          mStart := i;
         inc(BlockCount);
         end
       else if (fTokens[i].TType = ttSingleLineComment) and (SubString(fTokens[i].Value, 1, 6) = '// END') then
         begin
         dec(BlockCount);
-        mEnd := i;
-        if not Evaluate(mStart) then
+        if BlockCount = 0 then
           begin
-          for j := mStart to mEnd do
+          mEnd := i;
+          if not Evaluate(mStart) then
             begin
-            fTokens[j].Value := '';
-            fTokens[j].TType := ttUnknown;
-            end;
-          end
-        else
-          CheckBlock(mStart + 1, mEnd - 1);
+            for j := mStart to mEnd do
+              begin
+              fTokens[j].Value := '';
+              fTokens[j].TType := ttUnknown;
+              end;
+            end
+          else
+            CheckBlock(mStart + 1, mEnd - 1);
+          end;
         end;
   end;
 begin

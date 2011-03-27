@@ -42,9 +42,11 @@ void main(void) {
 //   if (clamp(Vertex.xz, vec2(0.0, 0.0), TerrainSize) != Vertex.xz && Border != 1)
 //     discard;
 
+  // IF [ EQ owe.terrain.tesselation 1 ]
   if (Vertex.x > 1.0 && Vertex.z > 1.0 && Vertex.x < TerrainSize.x - 1.0 && Vertex.z < TerrainSize.y - 1.0)
     if (Border == 0 && max(abs(Camera.x - Vertex.x), abs(Camera.y - Vertex.z)) < TerrainTesselationDistance - 2.0)
       discard;
+  // END
 
   iVertex = ivec2(floor(5.0 * FakeVertex + 0.001));
 
@@ -75,6 +77,8 @@ void main(void) {
   + normalize(cross(vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, YFactor), +0.2), vec3(+0.2, mix(0.0, fetchHeightAtOffset(ivec2(+1, +0)) - VY, YFactor), -0.0)))
   + normalize(cross(vec3(-0.2, mix(0.0, fetchHeightAtOffset(ivec2(-1, +0)) - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, YFactor), +0.2))));
   normal = normalize(mix(normal * NormalFactor, NormalMod.xyz, NormalMod.a));
+
+  // IF [ EQ owe.terrain.bumpmap 1 ]
   if (gl_FragData[2].a < TerrainBumpmapDistance) {
     bumpColors = mat4(
       texture2D(TerrainTexture, clamp((Vertex.xz / 8.0 - floor(Vertex.xz / 8.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy + vec2(0.0, 0.5)),
@@ -87,6 +91,7 @@ void main(void) {
     vec3 bitangent = normalize(cross(normal, tangent));
     normal = normalize(mix(normal, normalize(tangent * bumpNormal.x + normal * bumpNormal.y + bitangent * bumpNormal.z), clamp((TerrainBumpmapDistance - gl_FragData[2].a) / (TerrainBumpmapDistance / 2.0), 0.0, 1.0)));
   }
+  // END
 
   gl_FragData[1] = vec4(normal, 2.0);
   gl_FragData[0] = mix(mix(texColors[0], texColors[1], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), mix(texColors[2], texColors[3], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), (FakeVertex.y * 5.0 - floor(FakeVertex.y * 5.0)));

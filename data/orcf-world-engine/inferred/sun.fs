@@ -15,6 +15,7 @@ uniform float ShadowSize;
 uniform vec3 ShadowOffset;
 uniform int BlurSamples;
 
+// IF [ EQ owe.shadows.sun 1 ]
 vec2 ProjectShadowVertex(vec3 V) {
   vec3 dir = V - gl_LightSource[0].position.xyz;
   dir /= abs(dir.y);
@@ -22,6 +23,7 @@ vec2 ProjectShadowVertex(vec3 V) {
   V -= ShadowOffset;
   return (V / ShadowSize).xz;
 }
+// END
 
 void main(void) {
   ivec2 Coords = ivec2(floor(gl_FragCoord.xy));
@@ -33,10 +35,15 @@ void main(void) {
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
   vec3 Sun = gl_LightSource[0].position.xyz - Vertex;
   gl_FragColor.rgb = max(0.0, dot(normalize(Normal.xyz), normalize(Sun))) * gl_LightSource[0].diffuse.rgb;
+
+  vec3 factor = vec3(2.0, 2.0, 2.0);
+
+  // IF [ EQ owe.shadows.sun 1 ]
   vec2 ShadowCoord = 0.5 + 0.5 * ProjectShadowVertex(Vertex);
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
-  vec3 factor = vec3(2.0, 2.0, 2.0);
   if (ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
+
+    // IF [ EQ owe.shadows.blur 1 ]
     float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);
     int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);
     for (int i = -BlurSamples; i <= BlurSamples; i++)
@@ -45,9 +52,19 @@ void main(void) {
         if (ShadowColor.a > Vertex.y + 0.1)
           factor -= 2.0 * ShadowColor.rgb / Samples;
       }
+    // END
+
+    // IF [ NEQ owe.shadows.blur 1 ]
+    ShadowColor = texture2D(ShadowTexture, ShadowCoord);
+    if (ShadowColor.a > Vertex.y + 0.1)
+      factor -= 2.0 * ShadowColor.rgb;
+    // END
+    
     factor = min(factor, vec3(1.0, 1.0, 1.0));
     gl_FragColor.rgb *= factor;
   }
+  // END
+  
   gl_FragColor.rgb += (0.3 + 0.7 * max(0.0, dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
   gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), max(0.0, -Material.a));
   vec4 v = (gl_ModelViewMatrix * vec4(Vertex, 1.0));

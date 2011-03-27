@@ -558,6 +558,8 @@ var
   ResX, ResY: Integer;
   Coord: TVector4D;
 begin
+//   glGetError();
+
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   FogStrength := RSky.FogStrength;
   FogRefractMode := 0;
@@ -1127,6 +1129,7 @@ begin
   glDisable(GL_BLEND);
 
   inc(fFrameID);
+//   writeln(glGetError());
 end;
 
 procedure TModuleRendererOWE.CheckModConf;

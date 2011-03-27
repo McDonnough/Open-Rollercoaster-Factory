@@ -4,9 +4,9 @@ uniform sampler2D TerrainMap;
 uniform vec2 TerrainSize;
 uniform vec2 BumpOffset;
 
-varying out vec3 normal;
-varying out vec3 Vertex;
-varying out vec2 texCoord;
+varying vec3 normal;
+varying vec3 Vertex;
+varying vec2 texCoord;
 
 float fetchHeightAtOffset(vec2 O) {
   return texture2D(TerrainMap, (gl_Vertex.xy + O) / TerrainSize).b * 256.0;

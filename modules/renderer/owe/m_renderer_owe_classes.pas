@@ -608,7 +608,7 @@ end;
 procedure TFBO.CopyFrom(Texture: TTexture);
 begin
   Bind;
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
   Texture.Bind(0);
   ModuleManager.ModRenderer.FullscreenShader.Bind;
   glBegin(GL_QUADS);
@@ -618,7 +618,6 @@ begin
     glVertex2f(-1,  1);
   glEnd;
   ModuleManager.ModRenderer.FullscreenShader.UnBind;
-  Texture.UnBind;
   UnBind;
 end;
 

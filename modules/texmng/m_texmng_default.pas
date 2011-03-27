@@ -159,8 +159,8 @@ end;
 
 procedure TModuleTextureManagerDefault.BindTexture(Texture: Integer);
 begin
-{  if fCurrentTextures[fCurrentTexUnit] = Texture then
-    exit;}
+  if fCurrentTextures[fCurrentTexUnit] = Texture then
+    exit;
   if (Texture >= 0) and (Texture <= high(fTexRefs)) then
     glBindTexture(GL_TEXTURE_2D, fTexRefs[Texture].Tex)
   else

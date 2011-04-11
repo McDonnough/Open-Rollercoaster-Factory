@@ -27,7 +27,7 @@ type
     public
       constructor Create;
       procedure CheckModConf;
-      function LoadTexture(Filename: String; VertexTexture: Boolean; var X, Y: Integer): Integer;
+      function LoadTexture(Filename: String; VertexTexture: Boolean; var X, Y: Integer; Compression: Boolean = True): Integer;
       function EmptyTexture(X, Y: Integer; Format: GLEnum): Integer;
       procedure ActivateTexUnit(U: Integer);
       procedure BindTexture(Texture: Integer);
@@ -67,7 +67,7 @@ begin
 
 end;
 
-function TModuleTextureManagerDefault.LoadTexture(Filename: String; VertexTexture: Boolean; var X, Y: Integer): Integer;
+function TModuleTextureManagerDefault.LoadTexture(Filename: String; VertexTexture: Boolean; var X, Y: Integer; Compression: Boolean = True): Integer;
 var
   Texture: TTexRef;
   TexImage: TTexImage;
@@ -97,6 +97,8 @@ begin
       Texture.InputFormat := GL_RGBA;
       Texture.ExternalFormat := GL_COMPRESSED_RGBA;
       end;
+    if not Compression then
+      Texture.ExternalFormat := Texture.InputFormat;
     Texture.Width := TexImage.width;
     Texture.Height := TexImage.height;
     setLength(Texture.Data, length(TexImage.Data));

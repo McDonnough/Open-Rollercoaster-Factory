@@ -36,12 +36,9 @@ begin
 
   CheckModConf;
 
-  fTexture := TTexture.Create;
-  fTexture.FromFile(GetConfVal('background'));
-  fTexture.SetFilter(GL_NEAREST, GL_NEAREST);
-  fTexture.SetClamp(GL_MIRRORED_REPEAT, GL_MIRRORED_REPEAT);
-
   ModuleManager.ModGLContext.GetResolution(W, H);
+
+  fTexture := nil;
 
   fWindow := TWindow.Create(nil);
   fWindow.Left := (W - 450) div 2;
@@ -84,6 +81,14 @@ end;
 
 procedure TModuleLoadScreenDefault.Render;
 begin
+  if fTexture = nil then
+    begin
+    fTexture := TTexture.Create;
+    fTexture.FromFile(GetConfVal('background'), false, false);
+    fTexture.SetFilter(GL_NEAREST, GL_NEAREST);
+    fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
+    end;
+
   fPB.Progress := Progress;
   fHLabel.Caption := Headline;
   fTLabel.Caption := Text;
@@ -96,10 +101,10 @@ begin
   fTexture.Bind;
   glColor4f(1, 1, 1, 1);
   glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex3f(0,    0,    -255);
-    glTexCoord2f(0, 2); glVertex3f(0,    2048, -255);
-    glTexCoord2f(2, 2); glVertex3f(4096, 2048, -255);
-    glTexCoord2f(2, 0); glVertex3f(4096, 0,    -255);
+    glTexCoord2f(0, 0); glVertex3f(0 - ((2048 - W) div 2),    0,    -255);
+    glTexCoord2f(0, 1); glVertex3f(0 - ((2048 - W) div 2),    2048, -255);
+    glTexCoord2f(1, 1); glVertex3f(2048 - ((2048 - W) div 2), 2048, -255);
+    glTexCoord2f(1, 0); glVertex3f(2048 - ((2048 - W) div 2), 0,    -255);
   glEnd;
   fTexture.Unbind;
 end;
@@ -111,13 +116,21 @@ begin
   if Visible then
     fWindow.Top := (H - 120) div 2
   else
+    begin
     fWindow.Top := -200;
+    if fTexture <> nil then
+      begin
+      fTexture.Free;
+      fTexture := nil;
+      end;
+    end;
 end;
 
 destructor TModuleLoadScreenDefault.Free;
 begin
   fWindow.Free;
-  fTexture.Free;
+  if fTexture <> nil then
+    fTexture.Free;
 end;
 
 end.

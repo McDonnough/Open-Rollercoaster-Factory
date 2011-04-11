@@ -16,7 +16,7 @@ type
         *@param internal format
         *@return Texture ID
         *)
-      function LoadTexture(Filename: String; VertexTexture: Boolean; var X, Y: Integer): Integer; virtual abstract;
+      function LoadTexture(Filename: String; VertexTexture: Boolean; var X, Y: Integer; Compression: Boolean = True): Integer; virtual abstract;
 
       (**
         * Create blank texture
@@ -114,7 +114,7 @@ type
       property Width: Integer read fWidth;
       property Height: Integer read fHeight;
       property Pixels[X: Integer; Y: Integer]: DWord read getPixel write setPixel;
-      procedure FromFile(FileName: String; VertexTexture: Boolean = false);
+      procedure FromFile(FileName: String; VertexTexture: Boolean = false; Compression: Boolean = True);
       procedure CreateNew(X, Y: Integer; Format: GLEnum);
       procedure Fill(Data: Pointer; Format: GLEnum);
       procedure Bind(U: Integer = -1);
@@ -148,10 +148,10 @@ begin
   Result := ModuleManager.ModTexMng.ReadPixel(fID, X, Y);
 end;
 
-procedure TTexture.FromFile(FileName: String; VertexTexture: Boolean = false);
+procedure TTexture.FromFile(FileName: String; VertexTexture: Boolean = false; Compression: Boolean = True);
 begin
   FileName := GetFirstExistingFilename(FileName);
-  fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(FileName), VertexTexture, fWidth, fHeight);
+  fID := ModuleManager.ModTexMng.LoadTexture(ModuleManager.ModPathes.Convert(FileName), VertexTexture, fWidth, fHeight, Compression);
 end;
 
 procedure TTexture.CreateNew(X, Y: Integer; Format: GLEnum);

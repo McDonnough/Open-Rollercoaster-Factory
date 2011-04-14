@@ -61,7 +61,7 @@ begin
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER, 0.0);
-  fTexture.Bind;
+  fTexture.Bind(0);
   glBegin(GL_QUADS);
     if FullyFilledBullets < Bullets then
       begin

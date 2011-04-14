@@ -79,7 +79,7 @@ begin
   glEnable(GL_ALPHA_TEST);
   glEnable(GL_BLEND);
 
-  fMask.Bind;
+  fMask.Bind(0);
   glBegin(GL_QUADS);
   for i := 0 to high(Lbl.Tabs) do
     begin

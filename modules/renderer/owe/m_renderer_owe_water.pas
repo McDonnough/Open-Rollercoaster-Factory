@@ -188,12 +188,14 @@ begin
   fRenderShader.UniformI('GeometryMap', 4);
   fRenderShader.UniformF('ScreenSize', ModuleManager.ModRenderer.BufferSizeX, ModuleManager.ModRenderer.BufferSizeY);
   fRenderShader.UniformF('BumpOffset', 0, 0);
+  fRenderShader.Unbind;
 
   fSimpleShader := TShader.Create('orcf-world-engine/scene/water/waterSimple.vs', 'orcf-world-engine/scene/water/waterSimple.fs');
   fSimpleShader.UniformI('HeightMap', 0);
   fSimpleShader.UniformI('BumpMap', 1);
   fSimpleShader.UniformI('EvironmentMap', 3);
   fSimpleShader.UniformF('BumpOffset', 0, 0);
+  fSimpleShader.Unbind;
 
   fWaterMap := TTable.Create;
 
@@ -302,10 +304,10 @@ begin
     ModuleManager.ModRenderer.RWater.RenderShader.UniformF('UnderWaterFactor', 1);
     ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Mediums', 1.0, 1.33);
     end;
+  ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
   fRefractionPass.Textures[0].Bind(2);
   fReflectionPass.Textures[0].Bind(3);
   fRefractionGeo.Textures[0].Bind(4);
-  ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
 
   ModuleManager.ModRenderer.RWater.WaterVBO.Bind;
   ModuleManager.ModRenderer.RWater.WaterVBO.Render;
@@ -352,14 +354,14 @@ procedure TWaterLayer.RenderBuffers;
 var
   ClipPlane: Array[0..3] of GLDouble = (0, -1, 0, 0);
 begin
-  glEnable(GL_CLIP_PLANE0);
-
   ModuleManager.ModRenderer.RWater.fCurrentHeight := fHeight / 256;
 
   if ModuleManager.ModCamera.ActiveCamera.Position.Y < fHeight / 256 then
     ClipPlane[1] := 1
   else
     ClipPlane[1] := -1;
+
+  glEnable(GL_CLIP_PLANE0);
 
   glMatrixMode(GL_MODELVIEW);
 

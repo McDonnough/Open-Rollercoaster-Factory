@@ -224,30 +224,37 @@ begin
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);          // Transparency Material ID
   fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.Unbind;
 
   fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
   fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Materials (opaque only) and specularity
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fSpareBuffer.Unbind;
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
   fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Colors, Specular
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fLightBuffer.Unbind;
 
   fSceneBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
   fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);      // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fSceneBuffer.Unbind;
 
   fHDRBuffer := TFBO.Create(BufferSizeX, 1, false);
   fHDRBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
+  fHDRBuffer.Unbind;
 
   fHDRBuffer2 := TFBO.Create(1, 1, false);
   fHDRBuffer2.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
+  fHDRBuffer2.Unbind;
 
   if UseScreenSpaceAmbientOcclusion then
     begin
     fSSAOBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
     fSSAOBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);     // Screen Space Ambient Occlusion
     fSSAOBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fSSAOBuffer.Unbind;
     end
   else
     fSSAOBuffer := nil;
@@ -257,6 +264,7 @@ begin
     fBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
     fBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);    // Pseudo-HDR/Color Bleeding
     fBloomBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fBloomBuffer.Unbind;
     end
   else
     fBloomBuffer := nil;
@@ -266,6 +274,7 @@ begin
     fFocalBlurBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
     fFocalBlurBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR); // Focal blur
     fFocalBlurBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fFocalBlurBuffer.Unbind;
     end
   else
     fFocalBlurBuffer := nil;
@@ -275,6 +284,7 @@ begin
     fSunRayBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
     fSunRayBuffer.AddTexture(GL_RGBA, GL_LINEAR, GL_LINEAR);  // Color overlay
     fSunRayBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fSunRayBuffer.Unbind;
     end
   else
     fSunRayBuffer := nil;
@@ -284,6 +294,7 @@ begin
     fTmpBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), true);
     fTmpBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
     fTmpBloomBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fTmpBloomBuffer.Unbind;
     end
   else
     fTmpBloomBuffer := nil;
@@ -293,6 +304,7 @@ begin
     fMotionBlurBuffer := TFBO.Create(ResX, ResY, false);
     fMotionBlurBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);
     fMotionBlurBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fMotionBlurBuffer.Unbind;
     end
   else
     fMotionBlurBuffer := nil;
@@ -302,6 +314,7 @@ begin
     fSunShadowBuffer := TFBO.Create(Round(2048 * ShadowBufferSamples), Round(2048 * ShadowBufferSamples), true);
     fSunShadowBuffer.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
     fSunShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fSunShadowBuffer.Unbind;
     end
   else
     fSunShadowBuffer := nil;
@@ -311,6 +324,7 @@ begin
     fTmpShadowBuffer := TFBO.Create(Round(1536 * ShadowBufferSamples), Round(1024 * ShadowBufferSamples), true);
     fTmpShadowBuffer.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
     fTmpShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fTmpShadowBuffer.Unbind;
     end
   else
     fTmpShadowBuffer := nil;
@@ -356,6 +370,12 @@ begin
   fSunShader.UniformI('ShadowTexture', 2);
   fSunShader.UniformI('MaterialTexture', 3);
   fSunShader.UniformI('HeightMap', 4);
+
+  fLightShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/light.fs');
+  fLightShader.UniformI('GeometryTexture', 0);
+  fLightShader.UniformI('NormalTexture', 1);
+  fLightShader.UniformI('ShadowTexture', 2);
+  fLightShader.UniformI('MaterialTexture', 3);
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
@@ -414,6 +434,7 @@ begin
   fBloomShader.Free;
   fLensFlareShader.Free;
   fCompositionShader.Free;
+  fLightShader.Free;
   fSunShader.Free;
   fSunRayShader.Free;
   fAAShader.Free;
@@ -555,7 +576,7 @@ var
   end;
 var
   MX, MY: Single;
-  ResX, ResY: Integer;
+  i, ResX, ResY: Integer;
   Coord: TVector4D;
 begin
 //   glGetError();
@@ -614,9 +635,6 @@ begin
 
   ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
 
-  // Do water renderpasses
-  RWater.RenderBuffers;
-
   // Create object reflections
   DynamicSettingsSetReflection;
     RTerrain.BorderEnabled := True;
@@ -631,6 +649,9 @@ begin
       end
     else
       dec(fEnvironmentMapFrames);
+
+  // Do water renderpasses
+  RWater.RenderBuffers;
 
   DynamicSettingsSetNormal;
 
@@ -676,22 +697,21 @@ begin
     RTerrain.Render;
 
     // Water
+    glDisable(GL_CULL_FACE);
+
     glColorMask(false, false, false, false);
     glDepthMask(false);
     RWater.Check;
     glDepthMask(true);
     glColorMask(true, true, true, true);
-//   GBuffer.Unbind;
 
-//   GBuffer.Bind;
     RWater.Render;
 
-    glDisable(GL_CULL_FACE);
   GBuffer.Unbind;
 
   // Save material buffer
   SpareBuffer.Bind;
-    GBuffer.Textures[0].Bind;
+    GBuffer.Textures[0].Bind(0);
     fFullscreenShader.Bind;
     DrawFullscreenQuad;
     fFullscreenShader.Unbind;
@@ -792,10 +812,24 @@ begin
     DrawFullscreenQuad;
     SunShader.Unbind;
 
+    fLightShader.Bind;
+
+    for i := 0 to high(fLightManager.fRegisteredLights) do
+      if fLightManager.fRegisteredLights[i].IsVisible(fFrustum) then
+        begin
+        fLightManager.fRegisteredLights[i].Bind(1);
+
+        
+        
+        fLightManager.fRegisteredLights[i].UnBind(1);
+        end;
+    fLightShader.UnBind;
+
     RTerrain.TerrainMap.UnBind;
     GBuffer.Textures[0].UnBind;
     GBuffer.Textures[1].UnBind;
     GBuffer.Textures[2].UnBind;
+
   LightBuffer.Unbind;
 
   // Sun ray pass

@@ -163,8 +163,6 @@ end;
 
 procedure TModuleShaderManagerDefault.BindShader(Shader: Integer);
 begin
-  if fCurrentShader = Shader then
-    exit;
   if (Shader >= 0) and (Shader <= high(fShdRef)) then
     glUseProgram(fShdRef[Shader].ID)
   else

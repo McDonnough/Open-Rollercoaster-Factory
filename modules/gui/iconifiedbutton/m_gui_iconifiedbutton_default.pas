@@ -61,7 +61,7 @@ begin
     Button.fClickFactor := Button.fClickFactor - Button.fClickFactor / 10;
     end;
 
-  fTexture.Bind;
+  fTexture.Bind(0);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -79,7 +79,7 @@ begin
   Tex := FindIconByName(Button.Icon);
   if Tex <> nil then
     begin
-    Tex.Bind;
+    Tex.Bind(0);
     glBegin(GL_QUADS);
       glColor4f(1, 1, 1, 1);
       glTexCoord2f(0, 0); glVertex3f(Button.Left + 0.15 * Button.Width, Button.Top + 0.15 * Button.Height, 0);

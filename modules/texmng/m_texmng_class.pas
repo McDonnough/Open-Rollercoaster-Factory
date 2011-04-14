@@ -117,7 +117,7 @@ type
       procedure FromFile(FileName: String; VertexTexture: Boolean = false; Compression: Boolean = True);
       procedure CreateNew(X, Y: Integer; Format: GLEnum);
       procedure Fill(Data: Pointer; Format: GLEnum);
-      procedure Bind(U: Integer = -1);
+      procedure Bind(U: Integer);
       procedure Unbind;
       procedure SetFilter(Min, Max: GLEnum);
       procedure SetClamp(X, Y: GLEnum);
@@ -166,7 +166,7 @@ begin
   ModuleManager.ModTexMng.FillTexture(fID, Data, Format);
 end;
 
-procedure TTexture.Bind(U: Integer = -1);
+procedure TTexture.Bind(U: Integer);
 begin
   ModuleManager.ModTexMng.ActivateTexUnit(U);
   ModuleManager.ModTexMng.BindTexture(fID);

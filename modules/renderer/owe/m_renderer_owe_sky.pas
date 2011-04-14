@@ -32,7 +32,7 @@ procedure TRSky.Render;
 var
   i, j: Integer;
 begin
-  fStarTexture.Bind;
+  fStarTexture.Bind(0);
   fShader.Bind;
   glBegin(GL_QUADS);
     for i := 0 to 17 do

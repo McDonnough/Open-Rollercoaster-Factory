@@ -617,6 +617,7 @@ begin
     glVertex2f( 1,  1);
     glVertex2f(-1,  1);
   glEnd;
+  Texture.UnBind;
   ModuleManager.ModRenderer.FullscreenShader.UnBind;
   UnBind;
 end;

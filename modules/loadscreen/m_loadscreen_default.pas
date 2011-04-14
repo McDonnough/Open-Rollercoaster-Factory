@@ -98,7 +98,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
-  fTexture.Bind;
+  fTexture.Bind(0);
   glColor4f(1, 1, 1, 1);
   glBegin(GL_QUADS);
     glTexCoord2f(0, 0); glVertex3f(0 - ((2048 - W) div 2),    0,    -255);

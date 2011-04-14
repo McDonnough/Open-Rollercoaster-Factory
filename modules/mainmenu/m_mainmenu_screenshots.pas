@@ -172,7 +172,7 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
-  fTexture.Bind;
+  fTexture.Bind(0);
   glColor4f(1, 1, 1, 1);
   glBegin(GL_QUADS);
     glTexCoord2f(0, 0); glVertex3f(0,    0,    -255);
@@ -182,7 +182,7 @@ begin
   glEnd;
   fTexture.Unbind;
 
-  fLogo.Bind;
+  fLogo.Bind(0);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBegin(GL_QUADS);

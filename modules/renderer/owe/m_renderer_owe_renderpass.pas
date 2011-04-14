@@ -117,7 +117,7 @@ begin
   // Save material buffer
   fSpareBuffer.Bind;
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-    GBuffer.Textures[0].Bind;
+    GBuffer.Textures[0].Bind(0);
     ModuleManager.ModRenderer.FullscreenShader.Bind;
     DrawFullscreenQuad;
     ModuleManager.ModRenderer.FullscreenShader.Unbind;
@@ -280,18 +280,22 @@ begin
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);          // Material IDs
   fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.Unbind;
 
   fSpareBuffer := TFBO.Create(X, Y, false);
   fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fSpareBuffer.Unbind;
 
   fLightBuffer := TFBO.Create(X, Y, false);
   fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Colors, Specular
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fLightBuffer.Unbind;
 
   fSceneBuffer := TFBO.Create(X, Y, true);
   fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_LINEAR, GL_LINEAR);   // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fSceneBuffer.Unbind;
 
   RenderAutoplants := True;
   RenderParticles := True;

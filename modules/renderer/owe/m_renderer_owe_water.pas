@@ -354,7 +354,7 @@ procedure TWaterLayer.RenderBuffers;
 var
   ClipPlane: Array[0..3] of GLDouble = (0, -1, 0, 0);
 begin
-  ModuleManager.ModRenderer.RWater.fCurrentHeight := fHeight / 256;
+{  ModuleManager.ModRenderer.RWater.fCurrentHeight := fHeight / 256;
 
   if ModuleManager.ModCamera.ActiveCamera.Position.Y < fHeight / 256 then
     ClipPlane[1] := 1
@@ -409,7 +409,7 @@ begin
   fRefractionPass.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.Scene.Textures[0]);
   fRefractionGeo.CopyFrom(ModuleManager.ModRenderer.RWater.RenderPass.GBuffer.Textures[2]);
 
-  glDisable(GL_CLIP_PLANE0);
+  glDisable(GL_CLIP_PLANE0);}
 end;
 
 constructor TWaterLayer.Create(H: Word);

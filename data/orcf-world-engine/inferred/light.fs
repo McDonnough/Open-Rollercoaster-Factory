@@ -52,6 +52,6 @@ void main(void) {
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * vec4(gl_LightSource[1].position.xyz, 1.0) - v).xyz), normalize(gl_NormalMatrix * Normal.xyz)));
   gl_FragColor.a = pow(max(dot(Reflected, Eye), 0.0), Normal.a) * length(factor) / sqrt(3.0) * attenuation;
 
-  if (max(Normal.x, max(Normal.y, Normal.z)) == 0.0)
+  if (max(abs(Normal.x), max(abs(Normal.y), abs(Normal.z))) == 0.0)
     gl_FragColor.a = -1.0;
 }

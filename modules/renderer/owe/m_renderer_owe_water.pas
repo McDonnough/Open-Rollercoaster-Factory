@@ -193,7 +193,7 @@ begin
   fSimpleShader := TShader.Create('orcf-world-engine/scene/water/waterSimple.vs', 'orcf-world-engine/scene/water/waterSimple.fs');
   fSimpleShader.UniformI('HeightMap', 0);
   fSimpleShader.UniformI('BumpMap', 1);
-  fSimpleShader.UniformI('EvironmentMap', 3);
+  fSimpleShader.UniformI('EnvironmentMap', 3);
   fSimpleShader.UniformF('BumpOffset', 0, 0);
   fSimpleShader.Unbind;
 
@@ -330,7 +330,7 @@ begin
   ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('Offset', ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
   ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('ViewPoint', ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
 
-  ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(2);
+  ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(3);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
 
 //   ModuleManager.ModRenderer.RWater.WaterVBO.Bind;

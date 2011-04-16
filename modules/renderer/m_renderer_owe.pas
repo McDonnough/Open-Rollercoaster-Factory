@@ -637,8 +637,6 @@ begin
   else
     MaxRenderDistance := MaxFogDistance;
 
-  ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
-
   // Create object reflections
   DynamicSettingsSetReflection;
     RTerrain.BorderEnabled := True;
@@ -654,10 +652,12 @@ begin
     else
       dec(fEnvironmentMapFrames);
 
+  DynamicSettingsSetNormal;
+
+  ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
+
   // Do water renderpasses
   RWater.RenderBuffers;
-
-  DynamicSettingsSetNormal;
 
   ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
 

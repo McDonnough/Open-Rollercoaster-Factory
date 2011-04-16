@@ -96,6 +96,6 @@ void main(void) {
 
   // No lighting
 
-  if (max(Normal.x, max(Normal.y, Normal.z)) == 0.0)
+  if (max(abs(Normal.x), max(abs(Normal.y), abs(Normal.z))) == 0.0)
     gl_FragColor.a = -1.0;
 }

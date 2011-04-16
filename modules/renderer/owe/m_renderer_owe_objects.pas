@@ -166,9 +166,7 @@ begin
       ModuleManager.ModTexMng.BindTexture(-1);
       fCurrentShader.UniformI('HasTexture', 0);
       end;
-    Spec := Vector(Specularity, 0, 0, 0);
-    if Reflectivity > 0 then
-      Spec := Vector(0, Reflectivity, 0, 0);
+    Spec := Vector(Specularity, Reflectivity, 0, 0);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, @Color.X);
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, @Emission.X);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, @Spec.X);
@@ -400,9 +398,9 @@ begin
     end;
   fTest.Meshes[0].AddBone(fTest.Armatures[0].Bones[1]);
   fTest.Meshes[1].AddBone(fTest.Armatures[0].Bones[0]);
-//   fTest.Materials[0].Reflectivity := 0.8;
-//   fTest.Materials[1].Reflectivity := 0.7;
-//   fTest.Materials[2].Reflectivity := 0.6;
+  fTest.Materials[0].Reflectivity := 0.8;
+  fTest.Materials[1].Reflectivity := 0.7;
+  fTest.Materials[2].Reflectivity := 0.6;
   fTest.Materials[2].BumpMap := TTexture.Create;
   fTest.Materials[2].BumpMap.FromFile('scenery/testbump.tga');
   fTest.Matrix := TranslationMatrix(Vector(160, 70, 160));

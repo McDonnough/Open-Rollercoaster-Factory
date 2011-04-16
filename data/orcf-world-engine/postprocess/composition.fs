@@ -29,9 +29,11 @@ void main(void) {
   gl_FragDepth = Vertex.a / 10000.0;
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
   vec4 Light = texelFetch2D(LightTexture, Coords, 0);
+  vec4 Reflection = texelFetch2D(ReflectionTexture, Coords, 0);
   gl_FragColor = vec4(Material.rgb, 1.0);
   if (Light.a >= 0.0) {
     gl_FragColor.rgb *= Light.rgb;
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, Reflection.rgb, Reflection.a);
     gl_FragColor.rgb += Light.rgb * Light.a * abs(Material.a);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
   }

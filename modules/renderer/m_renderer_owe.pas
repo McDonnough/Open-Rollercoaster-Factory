@@ -79,6 +79,7 @@ type
       property RObjects: TRObjects read fRendererObjects;
       property RWater: TRWater read fRendererWater;
       property FullscreenShader: TShader read fFullscreenShader;
+      property LightShader: TShader read fLightShader;
       property SunShader: TShader read fSunShader;
       property CompositionShader: TShader read fCompositionShader;
       property MotionBlurBuffer: TFBO read fMotionBlurBuffer;

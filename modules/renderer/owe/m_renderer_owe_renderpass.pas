@@ -41,6 +41,7 @@ procedure TRenderPass.Render;
   end;
 var
   fWaterHeight: Single;
+  i: Integer;
 begin
   if EnableRefractionFog then
     ModuleManager.ModRenderer.FogRefractMode := 1;
@@ -179,10 +180,25 @@ begin
     DrawFullscreenQuad;
     ModuleManager.ModRenderer.SunShader.Unbind;
 
-    ModuleManager.ModRenderer.RTerrain.TerrainMap.UnBind;
+    ModuleManager.ModRenderer.LightShader.Bind;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+
+    for i := 0 to high(ModuleManager.ModRenderer.LightManager.fRegisteredLights) do
+      if ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].IsVisible(ModuleManager.ModRenderer.Frustum) then
+        begin
+        ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].Bind(1);
+        DrawFullscreenQuad;
+        ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].UnBind(1);
+        end;
+    ModuleManager.ModRenderer.LightShader.UnBind;
+
     GBuffer.Textures[0].UnBind;
     GBuffer.Textures[1].UnBind;
     GBuffer.Textures[2].UnBind;
+
+    glDisable(GL_BLEND);
   fLightBuffer.Unbind;
 
   // Composition

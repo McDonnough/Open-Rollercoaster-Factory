@@ -214,6 +214,7 @@ begin
     ModuleManager.ModRenderer.CompositionShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
     ModuleManager.ModRenderer.CompositionShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
 
+    GBuffer.Textures[4].Bind(3);
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);
     fLightBuffer.Textures[0].Bind(1);
@@ -280,6 +281,8 @@ begin
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);          // Material IDs
   fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Reflection and reflectivity
+  fGBuffer.Textures[4].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.Unbind;
 
   fSpareBuffer := TFBO.Create(X, Y, false);

@@ -814,13 +814,14 @@ begin
 
     fLightShader.Bind;
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+
     for i := 0 to high(fLightManager.fRegisteredLights) do
       if fLightManager.fRegisteredLights[i].IsVisible(fFrustum) then
         begin
         fLightManager.fRegisteredLights[i].Bind(1);
-
-        
-        
+        DrawFullscreenQuad;
         fLightManager.fRegisteredLights[i].UnBind(1);
         end;
     fLightShader.UnBind;
@@ -829,6 +830,8 @@ begin
     GBuffer.Textures[0].UnBind;
     GBuffer.Textures[1].UnBind;
     GBuffer.Textures[2].UnBind;
+
+    glDisable(GL_BLEND);
 
   LightBuffer.Unbind;
 

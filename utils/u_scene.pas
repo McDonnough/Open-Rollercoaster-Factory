@@ -12,7 +12,7 @@ type
       Position: TVector4D;
       Color: TVector3D;
       Energy, FalloffDistance: Single;
-      DiffuseFactor, AmbientFactor: Single;
+      DiffuseFactor: Single;
       CastShadows: Boolean;
       function Duplicate: TLightSource;
       constructor Create;
@@ -204,6 +204,13 @@ end;
 
 constructor TLightSource.Create;
 begin
+  Energy := 1;
+  FalloffDistance := 1;
+  Color := Vector(1, 1, 1);
+  DiffuseFactor := 1;
+  Name := ''; //What is this for?
+  CastShadows := True;
+  Position := Vector(1, 1, 1, 1);
   EventManager.CallEvent('TLightSource.Deleted', self, self);
 end;
 

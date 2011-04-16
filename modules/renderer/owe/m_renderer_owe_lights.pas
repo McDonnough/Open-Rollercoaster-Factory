@@ -38,6 +38,7 @@ type
       procedure SetSun(Sun: TSun);
       procedure AddLight(Light: TLight);
       procedure RemoveLight(Light: TLight);
+      destructor Free;
     end;
 
 implementation
@@ -47,12 +48,16 @@ uses
 
 function TLight.Strength(Distance: Single): Single;
 begin
-  Result := VecLengthNoRoot(fLightSource.Color * (fLightSource.AmbientFactor + fLightSource.DiffuseFactor)) * fLightSource.FalloffDistance * fLightSource.Energy / Max(0.01, Distance);
+  // 0.5774 = 1 / SQRT(3)
+  Result := VecLength(LightSource.Color) * LightSource.DiffuseFactor * LightSource.Energy * 0.5774 * LightSource.FalloffDistance * LightSource.FalloffDistance / (LightSource.FalloffDistance * LightSource.FalloffDistance + Distance * Distance);
 end;
 
 function TLight.MaxLightingEffect: Single;
+const
+  LIGHT_MIN_CHANGE: Single = 0.01;
 begin
-  Result := fLightSource.FalloffDistance * fLightSource.Energy * (fLightSource.AmbientFactor + fLightSource.DiffuseFactor) / 0.1;
+  // 0.5774 = 1 / SQRT(3)
+  Result := sqrt(Max(0.0, VecLength(LightSource.Color) * LightSource.DiffuseFactor * LightSource.Energy * 0.5774 - LIGHT_MIN_CHANGE) * LightSource.FalloffDistance * LightSource.FalloffDistance / LIGHT_MIN_CHANGE);
 end;
 
 function TLight.IsVisible(A: TFrustum): Boolean;
@@ -65,12 +70,16 @@ procedure TLight.Bind(I: Integer);
 var
   A, B: TVector4D;
 begin
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix;
+  glLoadIdentity;
   glEnable(GL_LIGHT0 + i);
   A := Vector(LightSource.Color * LightSource.DiffuseFactor, LightSource.Energy);
-  B := Vector(LightSource.Color * LightSource.AmbientFactor, LightSource.FalloffDistance);
+  B := Vector(LightSource.Color, LightSource.FalloffDistance);
   glLightfv(GL_LIGHT0 + i, GL_DIFFUSE,  @A.X);
   glLightfv(GL_LIGHT0 + i, GL_AMBIENT,  @B.X);
   glLightfv(GL_LIGHT0 + i, GL_POSITION, @LightSource.Position.X);
+  glPopMatrix;
 end;
 
 procedure TLight.Unbind(I: Integer);
@@ -78,9 +87,13 @@ var
   Null: TVector4D;
 begin
   Null := Vector(0, 0, 0, 1);
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix;
+  glLoadIdentity;
   glEnable(GL_LIGHT0 + i);
   glLightfv(GL_LIGHT0 + i, GL_DIFFUSE,  @Null.X);
   glLightfv(GL_LIGHT0 + i, GL_POSITION, @Null.X);
+  glPopMatrix;
 end;
 
 constructor TLight.Create(LS: TLightSource);
@@ -136,7 +149,16 @@ begin
       begin
       fRegisteredLights[i] := fRegisteredLights[high(fRegisteredLights)];
       SetLength(fRegisteredLights, length(fRegisteredLights) - 1);
+      exit;
       end;
+end;
+
+destructor TLightManager.Free;
+begin
+  while length(fRegisteredLights) > 0 do
+    fRegisteredLights[0].Free;
+  if fSun <> nil then
+    fSun.Free;
 end;
 
 end.

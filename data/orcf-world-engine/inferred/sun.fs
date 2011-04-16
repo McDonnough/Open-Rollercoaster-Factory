@@ -59,11 +59,10 @@ void main(void) {
     if (ShadowColor.a > Vertex.y + 0.1)
       factor -= 2.0 * ShadowColor.rgb;
     // END
-    
-    factor = min(factor, vec3(1.0, 1.0, 1.0));
-    gl_FragColor.rgb *= factor;
   }
   // END
+  factor = min(factor, vec3(1.0, 1.0, 1.0));
+  gl_FragColor.rgb *= factor;
   
   gl_FragColor.rgb += (0.3 + 0.7 * max(0.0, dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
   gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), max(0.0, -Material.a));

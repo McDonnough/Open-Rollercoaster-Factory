@@ -804,7 +804,7 @@ constructor TRTerrain.Create;
 var
   i, j: Integer;
 begin
-  writeln('Hint; Initializing terrain renderer');
+  writeln('Hint: Initializing terrain renderer');
   fTerrainMap := nil;
 
   fTerrainEditorIsOpen := false;

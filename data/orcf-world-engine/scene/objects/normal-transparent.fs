@@ -18,6 +18,7 @@ varying vec3 Vertex;
 varying vec3 Normal;
 
 void main(void) {
+  gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
   gl_FragData[3].a = 1.0;
   gl_FragData[3].rgb = MaterialID;
   gl_FragData[3].rgb /= 255.0;

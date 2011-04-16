@@ -5,6 +5,8 @@ uniform sampler2D TerrainTexture;
 varying vec3 Vertex;
 
 void main(void) {
+  gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
+  
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
 
   gl_FragData[2].rgb = Vertex;

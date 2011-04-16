@@ -15,11 +15,11 @@ uniform vec2 Mediums;
 varying vec2 Vertex;
 varying float Displacement;
 
-// float Fresnel(float x) {
-//   float Rs = pow((Mediums.x * cos(x) - Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))) / (Mediums.x * cos(x) + Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))), 2.0);
-//   float Rp = pow((Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) - Mediums.y * cos(x)) / (Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) + Mediums.y * cos(x)), 2.0);
-//   return 0.5 * (min(1.0, Rs) + min(1.0, Rp));
-// }
+float Fresnel(float x) {
+  float Rs = pow((Mediums.x * cos(x) - Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))) / (Mediums.x * cos(x) + Mediums.y * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0))), 2.0);
+  float Rp = pow((Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) - Mediums.y * cos(x)) / (Mediums.x * sqrt(1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)) + Mediums.y * cos(x)), 2.0);
+  return 0.5 * (min(1.0, Rs) + min(1.0, Rp));
+}
 
 void main(void) {
   vec2 FakeVertex = Vertex;
@@ -36,39 +36,40 @@ void main(void) {
   if (abs(256.0 * hm.r - Height) > 0.1)
     discard;
 
-//   vec3 Position = vec3(Vertex.x, Height, Vertex.y);
-// 
-//   vec4 bumpColor = (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset) / 30.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset.yx) / 15.0 + 0.5));
-//   vec3 normal = normalize((bumpColor.rbg) + vec3(0.0, 1.0, 0.0));
-//   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Position, 1.0)).xyz);
-// 
-//   vec4 RealPosition = gl_ModelViewProjectionMatrix * vec4(Position, 1.0);
-//   float PixelSceneHeight = texture2D(GeometryMap, 0.5 + 0.5 * RealPosition.xy / RealPosition.w).y;
-//   float OffsetFactor = 1.0 - clamp(pow(0.5, Height - PixelSceneHeight), 0.0, 1.0);
-// 
-//   normal = normalize(UnderWaterFactor * mix(vec3(0.0, 1.0, 0.0), normal, OffsetFactor));
-// 
-//   vec3 RefractedOffset = normal * vec3(1.0, 0.0, 1.0);
-//   vec4 RefractedPosition = gl_ModelViewProjectionMatrix * vec4(Position + RefractedOffset, 1.0);
-// 
-//   vec3 ReflectedOffset = normal * vec3(1.0, 0.0, 1.0);
-//   vec4 ReflectedPosition = gl_ModelViewProjectionMatrix * vec4(Position + ReflectedOffset, 1.0);
-// 
-//   vec3 SceneVertex = texture2D(GeometryMap, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).xyz;
-// 
-//   float WaterColorFactor = 0.9 + 0.1 * dot(normal, normalize(gl_LightSource[0].position.xyz));
-// 
-//   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
-//   gl_FragData[2] = vec4(Vertex.x, Height + Displacement, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height + Displacement, Vertex.y, 1.0))));
-//   gl_FragData[1] = vec4(UnderWaterFactor * normal, 250.0);
-//   gl_FragData[0] = vec4(1.0, 1.0, 1.0, -1.0);
-//   float ReflectionCoefficient = Fresnel(acos(dot(-Eye, normalize(gl_NormalMatrix * normal))));
-//   gl_FragData[0].rgb = ReflectionCoefficient * texture2D(ReflectTex, 0.5 + 0.5 * ReflectedPosition.xy / ReflectedPosition.w).rgb;
-//   gl_FragData[0].rgb += (1.0 - ReflectionCoefficient) * texture2D(RefractTex, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).rgb;
-//   gl_FragData[0].rgb *= WaterColorFactor;
-  
+  vec3 Position = vec3(Vertex.x, Height, Vertex.y);
+
+  vec4 bumpColor = (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset) / 30.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset.yx) / 15.0 + 0.5));
+  vec3 normal = normalize((bumpColor.rbg) + vec3(0.0, 1.0, 0.0));
+  vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Position, 1.0)).xyz);
+
+  vec4 RealPosition = gl_ModelViewProjectionMatrix * vec4(Position, 1.0);
+  float PixelSceneHeight = texture2D(GeometryMap, 0.5 + 0.5 * RealPosition.xy / RealPosition.w).y;
+  float OffsetFactor = 1.0 - clamp(pow(0.5, Height - PixelSceneHeight), 0.0, 1.0);
+
+  normal = normalize(UnderWaterFactor * mix(vec3(0.0, 1.0, 0.0), normal, OffsetFactor));
+
+  vec3 RefractedOffset = normal * vec3(1.0, 0.0, 1.0);
+  vec4 RefractedPosition = gl_ModelViewProjectionMatrix * vec4(Position + RefractedOffset, 1.0);
+
+  vec3 ReflectedOffset = normal * vec3(1.0, 0.0, 1.0);
+  vec4 ReflectedPosition = gl_ModelViewProjectionMatrix * vec4(Position + ReflectedOffset, 1.0);
+
+  vec3 SceneVertex = texture2D(GeometryMap, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).xyz;
+
+  float WaterColorFactor = 0.9 + 0.1 * dot(normal, normalize(gl_LightSource[0].position.xyz));
+
+  float ReflectionCoefficient = Fresnel(acos(dot(-Eye, normalize(gl_NormalMatrix * normal))));
+  gl_FragData[4].rgb = ReflectionCoefficient * texture2D(ReflectTex, 0.5 + 0.5 * ReflectedPosition.xy / ReflectedPosition.w).rgb;
+  gl_FragData[4].rgb += (1.0 - ReflectionCoefficient) * texture2D(RefractTex, 0.5 + 0.5 * RefractedPosition.xy / RefractedPosition.w).rgb;
+  gl_FragData[4].a = WaterColorFactor;
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[2] = vec4(Vertex.x, Height + Displacement, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height + Displacement, Vertex.y, 1.0))));
-  gl_FragData[1] = vec4(UnderWaterFactor * vec3(0.0, 1.0, 0.0), 250.0);
-  gl_FragData[0] = vec4(vec3(0.2, 0.3, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb, -1.0);
+  gl_FragData[1] = vec4(UnderWaterFactor * normal, 250.0);
+  gl_FragData[0] = vec4(0.0, 0.0, 0.0, 1.0);
+  
+//   gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
+//   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
+//   gl_FragData[2] = vec4(Vertex.x, Height + Displacement, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height + Displacement, Vertex.y, 1.0))));
+//   gl_FragData[1] = vec4(UnderWaterFactor * vec3(0.0, 1.0, 0.0), 250.0);
+//   gl_FragData[0] = vec4(vec3(0.2, 0.3, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb, -1.0);
 }

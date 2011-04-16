@@ -54,25 +54,25 @@ void main(void) {
   if (abs(256.0 * hm.r - Height) > 0.1)
     discard;
 
-//   vec3 Position = vec3(Vertex.x, Height, Vertex.y);
-// 
-//   vec4 bumpColor = (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset) / 30.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset.yx) / 15.0 + 0.5));
-//   vec3 normal = normalize((bumpColor.rbg) + vec3(0.0, 1.0, 0.0));
-//   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Position, 1.0)).xyz);
-// 
-//   float WaterColorFactor = 0.9 + 0.1 * dot(normal, normalize(gl_LightSource[0].position.xyz));
-// 
-//   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
-//   gl_FragData[2] = vec4(Vertex.x, Height, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height, Vertex.y, 1.0))));
-//   gl_FragData[1] = vec4(normal, 250.0);
-//   gl_FragData[0] = vec4(1.0, 1.0, 1.0, -1.0);
-//   float ReflectionCoefficient = Fresnel(acos(dot(-Eye, normalize(gl_NormalMatrix * normal))));
-//   gl_FragData[0].rgb = ReflectionCoefficient * GetReflectionColor(normal);
-//   gl_FragData[0].rgb += (1.0 - ReflectionCoefficient) * (vec3(0.20, 0.30, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb);
-//   gl_FragData[0].rgb *= WaterColorFactor;
+  vec3 Position = vec3(Vertex.x, Height, Vertex.y);
 
+  vec4 bumpColor = (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset) / 30.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (Vertex + BumpOffset.yx) / 15.0 + 0.5));
+  vec3 normal = normalize((bumpColor.rbg) + vec3(0.0, 1.0, 0.0));
+  vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Position, 1.0)).xyz);
+
+  float WaterColorFactor = 0.9 + 0.1 * dot(normal, normalize(gl_LightSource[0].position.xyz));
+
+  float ReflectionCoefficient = Fresnel(acos(dot(-Eye, normalize(gl_NormalMatrix * normal))));
+  gl_FragData[4].a = WaterColorFactor;
+  gl_FragData[4].rgb = (1.0 - ReflectionCoefficient) * (vec3(0.20, 0.30, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb);
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[2] = vec4(Vertex.x, Height, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height, Vertex.y, 1.0))));
-  gl_FragData[1] = vec4(0.0, 1.0, 0.0, 250.0);
-  gl_FragData[0] = vec4(vec3(0.2, 0.3, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb, -1.0);
+  gl_FragData[1] = vec4(normal, 250.0);
+  gl_FragData[0] = vec4(0.0, 0.0, 0.0, 1.0);
+
+//   gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
+//   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
+//   gl_FragData[2] = vec4(Vertex.x, Height, Vertex.y, length(vec3(gl_ModelViewMatrix * vec4(Vertex.x, Height, Vertex.y, 1.0))));
+//   gl_FragData[1] = vec4(0.0, 1.0, 0.0, 250.0);
+//   gl_FragData[0] = vec4(vec3(0.2, 0.3, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb, -1.0);
 }

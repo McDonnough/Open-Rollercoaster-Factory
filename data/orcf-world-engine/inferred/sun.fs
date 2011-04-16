@@ -65,7 +65,6 @@ void main(void) {
   gl_FragColor.rgb *= factor;
   
   gl_FragColor.rgb += (0.3 + 0.7 * max(0.0, dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 1.0, 1.0), max(0.0, -Material.a));
   vec4 v = (gl_ModelViewMatrix * vec4(Vertex, 1.0));
   vec3 Eye = normalize(-v.xyz);
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * vec4(gl_LightSource[0].position.xyz, 1.0) - v).xyz), normalize(gl_NormalMatrix * Normal.xyz)));

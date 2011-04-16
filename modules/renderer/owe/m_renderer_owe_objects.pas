@@ -196,10 +196,11 @@ begin
 
   BindMaterial(Mesh.GeoMesh.Material);
 
-  if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
-    Mesh.Reflection.Map.Textures[0].Bind(3)
-  else
-    ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(3);
+  if not (MaterialMode or ShadowMode) then
+    if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
+      Mesh.Reflection.Map.Textures[0].Bind(3)
+    else
+      ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(3);
 
   MakeOGLCompatibleMatrix(Mesh.GeoMesh.CalculatedMatrix, @Matrix[0]);
 
@@ -257,6 +258,7 @@ procedure TRObjects.RenderOpaque;
 var
   i, j: Integer;
 begin
+  MaterialMode := False;
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
       if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
@@ -359,6 +361,7 @@ begin
   fTransparentShader.UniformI('Texture', 0);
   fTransparentShader.UniformI('NormalMap', 1);
   fTransparentShader.UniformI('LightFactorMap', 2);
+  fTransparentShader.UniformI('ReflectionMap', 3);
   fTransparentShader.UniformI('TransparencyMask', 7);
   fTransparentShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
 

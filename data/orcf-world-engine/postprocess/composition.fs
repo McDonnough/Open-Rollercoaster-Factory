@@ -6,6 +6,7 @@ uniform sampler2D MaterialTexture;
 uniform sampler2D LightTexture;
 uniform sampler2D GTexture;
 uniform sampler2D MaterialMap;
+uniform sampler2D ReflectionTexture;
 
 uniform float WaterHeight;
 uniform float WaterRefractionMode;

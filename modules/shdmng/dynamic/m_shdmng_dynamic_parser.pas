@@ -319,7 +319,7 @@ begin
             if (fCurrentValue = 'uniform') or (fCurrentValue = 'const') or (fCurrentValue = 'varying')
             or (fCurrentValue = 'out') or (fCurrentValue = 'in') or (fCurrentValue = 'inout') then
               fCurrentToken := ttTypePrefix
-            else if (fCurrentValue = 'if') or (fCurrentValue = 'for') or (fCurrentValue = 'while') or (fCurrentValue = 'do')
+            else if (fCurrentValue = 'if') or (fCurrentValue = 'for') or (fCurrentValue = 'while') or (fCurrentValue = 'do') or (fCurrentValue = 'else')
                  or (fCurrentValue = 'return') then
               fCurrentToken := ttControlStatement
             else if (fCurrentValue = 'void') or (fCurrentValue = 'int') or (fCurrentValue = 'float') or (fCurrentValue = 'bool')

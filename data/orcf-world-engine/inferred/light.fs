@@ -48,7 +48,7 @@ void main(void) {
 
 // IF [ EQ owe.shadows.light 1 ]
   if (UseShadow == 1) {
-  // IF [ EQ owe.shadows.light.blur 0 ]
+  // IF [ NEQ owe.shadows.light.blur 1 ]
     vec4 ShadowColor = texture2D(ShadowTexture, ProjectShadowVertex(-Light));
     if (dot(Light, Light) > ShadowColor.a * ShadowColor.a * 1.05 * 1.05)
       factor -= 2.0 * ShadowColor.rgb;

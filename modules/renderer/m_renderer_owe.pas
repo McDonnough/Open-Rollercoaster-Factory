@@ -42,7 +42,7 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
@@ -86,6 +86,7 @@ type
       property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
       property HDRAverageShader: TShader read fHDRAverageShader;
       property SimpleShader: TShader read fSimpleShader;
+      property SSAOShader: TShader read fSSAOShader;
       property GBuffer: TFBO read fGBuffer;
       property HDRBuffer: TFBO read fHDRBuffer;
       property HDRBuffer2: TFBO read fHDRBuffer2;
@@ -199,7 +200,7 @@ end;
 
 procedure TModuleRendererOWE.PostInit;
 var
-  ResX, ResY: Integer;
+  i, j, ResX, ResY: Integer;
 begin
   fFrontFace := GL_CCW;
 
@@ -256,8 +257,8 @@ begin
 
   if UseScreenSpaceAmbientOcclusion then
     begin
-    fSSAOBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
-    fSSAOBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);     // Screen Space Ambient Occlusion
+    fSSAOBuffer := TFBO.Create(Round(ResX * FSAASamples), Round(ResY * FSAASamples), false);
+    fSSAOBuffer.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);     // Screen Space Ambient Occlusion
     fSSAOBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fSSAOBuffer.Unbind;
     end
@@ -365,6 +366,21 @@ begin
   fSunShader.UniformI('ShadowTexture', 2);
   fSunShader.UniformI('MaterialTexture', 3);
   fSunShader.UniformI('HeightMap', 4);
+  fSunShader.UniformI('SSAOTexture', 5);
+
+  fSSAOShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/ssao.fs');
+  fSSAOShader.UniformI('GeometryTexture', 0);
+  fSSAOShader.UniformI('NormalTexture', 1);
+  fSSAOShader.UniformI('SamplesFirstRing', Round(Int(Sqrt(SSAOSamples) / 2)));
+  j := 0;
+  i := 0;
+  while j < SSAOSamples do
+    begin
+    inc(i);
+    inc(j, i * Round(Int(Sqrt(SSAOSamples) / 2)));
+    end;
+  fSSAOShader.UniformI('Rings', i);
+  fSSAOShader.UniformI('ScreenSize', ResX, ResY);
 
   fLightShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/light.fs');
   fLightShader.UniformI('GeometryTexture', 0);
@@ -432,6 +448,7 @@ begin
   fLensFlareShader.Free;
   fCompositionShader.Free;
   fLightShader.Free;
+  fSSAOShader.Free;
   fSunShader.Free;
   fSunRayShader.Free;
   fAAShader.Free;
@@ -721,10 +738,27 @@ begin
 
   if UseScreenSpaceAmbientOcclusion then
     begin
-    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+    
     SSAOBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+    fSSAOShader.Bind;
+    GBuffer.Textures[1].Bind(1);
+    GBuffer.Textures[2].Bind(0);
+
+    DrawFullscreenQuad;
+
+    GBuffer.Textures[1].Unbind;
+    GBuffer.Textures[2].Unbind;
+    fSSAOShader.Unbind;
+    
     SSAOBuffer.Unbind;
+
+    glEnable(GL_CULL_FACE);
     end;
 
   // Transparent parts, fuck up the material buffer
@@ -808,6 +842,9 @@ begin
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
+    if UseScreenSpaceAmbientOcclusion then
+      fSSAOBuffer.Textures[0].Bind(5);
+
     RTerrain.TerrainMap.Bind(4);
 
     if UseSunShadows then
@@ -818,6 +855,10 @@ begin
     GBuffer.Textures[2].Bind(0);
 
     SunShader.Bind;
+    if UseScreenSpaceAmbientOcclusion then
+      SunShader.UniformI('UseSSAO', 1)
+    else
+      SunShader.UniformI('UseSSAO', 0);
     SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
     SunShader.UniformF('ShadowSize', ShadowSize);
     SunShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
@@ -825,6 +866,10 @@ begin
     SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
     DrawFullscreenQuad;
     SunShader.Unbind;
+
+    ModuleManager.ModTexMng.ActivateTexUnit(5);
+    ModuleManager.ModTexMng.BindTexture(-1);
+    ModuleManager.ModTexMng.ActivateTexUnit(0);
 
     fLightShader.Bind;
 
@@ -1194,6 +1239,15 @@ begin
 
   inc(fFrameID);
 //   writeln(glGetError());
+
+
+  // TESTING ONLY
+{  glColor4f(1, 1, 1, 1);
+  fSSAOBuffer.Textures[0].Bind(0);
+  fFullscreenShader.Bind;
+  DrawFullscreenQuad;
+  fFullscreenShader.Unbind;
+  fSSAOBuffer.Textures[0].UnBind;}
 end;
 
 procedure TModuleRendererOWE.CheckModConf;
@@ -1307,14 +1361,14 @@ begin
   fWaterRefractAutoplants := GetConfVal('water.refract.autoplants') = '1';
 
   ModuleManager.ModShdMng.SetVar('owe.samples', fFSAASamples);
-  ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 0);
+{  ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 0);
   ModuleManager.ModShdMng.SetVar('owe.shadows.light', 0);
   ModuleManager.ModShdMng.SetVar('owe.ssao', 0);
   ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 0);
   ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 0);
-  ModuleManager.ModShdMng.SetVar('owe.gamma', 0);
+  ModuleManager.ModShdMng.SetVar('owe.gamma', 0);}
   if fUseSunShadows then
     ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 1);
   if fUseLightShadows then

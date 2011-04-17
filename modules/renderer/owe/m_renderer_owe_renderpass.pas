@@ -174,6 +174,7 @@ begin
     GBuffer.Textures[2].Bind(0);
 
     ModuleManager.ModRenderer.SunShader.Bind;
+    ModuleManager.ModRenderer.SunShader.UniformI('UseSSAO', 0);
     ModuleManager.ModRenderer.SunShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
     ModuleManager.ModRenderer.SunShader.UniformF('ShadowOffset', ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
     ModuleManager.ModRenderer.SunShader.UniformI('BlurSamples', ModuleManager.ModRenderer.ShadowBlurSamples);
@@ -189,7 +190,17 @@ begin
       if ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].IsVisible(ModuleManager.ModRenderer.Frustum) then
         begin
         ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].Bind(1);
+        if ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].ShadowMap <> nil then
+          begin
+          ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].ShadowMap.Map.Textures[0].Bind(2);
+          ModuleManager.ModRenderer.LightShader.UniformI('UseShadow', 1);
+          end
+        else
+          ModuleManager.ModRenderer.LightShader.UniformI('UseShadow', 0);
         DrawFullscreenQuad;
+        ModuleManager.ModTexMng.ActivateTexUnit(2);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        ModuleManager.ModTexMng.ActivateTexUnit(0);
         ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].UnBind(1);
         end;
     ModuleManager.ModRenderer.LightShader.UnBind;

@@ -15,6 +15,7 @@ uniform vec2 TerrainSize;
 uniform float ShadowSize;
 uniform vec3 ShadowOffset;
 uniform int BlurSamples;
+uniform int UseSSAO;
 
 // IF [ EQ owe.shadows.sun 1 ]
 vec2 ProjectShadowVertex(vec3 V) {
@@ -63,8 +64,18 @@ void main(void) {
   // END
   factor = min(factor, vec3(1.0, 1.0, 1.0));
   gl_FragColor.rgb *= factor;
-  
+
+  // IF [ EQ owe.ssao 1 ]
+  if (UseSSAO == 1) {
+    vec4 ssaoColor = texelFetch2D(SSAOTexture, Coords, 0);
+    gl_FragColor.rgb += ssaoColor.a * gl_LightSource[0].ambient.rgb * (0.8 + 0.2 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)));
+  }
+  else
+    gl_FragColor.rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
+  // END
+  // IF [ NEQ owe.ssao 1 ]
   gl_FragColor.rgb += (0.3 + 0.7 * max(0.0, dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
+  // END
   vec4 v = (gl_ModelViewMatrix * vec4(Vertex, 1.0));
   vec3 Eye = normalize(-v.xyz);
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * vec4(gl_LightSource[0].position.xyz, 1.0) - v).xyz), normalize(gl_NormalMatrix * Normal.xyz)));

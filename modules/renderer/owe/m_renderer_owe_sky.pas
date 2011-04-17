@@ -78,12 +78,12 @@ begin
   fStarTexture := TTexture.Create;
   fStarTexture.FromFile('orcf-world-engine/scene/sky/stars.tga');
 
-  fTest := TLightSource.Create;
-  fTest.Energy := 2;
-  fTest.FalloffDistance := 10;
-  fTest.Color := Vector(1, 0, 0);
-  fTest.Position := Vector(160, 75, 160, 1);
-  TLight.Create(fTest);
+//   fTest := TLightSource.Create;
+//   fTest.Energy := 2;
+//   fTest.FalloffDistance := 10;
+//   fTest.Color := Vector(1, 0, 0);
+//   fTest.Position := Vector(160, 75, 160, 1);
+//   TLight.Create(fTest);
 
   fTest := TLightSource.Create;
   fTest.Energy := 1;

@@ -205,11 +205,11 @@ procedure TLightManager.QuicksortLights;
   begin
     if First >= Last then
       exit;
-    PivotID := (First + Last) div 2;
+    PivotID := Last;
     Pivot := fRegisteredLights[PivotID].fCalculatedStrength;
 
     i := First;
-    j := Last;
+    j := Last - 1;
 
     repeat
       while (fRegisteredLights[i].fCalculatedStrength >= Pivot) and (i < Last) do

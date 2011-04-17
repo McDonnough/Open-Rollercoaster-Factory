@@ -765,6 +765,7 @@ begin
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_NOTEQUAL, 0.0);
+    glDepthFunc(GL_LEQUAL);
     glDisable(GL_BLEND);
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -1306,6 +1307,14 @@ begin
   fWaterRefractAutoplants := GetConfVal('water.refract.autoplants') = '1';
 
   ModuleManager.ModShdMng.SetVar('owe.samples', fFSAASamples);
+  ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 0);
+  ModuleManager.ModShdMng.SetVar('owe.shadows.light', 0);
+  ModuleManager.ModShdMng.SetVar('owe.ssao', 0);
+  ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 0);
+  ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 0);
+  ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 0);
+  ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 0);
+  ModuleManager.ModShdMng.SetVar('owe.gamma', 0);
   if fUseSunShadows then
     ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 1);
   if fUseLightShadows then
@@ -1313,13 +1322,9 @@ begin
   if fUseScreenSpaceAmbientOcclusion then
     ModuleManager.ModShdMng.SetVar('owe.ssao', 1);
   if fShadowBlurSamples > 0 then
-    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1)
-  else
-    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 0);
+    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1);
   if fLightShadowBlurSamples > 0 then
-    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 1)
-  else
-    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 0);
+    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 1);
   if fTerrainTesselationDistance > 0 then
     ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 1);
   if fTerrainBumpmapDistance > 0 then

@@ -105,10 +105,10 @@ begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 1, 0, 1);
 
   glBegin(GL_QUADS);
-    glVertex3f(0, 0, 25.6); glTexCoord2f(0, 25.6);
-    glVertex3f(25.6, 0, 25.6); glTexCoord2f(25.6, 25.6);
-    glVertex3f(25.6, 0, 0); glTexCoord2f(25.6, 0);
-    glVertex3f(0, 0, 0); glTexCoord2f(0, 0);
+    glVertex3f(0, 1, 25.6); glTexCoord2f(0, 25.6);
+    glVertex3f(25.6, 1, 25.6); glTexCoord2f(25.6, 25.6);
+    glVertex3f(25.6, 1, 0); glTexCoord2f(25.6, 0);
+    glVertex3f(0, 1, 0); glTexCoord2f(0, 0);
   glEnd;
 end;
 

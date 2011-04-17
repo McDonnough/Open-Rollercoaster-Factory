@@ -16,12 +16,11 @@ void main(void) {
   vec2 FakeVertex = Offset + gl_MultiTexCoord0.xy;
   vec3 Vertex = vec3(Offset.x + gl_Vertex.x, mix(64.0, texture2D(TerrainMap, FakeVertex / TerrainSize + TOffset).b * 256.0, gl_Vertex.y), Offset.y + gl_Vertex.z);
   Source = Vertex;
-  vec3 OV = Vertex;
+  VData = Vertex;
   vec3 dir = Vertex - gl_LightSource[0].position.xyz;
   dir /= abs(dir.y);
   Vertex += (Vertex.y - ShadowOffset.y) * dir;
   Vertex -= ShadowOffset;
-  VData = OV;
   gl_Position = vec4((Vertex / ShadowSize).xz, 1.0, 1.0);
 }
 

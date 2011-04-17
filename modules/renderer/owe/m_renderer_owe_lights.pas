@@ -3,21 +3,27 @@ unit m_renderer_owe_lights;
 interface
 
 uses
-  SysUtils, Classes, DGLOpenGL, math, u_math, u_vectors, u_scene, m_renderer_owe_frustum;
+  SysUtils, Classes, DGLOpenGL, math, u_math, u_vectors, u_scene, m_renderer_owe_frustum,
+  m_renderer_owe_classes;
 
 type
   TLight = class
+    private
+      fCalculatedStrength: Single;
+      fShadowMap: TFBO;
     protected
       fInternalID: Integer;
       fHints: QWord;
       fLightSource: TLightSource;
     public
       property LightSource: TLightSource read fLightSource;
+      property ShadowMap: TFBO read fShadowMap;
       function Strength(Distance: Single): Single;
       function IsVisible(A: TFrustum): Boolean;
       function MaxLightingEffect: Single;
       procedure Bind(I: Integer);
       procedure Unbind(I: Integer);
+//       procedure CreateShadows(I: Integer);
       constructor Create(LS: TLightSource);
       destructor Free;
     end;
@@ -31,14 +37,22 @@ type
       destructor Free;
     end;
 
-  TLightManager = class
+  TLightManager = class(TThread)
+    protected
+      fCanWork, fWorking: Boolean;
+      fShadowBuffers: Array of TFBO;
+      fMaxShadowBuffers: Integer;
     public
       fRegisteredLights: Array of TLight;
       fSun: TSun;
+      procedure Sync;
+      procedure Execute; override;
       procedure SetSun(Sun: TSun);
       procedure AddLight(Light: TLight);
       procedure RemoveLight(Light: TLight);
-      destructor Free;
+      procedure QuicksortLights;
+      constructor Create;
+      procedure Free;
     end;
 
 implementation
@@ -54,7 +68,7 @@ end;
 
 function TLight.MaxLightingEffect: Single;
 const
-  LIGHT_MIN_CHANGE: Single = 0.01;
+  LIGHT_MIN_CHANGE: Single = 0.03;
 begin
   // 0.5774 = 1 / SQRT(3)
   Result := sqrt(Max(0.0, VecLength(LightSource.Color) * LightSource.DiffuseFactor * LightSource.Energy * 0.5774 - LIGHT_MIN_CHANGE) * LightSource.FalloffDistance * LightSource.FalloffDistance / LIGHT_MIN_CHANGE);
@@ -129,6 +143,82 @@ begin
 end;
 
 
+procedure TLightManager.Sync;
+begin
+  while fWorking do
+    sleep(1);
+end;
+
+procedure TLightManager.QuicksortLights;
+  procedure DoQuicksort(First, Last: Integer);
+    procedure Swap(X, Y: Integer);
+    var
+      Z: TLight;
+    begin
+      Z := fRegisteredLights[X];
+      fRegisteredLights[X] := fRegisteredLights[Y];
+      fRegisteredLights[Y] := Z;
+    end;
+  var
+    PivotID, i, j: Integer;
+    Pivot: Single;
+  begin
+    if First >= Last then
+      exit;
+    PivotID := (First + Last) div 2;
+    Pivot := fRegisteredLights[PivotID].fCalculatedStrength;
+
+    i := First;
+    j := Last - 1;
+
+    repeat
+      while (fRegisteredLights[i].fCalculatedStrength <= Pivot) and (i < Last) do
+        inc(i);
+
+      while (fRegisteredLights[j].fCalculatedStrength >= Pivot) and (j > First) do
+        dec(j);
+
+      if i < j then
+        Swap(i, j);
+    until
+      i >= j;
+    Swap(i, PivotID);
+
+    DoQuicksort(First, PivotID - 1);
+    DoQuicksort(PivotID + 1, Last);
+  end;
+begin
+  DoQuicksort(0, high(fRegisteredLights));
+end;
+
+procedure TLightManager.Execute;
+var
+  i: Integer;
+begin
+  fWorking := False;
+  fCanWork := False;
+  while not Terminated do
+    begin
+    if fCanWork then
+      begin
+      fCanWork := False;
+      fWorking := True;
+
+      for i := 0 to high(fRegisteredLights) do
+        fRegisteredLights[i].fCalculatedStrength := fRegisteredLights[i].Strength(VecLength(Vector3D(fRegisteredLights[i].LightSource.Position) - ModuleManager.ModCamera.ActiveCamera.Position));
+
+      QuicksortLights;
+
+      for i := 0 to Min(fMaxShadowBuffers - 1, high(fRegisteredLights)) do
+        fRegisteredLights[i].fShadowMap := fShadowBuffers[i];
+
+      fWorking := False;
+      end
+    else
+      sleep(1);
+    end;
+end;
+
 procedure TLightManager.SetSun(Sun: TSun);
 begin
   fSun := Sun;
@@ -136,29 +226,56 @@ end;
 
 procedure TLightManager.AddLight(Light: TLight);
 begin
+  Sync;
   SetLength(fRegisteredLights, length(fRegisteredLights) + 1);
   fRegisteredLights[high(fRegisteredLights)] := Light;
+  if length(fRegisteredLights) <= fMaxShadowBuffers then
+    begin
+    setLength(fShadowBuffers, length(fShadowBuffers) + 1);
+    fShadowBuffers[high(fShadowBuffers)] := TFBO.Create(3 * Round(256 * ModuleManager.ModRenderer.LightShadowBufferSamples), 2 * Round(256 * ModuleManager.ModRenderer.LightShadowBufferSamples), true);
+    fShadowBuffers[high(fShadowBuffers)].AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);
+    fShadowBuffers[high(fShadowBuffers)].Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+    fShadowBuffers[high(fShadowBuffers)].Unbind;
+    end;
 end;
 
 procedure TLightManager.RemoveLight(Light: TLight);
 var
-  i: Integer;
+  i, j: Integer;
 begin
+  Sync;
   for i := 0 to high(fRegisteredLights) do
     if fRegisteredLights[i] = Light then
       begin
       fRegisteredLights[i] := fRegisteredLights[high(fRegisteredLights)];
       SetLength(fRegisteredLights, length(fRegisteredLights) - 1);
-      exit;
+      if length(fRegisteredLights) < fMaxShadowBuffers then
+        begin
+        fShadowBuffers[high(fShadowBuffers)].Free;
+        setLength(fShadowBuffers, length(fShadowBuffers) - 1);
+        for j := 0 to high(fRegisteredLights) do
+          fRegisteredLights[j].fShadowMap := fShadowBuffers[j];
+        end;
+      break;
       end;
 end;
 
-destructor TLightManager.Free;
+constructor TLightManager.Create;
+begin
+  fMaxShadowBuffers := ModuleManager.ModRenderer.MaxShadowPasses;
+end;
+
+procedure TLightManager.Free;
+var
+  i: Integer;
 begin
   while length(fRegisteredLights) > 0 do
     fRegisteredLights[0].Free;
   if fSun <> nil then
     fSun.Free;
+  Terminate;
+  Sync;
+  inherited Free;
 end;
 
 end.

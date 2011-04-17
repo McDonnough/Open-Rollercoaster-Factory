@@ -13,11 +13,20 @@ type
     public
       property Time: Single read fTime write setTime;
       procedure LoadDefaults;
+      procedure Advance;
       constructor Create;
       destructor Free;
     end;
 
 implementation
+
+uses
+  Main;
+
+procedure TSky.Advance;
+begin
+  Time := Time + FPSDisplay.MS / 50;
+end;
 
 procedure TSky.SetTime(T: Single);
 begin
@@ -30,7 +39,8 @@ end;
 
 procedure TSky.LoadDefaults;
 begin
-  fTime := 86400 / 4 * 1.3;
+//   fTime := 86400 / 4 * 1.3;
+  fTime := 86400 / 4 * 3;
 end;
 
 constructor TSky.Create;

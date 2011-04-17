@@ -20,7 +20,7 @@ type
       fRendererObjects: TRObjects;
       fRendererWater: TRWater;
       fLightManager: TLightManager;
-      fGBuffer, fHDRBuffer, fHDRBuffer2, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer, fTmpShadowBuffer: TFBO;
+      fGBuffer, fHDRBuffer, fHDRBuffer2, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer: TFBO;
       fFSAASamples: Integer;
       fReflectionRealtimeMinimum, fReflectionRealtimeDistanceExponent: Single;
       fReflectionRenderTerrain, fReflectionRenderAutoplants, fReflectionRenderObjects, fReflectionRenderParticles: Boolean;
@@ -32,11 +32,11 @@ type
       fLODDistanceOffset, fLODDistanceFactor, fMotionBlurStrength: Single;
       fReflectionRenderDistanceOffset, fReflectionRenderDistanceFactor: Single;
       fReflectionTerrainDetailDistance, fReflectionTerrainTesselationDistance, fReflectionTerrainBumpmapDistance: Single;
-      fShadowBufferSamples: Single;
+      fShadowBufferSamples, fLightShadowBufferSamples: Single;
       fSubdivisionCuts: Integer;
       fSubdivisionDistance: Single;
       fBufferSizeX, fBufferSizeY: Integer;
-      fSSAOSamples, fShadowBlurSamples: Integer;
+      fSSAOSamples, fShadowBlurSamples, fLightShadowBlurSamples: Integer;
       fTmpBloomBuffer: TFBO;
       fMaxShadowPasses: Integer;
       fAutoplantCount: Integer;
@@ -113,6 +113,8 @@ type
       property WaterReflectionBufferSamples: Single read fWaterReflectionBufferSamples;
       property ShadowBufferSamples: Single read fShadowBufferSamples;
       property ShadowBlurSamples: Integer read fShadowBlurSamples;
+      property LightShadowBufferSamples: Single read fLightShadowBufferSamples;
+      property LightShadowBlurSamples: Integer read fLightShadowBlurSamples;
       property SSAOSamples: Integer read fSSAOSamples;
       property LODDistanceOffset: Single read fLODDistanceOffset;
       property LODDistanceFactor: Single read fLODDistanceFactor;
@@ -322,16 +324,6 @@ begin
   else
     fSunShadowBuffer := nil;
 
-  if UseLightShadows then
-    begin
-    fTmpShadowBuffer := TFBO.Create(Round(1536 * ShadowBufferSamples), Round(1024 * ShadowBufferSamples), true);
-    fTmpShadowBuffer.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
-    fTmpShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
-    fTmpShadowBuffer.Unbind;
-    end
-  else
-    fTmpShadowBuffer := nil;
-
   fLightManager := TLightManager.Create;
   fRendererCamera := TRCamera.Create;
   fRendererSky := TRSky.Create;
@@ -466,8 +458,6 @@ begin
     fMotionBlurBuffer.Free;
   if fSunShadowBuffer <> nil then
     fSunShadowBuffer.Free;
-  if fTmpShadowBuffer <> nil then
-    fTmpShadowBuffer.Free;
   fHDRBuffer.Free;
   fHDRBuffer2.Free;
 
@@ -1203,6 +1193,8 @@ begin
     SetConfVal('shadows', '0');
     SetConfVal('shadows.samples', '1');
     SetConfVal('shadows.blursamples', '2');
+    SetConfVal('shadows.lights.samples', '1');
+    SetConfVal('shadows.lights.blursamples', '2');
     SetConfVal('shadows.maxpasses', '2');
     SetConfVal('bloom', '0.0');
     SetConfVal('focalblur', '0');
@@ -1259,6 +1251,8 @@ begin
   fShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.samples'), 1);
   fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.blursamples'), 2);
   fMaxShadowPasses := StrToIntWD(GetConfVal('shadows.maxpasses'), 2);
+  fLightShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.lights.samples'), 1);
+  fLightShadowBlurSamples := StrToIntWD(GetConfVal('shadows.lights.blursamples'), 2);
   fMotionBlurStrength := StrToFloatWD(GetConfVal('motionblur.strength'), 0.05);
   fTerrainTesselationDistance := StrToFloatWD(GetConfVal('terrain.tesselationdistance'), 15);
   fTerrainDetailDistance := StrToFloatWD(GetConfVal('terrain.detaildistance'), 60);
@@ -1291,6 +1285,8 @@ begin
     ModuleManager.ModShdMng.SetVar('owe.ssao', 1);
   if fShadowBlurSamples > 0 then
     ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1);
+  if fLightShadowBlurSamples > 0 then
+    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 1);
   if fTerrainTesselationDistance > 0 then
     ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 1);
   if fTerrainBumpmapDistance > 0 then

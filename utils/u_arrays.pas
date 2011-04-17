@@ -143,7 +143,8 @@ procedure TRow.Sort;
           Swap(fData[i], fData[j]);
       until
         i >= j;
-      Swap(fData[i], fData[Right]);
+      if fData[i] > fData[Right] then
+        Swap(fData[i], fData[Right]);
       Splitter := i;
     end;
   begin

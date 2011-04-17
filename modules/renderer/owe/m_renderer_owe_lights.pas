@@ -209,23 +209,24 @@ procedure TLightManager.QuicksortLights;
     Pivot := fRegisteredLights[PivotID].fCalculatedStrength;
 
     i := First;
-    j := Last - 1;
+    j := Last;
 
     repeat
-      while (fRegisteredLights[i].fCalculatedStrength <= Pivot) and (i < Last) do
+      while (fRegisteredLights[i].fCalculatedStrength >= Pivot) and (i < Last) do
         inc(i);
 
-      while (fRegisteredLights[j].fCalculatedStrength >= Pivot) and (j > First) do
+      while (fRegisteredLights[j].fCalculatedStrength <= Pivot) and (j > First) do
         dec(j);
 
       if i < j then
         Swap(i, j);
     until
       i >= j;
-    Swap(i, PivotID);
+    if fRegisteredLights[i].fCalculatedStrength < Pivot then
+      Swap(i, PivotID);
 
-    DoQuicksort(First, PivotID - 1);
-    DoQuicksort(PivotID + 1, Last);
+    DoQuicksort(First, i - 1);
+    DoQuicksort(i + 1, Last);
   end;
 begin
   DoQuicksort(0, high(fRegisteredLights));

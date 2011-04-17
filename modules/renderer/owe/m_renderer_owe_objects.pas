@@ -26,6 +26,7 @@ type
     protected
       fManagedObjects: Array of TManagedObject;
       fOpaqueShadowShader, fTransparentShadowShader: TShader;
+      fOpaqueLightShadowShader, fTransparentLightShadowShader: TShader;
       fOpaqueShader, fTransparentShader: TShader;
       fTransparentMaterialShader: TShader;
       fLastGeoObject: TGeoObject;
@@ -38,12 +39,14 @@ type
     public
       CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
-      ShadowMode, MaterialMode: Boolean;
+      ShadowMode, MaterialMode, LightShadowMode: Boolean;
       property OpaqueShader: TShader read fOpaqueShader;
       property OpaqueShadowShader: TShader read fOpaqueShadowShader;
+      property OpaqueLightShadowShader: TShader read fOpaqueLightShadowShader;
       property TransparentShader: TShader read fTransparentShader;
       property TransparentMaterialShader: TShader read fTransparentMaterialShader;
       property TransparentShadowShader: TShader read fTransparentShadowShader;
+      property TransparentLightShadowShader: TShader read fTransparentLightShadowShader;
       procedure AddObject(Event: String; Data, Result: Pointer);
       procedure DeleteObject(Event: String; Data, Result: Pointer);
       procedure AddMesh(Event: String; Data, Result: Pointer);
@@ -194,7 +197,7 @@ begin
 
   BindMaterial(Mesh.GeoMesh.Material);
 
-  if not (MaterialMode or ShadowMode) then
+  if not (MaterialMode or ShadowMode or LightShadowMode) then
     if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
       Mesh.Reflection.Map.Textures[0].Bind(3)
     else
@@ -228,7 +231,9 @@ begin
       if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
         if fManagedObjects[i].Meshes[j].Transparent then
           begin
-          if ShadowMode then
+          if LightShadowMode then
+            fCurrentShader := fTransparentLightShadowShader
+          else if ShadowMode then
             fCurrentShader := fTransparentShadowShader
           else if MaterialMode then
             fCurrentShader := fTransparentMaterialShader
@@ -238,7 +243,7 @@ begin
             fCurrentShader.UniformF('MaskOffset', Round(16 * Random) / 16, Round(16 * Random) / 16);
             end;
           fCurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
-          if not ShadowMode then
+          if not (ShadowMode or LightShadowMode) then
             begin
             // Render back sides first
             ModuleManager.ModRenderer.InvertFrontFace;
@@ -262,10 +267,12 @@ begin
       if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
         if not fManagedObjects[i].Meshes[j].Transparent then
           begin
-          if not ShadowMode then
-            fCurrentShader := fOpaqueShader
+          if ShadowMode then
+            fCurrentShader := fOpaqueShadowShader
+          else if LightShadowMode then
+            fCurrentShader := fOpaqueLightShadowShader
           else
-            fCurrentShader := fOpaqueShadowShader;
+            fCurrentShader := fOpaqueShader;
           Render(fManagedObjects[i].Meshes[j]);
           end;
 end;
@@ -337,6 +344,10 @@ constructor TRObjects.Create;
 begin
   writeln('Hint: Initializing object renderer');
 
+  MaterialMode := False;
+  ShadowMode := False;
+  LightShadowMode := False;
+
   EventManager.AddCallback('TGeoObject.Created', @AddObject);
   EventManager.AddCallback('TGeoObject.Deleted', @DeleteObject);
   EventManager.AddCallback('TGeoObject.AddedMesh', @AddMesh);
@@ -348,6 +359,11 @@ begin
 
   fTransparentShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadow.vs', 'orcf-world-engine/scene/objects/shadow-transparent.fs');
   fTransparentShadowShader.UniformI('Texture', 0);
+
+  fOpaqueLightShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadowLight.vs', 'orcf-world-engine/scene/objects/shadowLight-opaque.fs');
+
+  fTransparentLightShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadowLight.vs', 'orcf-world-engine/scene/objects/shadowLight-transparent.fs');
+  fTransparentLightShadowShader.UniformI('Texture', 0);
 
   fOpaqueShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-opaque.fs');
   fOpaqueShader.UniformI('Texture', 0);
@@ -416,6 +432,13 @@ destructor TRObjects.Free;
 begin
   fTest.Free;
   fReflectionPass.Free;
+  fOpaqueLightShadowShader.Free;
+  fOpaqueShader.Free;
+  fOpaqueShadowShader.Free;
+  fTransparentLightShadowShader.Free;
+  fTransparentMaterialShader.Free;
+  fTransparentShader.Free;
+  fTransparentShadowShader.Free;
   EventManager.RemoveCallback(@AddObject);
   EventManager.RemoveCallback(@DeleteObject);
   EventManager.RemoveCallback(@AddMesh);

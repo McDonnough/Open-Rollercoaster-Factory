@@ -68,6 +68,11 @@ begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader := ModuleManager.ModRenderer.RTerrain.LightShadowPassShader;
   ModuleManager.ModRenderer.RTerrain.BorderEnabled := false;
   ModuleManager.ModRenderer.RTerrain.Render;
+
+  ModuleManager.ModRenderer.RObjects.LightShadowMode := True;
+  ModuleManager.ModRenderer.RObjects.RenderOpaque;
+  ModuleManager.ModRenderer.RObjects.RenderTransparent;
+  ModuleManager.ModRenderer.RObjects.LightShadowMode := False;
 end;
 
 procedure TLight.CreateShadows;

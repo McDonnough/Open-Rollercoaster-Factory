@@ -37,7 +37,7 @@ type
       fTerrainEditorIsOpen: Boolean;
       fTerrainMap: TTexture;
       fCanWork, fWorking: Boolean;
-      fGeometryPassShader, fSimpleGeometryPassShader, fShadowPassShader: TShader;
+      fGeometryPassShader, fLightShadowPassShader, fSimpleGeometryPassShader, fShadowPassShader: TShader;
       fRawVBO, fFineVBO, fHDVBO, fBorderVBO, fOuterHillVBO: TVBO;
       fXBlocks, fYBlocks: Integer;
       procedure Execute; override;
@@ -54,6 +54,7 @@ type
       property HDVBO: TVBO read fHDVBO;
       property GeometryPassShader: TShader read fGeometryPassShader;
       property ShadowPassShader: TShader read fShadowPassShader;
+      property LightShadowPassShader: TShader read fLightShadowPassShader;
       procedure CheckVisibility;
       procedure Sync;
       procedure Render;
@@ -222,11 +223,11 @@ begin
   CurrentShader.Bind;
   if CurrentShader = fGeometryPassShader then
     begin
-    fGeometryPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance);
-    fGeometryPassShader.UniformF('TerrainBumpmapDistance', ModuleManager.ModRenderer.CurrentTerrainBumpmapDistance);
+    CurrentShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance);
+    CurrentShader.UniformF('TerrainBumpmapDistance', ModuleManager.ModRenderer.CurrentTerrainBumpmapDistance);
     end
-  else if CurrentShader = fShadowPassShader then
-    fShadowPassShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance);
+  else if (CurrentShader = fShadowPassShader) or (CurrentShader = fLightShadowPassShader) then
+    CurrentShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance);
 
   CurrentShader.UniformF('Camera', ModuleManager.ModCamera.ActiveCamera.Position.x, ModuleManager.ModCamera.ActiveCamera.Position.z);
    if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
@@ -248,7 +249,7 @@ begin
     CurrentShader.UniformF('Max', 15000, 15000);
     end;
   for i := 0 to high(Blocks) do
-    if ((Blocks[BlockIDs[i]].Visible) and (CurrentShader = fGeometryPassShader)) or ((Blocks[BlockIDs[i]].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
+    if ((Blocks[BlockIDs[i]].Visible) and ((CurrentShader = fGeometryPassShader) or (CurrentShader = fLightShadowPassShader))) or ((Blocks[BlockIDs[i]].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
       if Blocks[BlockIDs[i]].MinHeight = Blocks[BlockIDs[i]].MaxHeight then
         Blocks[BlockIDs[i]].RenderOneFace
       else if VecLengthNoRoot(Blocks[BlockIDs[i]].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (ModuleManager.ModRenderer.CurrentTerrainDetailDistance) * (4 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance) then
@@ -824,6 +825,9 @@ begin
   fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainShadow.vs', 'orcf-world-engine/scene/terrain/terrainShadow.fs');
   fShadowPassShader.UniformI('TerrainMap', 0);
 
+  fLightShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainLightShadow.vs', 'orcf-world-engine/scene/terrain/terrainLightShadow.fs');
+  fLightShadowPassShader.UniformI('TerrainMap', 0);
+
   fFineVBO := TVBO.Create(34 * 34 * 4, GL_T2F_V3F, GL_QUADS);
   for i := 0 to 33 do
     for j := 0 to 33 do
@@ -896,6 +900,7 @@ begin
   EventManager.RemoveCallback(@UpdateCollection);
   Terminate;
   Sync;
+  fLightShadowPassShader.Free;
   fShadowPassShader.Free;
   fSimpleGeometryPassShader.Free;
   fGeometryPassShader.Free;

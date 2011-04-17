@@ -4,26 +4,27 @@ interface
 
 uses
   SysUtils, Classes, DGLOpenGL, math, u_math, u_vectors, u_scene, m_renderer_owe_frustum,
-  m_renderer_owe_classes;
+  m_renderer_owe_classes, m_renderer_owe_cubemaps;
 
 type
   TLight = class
     private
       fCalculatedStrength: Single;
-      fShadowMap: TFBO;
+      fShadowMap: TShadowCubeMap;
     protected
       fInternalID: Integer;
       fHints: QWord;
       fLightSource: TLightSource;
     public
       property LightSource: TLightSource read fLightSource;
-      property ShadowMap: TFBO read fShadowMap;
+      property ShadowMap: TShadowCubeMap read fShadowMap;
       function Strength(Distance: Single): Single;
       function IsVisible(A: TFrustum): Boolean;
       function MaxLightingEffect: Single;
       procedure Bind(I: Integer);
       procedure Unbind(I: Integer);
-//       procedure CreateShadows(I: Integer);
+      procedure RenderShadowPass;
+      procedure CreateShadows;
       constructor Create(LS: TLightSource);
       destructor Free;
     end;
@@ -40,17 +41,19 @@ type
   TLightManager = class(TThread)
     protected
       fCanWork, fWorking: Boolean;
-      fShadowBuffers: Array of TFBO;
+      fShadowBuffers: Array of TShadowCubeMap;
       fMaxShadowBuffers: Integer;
     public
       fRegisteredLights: Array of TLight;
       fSun: TSun;
+      property Working: Boolean read fWorking write fCanWork;
       procedure Sync;
       procedure Execute; override;
       procedure SetSun(Sun: TSun);
       procedure AddLight(Light: TLight);
       procedure RemoveLight(Light: TLight);
       procedure QuicksortLights;
+      procedure CreateShadows;
       constructor Create;
       procedure Free;
     end;
@@ -59,6 +62,38 @@ implementation
 
 uses
   m_varlist;
+
+procedure TLight.RenderShadowPass;
+begin
+  ModuleManager.ModRenderer.RTerrain.CurrentShader := ModuleManager.ModRenderer.RTerrain.LightShadowPassShader;
+  ModuleManager.ModRenderer.RTerrain.BorderEnabled := false;
+  ModuleManager.ModRenderer.RTerrain.Render;
+end;
+
+procedure TLight.CreateShadows;
+var
+  tmpMaxRenderDistance: Single;
+  tmpViewPoint: TVector3D;
+begin
+  if ShadowMap <> nil then
+    begin
+    tmpMaxRenderDistance := ModuleManager.ModRenderer.MaxRenderDistance;
+    tmpViewPoint := ModuleManager.ModRenderer.ViewPoint;
+    
+    ModuleManager.ModRenderer.MaxRenderDistance := MaxLightingEffect;
+    ModuleManager.ModRenderer.ViewPoint := Vector3D(LightSource.Position);
+
+    Bind(1);
+
+    ShadowMap.RenderProcedure := @RenderShadowPass;
+    ShadowMap.Render(Vector3D(LightSource.Position));
+
+    Unbind(1);
+
+    ModuleManager.ModRenderer.ViewPoint := tmpViewPoint;
+    ModuleManager.ModRenderer.MaxRenderDistance := tmpMaxRenderDistance;
+    end;
+end;
 
 function TLight.Strength(Distance: Single): Single;
 begin
@@ -209,19 +244,33 @@ begin
 
       QuicksortLights;
 
-      for i := 0 to Min(fMaxShadowBuffers - 1, high(fRegisteredLights)) do
-        fRegisteredLights[i].fShadowMap := fShadowBuffers[i];
+      for i := 0 to high(fRegisteredLights) do
+        if i < fMaxShadowBuffers then
+          fRegisteredLights[i].fShadowMap := fShadowBuffers[i]
+        else
+          fRegisteredLights[i].fShadowMap := nil;
 
       fWorking := False;
       end
     else
       sleep(1);
     end;
+  writeln('Hint: Terminated light manager thread');
 end;
 
 procedure TLightManager.SetSun(Sun: TSun);
 begin
   fSun := Sun;
+end;
+
+procedure TLightManager.CreateShadows;
+var
+  i: Integer;
+begin
+  ModuleManager.ModRenderer.Frustum.Push;
+  for i := 0 to Min(fMaxShadowBuffers - 1, high(fRegisteredLights)) do
+    fRegisteredLights[i].CreateShadows;
+  ModuleManager.ModRenderer.Frustum.Pop;
 end;
 
 procedure TLightManager.AddLight(Light: TLight);
@@ -232,10 +281,7 @@ begin
   if length(fRegisteredLights) <= fMaxShadowBuffers then
     begin
     setLength(fShadowBuffers, length(fShadowBuffers) + 1);
-    fShadowBuffers[high(fShadowBuffers)] := TFBO.Create(3 * Round(256 * ModuleManager.ModRenderer.LightShadowBufferSamples), 2 * Round(256 * ModuleManager.ModRenderer.LightShadowBufferSamples), true);
-    fShadowBuffers[high(fShadowBuffers)].AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);
-    fShadowBuffers[high(fShadowBuffers)].Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
-    fShadowBuffers[high(fShadowBuffers)].Unbind;
+    fShadowBuffers[high(fShadowBuffers)] := TShadowCubeMap.Create(Round(256 * ModuleManager.ModRenderer.LightShadowBufferSamples), Round(256 * ModuleManager.ModRenderer.LightShadowBufferSamples), GL_RGBA16F_ARB);
     end;
 end;
 
@@ -262,6 +308,7 @@ end;
 
 constructor TLightManager.Create;
 begin
+  inherited Create(false);
   fMaxShadowBuffers := ModuleManager.ModRenderer.MaxShadowPasses;
 end;
 

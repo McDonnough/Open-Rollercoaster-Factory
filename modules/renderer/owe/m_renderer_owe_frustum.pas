@@ -8,12 +8,17 @@ uses
 type
   TFrustum = class
     protected
-      Frustum : array[0..5,0..3] of Single;
+      Frustum : array[0..5, 0..3] of Single;
+      FrustumStack: array[0..7, 0..5, 0..3] of Single;
+      StackPointer: Integer;
     public
       function IsPointWithin(pX, pY, pZ: Single): Boolean;
       function IsSphereWithin(pX, pY, pZ, Radius: Single): Boolean;
       function IsBoxWithin(pX, pY, pZ, pB, pH, pT: Single): Boolean;
       procedure Calculate;
+      procedure Push;
+      procedure Pop;
+      constructor Create;
     end;
 
 implementation
@@ -44,12 +49,35 @@ begin
   pFrustum.Frustum[pPlane][D] := pFrustum.Frustum[pPlane][D] / Magnitude;
 end;
 
+procedure TFrustum.Push;
+var
+  i, j: Integer;
+begin
+  for i := 0 to 5 do
+    for j := 0 to 3 do
+      FrustumStack[StackPointer, i, j] := Frustum[i, j];
+
+  Inc(StackPointer);
+end;
+
+procedure TFrustum.Pop;
+var
+  i, j: Integer;
+begin
+  Dec(StackPointer);
+
+  for i := 0 to 5 do
+    for j := 0 to 3 do
+      Frustum[i, j] := FrustumStack[StackPointer, i, j];
+
+  ModuleManager.ModRenderer.RTerrain.CheckVisibility;
+  ModuleManager.ModRenderer.RObjects.CheckVisibility;
+end;
+
 function TFrustum.IsPointWithin(pX, pY, pZ: Single): Boolean;
 var
    i : Integer;
 begin
-//   if fInterface.Options.Items['all:frustumcull'] = 'off' then
-//     exit(true);
   Result := true;
   for i := 0 to 5 do
     if (Frustum[i][A]*pX + Frustum[i][B]*pY +
@@ -65,8 +93,6 @@ var
   i : Integer;
   ObjectShadowQuad: TQuad;
 begin
-//   if fInterface.Options.Items['all:frustumcull'] = 'off' then
-//     exit(true);
   Result := true;
   if Radius * Radius > VecLengthNoRoot(Vector(PX, PY, PZ) - ModuleManager.ModCamera.ActiveCamera.Position) then
     exit;
@@ -83,8 +109,6 @@ function TFrustum.IsBoxWithin(pX, pY, pZ, pB, pH, pT: Single): Boolean;
 var
   i : Integer;
 begin
-//   if fInterface.Options.Items['all:frustumcull'] = 'off' then
-//     exit(true);
   Result := true;
   for i := 0 to 5 do
     begin
@@ -192,6 +216,11 @@ begin
 
   ModuleManager.ModRenderer.RTerrain.CheckVisibility;
   ModuleManager.ModRenderer.RObjects.CheckVisibility;
+end;
+
+constructor TFrustum.Create;
+begin
+  StackPointer := 0;
 end;
 
 end.

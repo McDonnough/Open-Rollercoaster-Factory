@@ -6,6 +6,8 @@ uniform sampler2D GeometryTexture;
 uniform sampler2D NormalTexture;
 uniform sampler2D ShadowTexture;
 uniform sampler2D MaterialTexture;
+uniform int UseShadow;
+uniform int Samples;
 
 // IF [ EQ owe.shadows.light 1 ]
 vec2 ProjectShadowVertex(vec3 vector) {
@@ -43,6 +45,29 @@ void main(void) {
   vec3 factor = vec3(2.0, 2.0, 2.0);
 
   float attenuation = gl_LightSource[1].diffuse.a * (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a / (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a + dot(Light, Light)));
+
+// IF [ EQ owe.shadows.light 1 ]
+  if (UseShadow == 1) {
+  // IF [ EQ owe.shadows.light.blur 0 ]
+    vec4 ShadowColor = texture2D(ShadowTexture, ProjectShadowVertex(-Light));
+    if (dot(Light, Light) > ShadowColor.a * ShadowColor.a * 1.05 * 1.05)
+      factor -= 2.0 * ShadowColor.rgb;
+  // END
+  // IF [ EQ owe.shadows.light.blur 1 ]
+    int SampleCount = (Samples * 2 + 1) * (Samples * 2 + 1);
+    vec3 bvrl = mix(0.05 * normalize(cross(-Light, vec3(0.0, 1.0, 0.0))), vec3(1.0, 0.0, 0.0), clamp(50.0 * abs(dot(normalize(Light), vec3(0.0, 1.0, 0.0))) - 49.0, 0.0, 1.0));
+    vec3 bvud = 0.05 * normalize(cross(-Light, bvrl));
+    for (int i = -Samples; i <= Samples; i++)
+      for (int j = -Samples; j <= Samples; j++) {
+        vec4 ShadowColor = texture2D(ShadowTexture, ProjectShadowVertex(normalize(-Light) + i * bvrl + j * bvud));
+        if (dot(Light, Light) > ShadowColor.a * ShadowColor.a * 1.05 * 1.05)
+          factor -= 2.0 * ShadowColor.rgb / SampleCount;
+      }
+
+  // END
+  }
+// END
+
 
   factor = min(factor, vec3(1.0, 1.0, 1.0));
   gl_FragColor.rgb *= factor * attenuation;

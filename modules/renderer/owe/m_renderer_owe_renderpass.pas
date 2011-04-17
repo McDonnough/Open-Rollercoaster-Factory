@@ -3,7 +3,7 @@ unit m_renderer_owe_renderpass;
 interface
 
 uses
-  SysUtils, Classes, m_renderer_owe_classes, m_renderer_owe_lights, m_shdmng_class, m_texmng_class, u_vectors, u_graphics, u_scene,
+  SysUtils, Classes, m_renderer_owe_classes, m_shdmng_class, m_texmng_class, u_vectors, u_graphics, u_scene,
   DGLOpenGL;
 
 type
@@ -27,7 +27,7 @@ type
 implementation
 
 uses
-  m_varlist, m_renderer_owe, g_park;
+  m_varlist, m_renderer_owe, g_park, m_renderer_owe_lights;
 
 procedure TRenderPass.Render;
   procedure DrawFullscreenQuad;

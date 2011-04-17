@@ -371,6 +371,7 @@ begin
   fLightShader.UniformI('NormalTexture', 1);
   fLightShader.UniformI('ShadowTexture', 2);
   fLightShader.UniformI('MaterialTexture', 3);
+  fLightShader.UniformI('Samples', LightShadowBlurSamples);
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
@@ -663,6 +664,10 @@ begin
 //   RTerrain.CheckVisibility;
 //   RObjects.CheckVisibility;
 
+  // Run some threads
+  if UseLightShadows then
+    LightManager.Working := True;
+
   // Geometry pass
 
   // Opaque parts only
@@ -780,13 +785,27 @@ begin
     fSunShadowBuffer.Unbind;
     end;
 
+  if UseLightShadows then
+    begin
+    glClearColor(0.0, 0.0, 0.0, 500.0);
+    glClearDepth(1.0);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_NOTEQUAL, 0.0);
+    glDisable(GL_BLEND);
+    glDepthFunc(GL_LEQUAL);
+    LightManager.Sync;
+    LightManager.CreateShadows;
+    end;
+
   // Lighting pass
 
   LightBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
+
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
 
     RTerrain.TerrainMap.Bind(4);
 
@@ -815,7 +834,17 @@ begin
       if fLightManager.fRegisteredLights[i].IsVisible(fFrustum) then
         begin
         fLightManager.fRegisteredLights[i].Bind(1);
+        if fLightManager.fRegisteredLights[i].ShadowMap <> nil then
+          begin
+          fLightManager.fRegisteredLights[i].ShadowMap.Map.Textures[0].Bind(2);
+          fLightShader.UniformI('UseShadow', 1);
+          end
+        else
+          fLightShader.UniformI('UseShadow', 0);
         DrawFullscreenQuad;
+        ModuleManager.ModTexMng.ActivateTexUnit(2);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        ModuleManager.ModTexMng.ActivateTexUnit(0);
         fLightManager.fRegisteredLights[i].UnBind(1);
         end;
     fLightShader.UnBind;
@@ -1284,9 +1313,13 @@ begin
   if fUseScreenSpaceAmbientOcclusion then
     ModuleManager.ModShdMng.SetVar('owe.ssao', 1);
   if fShadowBlurSamples > 0 then
-    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1);
+    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1)
+  else
+    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 0);
   if fLightShadowBlurSamples > 0 then
-    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 1);
+    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 1)
+  else
+    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 0);
   if fTerrainTesselationDistance > 0 then
     ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 1);
   if fTerrainBumpmapDistance > 0 then

@@ -11,7 +11,10 @@ uniform ivec2 ScreenSize;
 
 void main(void) {
   float value = 0.0;
+
+  // IF [ EQ owe.ssao.indirectlighting 1 ]
   vec3 finalEmission = vec3(0.0, 0.0, 0.0);
+  // END
 
   vec4 Vertex = texture2D(GeometryTexture, gl_FragCoord.xy / ScreenSize);
   vec3 Normal = texture2D(NormalTexture, gl_FragCoord.xy / ScreenSize).xyz;
@@ -28,13 +31,19 @@ void main(void) {
       vec3 dir = Dest - Vertex.xyz;
       float distfactor = pow(2.7183, -0.4 * length(dir));
       value += 1.0 - max(0.0, dot(normalize(dir), Normal)) * distfactor;
-
+      // IF [ EQ owe.ssao.indirectlighting 1 ]
       vec4 Emission = texture2D(EmissionTexture, coord);
       finalEmission += 2.0 * Emission.rgb * Emission.a * Emission.a / (Emission.a * Emission.a + dot(dir, dir)) * max(0.0, dot(normalize(dir), Normal));
+      // END
     }
   }
 
   value /= Samples;
+  // IF [ EQ owe.ssao.indirectlighting 1 ]
   finalEmission /= Samples;
   gl_FragColor = vec4(finalEmission, value);
+  // END
+  // IF [ NEQ owe.ssao.indirectlighting 1 ]
+  gl_FragColor = vec4(0.0, 0.0, 0.0, value);
+  // END
 }

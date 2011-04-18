@@ -15,7 +15,7 @@ type
       fReflectionRenderTerrain, fReflectionRenderAutoplants, fReflectionRenderObjects, fReflectionRenderParticles: TCheckBox;
       fReflectionRenderDistanceFactor, fReflectionRenderDistanceOffset: TSlider;
       fReflectionRealtimeUpdateInterval, fReflectionEnvMapUpdateInterval: TSlider;
-      fSSAO: TCheckBox;
+      fSSAO, fSSAOIL: TCheckBox;
       fSSAOSamples: TSlider;
       fSSAORings: TSlider;
       fUseSunShadows, fUseLightShadows: TCheckBox;
@@ -450,6 +450,25 @@ begin
     Height := 32;
     Checked := ModuleManager.ModRenderer.UseScreenSpaceAmbientOcclusion;
     end;
+  with TLabel.Create(fEffectPanel) do
+    begin
+    Top := 24;
+    Left := 378;
+    Width := 200;
+    Height := 32;
+    Size := 16;
+    Caption := 'Indirect Lighting (only when SSAO enabled)';
+    end;
+  fSSAOIL := TCheckBox.Create(fEffectPanel);
+  with fSSAOIL do
+    begin
+    Top := 24;
+    Left := 338;
+    Width := 32;
+    Height := 32;
+    Checked := ModuleManager.ModRenderer.UseScreenSpaceIndirectLighting;
+    end;
+
   with TLabel.Create(fEffectPanel) do
     begin
     Top := 56;

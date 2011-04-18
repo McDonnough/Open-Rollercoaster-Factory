@@ -27,7 +27,7 @@ type
       fReflectionUpdateInterval: Integer;
       fReflectionSize, fEnvMapSize: Integer;
       fUseSunShadows, fUseLightShadows, fUseSunRays, fUseRefractions: Boolean;
-      fUseScreenSpaceAmbientOcclusion, fUseMotionBlur, fUseFocalBlur: Boolean;
+      fUseScreenSpaceAmbientOcclusion, fUseMotionBlur, fUseFocalBlur, fUseScreenSpaceIndirectLighting: Boolean;
       fBloomFactor: Single;
       fLODDistanceOffset, fLODDistanceFactor, fMotionBlurStrength: Single;
       fReflectionRenderDistanceOffset, fReflectionRenderDistanceFactor: Single;
@@ -110,6 +110,7 @@ type
       property UseFocalBlur: Boolean read fUseFocalBlur;
       property UseRefractions: Boolean read fUseRefractions;
       property UseScreenSpaceAmbientOcclusion: Boolean read fUseScreenSpaceAmbientOcclusion;
+      property UseScreenSpaceIndirectLighting: Boolean read fUseScreenSpaceIndirectLighting;
       property UseLensFlare: Boolean read fUseLensFlare;
       property WaterReflectionBufferSamples: Single read fWaterReflectionBufferSamples;
       property ShadowBufferSamples: Single read fShadowBufferSamples;
@@ -1269,6 +1270,7 @@ begin
     SetConfVal('reflections.updateinterval', '4');
     SetConfVal('reflections.environmentmap.interval', '200');
     SetConfVal('ssao', '0');
+    SetConfVal('ssao.indirectlighting', '0');
     SetConfVal('ssao.samples', '5');
     SetConfVal('ssao.rings', '6');
     SetConfVal('refractions', '1');
@@ -1329,6 +1331,7 @@ begin
   fUseSunRays := GetConfVal('sunrays') = '1';
   fUseFocalBlur := GetConfVal('focalblur') = '1';
   fUseScreenSpaceAmbientOcclusion := GetConfVal('ssao') = '1';
+  fUseScreenSpaceIndirectLighting := GetConfVal('ssao.indirectlighting') = '1';
   fUseLensFlare := GetConfVal('lensflare') = '1';
   fShadowBufferSamples := StrToFloatWD(GetConfVal('shadows.samples'), 1);
   fShadowBlurSamples := StrToIntWD(GetConfVal('shadows.blursamples'), 2);
@@ -1360,20 +1363,25 @@ begin
   fWaterRefractAutoplants := GetConfVal('water.refract.autoplants') = '1';
 
   ModuleManager.ModShdMng.SetVar('owe.samples', fFSAASamples);
-{  ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 0);
+  ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 0);
   ModuleManager.ModShdMng.SetVar('owe.shadows.light', 0);
   ModuleManager.ModShdMng.SetVar('owe.ssao', 0);
+  ModuleManager.ModShdMng.SetVar('owe.ssao.indirectlighting', 0);
   ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 0);
   ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 0);
-  ModuleManager.ModShdMng.SetVar('owe.gamma', 0);}
+  ModuleManager.ModShdMng.SetVar('owe.gamma', 0);
   if fUseSunShadows then
     ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 1);
   if fUseLightShadows then
     ModuleManager.ModShdMng.SetVar('owe.shadows.light', 1);
   if fUseScreenSpaceAmbientOcclusion then
+    begin
     ModuleManager.ModShdMng.SetVar('owe.ssao', 1);
+    if fUseScreenSpaceIndirectLighting then
+      ModuleManager.ModShdMng.SetVar('owe.ssao.indirectlighting', 1);
+    end;
   if fShadowBlurSamples > 0 then
     ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1);
   if fLightShadowBlurSamples > 0 then
@@ -1426,6 +1434,7 @@ begin
   SetConfVal('sunrays', fOWEConfigInterface.fSunRays.Checked);
   SetConfVal('focalblur', fOWEConfigInterface.fFocalBlur.Checked);
   SetConfVal('ssao', fOWEConfigInterface.fSSAO.Checked);
+  SetConfVal('ssao.indirectlighting', fOWEConfigInterface.fSSAOIL.Checked);
   SetConfVal('lensflare', fOWEConfigInterface.fLensFlare.Checked);
   SetConfVal('shadows.samples', Round(fOWEConfigInterface.fShadowSamples.Value));
   SetConfVal('shadows.blursamples', Round(fOWEConfigInterface.fShadowBlurSamples.Value));

@@ -414,6 +414,7 @@ begin
     end;
   fTest.Meshes[0].AddBone(fTest.Armatures[0].Bones[1]);
   fTest.Meshes[1].AddBone(fTest.Armatures[0].Bones[0]);
+  fTest.Materials[3].Reflectivity := 0.8;
   fTest.Materials[0].Reflectivity := 0.8;
   fTest.Materials[1].Reflectivity := 0.7;
   fTest.Materials[2].Reflectivity := 0.6;

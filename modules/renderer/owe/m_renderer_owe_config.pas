@@ -17,8 +17,10 @@ type
       fReflectionRealtimeUpdateInterval, fReflectionEnvMapUpdateInterval: TSlider;
       fSSAO: TCheckBox;
       fSSAOSamples: TSlider;
+      fSSAORings: TSlider;
       fUseSunShadows, fUseLightShadows: TCheckBox;
-      fShadowSamples, fShadowBlurSamples: TSlider;
+      fShadowSamples, fShadowMaxPasses, fShadowBlurSamples: TSlider;
+      fLightShadowSamples, fLightShadowBlurSamples: TSlider;
       fBloom: TSlider;
       fFocalBlur: TCheckBox;
       fMotionBlur: TCheckBox;
@@ -49,7 +51,7 @@ begin
   with fReflectionPanel do
     begin
     Left := 0;
-    Top := 640;
+    Top := 680;
     Height := 248;
     Width := 700 - 16;
     Size := 24;
@@ -59,7 +61,7 @@ begin
   with fWaterPanel do
     begin
     Left := 0;
-    Top := 416;
+    Top := 496;
     Height := 192;
     Width := 700 - 16;
     Size := 24;
@@ -70,7 +72,7 @@ begin
     begin
     Left := 0;
     Top := 32;
-    Height := 224;
+    Height := 256;
     Width := 700 - 16;
     Size := 24;
     Caption := ' Normal rendering';
@@ -79,8 +81,8 @@ begin
   with fEffectPanel do
     begin
     Left := 0;
-    Top := 256;
-    Height := 160;
+    Top := 296;
+    Height := 200;
     Width := 700 - 16;
     Size := 24;
     Caption := ' Effects';
@@ -450,29 +452,50 @@ begin
     end;
   with TLabel.Create(fEffectPanel) do
     begin
-    Top := 24;
-    Left := 338;
+    Top := 56;
+    Left := 8;
     Height := 32;
     Width := 200;
     Size := 16;
-    Caption := 'SSAO Samples:';
+    Caption := 'SSAO Samples for first ring:';
     end;
   fSSAOSamples := TSlider.Create(fEffectPanel);
   with fSSAOSamples do
     begin
-    Top := 24;
+    Top := 56;
+    Left := 208;
+    Width := 122;
+    Height := 32;
+    Digits := 0;
+    Min := 4;
+    Max := 36;
+    Value := ModuleManager.ModRenderer.SSAOSamples;
+    end;
+  with TLabel.Create(fEffectPanel) do
+    begin
+    Top := 56;
+    Left := 338;
+    Height := 32;
+    Width := 200;
+    Size := 16;
+    Caption := 'Number of SSAO rings:';
+    end;
+  fSSAORings := TSlider.Create(fEffectPanel);
+  with fSSAORings do
+    begin
+    Top := 56;
     Left := 538;
     Width := 122;
     Height := 32;
     Digits := 0;
-    Min := 50;
-    Max := 400;
-    Value := ModuleManager.ModRenderer.SSAOSamples;
+    Min := 1;
+    Max := 30;
+    Value := ModuleManager.ModRenderer.SSAORings;
     end;
 
   with TLabel.Create(fEffectPanel) do
     begin
-    Top := 56;
+    Top := 96;
     Left := 8;
     Height := 32;
     Width := 200;
@@ -482,7 +505,7 @@ begin
   fBloom := TSlider.Create(fEffectPanel);
   with fBloom do
     begin
-    Top := 56;
+    Top := 96;
     Left := 208;
     Width := 122;
     Height := 32;
@@ -494,7 +517,7 @@ begin
 
   with TLabel.Create(fEffectPanel) do
     begin
-    Top := 96;
+    Top := 136;
     Left := 48;
     Height := 16;
     Width := 200;
@@ -504,7 +527,7 @@ begin
   fFocalBlur := TCheckBox.Create(fEffectPanel);
   with fFocalBlur do
     begin
-    Top := 88;
+    Top := 128;
     Left := 8;
     Width := 32;
     Height := 32;
@@ -512,7 +535,7 @@ begin
     end;
   with TLabel.Create(fEffectPanel) do
     begin
-    Top := 96;
+    Top := 136;
     Left := 278;
     Height := 32;
     Width := 200;
@@ -522,7 +545,7 @@ begin
   fSunRays := TCheckBox.Create(fEffectPanel);
   with fSunRays do
     begin
-    Top := 88;
+    Top := 128;
     Left := 238;
     Width := 32;
     Height := 32;
@@ -530,7 +553,7 @@ begin
     end;
   with TLabel.Create(fEffectPanel) do
     begin
-    Top := 96;
+    Top := 136;
     Left := 508;
     Height := 32;
     Width := 200;
@@ -540,7 +563,7 @@ begin
   fLensFlare := TCheckBox.Create(fEffectPanel);
   with fLensFlare do
     begin
-    Top := 88;
+    Top := 128;
     Left := 468;
     Width := 32;
     Height := 32;
@@ -549,7 +572,7 @@ begin
   
   with TLabel.Create(fEffectPanel) do
     begin
-    Top := 128;
+    Top := 168;
     Left := 48;
     Width := 200;
     Height := 32;
@@ -559,7 +582,7 @@ begin
   fMotionBlur := TCheckBox.Create(fEffectPanel);
   with fMotionBlur do
     begin
-    Top := 120;
+    Top := 160;
     Left := 8;
     Width := 32;
     Height := 32;
@@ -567,7 +590,7 @@ begin
     end;
   with TLabel.Create(fEffectPanel) do
     begin
-    Top := 120;
+    Top := 160;
     Left := 338;
     Height := 32;
     Width := 200;
@@ -577,7 +600,7 @@ begin
   fMotionBlurStrength := TSlider.Create(fEffectPanel);
   with fMotionBlurStrength do
     begin
-    Top := 120;
+    Top := 160;
     Left := 538;
     Width := 122;
     Height := 32;
@@ -632,7 +655,7 @@ begin
     Width := 200;
     Height := 32;
     Size := 16;
-    Caption := 'Shadow size factor:';
+    Caption := 'Sun shadow size factor:';
     end;
   fShadowSamples := TSlider.Create(fNormalRenderingPanel);
   with fShadowSamples do
@@ -653,7 +676,7 @@ begin
     Width := 200;
     Height := 32;
     Size := 16;
-    Caption := 'Shadow blur strength:';
+    Caption := 'Sun shadow blur strength:';
     end;
   fShadowBlurSamples := TSlider.Create(fNormalRenderingPanel);
   with fShadowBlurSamples do
@@ -675,12 +698,55 @@ begin
     Width := 200;
     Height := 32;
     Size := 16;
+    Caption := 'Shadow size factor:';
+    end;
+  fLightShadowSamples := TSlider.Create(fNormalRenderingPanel);
+  with fLightShadowSamples do
+    begin
+    Top := 88;
+    Left := 208;
+    Width := 122;
+    Height := 32;
+    Digits := 0;
+    Min := 1;
+    Max := 5;
+    Value := ModuleManager.ModRenderer.LightShadowBufferSamples;
+    end;
+  with TLabel.Create(fNormalRenderingPanel) do
+    begin
+    Top := 88;
+    Left := 338;
+    Width := 200;
+    Height := 32;
+    Size := 16;
+    Caption := 'Shadow blur strength:';
+    end;
+  fLightShadowBlurSamples := TSlider.Create(fNormalRenderingPanel);
+  with fLightShadowBlurSamples do
+    begin
+    Top := 88;
+    Left := 538;
+    Width := 122;
+    Height := 32;
+    Digits := 0;
+    Min := 1;
+    Max := 10;
+    Value := ModuleManager.ModRenderer.LightShadowBlurSamples;
+    end;
+
+  with TLabel.Create(fNormalRenderingPanel) do
+    begin
+    Top := 120;
+    Left := 8;
+    Width := 200;
+    Height := 32;
+    Size := 16;
     Caption := 'Distance factor for object LOD:';
     end;
   fLODDistanceFactor := TSlider.Create(fNormalRenderingPanel);
   with fLODDistanceFactor do
     begin
-    Top := 88;
+    Top := 120;
     Left := 208;
     Width := 122;
     Height := 32;
@@ -691,7 +757,7 @@ begin
     end;
   with TLabel.Create(fNormalRenderingPanel) do
     begin
-    Top := 88;
+    Top := 120;
     Left := 338;
     Width := 200;
     Height := 32;
@@ -701,7 +767,7 @@ begin
   fLODDistanceOffset := TSlider.Create(fNormalRenderingPanel);
   with fLODDistanceOffset do
     begin
-    Top := 88;
+    Top := 120;
     Left := 538;
     Width := 122;
     Height := 32;
@@ -713,7 +779,7 @@ begin
 
   with TLabel.Create(fNormalRenderingPanel) do
     begin
-    Top := 120;
+    Top := 152;
     Left := 8;
     Width := 200;
     Height := 32;
@@ -723,7 +789,7 @@ begin
   fTerrainTesselationDistance := TSlider.Create(fNormalRenderingPanel);
   with fTerrainTesselationDistance do
     begin
-    Top := 120;
+    Top := 152;
     Left := 208;
     Width := 122;
     Height := 32;
@@ -734,7 +800,7 @@ begin
     end;
   with TLabel.Create(fNormalRenderingPanel) do
     begin
-    Top := 120;
+    Top := 152;
     Left := 338;
     Width := 200;
     Height := 32;
@@ -744,7 +810,7 @@ begin
   fTerrainDetailDistance := TSlider.Create(fNormalRenderingPanel);
   with fTerrainDetailDistance do
     begin
-    Top := 120;
+    Top := 152;
     Left := 538;
     Width := 122;
     Height := 32;
@@ -756,7 +822,7 @@ begin
 
   with TLabel.Create(fNormalRenderingPanel) do
     begin
-    Top := 152;
+    Top := 184;
     Left := 8;
     Width := 200;
     Height := 32;
@@ -766,7 +832,7 @@ begin
   fTerrainBumpmapDistance := TSlider.Create(fNormalRenderingPanel);
   with fTerrainBumpmapDistance do
     begin
-    Top := 152;
+    Top := 184;
     Left := 208;
     Width := 122;
     Height := 32;
@@ -775,10 +841,31 @@ begin
     Max := 256;
     Value := ModuleManager.ModRenderer.TerrainBumpmapDistance;
     end;
-
   with TLabel.Create(fNormalRenderingPanel) do
     begin
     Top := 184;
+    Left := 338;
+    Width := 200;
+    Height := 32;
+    Size := 16;
+    Caption := 'Maximum number of shadows:';
+    end;
+  fShadowMaxPasses := TSlider.Create(fNormalRenderingPanel);
+  with fShadowMaxPasses do
+    begin
+    Top := 184;
+    Left := 538;
+    Width := 122;
+    Height := 32;
+    Digits := 0;
+    Min := 1;
+    Max := 128;
+    Value := ModuleManager.ModRenderer.MaxShadowPasses;
+    end;
+
+  with TLabel.Create(fNormalRenderingPanel) do
+    begin
+    Top := 216;
     Left := 8;
     Width := 200;
     Height := 32;
@@ -788,7 +875,7 @@ begin
   fAutoplantCount := TSlider.Create(fNormalRenderingPanel);
   with fAutoplantCount do
     begin
-    Top := 184;
+    Top := 216;
     Left := 208;
     Width := 122;
     Height := 32;
@@ -799,7 +886,7 @@ begin
     end;
   with TLabel.Create(fNormalRenderingPanel) do
     begin
-    Top := 184;
+    Top := 216;
     Left := 338;
     Width := 200;
     Height := 32;
@@ -809,7 +896,7 @@ begin
   fAutoplantDistance := TSlider.Create(fNormalRenderingPanel);
   with fAutoplantDistance do
     begin
-    Top := 184;
+    Top := 216;
     Left := 538;
     Width := 122;
     Height := 32;

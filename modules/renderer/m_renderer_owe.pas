@@ -36,7 +36,7 @@ type
       fSubdivisionCuts: Integer;
       fSubdivisionDistance: Single;
       fBufferSizeX, fBufferSizeY: Integer;
-      fSSAOSamples, fShadowBlurSamples, fLightShadowBlurSamples: Integer;
+      fSSAOSamples, fShadowBlurSamples, fLightShadowBlurSamples, fSSAORings: Integer;
       fTmpBloomBuffer: TFBO;
       fMaxShadowPasses: Integer;
       fAutoplantCount: Integer;
@@ -117,6 +117,7 @@ type
       property LightShadowBufferSamples: Single read fLightShadowBufferSamples;
       property LightShadowBlurSamples: Integer read fLightShadowBlurSamples;
       property SSAOSamples: Integer read fSSAOSamples;
+      property SSAORings: Integer read fSSAORings;
       property LODDistanceOffset: Single read fLODDistanceOffset;
       property LODDistanceFactor: Single read fLODDistanceFactor;
       property ReflectionLODDistanceOffset: Single read fReflectionRenderDistanceOffset;
@@ -200,7 +201,7 @@ end;
 
 procedure TModuleRendererOWE.PostInit;
 var
-  i, j, ResX, ResY: Integer;
+  ResX, ResY: Integer;
 begin
   fFrontFace := GL_CCW;
 
@@ -371,15 +372,8 @@ begin
   fSSAOShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/ssao.fs');
   fSSAOShader.UniformI('GeometryTexture', 0);
   fSSAOShader.UniformI('NormalTexture', 1);
-  fSSAOShader.UniformI('SamplesFirstRing', Round(Int(Sqrt(SSAOSamples) / 2)));
-  j := 0;
-  i := 0;
-  while j < SSAOSamples do
-    begin
-    inc(i);
-    inc(j, i * Round(Int(Sqrt(SSAOSamples) / 2)));
-    end;
-  fSSAOShader.UniformI('Rings', i);
+  fSSAOShader.UniformI('SamplesFirstRing', SSAOSamples);
+  fSSAOShader.UniformI('Rings', SSAORings);
   fSSAOShader.UniformI('ScreenSize', ResX, ResY);
 
   fLightShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/light.fs');
@@ -789,6 +783,7 @@ begin
   
   if UseSunShadows then
     begin
+    glDisable(GL_CULL_FACE);
     fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
     fShadowSize := 50 + 2 * (fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
     fShadowOffset.Y := 0.5 * (fShadowOffset.Y + RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
@@ -817,10 +812,12 @@ begin
     RObjects.ShadowMode := False;
 
     fSunShadowBuffer.Unbind;
+    glEnable(GL_CULL_FACE);
     end;
 
   if UseLightShadows then
     begin
+    glDisable(GL_CULL_FACE);
     glClearColor(0.0, 0.0, 0.0, 500.0);
     glClearDepth(1.0);
     glEnable(GL_DEPTH_TEST);
@@ -830,6 +827,7 @@ begin
     glDepthFunc(GL_LEQUAL);
     LightManager.Sync;
     LightManager.CreateShadows;
+    glEnable(GL_CULL_FACE);
     end;
 
   // Lighting pass
@@ -1238,15 +1236,6 @@ begin
 
   inc(fFrameID);
 //   writeln(glGetError());
-
-
-  // TESTING ONLY
-{  glColor4f(1, 1, 1, 1);
-  fSSAOBuffer.Textures[0].Bind(0);
-  fFullscreenShader.Bind;
-  DrawFullscreenQuad;
-  fFullscreenShader.Unbind;
-  fSSAOBuffer.Textures[0].UnBind;}
 end;
 
 procedure TModuleRendererOWE.CheckModConf;
@@ -1271,7 +1260,8 @@ begin
     SetConfVal('reflections.updateinterval', '4');
     SetConfVal('reflections.environmentmap.interval', '200');
     SetConfVal('ssao', '0');
-    SetConfVal('ssao.samples', '100');
+    SetConfVal('ssao.samples', '5');
+    SetConfVal('ssao.rings', '6');
     SetConfVal('refractions', '1');
     SetConfVal('shadows', '0');
     SetConfVal('shadows.samples', '1');
@@ -1341,7 +1331,8 @@ begin
   fTerrainDetailDistance := StrToFloatWD(GetConfVal('terrain.detaildistance'), 60);
   fTerrainBumpmapDistance := StrToFloatWD(GetConfVal('terrain.bumpmapdistance'), 60);
   fWaterReflectionBufferSamples := StrToFloatWD(GetConfVal('water.samples'), 0.5);
-  fSSAOSamples := StrToIntWD(GetConfVal('ssao.samples'), 100);
+  fSSAOSamples := StrToIntWD(GetConfVal('ssao.samples'), 5);
+  fSSAORings := StrToIntWD(GetConfVal('ssao.rings'), 6);
   fLODDistanceOffset := StrToFloatWD(GetConfVal('lod.distanceoffset'), 0.0);
   fLODDistanceFactor := StrToFloatWD(GetConfVal('lod.distancefactor'), 1.0);
   fSubdivisionCuts := StrToIntWD(GetConfVal('subdiv.cuts'), 0);
@@ -1429,13 +1420,16 @@ begin
   SetConfVal('lensflare', fOWEConfigInterface.fLensFlare.Checked);
   SetConfVal('shadows.samples', Round(fOWEConfigInterface.fShadowSamples.Value));
   SetConfVal('shadows.blursamples', Round(fOWEConfigInterface.fShadowBlurSamples.Value));
-//     SetConfVal('shadows.maxpasses', fOWEConfigInterface.fMaxShadowPasses);
+  SetConfVal('shadows.lights.samples', Round(fOWEConfigInterface.fLightShadowSamples.Value));
+  SetConfVal('shadows.lights.blursamples', Round(fOWEConfigInterface.fLightShadowBlurSamples.Value));
+  SetConfVal('shadows.maxpasses', fOWEConfigInterface.fShadowMaxPasses.Value);
   SetConfVal('motionblur.strength', fOWEConfigInterface.fMotionBlurStrength.Value);
   SetConfVal('terrain.tesselationdistance', fOWEConfigInterface.fTerrainTesselationDistance.Value);
   SetConfVal('terrain.detaildistance', fOWEConfigInterface.fTerrainDetailDistance.Value);
   SetConfVal('terrain.bumpmapdistance', fOWEConfigInterface.fTerrainBumpmapDistance.Value);
   SetConfVal('water.samples', fOWEConfigInterface.fWaterSamples.Value);
   SetConfVal('ssao.samples', Round(fOWEConfigInterface.fSSAOSamples.Value));
+  SetConfVal('ssao.rings', Round(fOWEConfigInterface.fSSAORings.Value));
   SetConfVal('lod.distanceoffset', fOWEConfigInterface.fLODDistanceOffset.Value);
   SetConfVal('lod.distancefactor', fOWEConfigInterface.fLODDistanceFactor.Value);
 //     SetConfVal('subdiv.cuts', fOWEConfigInterface.fSubdivisionCuts);

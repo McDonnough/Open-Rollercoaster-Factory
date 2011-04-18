@@ -249,7 +249,10 @@ begin
   for i := 0 to high(Blocks) do
     if ((Blocks[BlockIDs[i]].Visible) and ((CurrentShader = fGeometryPassShader) or (CurrentShader = fLightShadowPassShader))) or ((Blocks[BlockIDs[i]].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
       if Blocks[BlockIDs[i]].MinHeight = Blocks[BlockIDs[i]].MaxHeight then
-        Blocks[BlockIDs[i]].RenderOneFace
+        begin
+        if (CurrentShader <> fLightShadowPassShader) and (CurrentShader <> fShadowPassShader) then
+          Blocks[BlockIDs[i]].RenderOneFace;
+        end
       else if VecLengthNoRoot(Blocks[BlockIDs[i]].Center - ModuleManager.ModCamera.ActiveCamera.Position) > (ModuleManager.ModRenderer.CurrentTerrainDetailDistance) * (4 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance) then
         Blocks[BlockIDs[i]].RenderRaw
       else

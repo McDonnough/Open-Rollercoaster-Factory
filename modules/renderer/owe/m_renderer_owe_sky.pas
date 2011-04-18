@@ -15,7 +15,6 @@ type
       fSunColor: TTexImage;
       fStarTexture: TTexture;
       fFogStrength: Single;
-      fTest: TLightSource;
     public
       property FogStrength: Single read fFogStrength;
       property Sun: TSun read fSun;
@@ -53,7 +52,6 @@ procedure TRSky.Advance;
 var
   SunXAngle, SunYAngle: Single;
 begin
-  fTest.Position := Vector(ModuleManager.ModRenderer.SelectionStart + ModuleManager.ModRenderer.SelectionRay + Vector(0, 2, 0), 1.0);
   fFogStrength := 0.0;
   SunYAngle := 11 * (power(1 + cos(DegToRad(Park.pSky.Time / 86400 * 360)), 2)) + 1;
   SunXAngle := 180 - Park.pSky.Time / 86400 * 360;
@@ -62,9 +60,6 @@ begin
   fSun.Color.X := fSunColor.Data[3 * (Round(Park.pSky.Time) div 10) + 0] / 255;
   fSun.Color.Y := fSunColor.Data[3 * (Round(Park.pSky.Time) div 10) + 1] / 255;
   fSun.Color.Z := fSunColor.Data[3 * (Round(Park.pSky.Time) div 10) + 2] / 255;
-//     fSun.Color := fSun.Color - fSun.AmbientColor;
-{  if fSun.Position.Y < 0 then
-    fSun.Position := Vector(0, 0, 0, 0) - fSun.Position;}
 end;
 
 constructor TRSky.Create;
@@ -77,18 +72,6 @@ begin
   fSunColor := TexFromStream(ByteStreamFromFile('orcf-world-engine/scene/sky/sun-color/suncolor.tga'), '.tga');
   fStarTexture := TTexture.Create;
   fStarTexture.FromFile('orcf-world-engine/scene/sky/stars.tga');
-
-//   fTest := TLightSource.Create;
-//   fTest.Energy := 2;
-//   fTest.FalloffDistance := 10;
-//   fTest.Color := Vector(1, 0, 0);
-//   fTest.Position := Vector(160, 75, 160, 1);
-//   TLight.Create(fTest);
-
-  fTest := TLightSource.Create;
-  fTest.Energy := 1;
-  fTest.FalloffDistance := 10;
-  TLight.Create(fTest);
 end;
 
 destructor TRSky.Free;

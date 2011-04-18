@@ -655,7 +655,7 @@ begin
     Size := 16;
     Height := 32;
     Width := 200;
-    Caption := 'Other shadows';
+    Caption := 'Other shadows (only when sun shadows enabled)';
     end;
   fUseLightShadows := TCheckBox.Create(fNormalRenderingPanel);
   with fUseLightShadows do

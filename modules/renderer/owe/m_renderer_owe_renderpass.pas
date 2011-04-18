@@ -166,6 +166,8 @@ begin
 
     ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(4);
 
+    GBuffer.Textures[5].Bind(6);
+
     if ModuleManager.ModRenderer.UseSunShadows then
       ModuleManager.ModRenderer.SunShadowBuffer.Textures[0].Bind(2);
 
@@ -241,7 +243,6 @@ begin
     ModuleManager.ModRenderer.CompositionShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
     ModuleManager.ModRenderer.CompositionShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
 
-    GBuffer.Textures[5].Bind(5);
     GBuffer.Textures[4].Bind(3);
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);

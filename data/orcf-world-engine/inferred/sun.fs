@@ -8,6 +8,7 @@ uniform sampler2D ShadowTexture;
 uniform sampler2D MaterialTexture;
 uniform sampler2D HeightMap;
 uniform sampler2D SSAOTexture;
+uniform sampler2D EmissionTexture;
 
 uniform vec2 BumpOffset;
 
@@ -31,6 +32,9 @@ void main(void) {
   ivec2 Coords = ivec2(floor(gl_FragCoord.xy));
 
   vec4 AllCoord = texelFetch2D(GeometryTexture, Coords, 0);
+  vec4 Emission = texelFetch2D(EmissionTexture, Coords, 0);
+  if (UseSSAO == 1)
+    Emission.rgb += texelFetch2D(SSAOTexture, Coords, 0).rgb;
 
   vec3 Vertex = AllCoord.rgb;
   vec4 Normal = texelFetch2D(NormalTexture, Coords, 0);
@@ -64,6 +68,7 @@ void main(void) {
   // END
   factor = min(factor, vec3(1.0, 1.0, 1.0));
   gl_FragColor.rgb *= factor;
+  gl_FragColor.rgb += Emission.rgb;
 
   // IF [ EQ owe.ssao 1 ]
   if (UseSSAO == 1) {

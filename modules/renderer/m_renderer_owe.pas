@@ -370,10 +370,12 @@ begin
   fSunShader.UniformI('MaterialTexture', 3);
   fSunShader.UniformI('HeightMap', 4);
   fSunShader.UniformI('SSAOTexture', 5);
+  fSunShader.UniformI('EmissionTexture', 6);
 
   fSSAOShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/ssao.fs');
   fSSAOShader.UniformI('GeometryTexture', 0);
   fSSAOShader.UniformI('NormalTexture', 1);
+  fSSAOShader.UniformI('EmissionTexture', 2);
   fSSAOShader.UniformI('SamplesFirstRing', SSAOSamples);
   fSSAOShader.UniformI('Rings', SSAORings);
   fSSAOShader.UniformI('ScreenSize', ResX, ResY);
@@ -391,7 +393,6 @@ begin
   fCompositionShader.UniformI('GTexture', 2);
   fCompositionShader.UniformI('ReflectionTexture', 3);
   fCompositionShader.UniformI('MaterialMap', 4);
-  fCompositionShader.UniformI('EmissionTexture', 5);
 
   fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
   fLensFlareShader.UniformI('Texture', 0);
@@ -744,11 +745,13 @@ begin
 
     fSSAOShader.Bind;
     fSSAOShader.UniformF('RandomOffset', 100 * Random);
+    GBuffer.Textures[5].Bind(2);
     GBuffer.Textures[1].Bind(1);
     GBuffer.Textures[2].Bind(0);
 
     DrawFullscreenQuad;
 
+    GBuffer.Textures[5].Unbind;
     GBuffer.Textures[1].Unbind;
     GBuffer.Textures[2].Unbind;
     fSSAOShader.Unbind;
@@ -842,6 +845,8 @@ begin
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+    GBuffer.Textures[5].Bind(6);
 
     if UseScreenSpaceAmbientOcclusion then
       fSSAOBuffer.Textures[0].Bind(5);
@@ -948,7 +953,6 @@ begin
     CompositionShader.UniformF('WaterHeight', 0);
     CompositionShader.UniformF('WaterRefractionMode', 0);
 
-    GBuffer.Textures[5].Bind(5);
     GBuffer.Textures[4].Bind(3);
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);

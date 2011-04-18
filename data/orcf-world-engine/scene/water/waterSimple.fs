@@ -65,7 +65,7 @@ void main(void) {
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[2] = vec4(Vertex, length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0))));
   gl_FragData[1] = vec4(normal, 250.0);
-  gl_FragData[5] = vec4(0.0, 0.0, 0.0, 0.0);
+  gl_FragData[5] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[0] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[4].rgb = (1.0 - ReflectionCoefficient) * (vec3(0.20, 0.30, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb);
   gl_FragData[4].rgb += ReflectionCoefficient * GetReflectionColor(normal);

@@ -53,10 +53,10 @@ void main(void) {
     normal = normalize(M * (vec3(texture2D(NormalMap, gl_TexCoord[0].xy)) - vec3(0.5, 0.5, 0.5)));
   }
   gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
-  gl_FragData[5] = gl_FrontMaterial.emission;
   gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g);
   gl_FragData[0].rgb = gl_FrontMaterial.diffuse.rgb;
   if (HasTexture == 1)
     gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;
+  gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);
   gl_FragData[0].a = gl_FrontMaterial.specular.r;
 }

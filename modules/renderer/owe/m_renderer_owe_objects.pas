@@ -58,6 +58,7 @@ type
       procedure RenderOpaque;
       procedure RenderTransparent;
       procedure UpdateObjects;
+      function CalculateLODDistance(D: Single): Single;
       constructor Create;
       destructor Free;
     end;
@@ -66,6 +67,11 @@ implementation
 
 uses
   u_events, m_varlist;
+
+function TRObjects.CalculateLODDistance(D: Single): Single;
+begin
+  Result := D * ModuleManager.ModRenderer.CurrentLODDistanceFactor + ModuleManager.ModRenderer.CurrentLODDistanceOffset;
+end;
 
 procedure TRObjects.AddObject(Event: String; Data, Result: Pointer);
 begin
@@ -289,6 +295,8 @@ begin
       fManagedObjects[i].Meshes[j].Visible := false;
       if VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Pos) - fManagedObjects[i].Meshes[j].VBO.Radius * fManagedObjects[i].Meshes[j].VBO.Radius < ModuleManager.ModRenderer.MaxRenderDistance * ModuleManager.ModRenderer.MaxRenderDistance then
         fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius);
+      if (VecLength(ModuleManager.ModRenderer.ViewPoint - Pos) < CalculateLODDistance(fManagedObjects[i].Meshes[j].GeoMesh.MinDistance)) or (VecLength(ModuleManager.ModRenderer.ViewPoint - Pos) >= CalculateLODDistance(fManagedObjects[i].Meshes[j].GeoMesh.MaxDistance)) then
+        fManagedObjects[i].Meshes[j].Visible := false;
       end;
 end;
 
@@ -413,7 +421,9 @@ begin
       end;
     end;
   fTest.Meshes[0].AddBone(fTest.Armatures[0].Bones[1]);
+  fTest.Meshes[0].MinDistance := 20;
   fTest.Meshes[1].AddBone(fTest.Armatures[0].Bones[0]);
+  fTest.Meshes[1].MaxDistance := 20;
   fTest.Materials[3].Reflectivity := 0.8;
   fTest.Materials[0].Reflectivity := 0.8;
   fTest.Materials[1].Reflectivity := 0.7;

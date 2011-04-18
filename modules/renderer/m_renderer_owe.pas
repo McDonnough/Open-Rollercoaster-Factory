@@ -662,17 +662,17 @@ begin
 
   ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
 
+  if fIsUnderWater then
+    MaxRenderDistance := 55
+  else
+    MaxRenderDistance := MaxFogDistance;
+
   // Do water renderpasses
   RWater.RenderBuffers;
 
   ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
 
   // Render final scene
-
-  if fIsUnderWater then
-    MaxRenderDistance := 55
-  else
-    MaxRenderDistance := MaxFogDistance;
 
   // Check some visibilities
   Frustum.Calculate;

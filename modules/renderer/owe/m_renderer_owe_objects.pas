@@ -419,6 +419,7 @@ begin
   fTest.Materials[2].Reflectivity := 0.6;
   fTest.Materials[2].BumpMap := TTexture.Create;
   fTest.Materials[2].BumpMap.FromFile('scenery/testbump.tga');
+  fTest.Materials[2].Emission := Vector(1, 0, 0, 1);
   fTest.Matrix := TranslationMatrix(Vector(160, 70, 160));
   fTest.UpdateArmatures;
   fTest.UpdateVertexPositions;

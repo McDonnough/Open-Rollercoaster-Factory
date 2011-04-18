@@ -231,6 +231,8 @@ begin
   fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Reflection and reflectivity
   fGBuffer.Textures[4].SetClamp(GL_CLAMP, GL_CLAMP);
+  fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Emission
+  fGBuffer.Textures[5].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.Unbind;
 
   fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
@@ -389,6 +391,7 @@ begin
   fCompositionShader.UniformI('GTexture', 2);
   fCompositionShader.UniformI('ReflectionTexture', 3);
   fCompositionShader.UniformI('MaterialMap', 4);
+  fCompositionShader.UniformI('EmissionTexture', 5);
 
   fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
   fLensFlareShader.UniformI('Texture', 0);
@@ -945,6 +948,7 @@ begin
     CompositionShader.UniformF('WaterHeight', 0);
     CompositionShader.UniformF('WaterRefractionMode', 0);
 
+    GBuffer.Textures[5].Bind(5);
     GBuffer.Textures[4].Bind(3);
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);

@@ -12,18 +12,18 @@ uniform sampler2D SSAOTexture;
 uniform vec2 BumpOffset;
 
 uniform vec2 TerrainSize;
-uniform float ShadowSize;
 uniform vec3 ShadowOffset;
+uniform vec3 ShadowVectorX;
+uniform vec3 ShadowVectorY;
+uniform float ShadowSize;
+uniform float ShadowFactor;
 uniform int BlurSamples;
 uniform int UseSSAO;
 
 // IF [ EQ owe.shadows.sun 1 ]
 vec2 ProjectShadowVertex(vec3 V) {
-  vec3 dir = V - gl_LightSource[0].position.xyz;
-  dir /= abs(dir.y);
-  V += (V.y - ShadowOffset.y) * dir;
-  V -= ShadowOffset;
-  return (V / ShadowSize).xz;
+  vec3 dir = normalize(V - gl_LightSource[0].position.xyz);
+  return vec2(dot(dir, ShadowVectorX) * ShadowFactor, dot(dir, ShadowVectorY) * ShadowFactor);
 }
 // END
 
@@ -41,25 +41,27 @@ void main(void) {
   vec3 factor = vec3(2.0, 2.0, 2.0);
 
   // IF [ EQ owe.shadows.sun 1 ]
+  float Dist = length(Vertex - gl_LightSource[0].position.xyz);
+  Dist -= length(ShadowOffset - gl_LightSource[0].position.xyz);
   vec2 ShadowCoord = 0.5 + 0.5 * ProjectShadowVertex(Vertex);
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
-  if (ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
+  if (clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
 
-    // IF [ EQ owe.shadows.blur 1 ]
-    float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);
-    int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);
-    for (int i = -BlurSamples; i <= BlurSamples; i++)
-      for (int j = -BlurSamples; j <= BlurSamples; j++) {
-        ShadowColor = texture2D(ShadowTexture, ShadowCoord + 0.0004 * CoordFactor * vec2(i, j));
-        if (ShadowColor.a > Vertex.y + 0.1)
-          factor -= 2.0 * ShadowColor.rgb / Samples;
-      }
-    // END
+//     // IF [ EQ owe.shadows.blur 1 ]
+//     float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);
+//     int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);
+//     for (int i = -BlurSamples; i <= BlurSamples; i++)
+//       for (int j = -BlurSamples; j <= BlurSamples; j++) {
+//         ShadowColor = texture2D(ShadowTexture, ShadowCoord + 0.0004 * CoordFactor * vec2(i, j));
+//         if (ShadowColor.a > Vertex.y + 0.1)
+//           factor -= 2.0 * ShadowColor.rgb / Samples;
+//       }
+//     // END
 
-    // IF [ NEQ owe.shadows.blur 1 ]
-    if (ShadowColor.a > Vertex.y + 0.1)
+//     // IF [ NEQ owe.shadows.blur 1 ]
+    if (ShadowColor.a < Dist - 0.5)
       factor -= 2.0 * ShadowColor.rgb;
-    // END
+//     // END
   }
   // END
   factor = min(factor, vec3(1.0, 1.0, 1.0));

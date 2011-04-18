@@ -47,8 +47,8 @@ type
       fFocusDistance: Single;
       fFrustum: TFrustum;
       fTransparencyMask, fLensFlareMask: TTexture;
-      fShadowSize: Single;
-      fShadowOffset: TVector3D;
+      fShadowSize, fShadowFactor: Single;
+      fShadowOffset, fShadowVectorX, fShadowVectorY: TVector3D;
       fUseLensFlare: Boolean;
       fWaterReflectionBufferSamples: Single;
       fFrameID: Integer;
@@ -154,7 +154,10 @@ type
       property Frustum: TFrustum read fFrustum;
       property TransparencyMask: TTexture read fTransparencyMask;
       property ShadowSize: Single read fShadowSize;
+      property ShadowFactor: Single read fShadowFactor;
       property ShadowOffset: TVector3D read fShadowOffset;
+      property ShadowVectorX: TVector3D read fShadowVectorX;
+      property ShadowVectorY: TVector3D read fShadowVectorY;
       property FrameID: Integer read fFrameID;
       property Gamma: Single read fGamma;
       property EnvironmentMap: TCubeMap read fEnvironmentMap;
@@ -792,6 +795,12 @@ begin
     fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
     fShadowSize := 50 + 2 * (fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
     fShadowOffset.Y := 0.5 * (fShadowOffset.Y + RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
+    fShadowFactor := 1 / sin(ShadowSize / VecLength(ShadowOffset - Vector3D(RSky.Sun.Position)));
+    if Abs(DotProduct(Normalize(ShadowOffset - Vector3D(RSky.Sun.Position)),Vector(0, 1, 0))) > 0.99 then
+      fShadowVectorX := Vector(1, 0, 0)
+    else
+      fShadowVectorX := Normalize(Cross(ShadowOffset - Vector3D(RSky.Sun.Position), Vector(0, 1, 0)));
+    fShadowVectorY := Normalize(Cross(ShadowOffset - Vector3D(RSky.Sun.Position), fShadowVectorX));
 
     fSunShadowBuffer.Bind;
     glDepthMask(true);
@@ -800,20 +809,22 @@ begin
     glClearColor(1.0, 1.0, 1.0, 1.0);
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_NOTEQUAL, 0.0);
+    glDisable(GL_ALPHA_TEST);
     glDepthFunc(GL_LESS);
     glDisable(GL_BLEND);
 
     RTerrain.CurrentShader := RTerrain.ShadowPassShader;
     RTerrain.CurrentShader.UniformF('ShadowSize', ShadowSize);
+    RTerrain.CurrentShader.UniformF('ShadowFactor', ShadowFactor);
+    RTerrain.CurrentShader.UniformF('ShadowVectorX', ShadowVectorX);
+    RTerrain.CurrentShader.UniformF('ShadowVectorY', ShadowVectorY);
     RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset);
     RTerrain.BorderEnabled := false;
     RTerrain.Render;
 
     RObjects.ShadowMode := True;
-    RObjects.RenderOpaque;
-    RObjects.RenderTransparent;
+//     RObjects.RenderOpaque;
+//     RObjects.RenderTransparent;
     RObjects.ShadowMode := False;
 
     fSunShadowBuffer.Unbind;
@@ -861,6 +872,9 @@ begin
     SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
     SunShader.UniformF('ShadowSize', ShadowSize);
     SunShader.UniformF('ShadowOffset', ShadowOffset);
+    SunShader.UniformF('ShadowFactor', ShadowFactor);
+    SunShader.UniformF('ShadowVectorX', ShadowVectorX);
+    SunShader.UniformF('ShadowVectorY', ShadowVectorY);
     SunShader.UniformI('BlurSamples', ShadowBlurSamples);
     SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
     DrawFullscreenQuad;

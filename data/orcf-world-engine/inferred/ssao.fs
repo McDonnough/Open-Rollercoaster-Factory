@@ -3,6 +3,7 @@
 uniform sampler2D GeometryTexture;
 uniform sampler2D NormalTexture;
 
+uniform float RandomOffset;
 uniform int SamplesFirstRing;
 uniform int Rings;
 uniform ivec2 ScreenSize;
@@ -20,7 +21,7 @@ void main(void) {
     float Coeff = 6.28319 / (SamplesFirstRing * i);
     for (int j = 0; j < SamplesFirstRing * i; j++) {
       Samples++;
-      vec2 coord = (gl_FragCoord.xy + Radius * vec2(sin(Coeff * j), cos(Coeff * j))) / ScreenSize;
+      vec2 coord = (gl_FragCoord.xy + Radius * vec2(sin(Coeff * j + RandomOffset), cos(Coeff * j + RandomOffset))) / ScreenSize;
       vec3 Dest = texture2D(GeometryTexture, coord).xyz;
       vec3 dir = Dest - Vertex.xyz;
       float distfactor = pow(2.7183, -0.4 * length(dir));

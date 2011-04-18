@@ -740,6 +740,7 @@ begin
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
     fSSAOShader.Bind;
+    fSSAOShader.UniformF('RandomOffset', 100 * Random);
     GBuffer.Textures[1].Bind(1);
     GBuffer.Textures[2].Bind(0);
 

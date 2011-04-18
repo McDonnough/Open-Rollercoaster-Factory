@@ -171,10 +171,14 @@ end;
 
 procedure TSun.Bind(I: Integer);
 begin
+  glMatrixMode(GL_MODELVIEW);
+  glPushMatrix;
+  glLoadIdentity;
   glEnable(GL_LIGHT0 + i);
   glLightfv(GL_LIGHT0 + i, GL_AMBIENT,  @AmbientColor.X);
   glLightfv(GL_LIGHT0 + i, GL_DIFFUSE,  @Color.X);
   glLightfv(GL_LIGHT0 + i, GL_POSITION, @Position.X);
+  glPopMatrix;
 end;
 
 destructor TSun.Free;

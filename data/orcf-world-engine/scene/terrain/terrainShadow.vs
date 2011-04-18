@@ -10,13 +10,11 @@ uniform float ShadowSize;
 uniform vec2 Offset;
 
 varying vec3 VData;
-varying vec3 Source;
 
 void main(void) {
   vec2 FakeVertex = Offset + gl_MultiTexCoord0.xy;
-  vec3 Vertex = vec3(Offset.x + gl_Vertex.x, mix(64.0, texture2D(TerrainMap, FakeVertex / TerrainSize + TOffset).b * 256.0, gl_Vertex.y), Offset.y + gl_Vertex.z);
-  Source = Vertex;
-  VData = Vertex;
+  VData = vec3(Offset.x + gl_Vertex.x, texture2D(TerrainMap, FakeVertex / TerrainSize + TOffset).b * 256.0, Offset.y + gl_Vertex.z);
+  vec3 Vertex = VData;
   vec3 dir = Vertex - gl_LightSource[0].position.xyz;
   dir /= abs(dir.y);
   Vertex += (Vertex.y - ShadowOffset.y) * dir;

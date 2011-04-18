@@ -221,16 +221,11 @@ begin
         end;
 
   CurrentShader.Bind;
-  if CurrentShader = fGeometryPassShader then
-    begin
-    CurrentShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance);
-    CurrentShader.UniformF('TerrainBumpmapDistance', ModuleManager.ModRenderer.CurrentTerrainBumpmapDistance);
-    end
-  else if (CurrentShader = fShadowPassShader) or (CurrentShader = fLightShadowPassShader) then
-    CurrentShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance);
-
+  CurrentShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance);
+  CurrentShader.UniformF('TerrainBumpmapDistance', ModuleManager.ModRenderer.CurrentTerrainBumpmapDistance);
   CurrentShader.UniformF('Camera', ModuleManager.ModCamera.ActiveCamera.Position.x, ModuleManager.ModCamera.ActiveCamera.Position.z);
-   if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
+
+  if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
     CurrentShader.UniformF('PointToHighlight', Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
   else
     CurrentShader.UniformF('PointToHighlight', -15000, -15000);
@@ -248,6 +243,9 @@ begin
     CurrentShader.UniformF('Min', -15000, -15000);
     CurrentShader.UniformF('Max', 15000, 15000);
     end;
+
+  ModuleManager.ModTexMng.ActivateTexUnit(0);
+  
   for i := 0 to high(Blocks) do
     if ((Blocks[BlockIDs[i]].Visible) and ((CurrentShader = fGeometryPassShader) or (CurrentShader = fLightShadowPassShader))) or ((Blocks[BlockIDs[i]].ShadowsVisible) and (CurrentShader = fShadowPassShader)) then
       if Blocks[BlockIDs[i]].MinHeight = Blocks[BlockIDs[i]].MaxHeight then
@@ -270,7 +268,7 @@ begin
     fHDVBO.Unbind;
     end;
 
-  if BorderEnabled then
+  if (BorderEnabled) and (CurrentShader <> fShadowPassShader) then
     if (ModuleManager.ModRenderer.ViewPoint.X < ModuleManager.ModRenderer.MaxRenderDistance) or (ModuleManager.ModRenderer.ViewPoint.Z < ModuleManager.ModRenderer.MaxRenderDistance) or
        (0.2 * Park.pTerrain.SizeX - ModuleManager.ModRenderer.ViewPoint.X < ModuleManager.ModRenderer.MaxRenderDistance) or (0.2 * Park.pTerrain.SizeY - ModuleManager.ModRenderer.ViewPoint.Z < ModuleManager.ModRenderer.MaxRenderDistance) then
       begin

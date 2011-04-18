@@ -621,10 +621,9 @@ begin
   glLoadIdentity;
 
   RSky.Advance;
-  glLoadIdentity;
   RSky.Sun.Bind(0);
 
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
   glLoadIdentity;
   RCamera.ApplyRotation(Vector(1, 1, 1));
@@ -691,7 +690,7 @@ begin
   GBuffer.Bind;
     glDisable(GL_BLEND);
     glDepthMask(true);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
@@ -796,19 +795,19 @@ begin
 
     fSunShadowBuffer.Bind;
     glDepthMask(true);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_NOTEQUAL, 0.0);
-    glDepthFunc(GL_LEQUAL);
+    glDepthFunc(GL_LESS);
     glDisable(GL_BLEND);
-
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
-    glClearColor(1.0, 1.0, 1.0, 1.0);
 
     RTerrain.CurrentShader := RTerrain.ShadowPassShader;
     RTerrain.CurrentShader.UniformF('ShadowSize', ShadowSize);
-    RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
+    RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset);
     RTerrain.BorderEnabled := false;
     RTerrain.Render;
 
@@ -840,7 +839,7 @@ begin
     glDisable(GL_BLEND);
 
     glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
     if UseScreenSpaceAmbientOcclusion then
       fSSAOBuffer.Textures[0].Bind(5);
@@ -861,7 +860,7 @@ begin
       SunShader.UniformI('UseSSAO', 0);
     SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
     SunShader.UniformF('ShadowSize', ShadowSize);
-    SunShader.UniformF('ShadowOffset', ShadowOffset.X, ShadowOffset.Y, ShadowOffset.Z);
+    SunShader.UniformF('ShadowOffset', ShadowOffset);
     SunShader.UniformI('BlurSamples', ShadowBlurSamples);
     SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
     DrawFullscreenQuad;
@@ -910,7 +909,7 @@ begin
     begin
     glDisable(GL_BLEND);
     SunRayBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
     GBuffer.Textures[1].Bind(1);
     SpareBuffer.Textures[0].Bind(0);
@@ -929,7 +928,7 @@ begin
     glDepthMask(true);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
     CompositionShader.Bind;
     if fIsUnderWater then
@@ -991,7 +990,7 @@ begin
   if fIsUnderWater then
     begin
     fSpareBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
     fUnderWaterShader.Bind;
     fUnderWaterShader.UniformF('Height', fWaterHeight);
     fUnderWaterShader.UniformF('ViewPoint', ViewPoint.X, ViewPoint.Y, ViewPoint.Z);
@@ -1041,7 +1040,7 @@ begin
     glDisable(GL_BLEND);
 
     FocalBlurBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
     // Copy image to focal blur buffer
 
@@ -1125,7 +1124,7 @@ begin
 
     BloomBuffer.Bind;
 
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
     fBloomShader.Bind;
     fHDRBuffer2.Textures[0].Bind(1);

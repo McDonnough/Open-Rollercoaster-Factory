@@ -53,7 +53,7 @@ procedure TRSky.Advance;
 var
   SunXAngle, SunYAngle: Single;
 begin
-  fTest.Position := Vector(ModuleManager.ModRenderer.SelectionStart + ModuleManager.ModRenderer.SelectionRay + Vector(0, 2, 0), 1.0);
+//   fTest.Position := Vector(ModuleManager.ModRenderer.SelectionStart + ModuleManager.ModRenderer.SelectionRay + Vector(0, 2, 0), 1.0);
   fFogStrength := 0.0;
   SunYAngle := 11 * (power(1 + cos(DegToRad(Park.pSky.Time / 86400 * 360)), 2)) + 1;
   SunXAngle := 180 - Park.pSky.Time / 86400 * 360;
@@ -85,10 +85,10 @@ begin
 //   fTest.Position := Vector(160, 75, 160, 1);
 //   TLight.Create(fTest);
 
-  fTest := TLightSource.Create;
+{  fTest := TLightSource.Create;
   fTest.Energy := 1;
   fTest.FalloffDistance := 10;
-  TLight.Create(fTest);
+  TLight.Create(fTest);}
 end;
 
 destructor TRSky.Free;

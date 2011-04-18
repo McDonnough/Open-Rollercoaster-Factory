@@ -39,8 +39,7 @@ end;
 
 procedure TSky.LoadDefaults;
 begin
-  fTime := 86400 / 4 * 1.3;
-//   fTime := 86400 / 4 * 3;
+  fTime := 86400 / 4 * 2.7;
 end;
 
 constructor TSky.Create;

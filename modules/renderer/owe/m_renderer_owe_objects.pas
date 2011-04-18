@@ -7,7 +7,9 @@ uses
   u_ase, m_renderer_owe_renderpass, m_texmng_class, m_renderer_owe_cubemaps;
 
 type
-  TManagedMesh = record
+  TManagedObject = class;
+
+  TManagedMesh = class
     GeoMesh: TGeoMesh;
     VBO: TObjectVBO;
     Transparent: Boolean;
@@ -15,14 +17,20 @@ type
     Reflection: TCubeMap;
     ReflectionFramesToGo: Integer;
     nFrame: Integer;
+    ParentObject: TManagedObject;
     end;
 
-  TManagedObject = record
+  TManagedObject = class
     GeoObject: TGeoObject;
     Meshes: Array of TManagedMesh;
     end;
 
-  TRObjects = class
+  TMeshDistanceAssoc = record
+    Mesh: TManagedMesh;
+    Distance: Single;
+    end;
+
+  TRObjects = class(TThread)
     protected
       fManagedObjects: Array of TManagedObject;
       fOpaqueShadowShader, fTransparentShadowShader: TShader;
@@ -35,11 +43,15 @@ type
       fReflectionPass: TRenderPass;
       fCurrentShader: TShader;
       fCurrentMaterialCount: Integer;
-      fExcludedMeshObject, fExcludedMesh: Integer;
+      fExcludedMeshObject: TManagedObject;
+      fExcludedMesh: TManagedMesh;
+      fCanWork, fWorking: Boolean;
+      fTransparentMeshOrder: Array of TMeshDistanceAssoc;
     public
       CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
       ShadowMode, MaterialMode, LightShadowMode: Boolean;
+      property Working: Boolean read fWorking write fCanWork;
       property OpaqueShader: TShader read fOpaqueShader;
       property OpaqueShadowShader: TShader read fOpaqueShadowShader;
       property OpaqueLightShadowShader: TShader read fOpaqueLightShadowShader;
@@ -47,6 +59,8 @@ type
       property TransparentMaterialShader: TShader read fTransparentMaterialShader;
       property TransparentShadowShader: TShader read fTransparentShadowShader;
       property TransparentLightShadowShader: TShader read fTransparentLightShadowShader;
+      procedure Execute; override;
+      procedure Sync;
       procedure AddObject(Event: String; Data, Result: Pointer);
       procedure DeleteObject(Event: String; Data, Result: Pointer);
       procedure AddMesh(Event: String; Data, Result: Pointer);
@@ -58,9 +72,10 @@ type
       procedure RenderOpaque;
       procedure RenderTransparent;
       procedure UpdateObjects;
+      procedure QuickSortTransparentMeshes;
       function CalculateLODDistance(D: Single): Single;
       constructor Create;
-      destructor Free;
+      procedure Free;
     end;
 
 implementation
@@ -76,12 +91,10 @@ end;
 procedure TRObjects.AddObject(Event: String; Data, Result: Pointer);
 begin
   SetLength(fManagedObjects, length(fManagedObjects) + 1);
+  fManagedObjects[high(fManagedObjects)] := TManagedObject.Create;
   fManagedObjects[high(fManagedObjects)].GeoObject := TGeoObject(Data);
+  SetLength(fManagedObjects[high(fManagedObjects)].Meshes, 0);
   fLastManagedObject := high(fManagedObjects);
-  with fManagedObjects[fLastManagedObject] do
-    begin
-    SetLength(Meshes, 0);
-    end;
 end;
 
 procedure TRObjects.DeleteObject(Event: String; Data, Result: Pointer);
@@ -94,6 +107,7 @@ begin
         fLastManagedObject := i;
   for i := 0 to high(fManagedObjects[fLastManagedObject].Meshes) do
     DeleteMesh('', fManagedObjects[fLastManagedObject].GeoObject, fManagedObjects[fLastManagedObject].Meshes[i].GeoMesh);
+  fManagedObjects[fLastManagedObject].Free;
   fManagedObjects[fLastManagedObject] := fManagedObjects[high(fManagedObjects)];
   setLength(fManagedObjects, length(fManagedObjects) - 1);
   fLastManagedObject := Min(fLastManagedObject, high(fManagedObjects));
@@ -108,17 +122,24 @@ begin
       if fManagedObjects[i].GeoObject = TGeoObject(Data) then
         fLastManagedObject := i;
   setLength(fManagedObjects[fLastManagedObject].Meshes, length(fManagedObjects[fLastManagedObject].Meshes) + 1);
+  fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)] := TManagedMesh.Create;
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].GeoMesh := TGeoMesh(Result);
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].VBO := TObjectVBO.Create(TGeoMesh(Result));
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Transparent := TGeoMesh(Result).Material.Transparent;
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].ReflectionFramesToGo := Round(Random * ModuleManager.ModRenderer.ReflectionUpdateInterval);
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Reflection := nil;
+  fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].ParentObject := fManagedObjects[fLastManagedObject];
+  Sync;
+  SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
 end;
 
 procedure TRObjects.DeleteMesh(Event: String; Data, Result: Pointer);
 var
   i, mesh: Integer;
 begin
+  mesh := -1;
   if fManagedObjects[fLastManagedObject].GeoObject <> TGeoObject(Data) then
     for i := 0 to high(fManagedObjects) do
       if fManagedObjects[i].GeoObject = TGeoObject(Data) then
@@ -126,14 +147,26 @@ begin
   for i := 0 to high(fManagedObjects[fLastManagedObject].Meshes) do
     if fManagedObjects[fLastManagedObject].Meshes[i].GeoMesh = TGeoMesh(Result) then
       mesh := i;
-  with fManagedObjects[fLastManagedObject].Meshes[mesh] do
+  if mesh > -1 then
     begin
-    VBO.Free;
-    if Reflection <> nil then
-      Reflection.Free;
+    with fManagedObjects[fLastManagedObject].Meshes[mesh] do
+      begin
+      VBO.Free;
+      if Reflection <> nil then
+        Reflection.Free;
+      end;
+    Sync;
+    for i := 0 to high(fTransparentMeshOrder) do
+      if fTransparentMeshOrder[i].Mesh = fManagedObjects[fLastManagedObject].Meshes[mesh] then
+        begin
+        fTransparentMeshOrder[i] := fTransparentMeshOrder[high(fTransparentMeshOrder)];
+        SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) - 1);
+        break;
+        end;
+    fManagedObjects[fLastManagedObject].Meshes[mesh].Free;
+    fManagedObjects[fLastManagedObject].Meshes[mesh] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+    SetLength(fManagedObjects[fLastManagedObject].Meshes, length(fManagedObjects[fLastManagedObject].Meshes) - 1);
     end;
-  fManagedObjects[fLastManagedObject].Meshes[mesh] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
-  SetLength(fManagedObjects[fLastManagedObject].Meshes, length(fManagedObjects[fLastManagedObject].Meshes) - 1);
 end;
 
 procedure TRObjects.BindMaterial(Material: TMaterial);
@@ -225,17 +258,19 @@ procedure TRObjects.RenderTransparent;
 var
   i, j: Integer;
 begin
+  Sync;
   if MaterialMode then
     begin
     CurrentGBuffer.Textures[1].Bind(5);
     CurrentGBuffer.Textures[3].Bind(6);
     end;
   fCurrentMaterialCount := 1;
-  for i := 0 to high(fManagedObjects) do
-    for j := 0 to high(fManagedObjects[i].Meshes) do
+  for i := 0 to high(fTransparentMeshOrder) do
+//   for i := 0 to high(fManagedObjects) do
+//     for j := 0 to high(fManagedObjects[i].Meshes) do
       begin
-      if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
-        if fManagedObjects[i].Meshes[j].Transparent then
+      if ((fTransparentMeshOrder[i].Mesh.Visible) or (ShadowMode)) and ((fTransparentMeshOrder[i].Mesh.ParentObject <> fExcludedMeshObject) or (fTransparentMeshOrder[i].Mesh <> fExcludedMesh)) then
+        if fTransparentMeshOrder[i].Mesh.Transparent then
           begin
           if LightShadowMode then
             fCurrentShader := fTransparentLightShadowShader
@@ -253,11 +288,11 @@ begin
             begin
             // Render back sides first
             ModuleManager.ModRenderer.InvertFrontFace;
-            Render(fManagedObjects[i].Meshes[j]);
+            Render(fTransparentMeshOrder[i].Mesh);
             ModuleManager.ModRenderer.InvertFrontFace;
             end;
           // Final render, front sides
-          Render(fManagedObjects[i].Meshes[j]);
+          Render(fTransparentMeshOrder[i].Mesh);
           end;
       inc(fCurrentMaterialCount);
       end;
@@ -270,7 +305,7 @@ begin
   MaterialMode := False;
   for i := 0 to high(fManagedObjects) do
     for j := 0 to high(fManagedObjects[i].Meshes) do
-      if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((i <> fExcludedMeshObject) or (j <> fExcludedMesh)) then
+      if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((fManagedObjects[i] <> fExcludedMeshObject) or (fManagedObjects[i].Meshes[j] <> fExcludedMesh)) then
         if not fManagedObjects[i].Meshes[j].Transparent then
           begin
           if ShadowMode then
@@ -319,8 +354,8 @@ begin
             begin
             if fManagedObjects[i].Meshes[j].Reflection = nil then
               fManagedObjects[i].Meshes[j].Reflection := TCubeMap.Create(ModuleManager.ModRenderer.ReflectionSize, ModuleManager.ModRenderer.ReflectionSize, GL_RGB16F_ARB);
-            fExcludedMeshObject := i;
-            fExcludedMesh := j;
+            fExcludedMeshObject := fManagedObjects[i];
+            fExcludedMesh := fManagedObjects[i].Meshes[j];
             ModuleManager.ModRenderer.ViewPoint := MeshPosition;
             fManagedObjects[i].Meshes[j].Reflection.Render(fReflectionPass, MeshPosition);
             fManagedObjects[i].Meshes[j].ReflectionFramesToGo := ModuleManager.ModRenderer.ReflectionUpdateInterval - 1;
@@ -334,15 +369,15 @@ begin
           fManagedObjects[i].Meshes[j].Reflection := nil;
           end;
       end;
-  fExcludedMeshObject := -1;
-  fExcludedMesh := -1;
+  fExcludedMeshObject := nil;
+  fExcludedMesh := nil;
 end;
 
 procedure TRObjects.UpdateObjects;
 begin
-  fTest.Armatures[0].Bones[0].Matrix := fTest.Armatures[0].Bones[0].Matrix * RotationMatrix(1, Vector(0, 1, 0));
-  fTest.UpdateArmatures;
-  fTest.UpdateMatrix;
+//   fTest.Armatures[0].Bones[0].Matrix := fTest.Armatures[0].Bones[0].Matrix * RotationMatrix(1, Vector(0, 1, 0));
+//   fTest.UpdateArmatures;
+//   fTest.UpdateMatrix;
 //   fTest.UpdateVertexPositions;
 //   fTest.RecalcFaceNormals;
 //   fTest.RecalcVertexNormals;
@@ -350,6 +385,8 @@ end;
 
 constructor TRObjects.Create;
 begin
+  inherited Create(false);
+  
   writeln('Hint: Initializing object renderer');
 
   MaterialMode := False;
@@ -400,8 +437,8 @@ begin
   fReflectionPass.RenderParticles := ModuleManager.ModRenderer.ReflectionRenderParticles;
   fReflectionPass.RenderAutoplants := ModuleManager.ModRenderer.ReflectionRenderAutoplants;
 
-  fExcludedMeshObject := -1;
-  fExcludedMesh := -1;
+  fExcludedMeshObject := nil;
+  fExcludedMesh := nil;
   CurrentGBuffer := ModuleManager.ModRenderer.GBuffer;
 
   fTest := ASEFileToMeshArray(LoadASEFile('scenery/untitled.ase'));
@@ -440,8 +477,88 @@ begin
   fTest.Register;
 end;
 
-destructor TRObjects.Free;
+procedure TRObjects.QuickSortTransparentMeshes;
+  procedure DoQuicksort(First, Last: Integer);
+    procedure Swap(X, Y: Integer);
+    var
+      Z: TMeshDistanceAssoc;
+    begin
+      Z := fTransparentMeshOrder[X];
+      fTransparentMeshOrder[X] := fTransparentMeshOrder[Y];
+      fTransparentMeshOrder[Y] := Z;
+    end;
+  var
+    PivotID, i, j: Integer;
+    Pivot: Single;
+  begin
+    if First >= Last then
+      exit;
+    PivotID := (First + Last) div 2;
+    Pivot := fTransparentMeshOrder[PivotID].Distance;
+
+    Swap(PivotID, Last);
+
+    i := First;
+    j := Last - 1;
+
+    repeat
+      while (fTransparentMeshOrder[i].Distance >= Pivot) and (i < Last) do
+        inc(i);
+
+      while (fTransparentMeshOrder[j].Distance <= Pivot) and (j > First) do
+        dec(j);
+
+      if i < j then
+        Swap(i, j);
+    until
+      i >= j;
+    if fTransparentMeshOrder[i].Distance < Pivot then
+      Swap(i, Last);
+
+    DoQuicksort(First, i - 1);
+    DoQuicksort(i + 1, Last);
+  end;
 begin
+  DoQuicksort(0, high(fTransparentMeshOrder));
+end;
+
+procedure TRObjects.Execute;
+var
+  i: Integer;
+begin
+  fWorking := False;
+  fCanWork := False;
+
+  while not Terminated do
+    begin
+    if fCanWork then
+      begin
+      fWorking := True;
+      fCanWork := False;
+
+      for i := 0 to high(fTransparentMeshOrder) do
+        fTransparentMeshOrder[i].Distance := VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Vector3D(Vector(0, 0, 0, 1) * fTransparentMeshOrder[i].Mesh.GeoMesh.CalculatedMatrix));
+
+      QuickSortTransparentMeshes;
+
+      fWorking := False;
+      end
+    else
+      sleep(1);
+    end;
+
+  writeln('Hint: Terminated object renderer thread');
+end;
+
+procedure TRObjects.Sync;
+begin
+  while Working do
+    sleep(1);
+end;
+
+procedure TRObjects.Free;
+begin
+  Terminate;
   fTest.Free;
   fReflectionPass.Free;
   fOpaqueLightShadowShader.Free;
@@ -455,6 +572,8 @@ begin
   EventManager.RemoveCallback(@DeleteObject);
   EventManager.RemoveCallback(@AddMesh);
   EventManager.RemoveCallback(@DeleteMesh);
+  Sync;
+  inherited Free;
 end;
 
 

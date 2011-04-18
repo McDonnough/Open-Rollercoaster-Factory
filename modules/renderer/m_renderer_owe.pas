@@ -661,6 +661,7 @@ begin
   DynamicSettingsSetNormal;
 
   ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
+  RObjects.Working := True;
 
   if fIsUnderWater then
     MaxRenderDistance := 55
@@ -669,8 +670,6 @@ begin
 
   // Do water renderpasses
   RWater.RenderBuffers;
-
-  ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
 
   // Render final scene
 

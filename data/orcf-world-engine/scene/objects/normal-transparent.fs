@@ -48,7 +48,7 @@ void main(void) {
   gl_FragData[0] = gl_FrontMaterial.diffuse;
   if (HasTexture == 1)
     gl_FragData[0] *= texture2D(Texture, gl_TexCoord[0].xy);
-  if (gl_FragData[0].a < texture2D(TransparencyMask, (gl_FragCoord.xy) / MaskSize + MaskOffset).a)
+  if (gl_FragData[0].a <= texture2D(TransparencyMask, (gl_FragCoord.xy) / MaskSize + MaskOffset).a)
     discard;
   vec3 normal = Normal;
   if (HasNormalMap == 1) {

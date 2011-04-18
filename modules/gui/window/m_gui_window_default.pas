@@ -5,7 +5,7 @@ unit m_gui_window_default;
 interface
 
 uses
-  Classes, SysUtils, m_gui_window_class, m_texmng_class, m_shdmng_class, DGLOpenGL, m_renderer_opengl_classes;
+  Classes, SysUtils, m_gui_window_class, m_texmng_class, m_shdmng_class, DGLOpenGL, m_renderer_owe_classes;
 
 type
   TModuleGUIWindowDefault = class(TModuleGUIWindowClass)

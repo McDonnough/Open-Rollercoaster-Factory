@@ -175,17 +175,6 @@ var
 begin
   with Material do
     begin
-    if LightFactorMap <> nil then
-      begin
-      LightFactorMap.Bind(2);
-      fCurrentShader.UniformI('HasLightFactorMap', 1);
-      end
-    else
-      begin
-      ModuleManager.ModTexMng.ActivateTexUnit(2);
-      ModuleManager.ModTexMng.BindTexture(-1);
-      fCurrentShader.UniformI('HasLightFactorMap', 0);
-      end;
     if BumpMap <> nil then
       begin
       BumpMap.Bind(1);
@@ -413,13 +402,11 @@ begin
   fOpaqueShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-opaque.fs');
   fOpaqueShader.UniformI('Texture', 0);
   fOpaqueShader.UniformI('NormalMap', 1);
-  fOpaqueShader.UniformI('LightFactorMap', 2);
   fOpaqueShader.UniformI('ReflectionMap', 3);
 
   fTransparentShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-transparent.fs');
   fTransparentShader.UniformI('Texture', 0);
   fTransparentShader.UniformI('NormalMap', 1);
-  fTransparentShader.UniformI('LightFactorMap', 2);
   fTransparentShader.UniformI('ReflectionMap', 3);
   fTransparentShader.UniformI('TransparencyMask', 7);
   fTransparentShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);

@@ -122,7 +122,7 @@ type
       RefractionValue: Single;
       Hardness, Specularity: Single;
       BumpMapFactor: Single;
-      Texture, BumpMap, LightFactorMap: TTexture;
+      Texture, BumpMap: TTexture;
       OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
       function Duplicate: TMaterial;
@@ -337,7 +337,6 @@ begin
   OnlyEnvironmentMapHint := false;
   Texture := nil;
   BumpMap := nil;
-  LightFactorMap := nil;
 end;
 
 

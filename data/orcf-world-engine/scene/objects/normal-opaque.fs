@@ -2,14 +2,12 @@
 
 uniform sampler2D Texture;
 uniform sampler2D NormalMap;
-uniform sampler2D LightFactorMap;
 uniform sampler2D ReflectionMap;
 
 uniform vec3 ViewPoint;
 
 uniform int HasTexture;
 uniform int HasNormalMap;
-uniform int HasLightFactorMap;
 
 varying vec3 Vertex;
 varying vec3 Normal;

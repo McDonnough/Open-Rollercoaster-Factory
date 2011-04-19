@@ -2,7 +2,6 @@
 
 uniform sampler2D TransparencyMask;
 uniform sampler2D Texture;
-uniform sampler2D LightFactorMap;
 uniform sampler2D NormalMap;
 uniform sampler2D ReflectionMap;
 
@@ -13,7 +12,6 @@ uniform vec2 MaskSize;
 
 uniform int HasTexture;
 uniform int HasNormalMap;
-uniform int HasLightFactorMap;
 
 uniform ivec3 MaterialID;
 

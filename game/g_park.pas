@@ -197,9 +197,9 @@ begin
   else
     begin
     ParkUI.Drag;
-    ModuleManager.ModCamera.AdvanceActiveCamera;
     pSky.Advance;
     pParticles.Advance;
+    ModuleManager.ModCamera.AdvanceActiveCamera;
     fSelectionEngine.Update;
     ModuleManager.ModRenderer.RenderScene;
     end;
@@ -269,12 +269,12 @@ destructor TPark.Free;
 begin
   writeln('Hint: Deleting Park object');
   EventManager.RemoveCallback(@StartLoading);
-  ModuleManager.ModRenderer.Unload;
   fSelectionEngine := nil;
   fNormalSelectionEngine.Free;
   pSky.Free;
   pTerrain.Free;
   pParticles.Free;
+  ModuleManager.ModRenderer.Unload;
 end;
 
 end.

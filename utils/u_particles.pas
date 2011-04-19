@@ -44,7 +44,7 @@ procedure TParticle.AdvanceNormal(TimeFactor: Single);
 begin
   TimeLived := TimeLived + TimeFactor;
   Spin := InitialSpin * Power(2.7183, SpinExponent);
-  Rotation := Rotation + Spin;
+  Rotation := Rotation + Spin / TimeFactor;
   Velocity := Velocity + Acceleration * TimeFactor;
   Position := Position + Velocity * TimeFactor;
   Size := Vector(InitialSize.X * Power(2.7183, SizeExponent.X * TimeLived),
@@ -73,7 +73,7 @@ begin
     end;
   if Running then
     begin
-    if NextGenerationTime < 0 then
+    if NextGenerationTime <= 0 then
       begin
       NextGenerationTime := GenerationTime * Power(2, GenerationTimeVariance * QRandom);
       AddParticle;

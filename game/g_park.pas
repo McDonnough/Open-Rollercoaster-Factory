@@ -21,6 +21,7 @@ type
       pSky: TSky;
       pMainCamera: TCamera;
       pCameras: Array of TCamera;
+      pParticles: TParticleManager;
 
       fName, fAuthor, fDescription: String;
 
@@ -106,6 +107,8 @@ begin
   ModuleManager.ModLoadScreen.Progress := 5;
   fNormalSelectionEngine := TSelectionEngine.Create;
   fSelectionEngine := fNormalSelectionEngine;
+
+  pParticles := TParticleManager.Create;
 
   fLoadState := 0;
 end;
@@ -194,8 +197,9 @@ begin
   else
     begin
     ParkUI.Drag;
-    pSky.Advance;
     ModuleManager.ModCamera.AdvanceActiveCamera;
+    pSky.Advance;
+    pParticles.Advance;
     fSelectionEngine.Update;
     ModuleManager.ModRenderer.RenderScene;
     end;
@@ -265,11 +269,12 @@ destructor TPark.Free;
 begin
   writeln('Hint: Deleting Park object');
   EventManager.RemoveCallback(@StartLoading);
+  ModuleManager.ModRenderer.Unload;
   fSelectionEngine := nil;
   fNormalSelectionEngine.Free;
   pSky.Free;
   pTerrain.Free;
-  ModuleManager.ModRenderer.Unload;
+  pParticles.Free;
 end;
 
 end.

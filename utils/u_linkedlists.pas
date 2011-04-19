@@ -33,6 +33,7 @@ type
       procedure DetachItem(Item: TLinkedListItem);
       procedure FreeAllItems;
       procedure DetachAllItems;
+      function IsEmpty: Boolean;
       constructor Create;
       destructor Free;
     end;
@@ -131,6 +132,10 @@ begin
     DetachItem(Last);
 end;
 
+function TLinkedList.IsEmpty: Boolean;
+begin
+  Result := First = nil;
+end;
 
 constructor TLinkedList.Create;
 begin

@@ -14,16 +14,18 @@ type
       Lighting, InitialLighting, LightingExponent: Single;
       Velocity, Acceleration: TVector3D;
       Position: TVector3D;
-      Rotation, Spin: Single;
+      Rotation, InitialSpin, Spin, SpinExponent: Single;
       procedure AdvanceNormal(TimeFactor: Single);
     end;
 
   TParticleGroup = class(TLinkedList)
     public
 //       Script: TScript;
+      Running: Boolean;
       Material: TMaterial;
       Lifetime, LifetimeVariance: Single;
       GenerationTime, GenerationTimeVariance: Single;
+      NextGenerationTime: Single;
       InitialSize, SizeExponent, SizeVariance: TVector2D;
       InitialColor, ColorExponent, ColorVariance: TVector4D;
       InitialLighting, LightingExponent, LightingVariance: Single;
@@ -31,8 +33,8 @@ type
       InitialAcceleration, AccelerationVariance: TVector3D;
       InitialPosition, PositionVariance: TVector3D;
       InitialRotation, RotationVariance: Single;
-      InitialSpin, SpinVariance: Single;
-      procedure AdvanceGroup;
+      InitialSpin, SpinExponent, SpinVariance: Single;
+      procedure AdvanceGroup(TimeFactor: Single);
       function AddParticle: TParticle;
     end;
 
@@ -41,6 +43,7 @@ implementation
 procedure TParticle.AdvanceNormal(TimeFactor: Single);
 begin
   TimeLived := TimeLived + TimeFactor;
+  Spin := InitialSpin * Power(2.7183, SpinExponent);
   Rotation := Rotation + Spin;
   Velocity := Velocity + Acceleration * TimeFactor;
   Position := Position + Velocity * TimeFactor;
@@ -54,8 +57,29 @@ begin
 end;
 
 
-procedure TParticleGroup.AdvanceGroup;
+procedure TParticleGroup.AdvanceGroup(TimeFactor: Single);
+var
+  CurrItem, NextItem: TParticle;
 begin
+  CurrItem := TParticle(First);
+  while CurrItem <> nil do
+    begin
+    NextItem := TParticle(CurrItem.Next);
+    if CurrItem.TimeLived > CurrItem.MaxLifetime then
+      CurrItem.Free
+    else
+      CurrItem.AdvanceNormal(TimeFactor);
+    CurrItem := NextItem;
+    end;
+  if Running then
+    begin
+    if NextGenerationTime < 0 then
+      begin
+      NextGenerationTime := GenerationTime * Power(2, GenerationTimeVariance * QRandom);
+      AddParticle;
+      end;
+    NextGenerationTime := NextGenerationTime - TimeFactor;
+    end;
 end;
 
 function TParticleGroup.AddParticle: TParticle;
@@ -92,10 +116,11 @@ begin
   Result.Position := InitialPosition + PositionVariance * Vector(QRandom, QRandom, QRandom);
 
   Result.Rotation := InitialRotation + RotationVariance * QRandom;
-  Result.Spin := InitialSpin * Power(2, SpinVariance * QRandom);
+  Result.InitialSpin := InitialSpin * Power(2, SpinVariance * QRandom);
+  Result.SpinExponent := SpinExponent;
+  Result.Spin := Result.InitialSpin;
 
   Append(Result);
 end;
-
 
 end.

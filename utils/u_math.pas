@@ -159,7 +159,7 @@ end;
 function QRandom: Single;
 begin
   Result := -1 + 2 * Random;
-  Result := Result * Result;
+  Result := Result * abs(Result);
 end;
 
 end.

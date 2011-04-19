@@ -27,6 +27,8 @@ function FPart(A: TVector4D): TVector4D; inline;
 
 function Clamp(A, Min, Max: Single): Single;
 
+function QRandom: Single;
+
 implementation
 
 function Mix(A, B, C: Single): Single;
@@ -152,6 +154,12 @@ begin
   else if A > Max then
     exit(Max);
   Result := A;
+end;
+
+function QRandom: Single;
+begin
+  Result := -1 + 2 * Random;
+  Result := Result * Result;
 end;
 
 end.

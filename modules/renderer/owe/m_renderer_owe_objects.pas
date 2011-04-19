@@ -364,9 +364,9 @@ end;
 
 procedure TRObjects.UpdateObjects;
 begin
-//   fTest.Armatures[0].Bones[0].Matrix := fTest.Armatures[0].Bones[0].Matrix * RotationMatrix(1, Vector(0, 1, 0));
-//   fTest.UpdateArmatures;
-//   fTest.UpdateMatrix;
+  fTest.Armatures[0].Bones[0].Matrix := fTest.Armatures[0].Bones[0].Matrix * RotationMatrix(1, Vector(0, 1, 0));
+  fTest.UpdateArmatures;
+  fTest.UpdateMatrix;
 //   fTest.UpdateVertexPositions;
 //   fTest.RecalcFaceNormals;
 //   fTest.RecalcVertexNormals;
@@ -445,9 +445,7 @@ begin
       end;
     end;
   fTest.Meshes[0].AddBone(fTest.Armatures[0].Bones[1]);
-  fTest.Meshes[0].MinDistance := 20;
   fTest.Meshes[1].AddBone(fTest.Armatures[0].Bones[0]);
-  fTest.Meshes[1].MaxDistance := 20;
   fTest.Materials[3].Reflectivity := 0.8;
   fTest.Materials[0].Reflectivity := 0.8;
   fTest.Materials[1].Reflectivity := 0.7;

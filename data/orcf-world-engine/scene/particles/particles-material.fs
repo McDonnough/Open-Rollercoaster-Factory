@@ -5,15 +5,12 @@
 uniform sampler2D Texture;
 uniform sampler2D LightTexture;
 uniform sampler2D MaterialMap;
-uniform sampler2D ReflectionMap;
 
 uniform vec3 FogColor;
 uniform float FogStrength;
 
 uniform float WaterHeight;
 uniform float WaterRefractionMode;
-
-uniform int HasTexture;
 
 uniform ivec3 MaterialID;
 
@@ -22,10 +19,9 @@ varying vec3 Vertex;
 void main(void) {
   float dist = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
   gl_FragDepth = dist / 10000.0;
-  
-  gl_FragColor = gl_FrontMaterial.diffuse;
-  if (HasTexture == 1)
-    gl_FragColor *= texture2D(Texture, gl_TexCoord[0].xy);
+
+  gl_FragColor = gl_FrontMaterial.diffuse * gl_Color;
+  gl_FragColor *= texture2D(Texture, gl_TexCoord[0].xy);
 
   ivec2 Offset = ivec2(0, 0);
   ivec2 Coords = ivec2(floor(gl_FragCoord.xy));
@@ -39,7 +35,6 @@ void main(void) {
   vec4 Light = texelFetch2D(LightTexture, Coords, 0);
   if (Light.a >= 0.0) {
     gl_FragColor.rgb = gl_FragColor.rgb * Light.rgb;
-    gl_FragColor.rgb = mix(gl_FragColor.rgb, texelFetch2D(ReflectionMap, Coords, 0).rgb, gl_FrontMaterial.specular.g);
     gl_FragColor.rgb += Light.rgb * Light.a * gl_FrontMaterial.specular.r;
     gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
   }

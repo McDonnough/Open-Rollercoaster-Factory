@@ -44,7 +44,7 @@ procedure TParticle.AdvanceNormal(TimeFactor: Single);
 begin
   TimeLived := TimeLived + TimeFactor;
   Spin := InitialSpin * Power(2.7183, SpinExponent);
-  Rotation := Rotation + Spin / TimeFactor;
+  Rotation := Rotation + Spin * TimeFactor;
   Velocity := Velocity + Acceleration * TimeFactor;
   Position := Position + Velocity * TimeFactor;
   Size := Vector(InitialSize.X * Power(2.7183, SizeExponent.X * TimeLived),
@@ -120,7 +120,7 @@ begin
   Result.SpinExponent := SpinExponent;
   Result.Spin := Result.InitialSpin;
 
-  Append(Result);
+  Prepend(Result);
 end;
 
 end.

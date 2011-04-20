@@ -270,7 +270,7 @@ begin
           else
             begin
             fCurrentShader := fTransparentShader;
-            fCurrentShader.UniformF('MaskOffset', Round(16 * Random) / 16, Round(16 * Random) / 16);
+            fCurrentShader.UniformF('MaskOffset', 0, 0);
             end;
           fCurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
           if not (ShadowMode or LightShadowMode) then

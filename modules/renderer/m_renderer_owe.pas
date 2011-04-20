@@ -3,7 +3,7 @@ unit m_renderer_owe;
 interface
 
 uses
-  Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors,
+  Classes, SysUtils, m_renderer_class, DGLOpenGL, g_park, u_math, u_vectors, m_renderer_owe_particles,
   m_renderer_owe_camera, math, m_texmng_class, m_shdmng_class, u_functions, m_renderer_owe_frustum,
   m_renderer_owe_sky, m_renderer_owe_classes, u_scene, m_renderer_owe_lights, m_renderer_owe_terrain,
   m_renderer_owe_autoplants, m_renderer_owe_water, m_renderer_owe_objects, m_renderer_owe_cubemaps,
@@ -19,6 +19,7 @@ type
       fRendererAutoplants: TRAutoplants;
       fRendererObjects: TRObjects;
       fRendererWater: TRWater;
+      fRendererParticles: TRParticles;
       fLightManager: TLightManager;
       fGBuffer, fHDRBuffer, fHDRBuffer2, fLightBuffer, fSceneBuffer, fSSAOBuffer, fSunRayBuffer, fBloomBuffer, fFocalBlurBuffer, fMotionBlurBuffer, fSpareBuffer, fSunShadowBuffer: TFBO;
       fFSAASamples: Integer;
@@ -78,6 +79,7 @@ type
       property RAutoplants: TRAutoplants read fRendererAutoplants;
       property RObjects: TRObjects read fRendererObjects;
       property RWater: TRWater read fRendererWater;
+      property RParticles: TRParticles read fRendererParticles;
       property FullscreenShader: TShader read fFullscreenShader;
       property LightShader: TShader read fLightShader;
       property SunShader: TShader read fSunShader;
@@ -336,6 +338,7 @@ begin
   fRendererAutoplants := TRAutoplants.Create;
   fRendererObjects := TRObjects.Create;
   fRendererWater := TRWater.Create;
+  fRendererParticles := TRParticles.Create;
 
   fEnvironmentMap := TCubeMap.Create(EnvMapSize, EnvMapSize, GL_RGB16F_ARB);
   fEnvironmentPass := TRenderPass.Create(EnvMapSize, EnvMapSize);
@@ -478,6 +481,7 @@ begin
   fHDRBuffer.Free;
   fHDRBuffer2.Free;
 
+  fRendererParticles.Free;
   fRendererWater.Free;
   fRendererObjects.Free;
   fRendererAutoplants.Free;
@@ -765,13 +769,18 @@ begin
   GBuffer.Bind;
     fTransparencyMask.Bind(7);
 
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_NOTEQUAL, 0.0);
+    glDisable(GL_ALPHA_TEST);
 //     glColorMask(true, true, true, false);
 
     // Autoplants
     RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
     RAutoplants.Render;
+
+    // Particles
+    RParticles.CurrentShader := RParticles.GeometryShader;
+    glDepthMask(false);
+    RParticles.Render;
+    glDepthMask(true);
 
     // Objects
     RObjects.MaterialMode := False;
@@ -969,9 +978,19 @@ begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Autoplants
     RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
     RAutoplants.Render;
 
+    // Particles
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0);
+    RParticles.CurrentShader := RParticles.MaterialShader;
+    glDepthMask(false);
+    RParticles.Render;
+    glDepthMask(true);
+
+    // Objects
     RObjects.MaterialMode := True;
     glEnable(GL_CULL_FACE);
     RObjects.RenderTransparent;
@@ -993,7 +1012,6 @@ begin
   GBuffer.Unbind;
 
   // Under-water view
-
   if fIsUnderWater then
     begin
     fSpareBuffer.Bind;
@@ -1029,7 +1047,6 @@ begin
     end;
 
   // Set up selection rays
-
   with ModuleManager.ModCamera do
     fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
                                    -Sin(DegToRad(ActiveCamera.Rotation.X)),
@@ -1041,7 +1058,6 @@ begin
   fFocusDistance := Coord.W;
 
   // Focal Blur pass
-
   if UseFocalBlur then
     begin
     glDisable(GL_BLEND);
@@ -1077,8 +1093,7 @@ begin
     SceneBuffer.Unbind;
     end;
 
-    // Apply sun ray effect to the image
-
+  // Apply sun ray effect to the image
   if UseSunRays then
     begin
     SceneBuffer.Bind;

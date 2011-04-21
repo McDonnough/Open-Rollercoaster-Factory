@@ -79,7 +79,7 @@ begin
       CurrentGroup.Group.AdvanceGroup(0.001 * FPSDisplay.MS)
     else
       begin
-      EventManager.CallEvent('TParticleManager.DeleteGroup', CurrentGroup, nil);
+      EventManager.CallEvent('TParticleManager.DeleteGroup', CurrentGroup.Group, nil);
       CurrentGroup.Free;
       end;
 

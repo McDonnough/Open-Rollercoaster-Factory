@@ -276,7 +276,8 @@ var
   i, j: Integer;
 begin
   Sync;
-  ModuleManager.ModRenderer.RParticles.Prepare;
+  if (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
+    ModuleManager.ModRenderer.RParticles.Prepare;
   if MaterialMode then
     begin
     CurrentGBuffer.Textures[1].Bind(5);
@@ -313,7 +314,7 @@ begin
           Render(fTransparentMeshOrder[i].Mesh);
           end;
       end
-    else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) then
+    else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
       ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
     inc(fCurrentMaterialCount);
     end;

@@ -129,8 +129,7 @@ begin
   GBuffer.Bind;
     ModuleManager.ModRenderer.TransparencyMask.Bind(7);
 
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_NOTEQUAL, 0.0);
+    glDisable(GL_ALPHA_TEST);
 //     glColorMask(true, true, true, false);
 
     // Autoplants

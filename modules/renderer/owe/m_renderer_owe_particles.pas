@@ -59,7 +59,6 @@ begin
   CurrentShader.UniformI('MaterialID', (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 16) and $FF, (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 8) and $FF, ModuleManager.ModRenderer.RObjects.CurrentMaterialCount and $FF);
 
   glBegin(GL_QUADS);
-
   CurrentParticle := TParticle(Group.Last);
   while CurrentParticle <> nil do
     begin
@@ -91,11 +90,6 @@ begin
   MakeOGLCompatibleMatrix(BillboardMatrix, @Matrix[0]);
 
   CurrentShader.Bind;
-  if CurrentShader = MaterialShader then
-    begin
-    ModuleManager.ModRenderer.RObjects.CurrentGBuffer.Textures[1].Bind(5);
-    ModuleManager.ModRenderer.RObjects.CurrentGBuffer.Textures[3].Bind(6);
-    end;
   CurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
   CurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
   CurrentShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);

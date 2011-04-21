@@ -40,7 +40,6 @@ type
       fTransparentMaterialShader: TShader;
       fLastGeoObject: TGeoObject;
       fLastManagedObject: Integer;
-      fTest: TGeoObject;
       fReflectionPass: TRenderPass;
       fCurrentShader: TShader;
       fCurrentMaterialCount: Integer;
@@ -397,12 +396,7 @@ end;
 
 procedure TRObjects.UpdateObjects;
 begin
-  fTest.Armatures[0].Bones[0].Matrix := fTest.Armatures[0].Bones[0].Matrix * RotationMatrix(1, Vector(0, 1, 0));
-  fTest.UpdateArmatures;
-  fTest.UpdateMatrix;
-//   fTest.UpdateVertexPositions;
-//   fTest.RecalcFaceNormals;
-//   fTest.RecalcVertexNormals;
+
 end;
 
 constructor TRObjects.Create;
@@ -462,39 +456,6 @@ begin
   fExcludedMeshObject := nil;
   fExcludedMesh := nil;
   CurrentGBuffer := ModuleManager.ModRenderer.GBuffer;
-
-  fTest := ASEFileToMeshArray(LoadASEFile('scenery/untitled.ase'));
-  with fTest.AddArmature do
-    begin
-    with AddBone do
-      begin
-      SourcePosition := Vector(-1, -5, 0);
-      DestinationPosition := Vector(-1, -6, 0);
-      Matrix := TranslationMatrix(Vector(2, 10, 4));
-      end;
-    with AddBone do
-      begin
-      SourcePosition := Vector(0, 0, 0);
-      DestinationPosition := Vector(0, 1, 0);
-      Matrix := TranslationMatrix(Vector(0, 4, 0));
-      end;
-    end;
-  fTest.Meshes[0].AddBone(fTest.Armatures[0].Bones[1]);
-  fTest.Meshes[1].AddBone(fTest.Armatures[0].Bones[0]);
-  fTest.Materials[3].Reflectivity := 0.8;
-  fTest.Materials[0].Reflectivity := 0.8;
-  fTest.Materials[1].Reflectivity := 0.7;
-  fTest.Materials[2].Reflectivity := 0.6;
-  fTest.Materials[2].BumpMap := TTexture.Create;
-  fTest.Materials[2].BumpMap.FromFile('scenery/testbump.tga');
-  fTest.Materials[2].Emission := Vector(1, 1, 1, 5);
-  fTest.Matrix := TranslationMatrix(Vector(160, 70, 160));
-  fTest.UpdateArmatures;
-  fTest.UpdateVertexPositions;
-  fTest.UpdateMatrix;
-  fTest.RecalcFaceNormals;
-  fTest.RecalcVertexNormals;
-  fTest.Register;
 end;
 
 procedure TRObjects.QuickSortTransparentMeshes;
@@ -584,7 +545,6 @@ end;
 procedure TRObjects.Free;
 begin
   Terminate;
-  fTest.Free;
   fReflectionPass.Free;
   fOpaqueLightShadowShader.Free;
   fOpaqueShader.Free;

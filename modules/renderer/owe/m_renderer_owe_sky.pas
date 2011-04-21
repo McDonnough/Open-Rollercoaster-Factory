@@ -15,7 +15,6 @@ type
       fSunColor: TTexImage;
       fStarTexture: TTexture;
       fFogStrength: Single;
-      A: TParticleGroup;
     public
       property FogStrength: Single read fFogStrength;
       property Sun: TSun read fSun;
@@ -53,7 +52,6 @@ procedure TRSky.Advance;
 var
   SunXAngle, SunYAngle: Single;
 begin
-  A.InitialPosition := ModuleManager.ModRenderer.SelectionStart + ModuleManager.ModRenderer.SelectionRay;
   fFogStrength := 0.0;
   SunYAngle := 11 * (power(1 + cos(DegToRad(Park.pSky.Time / 86400 * 360)), 2)) + 1;
   SunXAngle := 180 - Park.pSky.Time / 86400 * 360;
@@ -74,85 +72,6 @@ begin
   fSunColor := TexFromStream(ByteStreamFromFile('orcf-world-engine/scene/sky/sun-color/suncolor.tga'), '.tga');
   fStarTexture := TTexture.Create;
   fStarTexture.FromFile('orcf-world-engine/scene/sky/stars.tga');
-
-
-  A := TParticleGroup.Create;
-
-  A.Running := True;
-  A.Material := TMaterial.Create;
-  A.Material.Color := Vector(0.5, 0.5, 0.5, 1);
-  A.Material.Emission := Vector(0, 0, 0, 1);
-  A.Material.Reflectivity := 0;
-  A.Material.Specularity := 0.2;
-  A.Material.Hardness := 5;
-  A.Material.OnlyEnvironmentMapHint := True;
-  A.Material.Texture := TTexture.Create;
-  A.Material.Texture.FromFile('scenery/testparticle.tga');
-
-  A.Lifetime := 10.0;
-  A.LifetimeVariance := 0.0;
-  A.GenerationTime := 0.20;
-  A.GenerationTimeVariance := 0.1;
-  A.NextGenerationTime := -1;
-  A.InitialSize := Vector(1, 1);
-  A.SizeExponent := Vector(0.2, 0.2);
-  A.SizeVariance := Vector(0.2, 0.2);
-  A.InitialColor := Vector(1.0, 1.0, 1.0, 1);
-  A.ColorExponent := Vector(0, 0, 0, -0.3);
-  A.ColorVariance := Vector(0, 0, 0, 0);
-  A.InitialVelocity := Vector(0, 0, 0);
-  A.VelocityVariance := Vector(0, 0, 0);
-  A.InitialAcceleration := Vector(0.1, 0.4, 0);
-  A.AccelerationVariance := Vector(1, 0.8, 1);
-  A.InitialPosition := Vector(160, 64, 160);
-  A.PositionVariance := Vector(0.1, 0, 0.1);
-  A.InitialRotation := 0;
-  A.RotationVariance := 3.141592;
-  A.InitialSpin := 1;
-  A.SpinExponent := -0.1;
-  A.SpinVariance := 0.1;
-  A.NeedsIllumination := False;
-
-  Park.pParticles.Add(A);
-
-  A := TParticleGroup.Create;
-
-  A.Running := True;
-  A.Material := TMaterial.Create;
-  A.Material.Color := Vector(1, 1, 1, 1);
-  A.Material.Emission := Vector(1, 1, 1, 1);
-  A.Material.Reflectivity := 0;
-  A.Material.Specularity := 0;
-  A.Material.Hardness := 1;
-  A.Material.OnlyEnvironmentMapHint := True;
-  A.Material.Texture := TTexture.Create;
-  A.Material.Texture.FromFile('scenery/testparticle.tga');
-
-  A.Lifetime := 5.0;
-  A.LifetimeVariance := 0.0;
-  A.GenerationTime := 0.20;
-  A.GenerationTimeVariance := 0.1;
-  A.NextGenerationTime := -1;
-  A.InitialSize := Vector(1, 1);
-  A.SizeExponent := Vector(0.5, 0.5);
-  A.SizeVariance := Vector(0.2, 0.2);
-  A.InitialColor := Vector(1.0, 1.0, 1.0, 1);
-  A.ColorExponent := Vector(0, -0.2, -0.6, -0.5);
-  A.ColorVariance := Vector(0, 0, 0, 0);
-  A.InitialVelocity := Vector(0, 0, 0);
-  A.VelocityVariance := Vector(0, 0, 0);
-  A.InitialAcceleration := Vector(0.1, 0.4, 0);
-  A.AccelerationVariance := Vector(0, 0.5, 0);
-  A.InitialPosition := Vector(0, 64, 0);
-  A.PositionVariance := Vector(0.1, 0, 0.1);
-  A.InitialRotation := 0;
-  A.RotationVariance := 3.141592;
-  A.InitialSpin := 1;
-  A.SpinExponent := -0.1;
-  A.SpinVariance := 0.1;
-  A.NeedsIllumination := False;
-
-  Park.pParticles.Add(A);
 end;
 
 destructor TRSky.Free;

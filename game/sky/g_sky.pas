@@ -26,7 +26,6 @@ uses
 procedure TSky.Advance;
 begin
   Time := Time + FPSDisplay.MS / 50;
-  Time := Time + FPSDisplay.MS / 5;
 end;
 
 procedure TSky.SetTime(T: Single);

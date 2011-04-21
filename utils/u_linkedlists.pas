@@ -23,9 +23,11 @@ type
   TLinkedList = class
     protected
       fFirst, fLast: TLinkedListItem;
+      fCount: Integer;
     public
       property First: TLinkedListItem read fFirst;
       property Last: TLinkedListItem read fLast;
+      property Count: Integer read fCount;
       procedure Append(Item: TLinkedListItem);
       procedure Prepend(Item: TLinkedListItem);
       procedure InsertBefore(Comparator, Item: TLinkedListItem);
@@ -66,6 +68,7 @@ begin
     Item.fNext := nil;
     fFirst := Item;
     fLast := Item;
+    inc(fCount);
     end;
 end;
 
@@ -80,11 +83,13 @@ begin
     Item.fNext := nil;
     fFirst := Item;
     fLast := Item;
+    inc(fCount);
     end;
 end;
 
 procedure TLinkedList.InsertBefore(Comparator, Item: TLinkedListItem);
 begin
+  inc(fCount);
   Item.fList := self;
   Item.fNext := Comparator;
   Item.fPrevious := Comparator.Previous;
@@ -97,6 +102,7 @@ end;
 
 procedure TLinkedList.InsertAfter(Comparator, Item: TLinkedListItem);
 begin
+  inc(fCount);
   Item.fList := self;
   Item.fNext := Comparator.Next;
   Item.fPrevious := Comparator;
@@ -109,15 +115,19 @@ end;
 
 procedure TLinkedList.DetachItem(Item: TLinkedListItem);
 begin
-  if Item.Previous <> nil then
-    Item.Previous.fNext := Item.Next
-  else
-    fFirst := Item.Next;
-  if Item.Next <> nil then
-    Item.Next.fPrevious := Item.Previous
-  else
-    fLast := Item.Previous;
-  Item.fList := nil;
+  if Item.fList = self then
+    begin
+    dec(fCount);
+    if Item.Previous <> nil then
+      Item.Previous.fNext := Item.Next
+    else
+      fFirst := Item.Next;
+    if Item.Next <> nil then
+      Item.Next.fPrevious := Item.Previous
+    else
+      fLast := Item.Previous;
+    Item.fList := nil;
+    end;
 end;
 
 procedure TLinkedList.FreeAllItems;
@@ -141,6 +151,7 @@ constructor TLinkedList.Create;
 begin
   fLast := nil;
   fFirst := nil;
+  fCount := 0;
 end;
 
 destructor TLinkedList.Free;

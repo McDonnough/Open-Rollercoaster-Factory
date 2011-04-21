@@ -335,11 +335,11 @@ begin
   fLightManager := TLightManager.Create;
   fRendererCamera := TRCamera.Create;
   fRendererObjects := TRObjects.Create;
+  fRendererParticles := TRParticles.Create;
   fRendererSky := TRSky.Create;
   fRendererTerrain := TRTerrain.Create;
   fRendererAutoplants := TRAutoplants.Create;
   fRendererWater := TRWater.Create;
-  fRendererParticles := TRParticles.Create;
 
   fEnvironmentMap := TCubeMap.Create(EnvMapSize, EnvMapSize, GL_RGB16F_ARB);
   fEnvironmentPass := TRenderPass.Create(EnvMapSize, EnvMapSize);
@@ -482,11 +482,11 @@ begin
   fHDRBuffer.Free;
   fHDRBuffer2.Free;
 
-  fRendererParticles.Free;
   fRendererWater.Free;
   fRendererAutoplants.Free;
   fRendererTerrain.Free;
   fRendererSky.Free;
+  fRendererParticles.Free;
   fRendererObjects.Free;
   fRendererCamera.Free;
   fLightManager.Free;
@@ -597,6 +597,7 @@ var
 begin
 //   glGetError();
 
+  RParticles.UpdateVBOs;
   RObjects.UpdateObjects;
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);

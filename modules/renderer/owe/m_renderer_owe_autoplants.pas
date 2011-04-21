@@ -180,6 +180,8 @@ procedure TRAutoplants.Render;
 var
   i: Integer;
 begin
+  if CurrentShader = fMaterialPassShader then
+    ModuleManager.ModRenderer.RObjects.CurrentGBuffer.Textures[3].Bind(6);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(1);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
   CurrentShader.Bind;
@@ -226,6 +228,7 @@ begin
   fMaterialPassShader := TShader.Create('orcf-world-engine/scene/terrain/autoplants.vs', 'orcf-world-engine/scene/terrain/autoplantsMaterial.fs');
   fMaterialPassShader.UniformI('Texture', 0);
   fMaterialPassShader.UniformI('TerrainMap', 1);
+  fMaterialPassShader.UniformI('MaterialMap', 6);
   fMaterialPassShader.UniformI('LightTexture', 7);
   fMaterialPassShader.UniformF('MaxDist', ModuleManager.ModRenderer.AutoplantDistance);
 

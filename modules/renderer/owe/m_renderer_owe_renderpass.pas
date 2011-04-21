@@ -46,6 +46,7 @@ begin
   if EnableRefractionFog then
     ModuleManager.ModRenderer.FogRefractMode := 1;
 
+  ModuleManager.ModRenderer.RenderParticles := RenderParticles;
   ModuleManager.ModRenderer.RObjects.CurrentGBuffer := fGBuffer;
 
   glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -139,9 +140,10 @@ begin
       ModuleManager.ModRenderer.RAutoplants.Render;
       end;
 
-    // Objects
+    // Objects and particles
     if RenderObjects then
       begin
+      ModuleManager.ModRenderer.RParticles.CurrentShader := ModuleManager.ModRenderer.RParticles.GeometryShader;
       ModuleManager.ModRenderer.RObjects.MaterialMode := False;
       glEnable(GL_CULL_FACE);
       ModuleManager.ModRenderer.RObjects.RenderTransparent;
@@ -259,14 +261,17 @@ begin
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // Autoplants
     if RenderAutoplants then
       begin
       ModuleManager.ModRenderer.RAutoplants.CurrentShader := ModuleManager.ModRenderer.RAutoplants.MaterialPassShader;
       ModuleManager.ModRenderer.RAutoplants.Render;
       end;
 
+    // Objects and particles
     if RenderObjects then
       begin
+      ModuleManager.ModRenderer.RParticles.CurrentShader := ModuleManager.ModRenderer.RParticles.MaterialShader;
       ModuleManager.ModRenderer.RObjects.MaterialMode := True;
       glEnable(GL_CULL_FACE);
       ModuleManager.ModRenderer.RObjects.RenderTransparent;

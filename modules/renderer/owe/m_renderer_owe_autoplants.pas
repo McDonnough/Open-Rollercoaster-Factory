@@ -103,8 +103,8 @@ begin
         begin
         fVBO.Vertices[4 * i + 0] := Vector(fPositions[i].X, fPositions[i].Y, 0.0);
         fVBO.Vertices[4 * i + 1] := Vector(fPositions[i].X, fPositions[i].Y, 1.0);
-        fVBO.Vertices[4 * i + 2] := Vector(fPositions[i].X + 1.6 * sin(fPositions[i].Z), fPositions[i].Y + 1.6 * cos(fPositions[i].Z), 1.0);
-        fVBO.Vertices[4 * i + 3] := Vector(fPositions[i].X + 1.6 * sin(fPositions[i].Z), fPositions[i].Y + 1.6 * cos(fPositions[i].Z), 0.0);
+        fVBO.Vertices[4 * i + 2] := Vector(fPositions[i].X + 0.8 * sin(fPositions[i].Z), fPositions[i].Y + 0.8 * cos(fPositions[i].Z), 1.0);
+        fVBO.Vertices[4 * i + 3] := Vector(fPositions[i].X + 0.8 * sin(fPositions[i].Z), fPositions[i].Y + 0.8 * cos(fPositions[i].Z), 0.0);
         end
       else
         begin

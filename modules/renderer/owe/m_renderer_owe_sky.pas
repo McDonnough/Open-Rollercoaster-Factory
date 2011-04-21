@@ -94,7 +94,7 @@ begin
   A.GenerationTime := 0.20;
   A.GenerationTimeVariance := 0.1;
   A.NextGenerationTime := -1;
-  A.InitialSize := Vector(0.5, 0.5);
+  A.InitialSize := Vector(1, 1);
   A.SizeExponent := Vector(0.5, 0.5);
   A.SizeVariance := Vector(0.2, 0.2);
   A.InitialColor := Vector(1.0, 1.0, 1.0, 1);
@@ -105,7 +105,7 @@ begin
   A.LightingVariance := 0;
   A.InitialVelocity := Vector(0, 0, 0);
   A.VelocityVariance := Vector(0, 0, 0);
-  A.InitialAcceleration := Vector(0.2, 0.4, 0);
+  A.InitialAcceleration := Vector(0.1, 0.4, 0);
   A.AccelerationVariance := Vector(0, 0.5, 0);
   A.InitialPosition := Vector(0, 64, 0);
   A.PositionVariance := Vector(0.1, 0, 0.1);

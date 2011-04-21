@@ -15,7 +15,7 @@ type
       property MaterialShader: TShader read fMaterialShader;
       procedure BindMaterial(Material: TMaterial);
       procedure Render(Group: TParticleGroup);
-      procedure Render;
+      procedure Prepare;
       constructor Create;
       destructor Free;
     end;
@@ -50,8 +50,16 @@ procedure TRParticles.Render(Group: TParticleGroup);
 var
   CurrentParticle: TParticle;
 begin
+  glDisable(GL_CULL_FACE);
+  glDepthMask(false);
   BindMaterial(Group.Material);
+
+  CurrentShader.Bind;
+  CurrentShader.UniformF('MaskOffset', ModuleManager.ModRenderer.RObjects.CurrentMaterialCount / 16, 0);
+  CurrentShader.UniformI('MaterialID', (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 16) and $FF, (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 8) and $FF, ModuleManager.ModRenderer.RObjects.CurrentMaterialCount and $FF);
+
   glBegin(GL_QUADS);
+
   CurrentParticle := TParticle(Group.Last);
   while CurrentParticle <> nil do
     begin
@@ -61,29 +69,26 @@ begin
     glTexCoord4f(0, 1, -CurrentParticle.Size.X,  CurrentParticle.Size.Y); glVertex4f(CurrentParticle.Position.X, CurrentParticle.Position.Y, CurrentParticle.Position.Z, CurrentParticle.Rotation);
     glTexCoord4f(1, 1,  CurrentParticle.Size.X,  CurrentParticle.Size.Y); glVertex4f(CurrentParticle.Position.X, CurrentParticle.Position.Y, CurrentParticle.Position.Z, CurrentParticle.Rotation);
     glTexCoord4f(1, 0,  CurrentParticle.Size.X, -CurrentParticle.Size.Y); glVertex4f(CurrentParticle.Position.X, CurrentParticle.Position.Y, CurrentParticle.Position.Z, CurrentParticle.Rotation);
-
     CurrentParticle := TParticle(CurrentParticle.Previous);
     end;
-  
   glEnd;
+  CurrentShader.Unbind;
+
+  glDepthMask(true);
+  glColor4f(1, 1, 1, 1);
+  glEnable(GL_CULL_FACE);
 end;
 
-procedure TRParticles.Render;
+procedure TRParticles.Prepare;
 var
-  CurrentParticleGroup: TParticleGroupItem;
   Matrix: Array[0..15] of Single;
   BillboardMatrix: TMatrix4D;
-  fCurrentMaterialCount: Integer;
 begin
   BillboardMatrix := RotationMatrix(-ModuleManager.ModCamera.ActiveCamera.Rotation.Y, Vector(0, 1, 0));
   BillboardMatrix := BillboardMatrix * RotationMatrix(-ModuleManager.ModCamera.ActiveCamera.Rotation.X, Vector(1, 0, 0));
   BillboardMatrix := BillboardMatrix * RotationMatrix(-ModuleManager.ModCamera.ActiveCamera.Rotation.Z, Vector(0, 0, 1));
 
   MakeOGLCompatibleMatrix(BillboardMatrix, @Matrix[0]);
-
-  fCurrentMaterialCount := 5;
-
-  glDisable(GL_CULL_FACE);
 
   CurrentShader.Bind;
   if CurrentShader = MaterialShader then
@@ -97,26 +102,12 @@ begin
   CurrentShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
   CurrentShader.UniformMatrix4D('BillboardMatrix', @Matrix[0]);
   CurrentShader.UniformF('ViewPoint', ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
-  CurrentShader.UniformF('MaskOffset', 0, 0);
-
-  CurrentParticleGroup := TParticleGroupItem(Park.pParticles.Emitters.First);
-  while CurrentParticleGroup <> nil do
-    begin
-    CurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
-    Render(CurrentParticleGroup.Group);
-    CurrentParticleGroup := TParticleGroupItem(CurrentParticleGroup.Next);
-    inc(fCurrentMaterialCount);
-    end;
   CurrentShader.Unbind;
-
-  glColor4f(1, 1, 1, 1);
-
-  glEnable(GL_CULL_FACE);
 end;
 
 constructor TRParticles.Create;
 begin
-  writeln('Hint: Creating particle renderer');
+  writeln('Hint: Initializing particle renderer');
 
   fGeometryShader := TShader.Create('orcf-world-engine/scene/particles/particles.vs', 'orcf-world-engine/scene/particles/particles-geometry.fs');
   fGeometryShader.UniformI('Texture', 0);

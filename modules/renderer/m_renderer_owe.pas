@@ -72,6 +72,7 @@ type
       MaxRenderDistance: Single;
       FogStrength, FogRefractMode: Single;
       FogColor: TVector3D;
+      RenderParticles: Boolean;
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
       property RSky: TRSky read fRendererSky;
@@ -333,10 +334,10 @@ begin
 
   fLightManager := TLightManager.Create;
   fRendererCamera := TRCamera.Create;
+  fRendererObjects := TRObjects.Create;
   fRendererSky := TRSky.Create;
   fRendererTerrain := TRTerrain.Create;
   fRendererAutoplants := TRAutoplants.Create;
-  fRendererObjects := TRObjects.Create;
   fRendererWater := TRWater.Create;
   fRendererParticles := TRParticles.Create;
 
@@ -483,10 +484,10 @@ begin
 
   fRendererParticles.Free;
   fRendererWater.Free;
-  fRendererObjects.Free;
   fRendererAutoplants.Free;
   fRendererTerrain.Free;
   fRendererSky.Free;
+  fRendererObjects.Free;
   fRendererCamera.Free;
   fLightManager.Free;
 
@@ -681,6 +682,7 @@ begin
   Frustum.Calculate;
 //   RTerrain.CheckVisibility;
 //   RObjects.CheckVisibility;
+  RenderParticles := True;
 
   // Run some threads
   if UseLightShadows then
@@ -776,13 +778,8 @@ begin
     RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
     RAutoplants.Render;
 
-    // Particles
+    // Objects and particles
     RParticles.CurrentShader := RParticles.GeometryShader;
-    glDepthMask(false);
-    RParticles.Render;
-    glDepthMask(true);
-
-    // Objects
     RObjects.MaterialMode := False;
     RObjects.RenderTransparent;
 
@@ -982,15 +979,10 @@ begin
     RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
     RAutoplants.Render;
 
-    // Particles
+    // Objects and particles
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0);
     RParticles.CurrentShader := RParticles.MaterialShader;
-    glDepthMask(false);
-    RParticles.Render;
-    glDepthMask(true);
-
-    // Objects
     RObjects.MaterialMode := True;
     glEnable(GL_CULL_FACE);
     RObjects.RenderTransparent;

@@ -24,7 +24,6 @@ void main(void) {
 //   if (gl_FragColor.a < 0.2)
   if (gl_FragColor.a < 0.2)
     discard;
-  gl_FragColor.a = 1.0;
   vec4 Light = texelFetch2D(LightTexture, ivec2(floor(gl_FragCoord.xy)), 0);
   if (Light.a >= 0.0)
     gl_FragColor.rgb = gl_FragColor.rgb * Light.rgb;

@@ -32,7 +32,7 @@ type
 implementation
 
 uses
-  Main, m_texmng_class, u_math, u_vectors, u_scene;
+  Main, m_texmng_class, u_math, u_vectors, u_scene, u_events;
 
 constructor TParticleGroupItem.Create(TheGroup: TParticleGroup);
 begin
@@ -49,6 +49,7 @@ end;
 procedure TParticleManager.Add(Group: TParticleGroup);
 begin
   Emitters.Append(TParticleGroupItem.Create(Group));
+  EventManager.CallEvent('TParticleManager.AddGroup', Group, nil);
 end;
 
 procedure TParticleManager.Delete(Group: TParticleGroup);
@@ -77,7 +78,10 @@ begin
     if (CurrentGroup.Group.Running) or (not CurrentGroup.Group.IsEmpty) then
       CurrentGroup.Group.AdvanceGroup(0.001 * FPSDisplay.MS)
     else
+      begin
+      EventManager.CallEvent('TParticleManager.DeleteGroup', CurrentGroup, nil);
       CurrentGroup.Free;
+      end;
 
     CurrentGroup := NextGroup;
     end;

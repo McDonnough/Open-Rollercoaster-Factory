@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, DGLOpenGL, math, u_math, u_vectors, u_scene, u_geometry, m_renderer_owe_frustum, m_renderer_owe_classes, m_shdmng_class,
-  u_ase, m_renderer_owe_renderpass, m_texmng_class, m_renderer_owe_cubemaps;
+  u_ase, m_renderer_owe_renderpass, m_texmng_class, m_renderer_owe_cubemaps, u_particles;
 
 type
   TManagedObject = class;
@@ -27,6 +27,7 @@ type
 
   TMeshDistanceAssoc = record
     Mesh: TManagedMesh;
+    ParticleGroup: TParticleGroup;
     Distance: Single;
     end;
 
@@ -51,6 +52,7 @@ type
       CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
       ShadowMode, MaterialMode, LightShadowMode: Boolean;
+      property CurrentMaterialCount: Integer read fCurrentMaterialCount;
       property Working: Boolean read fWorking write fCanWork;
       property OpaqueShader: TShader read fOpaqueShader;
       property OpaqueShadowShader: TShader read fOpaqueShadowShader;
@@ -65,6 +67,8 @@ type
       procedure DeleteObject(Event: String; Data, Result: Pointer);
       procedure AddMesh(Event: String; Data, Result: Pointer);
       procedure DeleteMesh(Event: String; Data, Result: Pointer);
+      procedure AddParticleGroup(Event: String; Data, Result: Pointer);
+      procedure DeleteParticleGroup(Event: String; Data, Result: Pointer);
       procedure CheckVisibility;
       procedure BindMaterial(Material: TMaterial);
       procedure Render(Mesh: TManagedMesh);
@@ -132,7 +136,31 @@ begin
   Sync;
   SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
   fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
   fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
+end;
+
+procedure TRObjects.AddParticleGroup(Event: String; Data, Result: Pointer);
+begin
+  Sync;
+  SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := nil;
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := TParticleGroup(Data);
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
+end;
+
+procedure TRObjects.DeleteParticleGroup(Event: String; Data, Result: Pointer);
+var
+  i: Integer;
+begin
+  Sync;
+  for i := 0 to high(fTransparentMeshOrder) do
+    if Pointer(fTransparentMeshOrder[i].ParticleGroup) = Data then
+      begin
+      fTransparentMeshOrder[i] := fTransparentMeshOrder[high(fTransparentMeshOrder)];
+      SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) - 1);
+      exit;
+      end;
 end;
 
 procedure TRObjects.DeleteMesh(Event: String; Data, Result: Pointer);
@@ -248,6 +276,7 @@ var
   i, j: Integer;
 begin
   Sync;
+  ModuleManager.ModRenderer.RParticles.Prepare;
   if MaterialMode then
     begin
     CurrentGBuffer.Textures[1].Bind(5);
@@ -255,8 +284,8 @@ begin
     end;
   fCurrentMaterialCount := 1;
   for i := 0 to high(fTransparentMeshOrder) do
-//   for i := 0 to high(fManagedObjects) do
-//     for j := 0 to high(fManagedObjects[i].Meshes) do
+    begin
+    if fTransparentMeshOrder[i].Mesh <> nil then
       begin
       if ((fTransparentMeshOrder[i].Mesh.Visible) or (ShadowMode)) and ((fTransparentMeshOrder[i].Mesh.ParentObject <> fExcludedMeshObject) or (fTransparentMeshOrder[i].Mesh <> fExcludedMesh)) then
         if fTransparentMeshOrder[i].Mesh.Transparent then
@@ -270,7 +299,7 @@ begin
           else
             begin
             fCurrentShader := fTransparentShader;
-            fCurrentShader.UniformF('MaskOffset', 0, 0);
+            fCurrentShader.UniformF('MaskOffset', fCurrentMaterialCount / 16, 0);
             end;
           fCurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
           if not (ShadowMode or LightShadowMode) then
@@ -283,8 +312,11 @@ begin
           // Final render, front sides
           Render(fTransparentMeshOrder[i].Mesh);
           end;
-      inc(fCurrentMaterialCount);
-      end;
+      end
+    else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) then
+      ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
+    inc(fCurrentMaterialCount);
+    end;
 end;
 
 procedure TRObjects.RenderOpaque;
@@ -386,6 +418,8 @@ begin
   EventManager.AddCallback('TGeoObject.Deleted', @DeleteObject);
   EventManager.AddCallback('TGeoObject.AddedMesh', @AddMesh);
   EventManager.AddCallback('TGeoObject.DeletedMesh', @DeleteMesh);
+  EventManager.AddCallback('TParticleManager.AddGroup', @AddParticleGroup);
+  EventManager.AddCallback('TParticleManager.DeleteGroup', @DeleteParticleGroup);
 
   fLastManagedObject := -1;
 
@@ -522,7 +556,12 @@ begin
       fCanWork := False;
 
       for i := 0 to high(fTransparentMeshOrder) do
-        fTransparentMeshOrder[i].Distance := VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Vector3D(Vector(0, 0, 0, 1) * fTransparentMeshOrder[i].Mesh.GeoMesh.CalculatedMatrix));
+        if fTransparentMeshOrder[i].Mesh <> nil then
+          fTransparentMeshOrder[i].Distance := VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Vector3D(Vector(0, 0, 0, 1) * fTransparentMeshOrder[i].Mesh.GeoMesh.CalculatedMatrix))
+        else if fTransparentMeshOrder[i].ParticleGroup <> nil then
+          fTransparentMeshOrder[i].Distance := VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - fTransparentMeshOrder[i].ParticleGroup.InitialPosition)
+        else
+          fTransparentMeshOrder[i].Distance := 20000;
 
       QuickSortTransparentMeshes;
 
@@ -557,6 +596,8 @@ begin
   EventManager.RemoveCallback(@DeleteObject);
   EventManager.RemoveCallback(@AddMesh);
   EventManager.RemoveCallback(@DeleteMesh);
+  EventManager.RemoveCallback(@AddParticleGroup);
+  EventManager.RemoveCallback(@DeleteParticleGroup);
   Sync;
   inherited Free;
 end;

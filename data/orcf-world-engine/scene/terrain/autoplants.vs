@@ -20,7 +20,7 @@ void main(void) {
   + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+0.0, +0.2)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(vec2(+0.2, +0.0)) - VY, -0.0)))
   + normalize(cross(vec3(-0.2, fetchHeightAtOffset(vec2(-0.2, +0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+0.0, +0.2)) - VY, +0.2))));
 
-  Vertex = vec3(gl_Vertex.x, VY, gl_Vertex.y) + gl_Vertex.z * 0.8 * normal;
+  Vertex = vec3(gl_Vertex.x, VY, gl_Vertex.y) + gl_Vertex.z * 0.4 * normal;
   texCoord = gl_MultiTexCoord0.xy;
   Vertex.xz += (1.0 - texCoord.y) * vec2(0.1 * sin(0.1 * (Vertex.x + Vertex.z) + BumpOffset.x + BumpOffset.y), 0.03 * sin(0.1 * (Vertex.x + Vertex.z) + BumpOffset.x + BumpOffset.y));
   gl_ClipVertex = gl_ModelViewMatrix * vec4(Vertex, 1.0);

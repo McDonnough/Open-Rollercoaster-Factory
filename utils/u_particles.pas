@@ -11,7 +11,6 @@ type
       MaxLifetime, TimeLived: Single;
       Size, InitialSize, SizeExponent: TVector2D;
       Color, InitialColor, ColorExponent: TVector4D;
-      Lighting, InitialLighting, LightingExponent: Single;
       Velocity, Acceleration: TVector3D;
       Position: TVector3D;
       Rotation, InitialSpin, Spin, SpinExponent: Single;
@@ -22,13 +21,13 @@ type
     public
 //       Script: TScript;
       Running: Boolean;
+      NeedsIllumination: Boolean;
       Material: TMaterial;
       Lifetime, LifetimeVariance: Single;
       GenerationTime, GenerationTimeVariance: Single;
       NextGenerationTime: Single;
       InitialSize, SizeExponent, SizeVariance: TVector2D;
       InitialColor, ColorExponent, ColorVariance: TVector4D;
-      InitialLighting, LightingExponent, LightingVariance: Single;
       InitialVelocity, VelocityVariance: TVector3D;
       InitialAcceleration, AccelerationVariance: TVector3D;
       InitialPosition, PositionVariance: TVector3D;
@@ -53,7 +52,6 @@ begin
                   InitialColor.Y * Power(2.7183, ColorExponent.Y * TimeLived),
                   InitialColor.Z * Power(2.7183, ColorExponent.Z * TimeLived),
                   InitialColor.W * Power(2.7183, ColorExponent.W * TimeLived));
-  Lighting := InitialLighting * Power(2.7183, LightingExponent * TimeLived);
 end;
 
 
@@ -100,10 +98,6 @@ begin
                                 InitialColor.W * Power(2, ColorVariance.W * QRandom));
   Result.ColorExponent := ColorExponent;
   Result.Color := Result.InitialColor;
-
-  Result.InitialLighting := InitialLighting * Power(2, LightingVariance * QRandom);
-  Result.LightingExponent := LightingExponent;
-  Result.Lighting := Result.InitialLighting;
 
   Result.Velocity := Vector(InitialVelocity.X * Power(2, VelocityVariance.X * QRandom),
                             InitialVelocity.Y * Power(2, VelocityVariance.Y * QRandom),

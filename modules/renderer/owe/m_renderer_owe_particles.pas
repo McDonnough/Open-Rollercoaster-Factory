@@ -174,10 +174,15 @@ begin
 
   for i := 0 to high(fParticleVBOs) do
     if fParticleVBOs[i].Group = Group then
-      begin
-      BindMaterial(Group.Material);
-      fParticleVBOs[i].VBO.Render;
-      end;
+      if (Group.NeedsIllumination) or (CurrentShader = MaterialShader) then
+        begin
+        if Group.NeedsIllumination then
+          CurrentShader.UniformI('Illumination', 1)
+        else
+          CurrentShader.UniformI('Illumination', 0);
+        BindMaterial(Group.Material);
+        fParticleVBOs[i].VBO.Render;
+        end;
   
   CurrentShader.Unbind;
 

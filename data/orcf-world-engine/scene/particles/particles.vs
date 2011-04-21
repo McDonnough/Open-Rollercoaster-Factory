@@ -19,7 +19,7 @@ void main(void) {
     Normal = normalize(ViewPoint - Vertex);
   else {
     Normal = normalize(cross(cross(Normal, vec3(0.0, 1.0, 0.0)), Normal));
-    Normal *= sign(dot(Normal, ViewPoint - Vertex));
+    Normal *= sign(sign(dot(Normal, ViewPoint - Vertex)) + 0.5);
   }
   
 

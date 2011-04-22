@@ -15,9 +15,8 @@ type
       fReflectionRenderTerrain, fReflectionRenderAutoplants, fReflectionRenderObjects, fReflectionRenderParticles: TCheckBox;
       fReflectionRenderDistanceFactor, fReflectionRenderDistanceOffset: TSlider;
       fReflectionRealtimeUpdateInterval, fReflectionEnvMapUpdateInterval: TSlider;
-      fSSAO, fSSAOIL: TCheckBox;
-      fSSAOSamples: TSlider;
-      fSSAORings: TSlider;
+      fSSAOIL, fSSAO: TCheckBox;
+      fSSAOSamples, fSSAORings, fSSAOSize: TSlider;
       fUseSunShadows, fUseLightShadows: TCheckBox;
       fShadowSamples, fShadowMaxPasses, fShadowBlurSamples: TSlider;
       fLightShadowSamples, fLightShadowBlurSamples: TSlider;
@@ -519,13 +518,34 @@ begin
     Height := 32;
     Width := 200;
     Size := 16;
+    Caption := 'SSAO buffer size factor:';
+    end;
+  fSSAOSize := TSlider.Create(fEffectPanel);
+  with fSSAOSize do
+    begin
+    Top := 96;
+    Left := 208;
+    Width := 122;
+    Height := 32;
+    Digits := 2;
+    Min := 0.25;
+    Max := 4;
+    Value := ModuleManager.ModRenderer.SSAOSize;
+    end;
+  with TLabel.Create(fEffectPanel) do
+    begin
+    Top := 96;
+    Left := 338;
+    Height := 32;
+    Width := 200;
+    Size := 16;
     Caption := 'Bloom strength:';
     end;
   fBloom := TSlider.Create(fEffectPanel);
   with fBloom do
     begin
     Top := 96;
-    Left := 208;
+    Left := 538;
     Width := 122;
     Height := 32;
     Digits := 2;

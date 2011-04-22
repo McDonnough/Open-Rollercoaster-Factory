@@ -1459,6 +1459,7 @@ begin
   SetConfVal('water.samples', fOWEConfigInterface.fWaterSamples.Value);
   SetConfVal('ssao.samples', Round(fOWEConfigInterface.fSSAOSamples.Value));
   SetConfVal('ssao.rings', Round(fOWEConfigInterface.fSSAORings.Value));
+  SetConfVal('ssao.size', fOWEConfigInterface.fSSAOSize.Value);
   SetConfVal('lod.distanceoffset', fOWEConfigInterface.fLODDistanceOffset.Value);
   SetConfVal('lod.distancefactor', fOWEConfigInterface.fLODDistanceFactor.Value);
 //     SetConfVal('subdiv.cuts', fOWEConfigInterface.fSubdivisionCuts);

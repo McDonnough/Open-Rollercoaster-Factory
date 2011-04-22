@@ -139,8 +139,8 @@ begin
 
   glAttachShader(fShdRef[Result].ID, VSObject);
   glAttachShader(fShdRef[Result].ID, FSObject);
-
   glLinkProgram(fShdRef[Result].ID);
+  glValidateProgram(fShdRef[Result].ID);
   if glSlang_getInfoLog(fShdRef[Result].ID) <> '' then
     ModuleManager.ModLog.AddWarning('Shader Info (' + VSFile + ', ' + FSFile + '):' + #10 + glSlang_getInfoLog(fShdRef[Result].ID));
 

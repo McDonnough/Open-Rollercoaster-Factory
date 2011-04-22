@@ -34,8 +34,9 @@ void main(void) {
   vec4 AllCoord = texelFetch2D(GeometryTexture, Coords, 0);
   vec4 Emission = texelFetch2D(EmissionTexture, Coords, 0);
   // IF [ EQ owe.ssao 1 ]
+  vec4 ssaoColor = texture2D(SSAOTexture, gl_TexCoord[0].xy);
   if (UseSSAO == 1)
-    Emission.rgb += texelFetch2D(SSAOTexture, Coords, 0).rgb;
+    Emission.rgb += ssaoColor.rgb;
   // END
 
   vec3 Vertex = AllCoord.rgb;
@@ -72,10 +73,8 @@ void main(void) {
   gl_FragColor.rgb *= factor;
 
   // IF [ EQ owe.ssao 1 ]
-  if (UseSSAO == 1) {
-    vec4 ssaoColor = texelFetch2D(SSAOTexture, Coords, 0);
+  if (UseSSAO == 1)
     gl_FragColor.rgb += ssaoColor.a * gl_LightSource[0].ambient.rgb * (0.8 + 0.2 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)));
-  }
   else
     gl_FragColor.rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
   // END

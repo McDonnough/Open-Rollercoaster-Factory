@@ -38,6 +38,7 @@ type
       fSubdivisionDistance: Single;
       fBufferSizeX, fBufferSizeY: Integer;
       fSSAOSamples, fShadowBlurSamples, fLightShadowBlurSamples, fSSAORings: Integer;
+      fSSAOSize: Single;
       fTmpBloomBuffer: TFBO;
       fMaxShadowPasses: Integer;
       fAutoplantCount: Integer;
@@ -122,6 +123,7 @@ type
       property LightShadowBlurSamples: Integer read fLightShadowBlurSamples;
       property SSAOSamples: Integer read fSSAOSamples;
       property SSAORings: Integer read fSSAORings;
+      property SSAOSize: Single read fSSAOSize;
       property LODDistanceOffset: Single read fLODDistanceOffset;
       property LODDistanceFactor: Single read fLODDistanceFactor;
       property ReflectionLODDistanceOffset: Single read fReflectionRenderDistanceOffset;
@@ -264,7 +266,7 @@ begin
 
   if UseScreenSpaceAmbientOcclusion then
     begin
-    fSSAOBuffer := TFBO.Create(Round(ResX * FSAASamples), Round(ResY * FSAASamples), false);
+    fSSAOBuffer := TFBO.Create(Round(ResX * SSAOSize), Round(ResY * SSAOSize), false);
     fSSAOBuffer.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);     // Screen Space Ambient Occlusion
     fSSAOBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fSSAOBuffer.Unbind;
@@ -1280,6 +1282,7 @@ begin
     SetConfVal('ssao.indirectlighting', '0');
     SetConfVal('ssao.samples', '5');
     SetConfVal('ssao.rings', '6');
+    SetConfVal('ssao.size', '0.5');
     SetConfVal('refractions', '1');
     SetConfVal('shadows', '0');
     SetConfVal('shadows.samples', '1');
@@ -1352,6 +1355,7 @@ begin
   fWaterReflectionBufferSamples := StrToFloatWD(GetConfVal('water.samples'), 0.5);
   fSSAOSamples := StrToIntWD(GetConfVal('ssao.samples'), 5);
   fSSAORings := StrToIntWD(GetConfVal('ssao.rings'), 6);
+  fSSAOSize := StrToFloatWD(GetConfVal('ssao.size'), 0.5);
   fLODDistanceOffset := StrToFloatWD(GetConfVal('lod.distanceoffset'), 0.0);
   fLODDistanceFactor := StrToFloatWD(GetConfVal('lod.distancefactor'), 1.0);
   fSubdivisionCuts := StrToIntWD(GetConfVal('subdiv.cuts'), 0);

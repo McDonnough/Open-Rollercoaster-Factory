@@ -3,12 +3,14 @@ unit g_park;
 interface
 
 uses
-  SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml, g_particles;
+  SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml, g_particles,
+  g_resources;
 
 type
   TPark = class
     protected
       fFile: TOCFFile;
+      fResourceManager: TResourceManager;
       fPostLoading: Boolean;
       fCanRender: Boolean;
       fLoadState: Integer;
@@ -27,6 +29,7 @@ type
 
       property CanRender: Boolean read fCanRender;
       property OCFFile: TOCFFile read fFile;
+      property ResourceManager: TResourceManager read fResourceManager;
       property SelectionEngine: TSelectionEngine read fSelectionEngine write setSelectionEngine;
       property NormalSelectionEngine: TSelectionEngine read fNormalSelectionEngine;
 
@@ -97,6 +100,8 @@ begin
   fCanRender := false;
 
   fFile := nil;
+
+  fResourceManager := TResourceManager.Create;
 
   fPostLoading := false;
   if (FileExists(GetFirstExistingFileName(FileName))) and not (DirectoryExists(GetFirstExistingFileName(FileName))) then
@@ -274,6 +279,7 @@ begin
   pSky.Free;
   pTerrain.Free;
   pParticles.Free;
+  fResourceManager.Free;
   ModuleManager.ModRenderer.Unload;
 end;
 

@@ -25,7 +25,7 @@ type
 
   TOCFResource = record
     id, section: Integer;
-    version, format: String;
+    version, format, name: String;
     end;
 
   TOCFFile = class
@@ -114,7 +114,7 @@ end;
 
 function TOCFFile.GetPreview: TTexImage;
 var
-  ResourceCount: Integer;
+  i, ResourceCount: Integer;
 begin
   if fPreview.BPP <> 0 then
     exit(fPreview);
@@ -123,6 +123,21 @@ begin
     ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
     fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
     Result := fPreview;
+    end
+  else if GetOCFType = 'savegame' then
+    begin
+{    ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
+    fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
+    Result := fPreview;}
+    end
+  else if GetOCFType = 'resource' then
+    begin
+    if length(fXMLSection.Document.GetElementsByTagName('preview')) = 1 then
+      begin
+      i := StrToInt(TDOMElement(fXMLSection.Document.GetElementsByTagName('park')[0]).GetAttribute('resource:id'));
+      fPreview := TexFromStream(fBinarySections[Resources[i].section].Stream, '.' + Resources[i].Format);
+      Result := fPreview;
+      end;
     end;
 end;
 
@@ -132,7 +147,7 @@ begin
     exit(fDescription);
   Result := '';
   try
-    if GetOCFType = 'savedgame' then
+    if (GetOCFType = 'savedgame') or (GetOCFType = 'resource') then
       Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('description')[0]).FirstChild.NodeValue;
   except
     ModuleManager.ModLog.AddError('Error loading description of an OCF file: Internal error');
@@ -216,6 +231,7 @@ begin
       Result.id := j;
       Result.Version := TDOMElement(a[j]).GetAttribute('resource:version');
       Result.Format := TDOMElement(a[j]).GetAttribute('resource:format');
+      Result.Name := TDOMElement(a[j]).GetAttribute('resource:name');
       Result.Section := StrToInt(TDOMElement(a[j]).GetAttribute('resource:section'));
       end;
 end;

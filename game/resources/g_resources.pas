@@ -8,7 +8,7 @@ uses
 type
   TResourceLoadedProcedure = procedure(Data: TOCFFile) of object;
 
-  TOCFResource = class(TLinkedListItem)
+  TAbstractResource = class(TLinkedListItem)
     protected
       fOCFFile: TOCFFile;
       fFileName: String;
@@ -20,32 +20,35 @@ type
       property FileName: String read fFileName;
       property SubResourceName: String read fSubResourceName;
       property Name: String read getFullName;
-      constructor Create(ResourceName: String);
+      constructor Create(ResourceName: String; fFileLoaded, fDepsLoaded: TResourceLoadedProcedure);
       procedure Free;
     end;
 
   TResourceManager = class(TLinkedList)
     protected
-      function getResourceByName(Name: String): TOCFResource;
+      function getResourceByName(Name: String): TAbstractResource;
     public
-      property Resources[Name: String]: TOCFResource read getResourceByName;
+      property Resources[Name: String]: TAbstractResource read getResourceByName;
       procedure FileLoaded(Event: String; Data, Result: Pointer);
       procedure DepsLoaded(Event: String; Data, Result: Pointer);
       constructor Create;
       procedure Free;
     end;
 
+var
+  ResourceManager: TResourceManager = nil;
+
 implementation
 
 uses
   m_varlist, u_files, u_functions, u_events, g_park;
 
-function TOCFResource.getFullName: String;
+function TAbstractResource.getFullName: String;
 begin
   Result := fFileName + '/' + fSubResourceName;
 end;
 
-constructor TOCFResource.Create(ResourceName: String);
+constructor TAbstractResource.Create(ResourceName: String; fFileLoaded, fDepsLoaded: TResourceLoadedProcedure);
 var
   A: AString;
   i: Integer;
@@ -74,15 +77,15 @@ begin
       end;
   if getFirstExistingFileName(fFileName) <> '' then
     begin
-    EventManager.AddCallback('TOCFResource.FileLoaded.' + ResourceName, @Park.ResourceManager.FileLoaded);
-    ModuleManager.ModOCFManager.RequestOCFFile(fFileName, 'TOCFResource.FileLoaded.' + ResourceName, self);
+    EventManager.AddCallback('TAbstractResource.FileLoaded.' + ResourceName, @ResourceManager.FileLoaded);
+    ModuleManager.ModOCFManager.RequestOCFFile(fFileName, 'TAbstractResource.FileLoaded.' + ResourceName, self);
     end;
 
-  DepsLoaded := nil;
-  FileLoaded := nil;
+  DepsLoaded := fDepsLoaded;
+  FileLoaded := fFileLoaded;
 end;
 
-procedure TOCFResource.Free;
+procedure TAbstractResource.Free;
 begin
   fDependencies.Free;
   inherited Free;
@@ -93,28 +96,28 @@ end;
 procedure TResourceManager.FileLoaded(Event: String; Data, Result: Pointer);
 begin
   EventManager.RemoveCallback(Event);
-  if TOCFResource(Result).FileLoaded <> nil then
-    TOCFResource(Result).FileLoaded(TOCFFile(Data));
+  if TAbstractResource(Result).FileLoaded <> nil then
+    TAbstractResource(Result).FileLoaded(TOCFFile(Data));
 end;
 
 procedure TResourceManager.DepsLoaded(Event: String; Data, Result: Pointer);
 begin
   EventManager.RemoveCallback(Event);
-  if TOCFResource(Result).DepsLoaded <> nil then
-    TOCFResource(Result).DepsLoaded(TOCFFile(Data));
+  if TAbstractResource(Result).DepsLoaded <> nil then
+    TAbstractResource(Result).DepsLoaded(TOCFFile(Data));
 end;
 
-function TResourceManager.getResourceByName(Name: String): TOCFResource;
+function TResourceManager.getResourceByName(Name: String): TAbstractResource;
 var
-  CurrResource: TOCFResource;
+  CurrResource: TAbstractResource;
 begin
-  CurrResource := TOCFResource(First);
+  CurrResource := TAbstractResource(First);
   Result := nil;
   while CurrResource <> nil do
     begin
     if CurrResource.Name = Name then
       exit(CurrResource);
-    CurrResource := TOCFResource(CurrResource.Next);
+    CurrResource := TAbstractResource(CurrResource.Next);
     end;
 end;
 
@@ -124,16 +127,9 @@ begin
 end;
 
 procedure TResourceManager.Free;
-var
-  CurrResource, NextResource: TOCFResource;
 begin
-  CurrResource := TOCFResource(First);
-  while CurrResource <> nil do
-    begin
-    NextResource := TOCFResource(CurrResource.Next);
-    CurrResource.Free;
-    CurrResource := NextResource;
-    end;
+  while First <> nil do
+    TAbstractResource(First).Free;
   inherited Free;
 end;
 

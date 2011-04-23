@@ -4,13 +4,12 @@ interface
 
 uses
   SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml, g_particles,
-  g_resources;
+  g_resources, g_objects;
 
 type
   TPark = class
     protected
       fFile: TOCFFile;
-      fResourceManager: TResourceManager;
       fPostLoading: Boolean;
       fCanRender: Boolean;
       fLoadState: Integer;
@@ -24,12 +23,12 @@ type
       pMainCamera: TCamera;
       pCameras: Array of TCamera;
       pParticles: TParticleManager;
+      pObjects: TObjectManager;
 
       fName, fAuthor, fDescription: String;
 
       property CanRender: Boolean read fCanRender;
       property OCFFile: TOCFFile read fFile;
-      property ResourceManager: TResourceManager read fResourceManager;
       property SelectionEngine: TSelectionEngine read fSelectionEngine write setSelectionEngine;
       property NormalSelectionEngine: TSelectionEngine read fNormalSelectionEngine;
 
@@ -101,7 +100,8 @@ begin
 
   fFile := nil;
 
-  fResourceManager := TResourceManager.Create;
+  pParticles := TParticleManager.Create;
+  pObjects := TObjectManager.Create;
 
   fPostLoading := false;
   if (FileExists(GetFirstExistingFileName(FileName))) and not (DirectoryExists(GetFirstExistingFileName(FileName))) then
@@ -113,7 +113,6 @@ begin
   fNormalSelectionEngine := TSelectionEngine.Create;
   fSelectionEngine := fNormalSelectionEngine;
 
-  pParticles := TParticleManager.Create;
 
   fLoadState := 0;
 end;
@@ -201,12 +200,12 @@ begin
     ModuleManager.ModLoadScreen.Render
   else
     begin
+    ModuleManager.ModRenderer.RenderScene;
     ParkUI.Drag;
     pSky.Advance;
     pParticles.Advance;
     ModuleManager.ModCamera.AdvanceActiveCamera;
     fSelectionEngine.Update;
-    ModuleManager.ModRenderer.RenderScene;
     end;
   if fPostLoading then
     ContinueLoading;
@@ -278,8 +277,8 @@ begin
   fNormalSelectionEngine.Free;
   pSky.Free;
   pTerrain.Free;
+  pObjects.Free;
   pParticles.Free;
-  fResourceManager.Free;
   ModuleManager.ModRenderer.Unload;
 end;
 

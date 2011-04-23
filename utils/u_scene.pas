@@ -9,12 +9,13 @@ type
   TLightSource = class
     public
       Name: String;
-      Position: TVector4D;
+      OriginalPosition, Position: TVector4D;
       Color: TVector3D;
       Energy, FalloffDistance: Single;
       DiffuseFactor: Single;
       CastShadows: Boolean;
       function Duplicate: TLightSource;
+      procedure Register;
       constructor Create;
       destructor Free;
     end;
@@ -63,7 +64,8 @@ type
       fCalculatedMatrix: TMatrix4D;
       fCalculatedSourcePosition: TVector3D;
     public
-      SourcePosition, DestinationPosition: TVector3D;
+      BoneID: Integer;
+      SourcePosition: TVector3D;
       Matrix: TMatrix4D;
       Name: String;
       Updated: Boolean;
@@ -74,7 +76,7 @@ type
       property CalculatedSourcePosition: TVector3D read fCalculatedSourcePosition;
       procedure AddChild(Bone: TBone);
       procedure UpdateMatrix;
-      function Duplicate: TBone;
+      function Duplicate(TheObject: TGeoObject): TBone;
       constructor Create;
     end;
 
@@ -102,21 +104,20 @@ type
 
   TArmature = class
     public
+      ArmatureID: Integer;
       Name: String;
       Bones: Array of TBone;
-      ParentArmature: TArmature;
       ParentObject: TGeoObject;
       CalculatedMatrix, Matrix: TMatrix4D;
-      Children: Array of TArmature;
-      function Duplicate: TArmature;
+      function Duplicate(TheObject: TGeoObject): TArmature;
       function AddBone: TBone;
       procedure UpdateMatrix;
-      procedure AddChild(A: TArmature);
       constructor Create;
     end;
 
   TMaterial = class
     public
+      MaterialID: Integer;
       Color, Emission: TVector4D;
       Reflectivity: Single;
       RefractionValue: Single;
@@ -125,12 +126,13 @@ type
       Texture, BumpMap: TTexture;
       OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
-      function Duplicate: TMaterial;
+      function Duplicate(TheObject: TGeoObject): TMaterial;
       constructor Create;
     end;
 
   TGeoMesh = class
     public
+      MeshID: Integer;
       Name: String;
       Bone: TBone;
       Changed: Boolean;
@@ -138,17 +140,17 @@ type
       Vertices: Array of TVertex;
       TextureVertices: Array of TTextureVertex;
       Faces: Array of TFace;
-      MotionPaths: Array of TMotionPathConstraint;
       Parent: TGeoMesh;
       Children: Array of TGeoMesh;
       Matrix, CalculatedMatrix: TMatrix4D;
       ParentObject: TGeoObject;
       Material: TMaterial;
+      LightSources: Array of TLightSource;
       procedure AddBoneToAll(B: TBone);
       procedure AddBone(B: TBone);
       procedure RecalcFaceNormals;
       procedure RecalcVertexNormals;
-      function Duplicate: TGeoMesh;
+      function Duplicate(TheObject: TGeoObject): TGeoMesh;
       function AddVertex: PVertex;
       function AddTextureVertex: PTextureVertex;
       function AddFace: PFace;
@@ -156,6 +158,7 @@ type
       procedure UpdateFaceVertexAssociationForVertexNormalCalculation;
       procedure UpdateMatrix;
       procedure UpdateVertexPositions;
+      procedure Register;
       constructor Create;
       destructor Free;
     end;
@@ -200,6 +203,20 @@ end;
 
 function TLightSource.Duplicate: TLightSource;
 begin
+  Result := TLightSource.Create;
+  Result.Name := Name;
+  Result.OriginalPosition := OriginalPosition;
+  Result.Position := Position;
+  Result.Color := Color;
+  Result.Energy := Energy;
+  Result.FalloffDistance := FalloffDistance;
+  Result.DiffuseFactor := DiffuseFactor;
+  Result.CastShadows := CastShadows;
+end;
+
+procedure TLightSource.Register;
+begin
+  EventManager.CallEvent('TLightSource.Added', self, nil);
 end;
 
 constructor TLightSource.Create;
@@ -208,10 +225,10 @@ begin
   FalloffDistance := 1;
   Color := Vector(1, 1, 1);
   DiffuseFactor := 1;
-  Name := ''; //What is this for?
+  Name := '';
   CastShadows := True;
-  Position := Vector(1, 1, 1, 1);
-  EventManager.CallEvent('TLightSource.Deleted', self, self);
+  Position := Vector(0, 0, 0, 1);
+  OriginalPosition := Vector(0, 0, 0, 1);
 end;
 
 destructor TLightSource.Free;
@@ -241,18 +258,31 @@ begin
     Children[i].UpdateMatrix;
 end;
 
-function TBone.Duplicate: TBone;
+function TBone.Duplicate(TheObject: TGeoObject): TBone;
 begin
+  Result := TBone.Create;
+  Result.fCalculatedMatrix := fCalculatedMatrix;
+  Result.fCalculatedSourcePosition := fCalculatedSourcePosition;
+  Result.BoneID := BoneID;
+  Result.SourcePosition := SourcePosition;
+  Result.Matrix := Matrix;
+  Result.Name := Name;
+  Result.Updated := Updated;
+  Result.ParentArmature := TheObject.Armatures[ParentBone.ParentArmature.ArmatureID];
+  if ParentBone = nil then
+    Result.ParentBone := nil
+  else
+    TheObject.Armatures[ParentBone.ParentArmature.ArmatureID].Bones[ParentBone.BoneID].AddChild(self);
 end;
 
 constructor TBone.Create;
 begin
   fCalculatedMatrix := Identity4D;
+  BoneID := -1;
   Matrix := Identity4D;
   ParentBone := nil;
   ParentArmature := nil;
   SourcePosition := Vector(0, 0, 0);
-  DestinationPosition := Vector(0, 1, 0);
 end;
 
 
@@ -270,8 +300,19 @@ end;
 
 
 
-function TArmature.Duplicate: TArmature;
+function TArmature.Duplicate(TheObject: TGeoObject): TArmature;
+var
+  i: Integer;
 begin
+  Result := TArmature.Create;
+  Result.ParentObject := TheObject;
+  Result.ArmatureID := ArmatureID;
+  Result.Name := Name;
+  Result.CalculatedMatrix := CalculatedMatrix;
+  Result.Matrix := Matrix;
+  SetLength(Result.Bones, length(Bones));
+  for i := 0 to high(Bones) do
+    Result.Bones[i] := Bones[i].Duplicate(TheObject);
 end;
 
 function TArmature.AddBone: TBone;
@@ -280,41 +321,42 @@ begin
   Bones[high(Bones)] := TBone.Create;
   Result := Bones[high(Bones)];
   Result.ParentArmature := Self;
+  Result.BoneID := high(Bones);
 end;
 
 procedure TArmature.UpdateMatrix;
 var
   i: Integer;
 begin
-  if ParentArmature <> nil then
-    CalculatedMatrix := ParentArmature.CalculatedMatrix * Matrix
-  else
-    CalculatedMatrix := Matrix;
+  CalculatedMatrix := Matrix;
   for i := 0 to high(Bones) do
     if Bones[i].ParentBone = nil then
       Bones[i].UpdateMatrix;
-  for i := 0 to high(Children) do
-    Children[i].UpdateMatrix;
-end;
-
-procedure TArmature.AddChild(A: TArmature);
-begin
-  SetLength(Children, length(Children) + 1);
-  Children[high(Children)] := A;
-  A.ParentArmature := Self;
 end;
 
 constructor TArmature.Create;
 begin
-  ParentArmature := nil;
+  ArmatureID := -1;
   ParentObject := nil;
   CalculatedMatrix := Identity4D;
   Matrix := Identity4D;
 end;
 
 
-function TMaterial.Duplicate: TMaterial;
+function TMaterial.Duplicate(TheObject: TGeoObject): TMaterial;
 begin
+  Result := TMaterial.Create;
+  Result.MaterialID := MaterialID;
+  Result.Color := Color;
+  Result.Emission := Emission;
+  Result.Reflectivity := Reflectivity;
+  Result.RefractionValue := RefractionValue;
+  Result.Hardness := Hardness;
+  Result.Specularity := Specularity;
+  Result.BumpMapFactor := BumpMapFactor;
+  Result.Texture := Texture;
+  Result.BumpMap := BumpMap;
+  Result.OnlyEnvironmentMapHint := OnlyEnvironmentMapHint;
 end;
 
 function TMaterial.Transparent: Boolean;
@@ -327,6 +369,7 @@ end;
 
 constructor TMaterial.Create;
 begin
+  MaterialID := -1;
   Color := Vector(1, 1, 1, 1);
   Emission := Vector(0, 0, 0, 1);
   Reflectivity := 0;
@@ -362,8 +405,70 @@ begin
       end;
 end;
 
-function TGeoMesh.Duplicate: TGeoMesh;
+function TGeoMesh.Duplicate(TheObject: TGeoObject): TGeoMesh;
+var
+  i, j: Integer;
 begin
+  Result := TGeoMesh.Create;
+  Result.MeshID := MeshID;
+  Result.Name := Name;
+  Result.Bone := TheObject.Armatures[Bone.ParentArmature.ArmatureID].Bones[Bone.BoneID];
+  Result.Changed := Changed;
+  Result.MinDistance := MinDistance;
+  Result.MaxDistance := MaxDistance;
+  Result.ParentObject := TheObject;
+  
+  setLength(Result.Vertices, length(Vertices));
+  setLength(Result.TextureVertices, length(TextureVertices));
+  setLength(Result.Faces, length(Faces));
+
+  for i := 0 to high(Vertices) do
+    begin
+    Result.Vertices[i].VertexID := Vertices[i].VertexID;
+    Result.Vertices[i].Changed := Vertices[i].Changed;
+    Result.Vertices[i].ParentMesh := Self;
+    Result.Vertices[i].Color := Vertices[i].Color;
+    Result.Vertices[i].Position := Vertices[i].Position;
+    Result.Vertices[i].VertexNormal := Vertices[i].VertexNormal;
+    Result.Vertices[i].OriginalPosition := Vertices[i].OriginalPosition;
+    Result.Vertices[i].UseFacenormal := Vertices[i].UseFacenormal;
+    SetLength(Result.Vertices[i].FaceIDs, length(Vertices[i].FaceIDs));
+    for j := 0 to high(Result.Vertices[i].FaceIDs) do
+      Result.Vertices[i].FaceIDs[j] := Vertices[i].FaceIDs[j];
+    SetLength(Result.Vertices[i].Bones, length(Vertices[i].Bones));
+    for j := 0 to high(Result.Vertices[i].Bones) do
+      begin
+      Result.Vertices[i].Bones[j].Weight := Vertices[i].Bones[j].Weight;
+      Result.Vertices[i].Bones[j].Bone := TheObject.Armatures[Vertices[i].Bones[j].Bone.ParentArmature.ArmatureID].Bones[Vertices[i].Bones[j].Bone.BoneID];
+      end;
+    end;
+
+  for i := 0 to high(TextureVertices) do
+    Result.TextureVertices[i].Position := TextureVertices[i].Position;
+
+  for i := 0 to high(Faces) do
+    begin
+    Result.Faces[i].FaceID := Faces[i].FaceID;
+    Result.Faces[i].FaceNormal := Faces[i].FaceNormal;
+    Result.Faces[i].ParentMesh := Self;
+    for j := 0 to 2 do
+      begin
+      Result.Faces[i].Vertices[j] := Faces[i].Vertices[j];
+      Result.Faces[i].TexCoords[j] := Faces[i].TexCoords[j];
+      end;
+    end;
+  
+  if Parent = nil then
+    Result.Parent := nil
+  else
+    TheObject.Meshes[Parent.MeshID].AddChild(Result);
+
+  Result.Matrix := Matrix;
+  Result.CalculatedMatrix := CalculatedMatrix;
+  Result.Material := TheObject.Materials[Material.MaterialID];
+  SetLength(Result.LightSources, length(LightSources));
+  for i := 0 to high(LightSources) do
+    Result.LightSources[i] := LightSources[i].Duplicate;
 end;
 
 function TGeoMesh.AddVertex: PVertex;
@@ -450,6 +555,8 @@ begin
     CalculatedMatrix := CalculatedMatrix * Bone.Matrix;
     CalculatedMatrix := CalculatedMatrix * TranslationMatrix(Bone.SourcePosition * -1);
     end;
+  for i := 0 to high(LightSources) do
+    LightSources[i].Position := LightSources[i].OriginalPosition * CalculatedMatrix;
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
 end;
@@ -474,8 +581,18 @@ begin
       end;
 end;
 
+procedure TGeoMesh.Register;
+var
+  i: Integer;
+begin
+  EventManager.CallEvent('TGeoObject.AddedMesh', ParentObject, self);
+  for i := 0 to high(LightSources) do
+    LightSources[i].Register;
+end;
+
 constructor TGeoMesh.Create;
 begin
+  MeshID := -1;
   ParentObject := nil;
   Parent := nil;
   Name := '';
@@ -489,10 +606,14 @@ begin
 end;
 
 destructor TGeoMesh.Free;
+var
+  i: Integer;
 begin
   SetLength(Faces, 0);
   SetLength(Vertices, 0);
   SetLength(TextureVertices, 0);
+  for i := 0 to high(LightSources) do
+    LightSources[i].Free;
   EventManager.CallEvent('TGeoObject.DeletedMesh', ParentObject, Self);
 end;
 
@@ -505,25 +626,43 @@ begin
   Armatures[high(Armatures)] := TArmature.Create;
   Result := Armatures[high(Armatures)];
   Result.ParentObject := Self;
+  Result.ArmatureID := high(Armatures);
 end;
 
 function TGeoObject.AddMesh: TGeoMesh;
 begin
   SetLength(Meshes, length(Meshes) + 1);
   Meshes[high(Meshes)] := TGeoMesh.Create;
+  Meshes[high(Meshes)].MeshID := high(Meshes);
+  Meshes[high(Meshes)].ParentObject := Self;
   Result := Meshes[high(Meshes)];
-  Result.ParentObject := Self;
 end;
 
 function TGeoObject.AddMaterial: TMaterial;
 begin
   SetLength(Materials, length(Materials) + 1);
   Materials[high(Materials)] := TMaterial.Create;
+  Materials[high(Materials)].MaterialID := high(Materials);
   Result := Materials[high(Materials)];
 end;
 
 function TGeoObject.Duplicate: TGeoObject;
+var
+  i: Integer;
 begin
+  Result := TGeoObject.Create;
+
+  setLength(Result.Materials, length(Materials));
+  for i := 0 to high(Materials) do
+    Result.Materials[i] := Materials[i].Duplicate(self);
+
+  setLength(Result.Armatures, length(Armatures));
+  for i := 0 to high(Armatures) do
+    Result.Armatures[i] := Armatures[i].Duplicate(self);
+
+  setLength(Result.Meshes, length(Meshes));
+  for i := 0 to high(Meshes) do
+    Result.Meshes[i] := Meshes[i].Duplicate(self);
 end;
 
 procedure TGeoObject.UpdateMatrix;
@@ -540,8 +679,7 @@ var
   i: Integer;
 begin
   for i := 0 to high(Armatures) do
-    if Armatures[i].ParentArmature = nil then
-      Armatures[i].UpdateMatrix;
+    Armatures[i].UpdateMatrix;
 end;
 
 procedure TGeoObject.Register;
@@ -550,7 +688,7 @@ var
 begin
   EventManager.CallEvent('TGeoObject.Created', Self, nil);
   for i := 0 to high(Meshes) do
-    EventManager.CallEvent('TGeoObject.AddedMesh', Self, Meshes[i]);
+    Meshes[i].Register;
 end;
 
 procedure TGeoObject.RecalcFaceNormals;

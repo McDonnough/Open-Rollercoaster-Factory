@@ -52,6 +52,8 @@ type
       procedure SetSun(Sun: TSun);
       procedure AddLight(Light: TLight);
       procedure RemoveLight(Light: TLight);
+      procedure AddLightSource(Event: String; Data, Result: Pointer);
+      procedure RemoveLightSource(Event: String; Data, Result: Pointer);
       procedure QuicksortLights;
       procedure CreateShadows;
       constructor Create;
@@ -61,7 +63,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, u_events;
 
 procedure TLight.RenderShadowPass;
 begin
@@ -80,7 +82,7 @@ var
   tmpMaxRenderDistance: Single;
   tmpViewPoint: TVector3D;
 begin
-  if ShadowMap <> nil then
+  if (ShadowMap <> nil) and (LightSource.CastShadows) then
     begin
     tmpMaxRenderDistance := ModuleManager.ModRenderer.MaxRenderDistance;
     tmpViewPoint := ModuleManager.ModRenderer.ViewPoint;
@@ -252,12 +254,15 @@ begin
       fWorking := True;
 
       for i := 0 to high(fRegisteredLights) do
-        fRegisteredLights[i].fCalculatedStrength := fRegisteredLights[i].Strength(VecLength(Vector3D(fRegisteredLights[i].LightSource.Position) - ModuleManager.ModCamera.ActiveCamera.Position));
+        if fRegisteredLights[i].LightSource.CastShadows then
+          fRegisteredLights[i].fCalculatedStrength := fRegisteredLights[i].Strength(VecLength(Vector3D(fRegisteredLights[i].LightSource.Position) - ModuleManager.ModCamera.ActiveCamera.Position))
+        else
+          fRegisteredLights[i].fCalculatedStrength := -1;
 
       QuicksortLights;
 
       for i := 0 to high(fRegisteredLights) do
-        if i < fMaxShadowBuffers then
+        if (i < fMaxShadowBuffers) and (fRegisteredLights[i].LightSource.CastShadows) then
           fRegisteredLights[i].fShadowMap := fShadowBuffers[i]
         else
           fRegisteredLights[i].fShadowMap := nil;
@@ -318,16 +323,34 @@ begin
       end;
 end;
 
+procedure TLightManager.AddLightSource(Event: String; Data, Result: Pointer);
+begin
+  TLight.Create(TLightSource(Data));
+end;
+
+procedure TLightManager.RemoveLightSource(Event: String; Data, Result: Pointer);
+var
+  i: Integer;
+begin
+  for i := 0 to high(fRegisteredLights) do
+    if fRegisteredLights[i].LightSource = TLightSource(Data) then
+      fRegisteredLights[i].LightSource.Free;
+end;
+
 constructor TLightManager.Create;
 begin
   inherited Create(false);
   fMaxShadowBuffers := ModuleManager.ModRenderer.MaxShadowPasses;
+  EventManager.AddCallback('TLightSource.Added', @AddLightSource);
+  EventManager.AddCallback('TLightSource.Deleted', @RemoveLightSource);
 end;
 
 procedure TLightManager.Free;
 var
   i: Integer;
 begin
+  EventManager.RemoveCallback(@AddLightSource);
+  EventManager.RemoveCallback(@RemoveLightSource);
   while length(fRegisteredLights) > 0 do
     fRegisteredLights[0].Free;
   if fSun <> nil then

@@ -4,7 +4,7 @@ program orcf;
 
 uses
   {$IFDEF UNIX}cthreads,{$ENDIF}
-  SysUtils, Classes, m_varlist, main, u_events;
+  SysUtils, Classes, m_varlist, main, u_events, g_resources;
 
 {$IFDEF WINDOWS}{$R orcf.rc}{$ENDIF}
 
@@ -14,7 +14,9 @@ begin
   EventManager := TEventManager.Create;
   ModuleManager := TModuleManager.Create;
   ModuleManager.LoadModules;
+  ResourceManager := TResourceManager.Create;
   ChangeRenderState(rsMainMenu);
+  ResourceManager.Free;
   ModuleManager.ModGLContext.StartMainLoop;
   ModuleManager.UnloadModules;
   ModuleManager.Free;

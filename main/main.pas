@@ -35,7 +35,8 @@ procedure ChangeRenderState(New: TRenderState);
 implementation
 
 uses
-  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events, g_parkui;
+  m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events, g_parkui,
+  g_resources;
 
 type
   TParkLoadDialog = class
@@ -149,6 +150,7 @@ begin
   ModuleManager.ModGLMng.SetUpScreen;
   ModuleManager.ModGUI.CallSignals;
   ModuleManager.ModOCFManager.CheckLoaded;
+  ResourceManager.Notify;
 
   if ModuleManager.ModSettings.CanBeDestroyed then
     ModuleManager.ModSettings.HideConfigurationInterface;

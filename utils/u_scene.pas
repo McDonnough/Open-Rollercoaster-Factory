@@ -120,9 +120,7 @@ type
       MaterialID: Integer;
       Color, Emission: TVector4D;
       Reflectivity: Single;
-      RefractionValue: Single;
       Hardness, Specularity: Single;
-      BumpMapFactor: Single;
       Texture, BumpMap: TTexture;
       OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
@@ -173,6 +171,7 @@ type
       function AddArmature: TArmature;
       function AddMesh: TGeoMesh;
       function AddMaterial: TMaterial;
+      function AddMaterial(A: TMaterial): TMaterial;
       function Duplicate: TGeoObject;
       procedure UpdateMatrix;
       procedure Register;
@@ -180,6 +179,8 @@ type
       procedure RecalcVertexNormals;
       procedure UpdateVertexPositions;
       procedure UpdateArmatures;
+      procedure UpdateFaceVertexAssociationForVertexNormalCalculation;
+      procedure SetUnchanged;
       constructor Create;
       destructor Free;
     end;
@@ -350,10 +351,8 @@ begin
   Result.Color := Color;
   Result.Emission := Emission;
   Result.Reflectivity := Reflectivity;
-  Result.RefractionValue := RefractionValue;
   Result.Hardness := Hardness;
   Result.Specularity := Specularity;
-  Result.BumpMapFactor := BumpMapFactor;
   Result.Texture := Texture;
   Result.BumpMap := BumpMap;
   Result.OnlyEnvironmentMapHint := OnlyEnvironmentMapHint;
@@ -373,10 +372,8 @@ begin
   Color := Vector(1, 1, 1, 1);
   Emission := Vector(0, 0, 0, 1);
   Reflectivity := 0;
-  RefractionValue := 0;
-  Specularity := 1;
+  Specularity := 0;
   Hardness := 20;
-  BumpMapFactor := 1;
   OnlyEnvironmentMapHint := false;
   Texture := nil;
   BumpMap := nil;
@@ -387,22 +384,24 @@ procedure TGeoMesh.RecalcFaceNormals;
 var
   i: Integer;
 begin
-  for i := 0 to high(Faces) do
-    Faces[i].FaceNormal := Normal(Vertices[Faces[i].Vertices[0]].Position - Vertices[Faces[i].Vertices[1]].Position, Vertices[Faces[i].Vertices[2]].Position - Vertices[Faces[i].Vertices[1]].Position) * -1;
+  if Changed  then
+    for i := 0 to high(Faces) do
+      Faces[i].FaceNormal := Normal(Vertices[Faces[i].Vertices[0]].Position - Vertices[Faces[i].Vertices[1]].Position, Vertices[Faces[i].Vertices[2]].Position - Vertices[Faces[i].Vertices[1]].Position) * -1;
 end;
 
 procedure TGeoMesh.RecalcVertexNormals;
 var
   i, j: Integer;
 begin
-  for i := 0 to high(Vertices) do
-    if Vertices[i].Changed then
-      begin
-      Vertices[i].VertexNormal := Vector(0, 0, 0);
-      for j := 0 to high(Vertices[i].FaceIDs) do
-        Vertices[i].VertexNormal := Vertices[i].VertexNormal + Faces[Vertices[i].FaceIDs[j]].FaceNormal;
-      Vertices[i].VertexNormal := Normalize(Vertices[i].VertexNormal);
-      end;
+  if Changed then
+    for i := 0 to high(Vertices) do
+      if Vertices[i].Changed then
+        begin
+        Vertices[i].VertexNormal := Vector(0, 0, 0);
+        for j := 0 to high(Vertices[i].FaceIDs) do
+          Vertices[i].VertexNormal := Vertices[i].VertexNormal + Faces[Vertices[i].FaceIDs[j]].FaceNormal;
+        Vertices[i].VertexNormal := Normalize(Vertices[i].VertexNormal);
+        end;
 end;
 
 function TGeoMesh.Duplicate(TheObject: TGeoObject): TGeoMesh;
@@ -412,7 +411,10 @@ begin
   Result := TGeoMesh.Create;
   Result.MeshID := MeshID;
   Result.Name := Name;
-  Result.Bone := TheObject.Armatures[Bone.ParentArmature.ArmatureID].Bones[Bone.BoneID];
+  if Bone <> nil then
+    Result.Bone := TheObject.Armatures[Bone.ParentArmature.ArmatureID].Bones[Bone.BoneID]
+  else
+    Result.Bone := nil;
   Result.Changed := Changed;
   Result.MinDistance := MinDistance;
   Result.MaxDistance := MaxDistance;
@@ -425,7 +427,7 @@ begin
   for i := 0 to high(Vertices) do
     begin
     Result.Vertices[i].VertexID := Vertices[i].VertexID;
-    Result.Vertices[i].Changed := Vertices[i].Changed;
+    Result.Vertices[i].Changed := True;
     Result.Vertices[i].ParentMesh := Self;
     Result.Vertices[i].Color := Vertices[i].Color;
     Result.Vertices[i].Position := Vertices[i].Position;
@@ -473,25 +475,41 @@ end;
 
 function TGeoMesh.AddVertex: PVertex;
 begin
+  Changed := True;
   SetLength(Vertices, length(Vertices) + 1);
   Result := @Vertices[high(Vertices)];
   Result^.Changed := True;
   Result^.VertexID := high(Vertices);
   Result^.ParentMesh := Self;
+  Result^.Color := Vector(1, 1, 1, 1);
+  Result^.Position := Vector(0, 0, 0);
+  Result^.VertexNormal := Vector(0, 0, 0);
+  Result^.OriginalPosition := Vector(0, 0, 0);
+  Result^.UseFacenormal := True;
 end;
 
 function TGeoMesh.AddTextureVertex: PTextureVertex;
 begin
+  Changed := True;
   SetLength(TextureVertices, length(TextureVertices) + 1);
   Result := @TextureVertices[high(TextureVertices)];
+  Result^.Position := Vector(0, 0);
 end;
 
 function TGeoMesh.AddFace: PFace;
 begin
+  Changed := True;
   SetLength(Faces, length(Faces) + 1);
   Result := @Faces[high(Faces)];
   Result^.FaceID := high(Faces);
   Result^.ParentMesh := Self;
+  Result^.Vertices[0] := 0;
+  Result^.Vertices[1] := 1;
+  Result^.Vertices[2] := 2;
+  Result^.TexCoords[0] := 0;
+  Result^.TexCoords[1] := 1;
+  Result^.TexCoords[2] := 2;
+  Result^.FaceNormal := Vector(0, 0, 0);
 end;
 
 procedure TGeoMesh.AddBoneToAll(B: TBone);
@@ -576,8 +594,12 @@ begin
       CalculatedVertexPosition := Vector3D(Vector(Vertices[i].OriginalPosition, 1)) + RelativeMeshOffset;
       for j := 0 to high(Vertices[i].Bones) do
         CalculatedVertexPosition := MixVec(CalculatedVertexPosition, Vector3D(Vector(CalculatedVertexPosition - Vertices[i].Bones[j].Bone.CalculatedSourcePosition, 1) * Vertices[i].Bones[j].Bone.CalculatedMatrix) + Vertices[i].Bones[j].Bone.SourcePosition, Vertices[i].Bones[j].Weight);
-      Vertices[i].Position := CalculatedVertexPosition - RelativeMeshOffset;
-      Vertices[i].Changed := True;
+      if VecLengthNoRoot(CalculatedVertexPosition - RelativeMeshOffset) > 0.001 then
+        begin
+        Vertices[i].Position := CalculatedVertexPosition - RelativeMeshOffset;
+        Vertices[i].Changed := True;
+        Changed := True;
+        end;
       end;
 end;
 
@@ -646,6 +668,14 @@ begin
   Result := Materials[high(Materials)];
 end;
 
+function TGeoObject.AddMaterial(A: TMaterial): TMaterial;
+begin
+  SetLength(Materials, length(Materials) + 1);
+  Materials[high(Materials)] := A;
+  Materials[high(Materials)].MaterialID := high(Materials);
+  Result := Materials[high(Materials)];
+end;
+
 function TGeoObject.Duplicate: TGeoObject;
 var
   i: Integer;
@@ -654,15 +684,15 @@ begin
 
   setLength(Result.Materials, length(Materials));
   for i := 0 to high(Materials) do
-    Result.Materials[i] := Materials[i].Duplicate(self);
+    Result.Materials[i] := Materials[i].Duplicate(Result);
 
   setLength(Result.Armatures, length(Armatures));
   for i := 0 to high(Armatures) do
-    Result.Armatures[i] := Armatures[i].Duplicate(self);
+    Result.Armatures[i] := Armatures[i].Duplicate(Result);
 
   setLength(Result.Meshes, length(Meshes));
   for i := 0 to high(Meshes) do
-    Result.Meshes[i] := Meshes[i].Duplicate(self);
+    Result.Meshes[i] := Meshes[i].Duplicate(Result);
 end;
 
 procedure TGeoObject.UpdateMatrix;
@@ -713,6 +743,22 @@ var
 begin
   for i := 0 to high(Meshes) do
     Meshes[i].UpdateVertexPositions;
+end;
+
+procedure TGeoObject.SetUnchanged;
+var
+  i: Integer;
+begin
+  for i := 0 to high(Meshes) do
+    Meshes[i].Changed := False;
+end;
+
+procedure TGeoObject.UpdateFaceVertexAssociationForVertexNormalCalculation;
+var
+  i: Integer;
+begin
+  for i := 0 to high(Meshes) do
+    Meshes[i].UpdateFaceVertexAssociationForVertexNormalCalculation;
 end;
 
 constructor TGeoObject.Create;

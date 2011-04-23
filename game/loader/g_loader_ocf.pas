@@ -53,6 +53,7 @@ type
       property Preview: TTexImage read getPreview;
       procedure AddBinarySection(A: TOCFBinarySection);
       procedure SaveTo(FName: String);
+      function ResourceByName(RName: String): TOCFResource;
       constructor Create(FName: String);
       destructor Free;
     end;
@@ -129,15 +130,6 @@ begin
 {    ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
     fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
     Result := fPreview;}
-    end
-  else if GetOCFType = 'resource' then
-    begin
-    if length(fXMLSection.Document.GetElementsByTagName('preview')) = 1 then
-      begin
-      i := StrToInt(TDOMElement(fXMLSection.Document.GetElementsByTagName('park')[0]).GetAttribute('resource:id'));
-      fPreview := TexFromStream(fBinarySections[Resources[i].section].Stream, '.' + Resources[i].Format);
-      Result := fPreview;
-      end;
     end;
 end;
 
@@ -147,7 +139,7 @@ begin
     exit(fDescription);
   Result := '';
   try
-    if (GetOCFType = 'savedgame') or (GetOCFType = 'resource') then
+    if (GetOCFType = 'savedgame') then
       Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('description')[0]).FirstChild.NodeValue;
   except
     ModuleManager.ModLog.AddError('Error loading description of an OCF file: Internal error');
@@ -224,6 +216,7 @@ var
   a: TDOMNodeList;
   j: Integer;
 begin
+  Result.id := -1;
   a := XML.Document.GetElementsByTagName('resource');
   for j := 0 to high(a) do
     if TDOMElement(a[j]).GetAttribute('resource:id') = IntToStr(i) then
@@ -240,6 +233,18 @@ procedure TOCFFile.AddBinarySection(A: TOCFBinarySection);
 begin
   setLength(fBinarySections, length(fBinarySections) + 1);
   fBinarySections[high(fBinarySections)] := A;
+end;
+
+function TOCFFile.ResourceByName(RName: String): TOCFResource;
+var
+  i: Integer;
+begin
+  i := 0;
+  repeat
+    Result := Resources[i];
+    inc(i)
+  until
+    (Result.Name = RName) or (Result.id = -1);
 end;
 
 constructor TOCFFile.Create(FName: String);

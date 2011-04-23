@@ -14,23 +14,28 @@ type
       fFileName: String;
       fSubResourceName: String;
       fDependencies: TStringList;
+      fFinishedLoading: Boolean;
       function getFullName: String;
+      procedure setFinishedLoading(B: Boolean);
     public
-      FileLoaded, DepsLoaded: TResourceLoadedProcedure;
+      FileLoaded: TResourceLoadedProcedure;
       property FileName: String read fFileName;
       property SubResourceName: String read fSubResourceName;
       property Name: String read getFullName;
-      constructor Create(ResourceName: String; fFileLoaded, fDepsLoaded: TResourceLoadedProcedure);
+      property FinishedLoading: Boolean read fFinishedLoading write setFinishedLoading;
+      constructor Create(ResourceName: String; fFileLoaded: TResourceLoadedProcedure);
       procedure Free;
     end;
 
   TResourceManager = class(TLinkedList)
     protected
+      fNotificationsRemaining: Array of TAbstractResource;
       function getResourceByName(Name: String): TAbstractResource;
     public
       property Resources[Name: String]: TAbstractResource read getResourceByName;
+      procedure AddFinishedResource(Resource: TAbstractResource);
+      procedure Notify;
       procedure FileLoaded(Event: String; Data, Result: Pointer);
-      procedure DepsLoaded(Event: String; Data, Result: Pointer);
       constructor Create;
       procedure Free;
     end;
@@ -43,17 +48,28 @@ implementation
 uses
   m_varlist, u_files, u_functions, u_events, g_park;
 
+procedure TAbstractResource.setFinishedLoading(B: Boolean);
+begin
+  if not fFinishedLoading then
+    begin
+    fFinishedLoading := B;
+    if fFinishedLoading then
+      ResourceManager.AddFinishedResource(Self);
+    end;
+end;
+
 function TAbstractResource.getFullName: String;
 begin
   Result := fFileName + '/' + fSubResourceName;
 end;
 
-constructor TAbstractResource.Create(ResourceName: String; fFileLoaded, fDepsLoaded: TResourceLoadedProcedure);
+constructor TAbstractResource.Create(ResourceName: String; fFileLoaded: TResourceLoadedProcedure);
 var
   A: AString;
   i: Integer;
 begin
   inherited Create;
+  fFinishedLoading := False;
   fDependencies := TStringList.Create;
   fFileName := '';
   fSubResourceName := '';
@@ -63,7 +79,7 @@ begin
 
   i := 0;
   for i := 0 to high(A) do
-    if getFirstExistingFileName(fFileName) = '' then
+    if (getFirstExistingFileName(fFileName) = '') or (directoryExists(getFirstExistingFileName(fFileName))) then
       begin
       if fFileName <> '' then
         fFileName := fFileName + '/';
@@ -75,14 +91,14 @@ begin
         fSubResourceName := fSubResourceName + '/';
       fSubResourceName := fSubResourceName + A[i];
       end;
+  FileLoaded := fFileLoaded;
   if getFirstExistingFileName(fFileName) <> '' then
     begin
     EventManager.AddCallback('TAbstractResource.FileLoaded.' + ResourceName, @ResourceManager.FileLoaded);
     ModuleManager.ModOCFManager.RequestOCFFile(fFileName, 'TAbstractResource.FileLoaded.' + ResourceName, self);
     end;
 
-  DepsLoaded := fDepsLoaded;
-  FileLoaded := fFileLoaded;
+  ResourceManager.Append(Self);
 end;
 
 procedure TAbstractResource.Free;
@@ -97,14 +113,11 @@ procedure TResourceManager.FileLoaded(Event: String; Data, Result: Pointer);
 begin
   EventManager.RemoveCallback(Event);
   if TAbstractResource(Result).FileLoaded <> nil then
-    TAbstractResource(Result).FileLoaded(TOCFFile(Data));
-end;
-
-procedure TResourceManager.DepsLoaded(Event: String; Data, Result: Pointer);
-begin
-  EventManager.RemoveCallback(Event);
-  if TAbstractResource(Result).DepsLoaded <> nil then
-    TAbstractResource(Result).DepsLoaded(TOCFFile(Data));
+    try
+      TAbstractResource(Result).FileLoaded(TOCFFile(Data));
+    except
+      ModuleManager.ModLog.AddError('Loading resource ' + TAbstractResource(Result).Name + ' failed');
+    end;
 end;
 
 function TResourceManager.getResourceByName(Name: String): TAbstractResource;
@@ -119,6 +132,26 @@ begin
       exit(CurrResource);
     CurrResource := TAbstractResource(CurrResource.Next);
     end;
+end;
+
+procedure TResourceManager.AddFinishedResource(Resource: TAbstractResource);
+begin
+  setLength(fNotificationsRemaining, length(fNotificationsRemaining) + 1);
+  fNotificationsRemaining[high(fNotificationsRemaining)] := Resource;
+end;
+
+procedure TResourceManager.Notify;
+var
+  i: Integer;
+begin
+  i := 0;
+  while i <= high(fNotificationsRemaining) do
+    begin
+    EventManager.CallEvent('TResource.FinishedLoading:' + fNotificationsRemaining[i].Name, fNotificationsRemaining[i], nil);
+    EventManager.RemoveCallback('TResource.FinishedLoading:' + fNotificationsRemaining[i].Name);
+    inc(i);
+    end;
+  setlength(fNotificationsRemaining, 0);
 end;
 
 constructor TResourceManager.Create;

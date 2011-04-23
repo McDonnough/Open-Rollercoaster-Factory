@@ -103,6 +103,7 @@ procedure TRObjects.DeleteObject(Event: String; Data, Result: Pointer);
 var
   i: Integer;
 begin
+  fLastManagedObject := Max(fLastManagedObject, 0);
   if fManagedObjects[fLastManagedObject].GeoObject <> TGeoObject(Data) then
     for i := 0 to high(fManagedObjects) do
       if fManagedObjects[i].GeoObject = TGeoObject(Data) then
@@ -119,6 +120,7 @@ procedure TRObjects.AddMesh(Event: String; Data, Result: Pointer);
 var
   i: Integer;
 begin
+  fLastManagedObject := Max(fLastManagedObject, 0);
   if fManagedObjects[fLastManagedObject].GeoObject <> TGeoObject(Data) then
     for i := 0 to high(fManagedObjects) do
       if fManagedObjects[i].GeoObject = TGeoObject(Data) then
@@ -166,6 +168,7 @@ var
   i, mesh: Integer;
 begin
   mesh := -1;
+  fLastManagedObject := Max(fLastManagedObject, 0);
   if fManagedObjects[fLastManagedObject].GeoObject <> TGeoObject(Data) then
     for i := 0 to high(fManagedObjects) do
       if fManagedObjects[i].GeoObject = TGeoObject(Data) then

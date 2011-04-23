@@ -126,12 +126,7 @@ var
         exit(fAutoplantTextures[i]);
     with fOCF.Resources[ID] do
       begin
-      if Format = 'tga' then
-        temptex := TexFromTGA(fOCF.Bin[Section].Stream)
-      else if Format = 'dbcg' then
-        temptex := TexFromDBCG(fOCF.Bin[Section].Stream)
-      else
-        raise EInvalidFormat.Create('Invalid Format');
+      temptex := TexFromStream(fOCF.Bin[Section].Stream, '.' + Format);
       TexFormat := GL_RGB;
       if TempTex.BPP = 32 then
         TexFormat := GL_RGBA;

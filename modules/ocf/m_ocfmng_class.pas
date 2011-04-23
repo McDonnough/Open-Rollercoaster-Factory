@@ -35,6 +35,11 @@ type
         * Reload a (changed) OCF file
         *)
       procedure ReloadOCFFile(FileName, Event: String; AdditionalData: Pointer); virtual abstract;
+
+      (**
+        * Report if a file is already loaded
+        *)
+      function FileAlreadyLoaded(FileName: String): Boolean; virtual abstract;
     end;
 
 implementation

@@ -33,6 +33,7 @@ type
       procedure ReloadOCFFile(FileName, Event: String; AdditionalData: Pointer);
       procedure CheckLoaded;
       procedure CheckModConf;
+      function FileAlreadyLoaded(FileName: String): Boolean;
       procedure __Loaded(Event: String; Data, Result: Pointer);
       constructor Create;
       destructor Free;
@@ -146,6 +147,12 @@ begin
         break;
       end;
   fThread.CanWork := True;
+end;
+
+function TModuleOCFManagerDefault.FileAlreadyLoaded(FileName: String): Boolean;
+begin
+  FileName := GetFirstExistingFileName(FileName);
+  Result := AlreadyLoaded(FileName) > -1;
 end;
 
 constructor TModuleOCFManagerDefault.Create;

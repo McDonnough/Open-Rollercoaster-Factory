@@ -511,7 +511,6 @@ begin
   SetLength(fMeshVertexIDList, 3 * Length(Mesh.Faces));
   SetLength(fMeshTextureVertexIDList, 3 * Length(Mesh.Faces));
 
-
   Create(3 * Length(Mesh.Faces), Length(Mesh.Faces), Mesh);
   for i := 0 to high(Mesh.Faces) do
     begin

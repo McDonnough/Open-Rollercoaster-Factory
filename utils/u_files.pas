@@ -32,6 +32,8 @@ end;
 
 function GetFirstExistingFilename(FileName: String): String;
 begin
+  if FileName = '' then
+    exit('');
   if ModuleManager = nil then // Independent mode
     exit(FileName);
   Result := '';

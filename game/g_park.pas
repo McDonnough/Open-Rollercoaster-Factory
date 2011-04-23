@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml, g_particles,
-  g_resources, g_objects;
+  g_resources, g_objects, g_res_textures;
 
 type
   TPark = class
@@ -134,6 +134,7 @@ begin
       PostInit;
     102:
       begin
+      pObjects.Test;
       ModuleManager.ModLoadScreen.Progress := 10;
       ModuleManager.ModLoadScreen.Text := 'Preparing terrain';
       end;
@@ -203,6 +204,7 @@ begin
     ModuleManager.ModRenderer.RenderScene;
     ParkUI.Drag;
     pSky.Advance;
+    pObjects.Advance;
     pParticles.Advance;
     ModuleManager.ModCamera.AdvanceActiveCamera;
     fSelectionEngine.Update;

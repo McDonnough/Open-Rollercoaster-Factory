@@ -74,7 +74,6 @@ type
       procedure RenderReflections;
       procedure RenderOpaque;
       procedure RenderTransparent;
-      procedure UpdateObjects;
       procedure QuickSortTransparentMeshes;
       function CalculateLODDistance(D: Single): Single;
       constructor Create;
@@ -392,11 +391,6 @@ begin
       end;
   fExcludedMeshObject := nil;
   fExcludedMesh := nil;
-end;
-
-procedure TRObjects.UpdateObjects;
-begin
-
 end;
 
 constructor TRObjects.Create;

@@ -85,6 +85,7 @@ begin
   fBGLabel.Top := 0;
   fBGLabel.Height := ResY;
   fBGLabel.Width := ResX;
+  fBGLabel.Color := Vector(0, 0, 0, 0.4);
 
   fWindow := TWindow.Create(fBGLabel);
   fWindow.Width := 300;
@@ -154,6 +155,7 @@ begin
   fBGLabel.Top := 0;
   fBGLabel.Height := ResY;
   fBGLabel.Width := ResX;
+  fBGLabel.Color := Vector(0, 0, 0, 0.4);
 
   fWindow := TWindow.Create(fBGLabel);
   fWindow.Width := 300;
@@ -424,6 +426,7 @@ begin
   bgLabel.Top := 0;
   bgLabel.Height := ResY;
   bgLabel.Width := ResX;
+  bgLabel.Color := Vector(0, 0, 0, 0.4);
 
   Window := TWindow.Create(bgLabel);
   Window.Width := 700;

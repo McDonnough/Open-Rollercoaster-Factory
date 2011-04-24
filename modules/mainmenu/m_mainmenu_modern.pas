@@ -327,7 +327,7 @@ begin
   fCoasterTrack.Height := 64;
   fCoasterTrack.Width := 2048;
   fCoasterTrack.Top := 408;
-  fCoasterTrack.Left := ResX - 56 - 2048;
+  fCoasterTrack.Left := ResX - 88 - 2048;
 
   fDescriptionContainer := TImage.Create(fWindow);
   fDescriptionContainer.FreeTextureOnDestroy := True;
@@ -336,7 +336,7 @@ begin
   fDescriptionContainer.Height := 286;
   fDescriptionContainer.Left := 100 + (ResX - 800) / 2;
   fDescriptionContainer.Width := 600;
-  fDescriptionContainer.Top := 122;
+  fDescriptionContainer.Top := 130;
 
   fLogoBG := TImage.Create(nil);
   fLogoBG.Left := -320;
@@ -383,9 +383,9 @@ begin
   fNew.Tag := MMVAL_STARTGAME;
   fNew.Caption := 'New game';
   fNew.TextLabel.TextColor := Vector(1, 1, 1, 1);
-  fNew.TextLabelTop := 10;
-  fNew.TextLabel.Height := 28;
-  fNew.TextLabel.Size := 28;
+  fNew.TextLabelTop := 8;
+  fNew.TextLabel.Height := 32;
+  fNew.TextLabel.Size := 32;
   fNew.TextLabelLeft := 16;
   fNew.TextLabel.Width := 350 - 16;
   fNew.TextLabel.OnHover := @HighlightItem;
@@ -402,9 +402,9 @@ begin
   fLoad.Tag := MMVAL_LOADGAME;
   fLoad.Caption := 'Load park';
   fLoad.TextLabel.TextColor := Vector(1, 1, 1, 1);
-  fLoad.TextLabelTop := 10;
-  fLoad.TextLabel.Height := 28;
-  fLoad.TextLabel.Size := 28;
+  fLoad.TextLabelTop := 8;
+  fLoad.TextLabel.Height := 32;
+  fLoad.TextLabel.Size := 32;
   fLoad.TextLabelLeft := 26;
   fLoad.TextLabel.Width := 350 - 26;
   fLoad.TextLabel.OnHover := @HighlightItem;
@@ -421,9 +421,9 @@ begin
   fSettings.Tag := MMVAL_SETTINGS;
   fSettings.Caption := 'Settings';
   fSettings.TextLabel.TextColor := Vector(1, 1, 1, 1);
-  fSettings.TextLabelTop := 10;
-  fSettings.TextLabel.Height := 28;
-  fSettings.TextLabel.Size := 28;
+  fSettings.TextLabelTop := 8;
+  fSettings.TextLabel.Height := 32;
+  fSettings.TextLabel.Size := 32;
   fSettings.TextLabelLeft := 0;
   fSettings.TextLabel.Width := 350 - 16;
   fSettings.TextLabel.Align := LABEL_ALIGN_RIGHT;
@@ -441,9 +441,9 @@ begin
   fHelp.Tag := MMVAL_HELP;
   fHelp.Caption := 'Help';
   fHelp.TextLabel.TextColor := Vector(1, 1, 1, 1);
-  fHelp.TextLabelTop := 10;
-  fHelp.TextLabel.Height := 28;
-  fHelp.TextLabel.Size := 28;
+  fHelp.TextLabelTop := 8;
+  fHelp.TextLabel.Height := 32;
+  fHelp.TextLabel.Size := 32;
   fHelp.TextLabelLeft := 0;
   fHelp.TextLabel.Width := 350 - 26;
   fHelp.TextLabel.Align := LABEL_ALIGN_RIGHT;

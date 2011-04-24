@@ -28,7 +28,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events;
+  m_varlist, u_events, u_vectors;
 
 constructor TModuleSettingsDefault.Create;
 begin
@@ -72,6 +72,7 @@ begin
   fBgLabel.Top := 0;
   fBgLabel.Height := ResY;
   fBgLabel.Width := ResX;
+  fBgLabel.Color := Vector(0, 0, 0, 0.4);
 
   fWindow := TWindow.Create(fBgLabel);
   fWindow.Width := 700;

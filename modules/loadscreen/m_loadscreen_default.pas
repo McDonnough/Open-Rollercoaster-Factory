@@ -15,6 +15,7 @@ type
       fHLabel, fTLabel: TLabel;
       fPB: TProgressBar;
       fVisible: Boolean;
+      fTexture: TTexture;
     public
       constructor Create;
       destructor Free;
@@ -34,6 +35,9 @@ begin
   fModType := 'LoadScreen';
 
   CheckModConf;
+
+  fTexture := TTexture.Create;
+  fTexture.FromFile(GetConfVal('background'), false, false);
 
   ModuleManager.ModGLContext.GetResolution(W, H);
 
@@ -96,6 +100,20 @@ begin
     glTexCoord2f(1, 0); glVertex3f(2048 - ((2048 - W) div 2), 0,    -255);
   glEnd;
   ModuleManager.ModMainMenu.fMainBackground.Unbind;
+
+  glEnable(GL_BLEND);
+
+  fTexture.Bind(0);
+  glColor4f(1, 1, 1, 1);
+  glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex3f(0 - ((2048 - W) div 2),    0,               -255);
+    glTexCoord2f(0, 1); glVertex3f(0 - ((2048 - W) div 2),    fTexture.Height, -255);
+    glTexCoord2f(1, 1); glVertex3f(2048 - ((2048 - W) div 2), fTexture.Height, -255);
+    glTexCoord2f(1, 0); glVertex3f(2048 - ((2048 - W) div 2), 0,               -255);
+  glEnd;
+  fTexture.Unbind;
+
+  glDisable(GL_BLEND);
 end;
 
 
@@ -111,6 +129,7 @@ end;
 destructor TModuleLoadScreenDefault.Free;
 begin
   fWindow.Free;
+  fTexture.Free;
 end;
 
 end.

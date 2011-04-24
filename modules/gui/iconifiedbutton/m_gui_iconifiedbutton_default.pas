@@ -66,11 +66,11 @@ begin
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBegin(GL_QUADS);
-    glColor4f(1, 1, 1, 1);
+    glColor4f(1, 1, 1, Button.Alpha);
     RenderButton(0, 0);
-    glColor4f(1, 1, 1, Button.fHoverFactor);
+    glColor4f(1, 1, 1, Button.fHoverFactor * Button.Alpha);
     RenderButton(0.5, 0);
-    glColor4f(1, 1, 1, Button.fClickFactor);
+    glColor4f(1, 1, 1, Button.fClickFactor * Button.Alpha);
     RenderButton(0, 0.5);
   glEnd;
 
@@ -81,7 +81,7 @@ begin
     begin
     Tex.Bind(0);
     glBegin(GL_QUADS);
-      glColor4f(1, 1, 1, 1);
+      glColor4f(1, 1, 1, Button.Alpha);
       glTexCoord2f(0, 0); glVertex3f(Button.Left + 0.15 * Button.Width, Button.Top + 0.15 * Button.Height, 0);
       glTexCoord2f(1, 0); glVertex3f(Button.Left + 0.85 * Button.Width, Button.Top + 0.15 * Button.Height, 0);
       glTexCoord2f(1, 1); glVertex3f(Button.Left + 0.85 * Button.Width, Button.Top + 0.85 * Button.Height, 0);

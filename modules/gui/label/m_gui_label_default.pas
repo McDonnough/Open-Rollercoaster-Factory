@@ -50,15 +50,18 @@ var
 begin
   glEnable(GL_BLEND);
   glDisable(GL_ALPHA_TEST);
-  glColor4f(Lbl.Color.X, Lbl.Color.Y, Lbl.Color.Z, Lbl.Color.W * Lbl.Alpha);
-  ModuleManager.ModTexMng.ActivateTexUnit(0);
-  ModuleManager.ModTexMng.BindTexture(-1);
-  glBegin(GL_QUADS);
-    glVertex2f(Lbl.Left, Lbl.Top);
-    glVertex2f(Lbl.Left + Lbl.Width, Lbl.Top);
-    glVertex2f(Lbl.Left + Lbl.Width, Lbl.Top + Lbl.Height);
-    glVertex2f(Lbl.Left, Lbl.Top + Lbl.Height);
-  glEnd;
+  if Lbl.Color.W > 0 then
+    begin
+    glColor4f(Lbl.Color.X, Lbl.Color.Y, Lbl.Color.Z, Lbl.Color.W * Lbl.Alpha);
+    ModuleManager.ModTexMng.ActivateTexUnit(0);
+    ModuleManager.ModTexMng.BindTexture(-1);
+    glBegin(GL_QUADS);
+      glVertex2f(Lbl.Left, Lbl.Top);
+      glVertex2f(Lbl.Left + Lbl.Width, Lbl.Top);
+      glVertex2f(Lbl.Left + Lbl.Width, Lbl.Top + Lbl.Height);
+      glVertex2f(Lbl.Left, Lbl.Top + Lbl.Height);
+    glEnd;
+    end;
   found := false;
   for k := 0 to high(LblResources) do
     if LblResources[k].Lbl = Lbl then
@@ -117,7 +120,7 @@ begin
           else
             Left := Lbl.Left;
             end;
-          ModuleManager.ModFont.Write(CTexts[high(CTexts), i], Lbl.Size, Left, Lbl.Top + Lbl.Size * n, 0, 0, 0, Lbl.Alpha, 0);
+          ModuleManager.ModFont.Write(CTexts[high(CTexts), i], Lbl.Size, Left, Lbl.Top + Lbl.Size * n, Lbl.TextColor.X, Lbl.TextColor.Y, Lbl.TextColor.Z, Lbl.Alpha * Lbl.TextColor.W, 0);
           inc(n);
           end;
         end;
@@ -134,7 +137,7 @@ begin
           else
             Left := Lbl.Left;
             end;
-          ModuleManager.ModFont.Write(CTexts[j, i], Lbl.Size, Left, Lbl.Top + Lbl.Size * n, 0, 0, 0, Lbl.Alpha, 0);
+          ModuleManager.ModFont.Write(CTexts[j, i], Lbl.Size, Left, Lbl.Top + Lbl.Size * n, Lbl.TextColor.X, Lbl.TextColor.Y, Lbl.TextColor.Z, Lbl.Alpha * Lbl.TextColor.W, 0);
           inc(n);
           end;
       end;

@@ -16,6 +16,7 @@ type
       Size: Integer;
       Align: Integer;
       Color: TVector4D;
+      TextColor: TVector4D;
       property Caption: String read fCaption write setCaption;
       procedure Render;
       constructor Create(mParent: TGUIComponent);
@@ -60,6 +61,7 @@ begin
   Caption := '';
   Align := LABEL_ALIGN_LEFT;
   Color := Vector(1, 1, 1, 0);
+  TextColor := Vector(0, 0, 0, 1);
 end;
 
 end.

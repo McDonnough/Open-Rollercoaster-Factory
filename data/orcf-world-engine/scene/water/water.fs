@@ -33,7 +33,7 @@ void main(void) {
   if (Vertex.z > TerrainSize.y + 204.8) FakeVertex.y = TerrainSize.y - 25.6;
 
   vec2 hm = texture2D(HeightMap, FakeVertex / TerrainSize).gb;
-  if (abs(256.0 * hm.r - Height) > 0.1)
+  if (abs(256.0 * hm.r - Height) > 0.05)
     discard;
 
   vec3 Position = vec3(Vertex.x, Height, Vertex.z);

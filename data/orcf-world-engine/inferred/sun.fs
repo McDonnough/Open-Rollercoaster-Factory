@@ -98,6 +98,7 @@ void main(void) {
 
   if (Height.r > Vertex.y) {
     gl_FragColor.rgb *= pow(0.9, (Height.r - Vertex.y));
+    vec3 ol = gl_FragColor.rgb;
     float lf = pow(0.95,  AllCoord.w);
     vec2 XZPos = Vertex.xz + (Height.r - Vertex.y) * Sun.xz / -Sun.y;
     XZPos += 0.2 * vec2(sin(XZPos.y + 4.0 * BumpOffset.x + 0.32 * XZPos.x), cos(3.1416 * XZPos.x + 3.67 * BumpOffset.y + 0.68 * XZPos.y));
@@ -108,6 +109,7 @@ void main(void) {
     XZPos *= pow(0.6, (Height.r - Vertex.y)) * lf;
     gl_FragColor.rgb *= (1.0 - 0.2 * lf + XZPos.x);
     gl_FragColor.rgb *= (1.0 - 0.2 * lf + XZPos.y);
+    gl_FragColor.rgb = mix(ol, gl_FragColor.rgb, min(3.0 * abs(Height.r - Vertex.y), 1.0));
   }
 
   gl_FragColor.rgb += Emission.rgb;

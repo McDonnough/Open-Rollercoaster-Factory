@@ -119,17 +119,12 @@ var
 begin
   if fPreview.BPP <> 0 then
     exit(fPreview);
+  Result := fPreview;
   if GetOCFType = 'terraincollection' then
     begin
     ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
     fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
     Result := fPreview;
-    end
-  else if GetOCFType = 'savegame' then
-    begin
-{    ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
-    fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
-    Result := fPreview;}
     end;
 end;
 

@@ -363,12 +363,12 @@ begin
   fQuit.Image.OnLeave := @MoveQuitButtonRight;
   fQuit.TextLabel.OnHover := @MoveQuitButtonLeft;
   fQuit.TextLabel.OnLeave := @MoveQuitButtonRight;
-  fQuit.Top := 0;
-  fQuit.Left := ResX;
-  fQuit.OnClick := @SetMenuState;
   fQuit.TextLabelLeft := 40;
   fQuit.TextLabelTop := 3;
   fQuit.Tag := MMVAL_QUIT;
+  fQuit.Top := 0;
+  fQuit.Left := ResX;
+  fQuit.OnClick := @SetMenuState;
 
   fVersion := TImageButton.Create('version', nil);
   fVersion.Caption := 'Version $0.0$';

@@ -69,6 +69,7 @@ var
   i: Integer;
 begin
   inherited Create;
+  writeln('Hint: Loading resource ' + ResourceName);
   fFinishedLoading := False;
   fDependencies := TStringList.Create;
   fFileName := '';

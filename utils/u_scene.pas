@@ -117,6 +117,7 @@ type
 
   TMaterial = class
     public
+      Name: String;
       MaterialID: Integer;
       Color, Emission: TVector4D;
       Reflectivity: Single;
@@ -347,6 +348,7 @@ end;
 function TMaterial.Duplicate(TheObject: TGeoObject): TMaterial;
 begin
   Result := TMaterial.Create;
+  Result.Name := Name;
   Result.MaterialID := MaterialID;
   Result.Color := Color;
   Result.Emission := Emission;
@@ -369,6 +371,7 @@ end;
 constructor TMaterial.Create;
 begin
   MaterialID := -1;
+  Name := '';
   Color := Vector(1, 1, 1, 1);
   Emission := Vector(0, 0, 0, 1);
   Reflectivity := 0;
@@ -469,6 +472,7 @@ begin
   Result.CalculatedMatrix := CalculatedMatrix;
   Result.Material := TheObject.Materials[Material.MaterialID];
   SetLength(Result.LightSources, length(LightSources));
+
   for i := 0 to high(LightSources) do
     Result.LightSources[i] := LightSources[i].Duplicate;
 end;

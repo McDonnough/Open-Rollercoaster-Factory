@@ -3,7 +3,8 @@ unit g_objects;
 interface
 
 uses
-  SysUtils, Classes, u_linkedlists, g_resources, u_scene, g_loader_ocf, g_res_textures, g_res_materials, u_xml, u_dom;
+  SysUtils, Classes, u_linkedlists, g_resources, u_scene, g_loader_ocf, g_res_textures, g_res_materials, u_xml, u_dom, u_vectors,
+  g_res_lights;
 
 type
   TObjectResource = class(TAbstractResource)
@@ -11,6 +12,9 @@ type
       fGeoObject: TGeoObject;
       fMaterialResources: Array of TMaterialResource;
       fMaterialResourceNames: Array of String;
+      fLightSourceResourceNames: Array of Array of String;
+      fLightSourceResourcePositions: Array of Array of TVector3D;
+      fLightSourceResources: Array of Array of TLightResource;
       fMaterialDefined: Array of Boolean;
       fFinalMaterialResourceNames: Array of String;
       fDepCount: Integer;
@@ -18,6 +22,7 @@ type
       property GeoObject: TGeoObject read fGeoObject;
       constructor Create(ResourceName: String);
       class function Get(ResourceName: String): TObjectResource;
+      function LoadMatrix(Element: TDOMElement): TMatrix4D;
       procedure FinalCreation;
       procedure FileLoaded(Data: TOCFFile);
       procedure DepLoaded(Event: String; Data, Result: Pointer);
@@ -49,7 +54,7 @@ type
 implementation
 
 uses
-  u_vectors, u_functions, u_events;
+  u_functions, u_events;
 
 class function TObjectResource.Get(ResourceName: String): TObjectResource;
 begin
@@ -75,13 +80,44 @@ begin
     fGeoObject.AddMaterial(fMaterialResources[i].Material);
 
   for i := 0 to high(fGeoObject.Meshes) do
+    begin
     for j := 0 to high(fFinalMaterialResourceNames) do
       if fFinalMaterialResourceNames[j] = fMaterialResourceNames[i] then
         fGeoObject.Meshes[i].Material := fMaterialResources[j].Material;
+
+    setLength(fGeoObject.Meshes[i].LightSources, length(fLightSourceResources[i]));
+    for j := 0 to high(fLightSourceResources[i]) do
+      begin
+      fGeoObject.Meshes[i].LightSources[j] := fLightSourceResources[i, j].Light;
+      fGeoObject.Meshes[i].LightSources[j].Position := Vector(fLightSourceResourcePositions[i, j], 1.0);
+      fGeoObject.Meshes[i].LightSources[j].OriginalPosition := fGeoObject.Meshes[i].LightSources[j].Position;
+      end;
+    end;
     
   fGeoObject.UpdateFaceVertexAssociationForVertexNormalCalculation;
   fGeoObject.RecalcFaceNormals;
   fGeoObject.RecalcVertexNormals;
+end;
+
+function TObjectResource.LoadMatrix(Element: TDOMElement): TMatrix4D;
+var
+  CurrElement: TDOMElement;
+  Row: Integer;
+begin
+  Row := 0;
+  CurrElement := TDOMElement(Element.FirstChild);
+  while CurrElement <> nil do
+    begin
+    if (CurrElement.TagName = 'row') and (Row < 4) then
+      begin
+      Result[Row] := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0.0),
+                            StrToFloatWD(CurrElement.GetAttribute('y'), 0.0),
+                            StrToFloatWD(CurrElement.GetAttribute('z'), 0.0),
+                            StrToFloatWD(CurrElement.GetAttribute('w'), 0.0));
+      inc(Row);
+      end;
+    CurrElement := TDOMElement(CurrElement.NextSibling);
+    end;
 end;
 
 procedure TObjectResource.LoadMesh(Element: TDOMElement);
@@ -199,6 +235,8 @@ var
 begin
   setLength(fMaterialResourceNames, length(fMaterialResourceNames) + 1);
   setLength(fMaterialDefined, length(fMaterialDefined) + 1);
+  setLength(fLightSourceResourceNames, length(fLightSourceResourceNames) + 1);
+  setLength(fLightSourceResourcePositions, length(fLightSourceResourcePositions) + 1);
   fMaterialResourceNames[high(fMaterialResourceNames)] := '';
   fMaterialDefined[high(fMaterialResourceNames)] := False;
   CurrElement := TDOMElement(Element.FirstChild);
@@ -207,8 +245,24 @@ begin
     begin
     if CurrElement.TagName = 'material' then
       fMaterialResourceNames[high(fMaterialResourceNames)] := CurrElement.GetAttribute('resource:name')
+    else if CurrElement.TagName = 'light' then
+      begin
+      setLength(fLightSourceResourceNames[high(fLightSourceResourceNames)], length(fLightSourceResourceNames[high(fLightSourceResourceNames)]) + 1);
+      fLightSourceResourceNames[high(fLightSourceResourceNames), high(fLightSourceResourceNames[high(fLightSourceResourceNames)])] := CurrElement.GetAttribute('resource:name');
+      
+      setLength(fLightSourceResourcePositions[high(fLightSourceResourcePositions)], length(fLightSourceResourcePositions[high(fLightSourceResourcePositions)]) + 1);
+      fLightSourceResourcePositions[high(fLightSourceResourcePositions), high(fLightSourceResourcePositions[high(fLightSourceResourcePositions)])] := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0.0), StrToFloatWD(CurrElement.GetAttribute('y'), 0.0), StrToFloatWD(CurrElement.GetAttribute('z'), 0.0));
+      end
     else if CurrElement.TagName = 'geometry' then
-      CreateGeometry(CurrElement);
+      CreateGeometry(CurrElement)
+    else if CurrElement.TagName = 'mindist' then
+      Mesh.MinDistance := StrToFloatWD(CurrElement.FirstChild.NodeValue, Mesh.MinDistance)
+    else if CurrElement.TagName = 'maxdist' then
+      Mesh.MaxDistance := StrToFloatWD(CurrElement.FirstChild.NodeValue, Mesh.MaxDistance)
+    else if CurrElement.TagName = 'matrix' then
+      Mesh.Matrix := LoadMatrix(CurrElement)
+    else if CurrElement.TagName = 'name' then
+      Mesh.Name := CurrElement.FirstChild.NodeValue;
     CurrElement := TDOMElement(CurrElement.NextSibling);
     end;
 end;
@@ -247,10 +301,22 @@ begin
       setLength(fMaterialResources, length(fMaterialResources) + 1);
       setLength(fFinalMaterialResourceNames, length(fFinalMaterialResourceNames) + 1);
       end;
+  setLength(fLightSourceResources, length(fLightSourceResourceNames));
+  for i := 0 to high(fLightSourceResourceNames) do
+    begin
+    setLength(fLightSourceResources[i], length(fLightSourceResourceNames[i]));
+    inc(fDepCount, length(fLightSourceResourceNames[i]));
+    end;
   if fDepCount = 0 then
     DepLoaded('', nil, nil)
   else
     begin
+    for i := 0 to high(fLightSourceResourceNames) do
+      for j := 0 to high(fLightSourceResourceNames[i]) do
+        begin
+        EventManager.AddCallback('TResource.FinishedLoading:' + fLightSourceResourceNames[i, j], @DepLoaded);
+        fLightSourceResources[i, j] := TLightResource.Get(fLightSourceResourceNames[i, j]);
+        end;
     j := 0;
     for i := 0 to high(fMaterialResources) do
       begin
@@ -316,13 +382,15 @@ end;
 
 procedure TObjectManager.AddTestObject(Event: String; Data, Result: Pointer);
 begin
-  Append(TRealObject.Create(TObjectResource(ResourceManager.Resources['scenery/test.ocf/object'])));
+  Append(TRealObject.Create(TObjectResource(ResourceManager.Resources[TAbstractResource(Data).Name])));
 end;
 
 procedure TObjectManager.Test;
 begin
   EventManager.AddCallback('TResource.FinishedLoading:scenery/test.ocf/object', @AddTestObject);
+  EventManager.AddCallback('TResource.FinishedLoading:scenery/test2.ocf/object', @AddTestObject);
   TObjectResource.Get('scenery/test.ocf/object');
+  TObjectResource.Get('scenery/test2.ocf/object');
 end;
 
 constructor TObjectManager.Create;

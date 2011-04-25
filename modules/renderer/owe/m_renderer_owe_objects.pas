@@ -443,6 +443,7 @@ begin
   fTransparentMaterialShader.UniformI('ReflectionMap', 3);
   fTransparentMaterialShader.UniformI('MaterialMap', 6);
   fTransparentMaterialShader.UniformI('LightTexture', 7);
+  fTransparentMaterialShader.UniformI('SpecularTexture', 4);
 
   fReflectionPass := TRenderPass.Create(ModuleManager.ModRenderer.ReflectionSize, ModuleManager.ModRenderer.ReflectionSize);
   fReflectionPass.RenderTerrain := ModuleManager.ModRenderer.ReflectionRenderTerrain;

@@ -247,15 +247,16 @@ begin
     GBuffer.Textures[4].Bind(3);
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);
-    fLightBuffer.Textures[0].Bind(1);
     fSpareBuffer.Textures[0].Bind(0);
+    fLightBuffer.Textures[0].Bind(7);
+    fLightBuffer.Textures[1].Bind(6);
     DrawFullscreenQuad;
 
     ModuleManager.ModRenderer.CompositionShader.Unbind;
 
     // Transparent parts only
 
-    fLightBuffer.Textures[0].Bind(7);
+    fLightBuffer.Textures[1].Bind(4);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -326,8 +327,10 @@ begin
   fSpareBuffer.Unbind;
 
   fLightBuffer := TFBO.Create(X, Y, false);
-  fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Colors, Specular
+  fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);// Colors
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fLightBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST); // Specular
+  fLightBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
   fLightBuffer.Unbind;
 
   fSceneBuffer := TFBO.Create(X, Y, true);

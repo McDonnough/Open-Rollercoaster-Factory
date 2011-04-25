@@ -4,6 +4,7 @@
 
 uniform sampler2D Texture;
 uniform sampler2D LightTexture;
+uniform sampler2D SpecularTexture;
 uniform sampler2D MaterialMap;
 
 uniform vec3 FogColor;
@@ -38,7 +39,7 @@ void main(void) {
     vec4 Light = texelFetch2D(LightTexture, Coords, 0);
     if (Light.a >= 0.0) {
       gl_FragColor.rgb = gl_FragColor.rgb * Light.rgb;
-      gl_FragColor.rgb += Light.rgb * Light.a * gl_FrontMaterial.specular.r;
+      gl_FragColor.rgb += texelFetch2D(SpecularTexture, Coords, 0).rgb * gl_FrontMaterial.specular.r;
       gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
     }
   }

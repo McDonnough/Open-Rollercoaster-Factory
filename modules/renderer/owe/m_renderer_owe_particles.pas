@@ -250,6 +250,7 @@ begin
   fMaterialShader.UniformI('NormalMap', 5);
   fMaterialShader.UniformI('ReflectionMap', 3);
   fMaterialShader.UniformI('MaterialMap', 6);
+  fMaterialShader.UniformI('SpecularTexture', 4);
   fMaterialShader.UniformI('LightTexture', 7);
 end;
 

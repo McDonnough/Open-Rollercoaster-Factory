@@ -44,7 +44,7 @@ void main(void) {
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
   vec3 Sun = gl_LightSource[0].position.xyz - Vertex;
   float dotprod = max(0.0, dot(normalize(Normal.xyz), normalize(Sun)));
-  gl_FragColor.rgb = dotprod * gl_LightSource[0].diffuse.rgb;
+  gl_FragData[0].rgb = dotprod * gl_LightSource[0].diffuse.rgb;
 
   vec3 factor = vec3(2.0, 2.0, 2.0);
 
@@ -71,21 +71,21 @@ void main(void) {
   }
   // END
   factor = min(factor, vec3(1.0, 1.0, 1.0));
-  gl_FragColor.rgb *= factor;
+  gl_FragData[0].rgb *= factor;
 
   // IF [ EQ owe.ssao 1 ]
   if (UseSSAO == 1)
-    gl_FragColor.rgb += ssaoColor.a * gl_LightSource[0].ambient.rgb * (0.8 + 0.2 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)));
+    gl_FragData[0].rgb += ssaoColor.a * gl_LightSource[0].ambient.rgb * (0.8 + 0.2 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)));
   else
-    gl_FragColor.rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
+    gl_FragData[0].rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
   // END
   // IF [ NEQ owe.ssao 1 ]
-  gl_FragColor.rgb += (0.3 + 0.7 * max(0.0, dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
+  gl_FragData[0].rgb += (0.3 + 0.7 * max(0.0, dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
   // END
   vec4 v = (gl_ModelViewMatrix * vec4(Vertex, 1.0));
   vec3 Eye = normalize(-v.xyz);
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * vec4(gl_LightSource[0].position.xyz, 1.0) - v).xyz), normalize(gl_NormalMatrix * Normal.xyz)));
-  gl_FragColor.a = pow(max(dot(Reflected, Eye), 0.0), Normal.a) * length(factor) / sqrt(3.0);
+  gl_FragData[0].a = pow(max(dot(Reflected, Eye), 0.0), Normal.a) * length(factor) / sqrt(3.0);
 
   // Caustic
 
@@ -98,8 +98,8 @@ void main(void) {
   vec2 Height = 256.0 * texture2D(HeightMap, FakeVertex / TerrainSize).gb;
 
   if (Height.r > Vertex.y) {
-    gl_FragColor.rgb *= pow(0.9, (Height.r - Vertex.y));
-    vec3 ol = gl_FragColor.rgb;
+    gl_FragData[0].rgb *= pow(0.9, (Height.r - Vertex.y));
+    vec3 ol = gl_FragData[0].rgb;
     float lf = pow(0.95,  AllCoord.w);
     vec2 XZPos = Vertex.xz + (Height.r - Vertex.y) * Sun.xz / -Sun.y;
     XZPos += 0.2 * vec2(sin(XZPos.y + 4.0 * BumpOffset.x + 0.32 * XZPos.x), cos(3.1416 * XZPos.x + 3.67 * BumpOffset.y + 0.68 * XZPos.y));
@@ -108,15 +108,19 @@ void main(void) {
     XZPos *= XZPos;
     XZPos *= XZPos;
     XZPos *= pow(0.6, (Height.r - Vertex.y)) * lf;
-    gl_FragColor.rgb *= (1.0 - 0.2 * lf + XZPos.x);
-    gl_FragColor.rgb *= (1.0 - 0.2 * lf + XZPos.y);
-    gl_FragColor.rgb = mix(ol, gl_FragColor.rgb, min(3.0 * abs(Height.r - Vertex.y), 1.0));
+    gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.x);
+    gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.y);
+    gl_FragData[0].rgb = mix(ol, gl_FragData[0].rgb, min(3.0 * abs(Height.r - Vertex.y), 1.0));
   }
 
-  gl_FragColor.rgb += Emission.rgb;
+  gl_FragData[1] = vec4(gl_FragData[0].a * gl_FragData[0].rgb, 1.0);
+
+  gl_FragData[0].rgb += Emission.rgb;
 
   // No lighting
 
   if (abs(Normal.x) + abs(Normal.y) + abs(Normal.z) == 0.0)
-    gl_FragColor.a = -1.0;
+    gl_FragData[0].a = -1.0;
+
+  
 }

@@ -4,6 +4,7 @@
 
 uniform sampler2D MaterialTexture;
 uniform sampler2D LightTexture;
+uniform sampler2D SpecularTexture;
 uniform sampler2D GTexture;
 uniform sampler2D MaterialMap;
 uniform sampler2D ReflectionTexture;
@@ -34,7 +35,7 @@ void main(void) {
   if (Light.a >= 0.0) {
     gl_FragColor.rgb *= Light.rgb;
     gl_FragColor.rgb = mix(gl_FragColor.rgb, Reflection.rgb, Reflection.a);
-    gl_FragColor.rgb += Light.rgb * Light.a * abs(Material.a);
+    gl_FragColor.rgb += texelFetch2D(SpecularTexture, Coords, 0).rgb * abs(Material.a);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
   }
   gl_FragColor.rgb = mix(gl_FragColor.rgb, FogColor, 1.0 - pow(0.5, mix(Vertex.a * FogStrength, max(0.0, WaterHeight - Vertex.y), WaterRefractionMode)));

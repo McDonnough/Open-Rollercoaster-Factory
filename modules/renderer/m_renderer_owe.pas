@@ -247,8 +247,10 @@ begin
   fSpareBuffer.Unbind;
 
   fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-  fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Colors, Specular
+  fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Colors
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fLightBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);      // Specular
+  fLightBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
   fLightBuffer.Unbind;
 
   fSceneBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
@@ -396,10 +398,11 @@ begin
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
-  fCompositionShader.UniformI('LightTexture', 1);
   fCompositionShader.UniformI('GTexture', 2);
   fCompositionShader.UniformI('ReflectionTexture', 3);
   fCompositionShader.UniformI('MaterialMap', 4);
+  fCompositionShader.UniformI('SpecularTexture', 6);
+  fCompositionShader.UniformI('LightTexture', 7);
 
   fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
   fLensFlareShader.UniformI('Texture', 0);
@@ -966,15 +969,18 @@ begin
     GBuffer.Textures[4].Bind(3);
     GBuffer.Textures[3].Bind(4);
     GBuffer.Textures[2].Bind(2);
-    LightBuffer.Textures[0].Bind(1);
     SpareBuffer.Textures[0].Bind(0);
+    LightBuffer.Textures[0].Bind(7);
+    LightBuffer.Textures[1].Bind(6);
+
     DrawFullscreenQuad;
 
     CompositionShader.Unbind;
 
     // Transparent parts only
 
-    LightBuffer.Textures[0].Bind(7);
+    LightBuffer.Textures[1].Bind(4);
+
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

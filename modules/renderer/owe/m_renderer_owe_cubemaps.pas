@@ -140,10 +140,8 @@ begin
     glTranslatef(-Position.X, -Position.Y, -Position.Z);
     ModuleManager.ModRenderer.Frustum.Calculate;
 
-    fMap.Bind;
-      glViewport(fWidth * (Orientation - 3 * (Orientation div 3)), fHeight * (Orientation div 3), fWidth, fHeight);
-      RenderProcedure;
-    fMap.Unbind;
+    glViewport(fWidth * (Orientation - 3 * (Orientation div 3)), fHeight * (Orientation div 3), fWidth, fHeight);
+    RenderProcedure;
 
     ResetView;
     end;
@@ -153,13 +151,13 @@ procedure TShadowCubeMap.Render(Position: TVector3D);
 begin
   fMap.Bind;
     glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
+    RenderShadow(CUBE_FRONT, Position);
+    RenderShadow(CUBE_BACK, Position);
+    RenderShadow(CUBE_LEFT, Position);
+    RenderShadow(CUBE_RIGHT, Position);
+    RenderShadow(CUBE_BOTTOM, Position);
+    RenderShadow(CUBE_TOP, Position);
   fMap.Unbind;
-  RenderShadow(CUBE_FRONT, Position);
-  RenderShadow(CUBE_BACK, Position);
-  RenderShadow(CUBE_LEFT, Position);
-  RenderShadow(CUBE_RIGHT, Position);
-  RenderShadow(CUBE_BOTTOM, Position);
-  RenderShadow(CUBE_TOP, Position);
 end;
 
 constructor TShadowCubeMap.Create(Width, Height: Integer; Format: GLEnum);

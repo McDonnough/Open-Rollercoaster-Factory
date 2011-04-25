@@ -40,14 +40,16 @@ void main(void) {
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
 
   vec3 Light = gl_LightSource[1].position.xyz - Vertex;
-  gl_FragColor.rgb = max(0.0, dot(normalize(Normal.xyz), normalize(Light))) * gl_LightSource[1].diffuse.rgb;
+
+  float dotprod = max(0.0, dot(normalize(Normal.xyz), normalize(Light)));
+  gl_FragColor.rgb = dotprod * gl_LightSource[1].diffuse.rgb;
 
   vec3 factor = vec3(2.0, 2.0, 2.0);
 
   float attenuation = gl_LightSource[1].diffuse.a * (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a / (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a + dot(Light, Light)));
 
 // IF [ EQ owe.shadows.light 1 ]
-  if (UseShadow == 1) {
+  if (UseShadow == 1 && dotprod > 0.0) {
   // IF [ NEQ owe.shadows.light.blur 1 ]
     vec4 ShadowColor = texture2D(ShadowTexture, ProjectShadowVertex(-Light));
     if (dot(Light, Light) > ShadowColor.a * ShadowColor.a * 1.05 * 1.05)

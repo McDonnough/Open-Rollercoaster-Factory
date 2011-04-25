@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, DGLOpenGL, math, u_math, u_vectors, u_scene, m_renderer_owe_frustum,
-  m_renderer_owe_classes, m_renderer_owe_cubemaps;
+  m_renderer_owe_classes, m_renderer_owe_cubemaps, m_renderer_owe_terrain;
 
 type
   TLight = class
@@ -12,6 +12,7 @@ type
       fCalculatedStrength: Single;
       fShadowMap: TShadowCubeMap;
     protected
+      fTerrainCastsShadows: Boolean;
       fInternalID: Integer;
       fHints: QWord;
       fLightSource: TLightSource;
@@ -67,9 +68,12 @@ uses
 
 procedure TLight.RenderShadowPass;
 begin
-  ModuleManager.ModRenderer.RTerrain.CurrentShader := ModuleManager.ModRenderer.RTerrain.LightShadowPassShader;
-  ModuleManager.ModRenderer.RTerrain.BorderEnabled := false;
-  ModuleManager.ModRenderer.RTerrain.Render;
+  if fTerrainCastsShadows then
+    begin
+    ModuleManager.ModRenderer.RTerrain.CurrentShader := ModuleManager.ModRenderer.RTerrain.LightShadowPassShader;
+    ModuleManager.ModRenderer.RTerrain.BorderEnabled := false;
+    ModuleManager.ModRenderer.RTerrain.Render;
+    end;
 
   ModuleManager.ModRenderer.RObjects.LightShadowMode := True;
   ModuleManager.ModRenderer.RObjects.RenderOpaque;
@@ -81,13 +85,38 @@ procedure TLight.CreateShadows;
 var
   tmpMaxRenderDistance: Single;
   tmpViewPoint: TVector3D;
+  l: Single;
+
+  function CheckRenderTerrain: Boolean;
+  var
+    i, j: Integer;
+    MinBlock, MaxBlock, CBlock: TTerrainBlock;
+  begin
+    Result := False;
+
+    l := MaxLightingEffect;
+
+    MinBlock := ModuleManager.ModRenderer.RTerrain.GetBlock(LightSource.Position.X - l, LightSource.Position.Z - l);
+    MaxBlock := ModuleManager.ModRenderer.RTerrain.GetBlock(LightSource.Position.X + l, LightSource.Position.Z + l);
+    for i := MinBlock.X to MaxBlock.X do
+      for j := MinBlock.Y to MaxBlock.Y do
+        begin
+        CBlock := ModuleManager.ModRenderer.RTerrain.GetBlock(25.6 * i + 12.8, 25.6 * j + 12.8);
+        if CBlock.MinHeight <> CBlock.MaxHeight then
+          Result := Result or (CBlock.MaxHeight > LightSource.Position.Y - l);
+        end;
+  end;
 begin
   if (ShadowMap <> nil) and (LightSource.CastShadows) then
     begin
+    l := MaxLightingEffect;
+    
+    fTerrainCastsShadows := CheckRenderTerrain;
+    
     tmpMaxRenderDistance := ModuleManager.ModRenderer.MaxRenderDistance;
     tmpViewPoint := ModuleManager.ModRenderer.ViewPoint;
     
-    ModuleManager.ModRenderer.MaxRenderDistance := MaxLightingEffect;
+    ModuleManager.ModRenderer.MaxRenderDistance := l;
     ModuleManager.ModRenderer.ViewPoint := Vector3D(LightSource.Position);
 
     Bind(1);
@@ -284,10 +313,13 @@ procedure TLightManager.CreateShadows;
 var
   i: Integer;
 begin
-  ModuleManager.ModRenderer.Frustum.Push;
   for i := 0 to Min(fMaxShadowBuffers - 1, high(fRegisteredLights)) do
-    fRegisteredLights[i].CreateShadows;
-  ModuleManager.ModRenderer.Frustum.Pop;
+    begin
+    ModuleManager.ModRenderer.Frustum.Push;
+    if fRegisteredLights[i].IsVisible(ModuleManager.ModRenderer.Frustum) then
+      fRegisteredLights[i].CreateShadows;
+    ModuleManager.ModRenderer.Frustum.Pop;
+    end;
 end;
 
 procedure TLightManager.AddLight(Light: TLight);
@@ -334,7 +366,7 @@ var
 begin
   for i := 0 to high(fRegisteredLights) do
     if fRegisteredLights[i].LightSource = TLightSource(Data) then
-      fRegisteredLights[i].LightSource.Free;
+      fRegisteredLights[i].Free;
 end;
 
 constructor TLightManager.Create;

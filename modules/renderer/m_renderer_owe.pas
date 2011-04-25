@@ -619,6 +619,8 @@ begin
     MaxRenderDistance := 55;
     end;
 
+  RTerrain.CheckForHDVBO;
+
   // Set up camera
 
   glMatrixMode(GL_PROJECTION);

@@ -43,14 +43,15 @@ void main(void) {
   vec4 Normal = texelFetch2D(NormalTexture, Coords, 0);
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
   vec3 Sun = gl_LightSource[0].position.xyz - Vertex;
-  gl_FragColor.rgb = max(0.0, dot(normalize(Normal.xyz), normalize(Sun))) * gl_LightSource[0].diffuse.rgb;
+  float dotprod = max(0.0, dot(normalize(Normal.xyz), normalize(Sun)));
+  gl_FragColor.rgb = dotprod * gl_LightSource[0].diffuse.rgb;
 
   vec3 factor = vec3(2.0, 2.0, 2.0);
 
   // IF [ EQ owe.shadows.sun 1 ]
   vec2 ShadowCoord = 0.5 + 0.5 * ProjectShadowVertex(Vertex);
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
-  if (ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
+  if (dotprod > 0.0 && ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
 
     // IF [ EQ owe.shadows.blur 1 ]
     float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);

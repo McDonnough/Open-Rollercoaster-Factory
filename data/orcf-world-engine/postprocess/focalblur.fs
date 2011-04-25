@@ -10,12 +10,12 @@ uniform float FocusDistance;
 uniform float Strength;
 
 const int SAMPLES = 5;
-const float PIXELS_PER_SAMPLE = 1;
+const float PIXELS_PER_SAMPLE = 1.0;
 
 void main(void) {
   gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
   float Distance = texture2D(GeometryTexture, gl_TexCoord[0].xy).a;
-  float Factor = min(2.0 / PIXELS_PER_SAMPLE, Distance / FocusDistance - 1.0);
+  float Factor = min(2.0 / PIXELS_PER_SAMPLE, Distance / FocusDistance - 1.0) * 0.25;
   if (Distance < 5000.0) {
     for (int i = -SAMPLES; i < SAMPLES; i++) {
       for (int j = -SAMPLES; j < SAMPLES; j++) {

@@ -725,7 +725,7 @@ begin
     Width := 122;
     Height := 32;
     Digits := 0;
-    Min := 1;
+    Min := 0;
     Max := 10;
     Value := ModuleManager.ModRenderer.ShadowBlurSamples;
     end;
@@ -768,7 +768,7 @@ begin
     Width := 122;
     Height := 32;
     Digits := 0;
-    Min := 1;
+    Min := 0;
     Max := 10;
     Value := ModuleManager.ModRenderer.LightShadowBlurSamples;
     end;

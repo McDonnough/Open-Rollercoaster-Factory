@@ -3,7 +3,7 @@ unit u_scene;
 interface
 
 uses
-  SysUtils, Classes, u_math, u_vectors, m_texmng_class;
+  SysUtils, Classes, u_math, u_vectors, m_texmng_class, u_pathes;
 
 type
   TLightSource = class
@@ -79,11 +79,6 @@ type
       function Duplicate(TheObject: TGeoObject; TheArmature: TArmature): TBone;
       constructor Create;
     end;
-
-  TBezierPoint = record
-    HandleRight, HandleLeft, Position: TVector3D;
-    end;
-  PBezierPoint = ^TBezierPoint;
 
   TArmature = class
     public

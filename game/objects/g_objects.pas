@@ -33,7 +33,7 @@ type
 implementation
 
 uses
-  u_events;
+  u_events, main;
 
 constructor TRealObject.Create(TheResource: TObjectResource);
 begin
@@ -62,10 +62,12 @@ begin
       begin
       SetUnchanged;
 
-      fProgress := fProgress + 0.01;
-
       if GetBoneByName('arm', 'moep') <> nil then
-        GetBoneByName('arm', 'moep').Matrix := TranslationMatrix(fTestPath.DataAtDistance(fProgress).Position);
+        begin
+        GetBoneByName('arm', 'moep').Matrix := TranslationMatrix(fTestPath.DataAtDistance(fProgress).Position)
+                                             * RotationMatrix(fTestPath.DataAtDistance(fProgress).Tangent);
+        fProgress := fProgress + 0.002 * FPSDisplay.MS;
+        end;
       
       UpdateMatrix;
       UpdateArmatures;
@@ -96,29 +98,28 @@ begin
   fTestPath := TPath.Create;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(0, 0, 0);
-    CP1 := Vector(0, 0, -1);
-    CP2 := Vector(0, 0, 1);
+    Position := Vector(0, 1, 0);
+    CP1 := Vector(0, 1, -1);
+    CP2 := Vector(0, 1, 1);
     end;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(1, -0.1, 2);
-    CP1 := Vector(1, -0.1, 1);
-    CP2 := Vector(1, -0.1, 3);
+    Position := Vector(1, 2, 2);
+    CP1 := Vector(1, 2, 1);
+    CP2 := Vector(1, 2, 3);
     end;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(-1, 0.1, 4);
-    CP1 := Vector(-1, 0.1, 3);
-    CP2 := Vector(-1, 0.1, 5);
+    Position := Vector(-1, 0, 4);
+    CP1 := Vector(-1, 0, 3);
+    CP2 := Vector(-1, 0, 5);
     end;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(-1, 0, 6);
-    CP1 := Vector(0, 0, 5);
-    CP2 := Vector(0, 0, 7);
+    Position := Vector(-1, 2, 6);
+    CP1 := Vector(0, 2, 5);
+    CP2 := Vector(0, 2, 7);
     end;
-  fTestPath.Closed := True;
   fTestPath.BuildLookupTable;
   fProgress := 0;
 end;

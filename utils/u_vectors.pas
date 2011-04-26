@@ -137,7 +137,7 @@ operator * (A, B: TMatrix4D): TMatrix4D;
 
 function Rotate(Deg: Single; AVector, Axis: TVector3D): TVector3D;
 function RotationMatrix(Deg: Single; Axis: TVector3D): TMatrix4D;
-
+function RotationMatrix(Direction: TVector3D): TMatrix4D;
 
 function TranslationMatrix(P: TVector3D): TMatrix4D;
 
@@ -642,6 +642,24 @@ begin
                      Vector(Axis.Y * Axis.X * (1 - C) + Axis.Z * S, Axis.Y * Axis.Y * (1 - C) + C, Axis.Y * Axis.Z * (1 - C) - Axis.X * s, 0),
                      Vector(Axis.X * Axis.Z * (1 - C) - Axis.Y * S, Axis.Y * Axis.Z * (1 - C) + Axis.X * s, Axis.Z * Axis.Z * (1 - C) + C, 0),
                      Vector(0,                                      0,                                      0,                             1));
+end;
+
+function RotationMatrix(Direction: TVector3D): TMatrix4D;
+var
+  a: Single;
+begin
+  Result := Identity4D;
+  if abs(dotProduct(Normalize(Direction), Vector(0, 1, 0))) < 0.999 then
+    begin
+    a := RadToDeg(arccos(dotProduct(normalize(Direction * Vector(1, 0, 1)), Vector(0, 0, 1))));
+    if Direction.X < 0 then
+      a := 360 - A;
+    Result := RotationMatrix(a, Vector(0, 1, 0));
+    end;
+  a := RadToDeg(arccos(dotProduct(normalize(Direction * Vector(0, 1, 1)), Vector(0, 0, 1))));
+  if Direction.Y > 0 then
+    a := 360 - A;
+  Result := Result * RotationMatrix(a, Vector(1, 0, 0));
 end;
 
 function Identity3D: TMatrix3D;

@@ -24,6 +24,8 @@ type
       property Emitters: TParticleGroupList read fEmitters;
       procedure Add(Group: TParticleGroup);
       procedure Delete(Group: TParticleGroup);
+      procedure EventAdd(Event: String; Data, Result: Pointer);
+      procedure EventDelete(Event: String; Data, Result: Pointer);
       procedure Advance;
       constructor Create;
       destructor Free;
@@ -53,17 +55,8 @@ begin
 end;
 
 procedure TParticleManager.Delete(Group: TParticleGroup);
-var
-  CurrentGroup, NextGroup: TParticleGroupItem;
 begin
-  CurrentGroup := TParticleGroupItem(Emitters.First);
-  while CurrentGroup <> nil do
-    begin
-    NextGroup := TParticleGroupItem(CurrentGroup.Next);
-    if CurrentGroup.Group = Group then
-      CurrentGroup.Group.Running := False;
-    CurrentGroup := NextGroup;
-    end;
+  Group.Running := False;
 end;
 
 procedure TParticleManager.Advance;
@@ -87,17 +80,34 @@ begin
     end;
 end;
 
+procedure TParticleManager.EventAdd(Event: String; Data, Result: Pointer);
+begin
+  Add(TParticleGroup(Data));
+end;
+
+procedure TParticleManager.EventDelete(Event: String; Data, Result: Pointer);
+begin
+  Delete(TParticleGroup(Data));
+end;
+
 constructor TParticleManager.Create;
 var
   A: TParticleGroup;
 begin
   writeln('Hint: Creating ParticleManager object');
   fEmitters := TParticleGroupList.Create;
+
+  EventManager.AddCallback('TParticleGroup.Added', @EventAdd);
+  EventManager.AddCallback('TParticleGroup.Deleted', @EventDelete);
 end;
 
 destructor TParticleManager.Free;
 begin
   writeln('Hint: Deleting ParticleManager object');
+
+  EventManager.RemoveCallback(@EventAdd);
+  EventManager.RemoveCallback(@EventDelete);
+  
   fEmitters.Free;
 end;
 

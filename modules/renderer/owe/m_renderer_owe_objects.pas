@@ -47,12 +47,13 @@ type
       fExcludedMesh: TManagedMesh;
       fCanWork, fWorking: Boolean;
       fTransparentMeshOrder: Array of TMeshDistanceAssoc;
+      function getWorking: Boolean;
     public
       CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
       ShadowMode, MaterialMode, LightShadowMode: Boolean;
       property CurrentMaterialCount: Integer read fCurrentMaterialCount;
-      property Working: Boolean read fWorking write fCanWork;
+      property Working: Boolean read getWorking write fCanWork;
       property OpaqueShader: TShader read fOpaqueShader;
       property OpaqueShadowShader: TShader read fOpaqueShadowShader;
       property OpaqueLightShadowShader: TShader read fOpaqueLightShadowShader;
@@ -84,6 +85,11 @@ implementation
 
 uses
   u_events, m_varlist;
+
+function TRObjects.getWorking: Boolean;
+begin
+  Result := fCanWork or fWorking;
+end;
 
 function TRObjects.CalculateLODDistance(D: Single): Single;
 begin

@@ -782,10 +782,12 @@ begin
 //     glColorMask(true, true, true, false);
 
     // Autoplants
+    glDisable(GL_CULL_FACE);
     RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
     RAutoplants.Render;
 
     // Objects and particles
+    glEnable(GL_CULL_FACE);
     RParticles.CurrentShader := RParticles.GeometryShader;
     RObjects.MaterialMode := False;
     RObjects.RenderTransparent;
@@ -986,11 +988,14 @@ begin
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Autoplants
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.1);
     RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
     RAutoplants.Render;
 
     // Objects and particles
-    glEnable(GL_ALPHA_TEST);
+    glEnable(GL_CULL_FACE);
     glAlphaFunc(GL_GREATER, 0.0);
     RParticles.CurrentShader := RParticles.MaterialShader;
     RObjects.MaterialMode := True;

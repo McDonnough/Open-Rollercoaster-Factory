@@ -20,6 +20,7 @@ type
   TParticleGroup = class(TLinkedList)
     public
 //       Script: TScript;
+      Name: String;
       Running: Boolean;
       NeedsIllumination: Boolean;
       Material: TMaterial;
@@ -31,13 +32,21 @@ type
       InitialVelocity, VelocityVariance: TVector3D;
       InitialAcceleration, AccelerationVariance: TVector3D;
       InitialPosition, PositionVariance: TVector3D;
+      OriginalPosition, OriginalVariance: TVector3D;
       InitialRotation, RotationVariance: Single;
       InitialSpin, SpinExponent, SpinVariance: Single;
       procedure AdvanceGroup(TimeFactor: Single);
       function AddParticle: TParticle;
+      function Duplicate: TParticleGroup;
+      procedure Register;
+      constructor Create;
+      procedure Free;
     end;
 
 implementation
+
+uses
+  u_events;
 
 procedure TParticle.AdvanceNormal(TimeFactor: Single);
 begin
@@ -51,7 +60,7 @@ begin
   Color := Vector(InitialColor.X * Power(2.7183, ColorExponent.X * TimeLived),
                   InitialColor.Y * Power(2.7183, ColorExponent.Y * TimeLived),
                   InitialColor.Z * Power(2.7183, ColorExponent.Z * TimeLived),
-                  InitialColor.W * Power(2.7183, ColorExponent.W * TimeLived));
+                  InitialColor.W * Power(2.7183, ColorExponent.W * TimeLived) * Min(1.0, 5 * TimeLived) * Min(1.0, 5 * (MaxLifetime - TimeLived)));
 end;
 
 
@@ -98,10 +107,9 @@ begin
                                 InitialColor.W * Power(2, ColorVariance.W * QRandom));
   Result.ColorExponent := ColorExponent;
   Result.Color := Result.InitialColor;
+  Result.Color.W := 0;
 
-  Result.Velocity := Vector(InitialVelocity.X * Power(2, VelocityVariance.X * QRandom),
-                            InitialVelocity.Y * Power(2, VelocityVariance.Y * QRandom),
-                            InitialVelocity.Z * Power(2, VelocityVariance.Z * QRandom));
+  Result.Velocity := InitialVelocity + VelocityVariance * Vector(QRandom, QRandom, QRandom);
 
   Result.Acceleration := Vector(InitialAcceleration.X * Power(2, AccelerationVariance.X * QRandom),
                                 InitialAcceleration.Y * Power(2, AccelerationVariance.Y * QRandom),
@@ -115,6 +123,83 @@ begin
   Result.Spin := Result.InitialSpin;
 
   Prepend(Result);
+end;
+
+function TParticleGroup.Duplicate: TParticleGroup;
+begin
+  Result := TParticleGroup.Create;
+  Result.Name := Name;
+  Result.Running := Running;
+  Result.NeedsIllumination := NeedsIllumination;
+  Result.Material := Material.Duplicate;
+  Result.Lifetime := Lifetime;
+  Result.LifetimeVariance := LifetimeVariance;
+  Result.GenerationTime := GenerationTime;
+  Result.GenerationTimeVariance := GenerationTimeVariance;
+  Result.NextGenerationTime := NextGenerationTime;
+  Result.InitialSize := InitialSize;
+  Result.SizeExponent := SizeExponent;
+  Result.SizeVariance := SizeVariance;
+  Result.InitialColor := InitialColor;
+  Result.ColorExponent := ColorExponent;
+  Result.ColorVariance := ColorVariance;
+  Result.InitialVelocity := InitialVelocity;
+  Result.VelocityVariance := VelocityVariance;
+  Result.InitialAcceleration := InitialAcceleration;
+  Result.AccelerationVariance := AccelerationVariance;
+  Result.InitialPosition := InitialPosition;
+  Result.PositionVariance := PositionVariance;
+  Result.OriginalPosition := OriginalPosition;
+  Result.OriginalVariance := OriginalVariance;
+  Result.InitialRotation := InitialRotation;
+  Result.RotationVariance := RotationVariance;
+  Result.InitialSpin := InitialSpin;
+  Result.SpinExponent := SpinExponent;
+  Result.SpinVariance := SpinVariance;
+end;
+
+procedure TParticleGroup.Register;
+begin
+  EventManager.CallEvent('TParticleGroup.Added', self, nil);
+end;
+
+constructor TParticleGroup.Create;
+begin
+  inherited Create;
+  Name := '';
+  Running := True;
+  NeedsIllumination := False;
+  Material := nil;
+  Lifetime := 10;
+  LifetimeVariance := 0;
+  GenerationTime := 1;
+  GenerationTimeVariance := 0;
+  NextGenerationTime := 0;
+  InitialSize := Vector(1, 1);
+  SizeExponent := Vector(0, 0);
+  SizeVariance := Vector(0, 0);
+  InitialColor := Vector(0, 0, 0, 0);
+  ColorExponent := Vector(0, 0, 0, 0);
+  ColorVariance := Vector(0, 0, 0, 0);
+  InitialVelocity := Vector(0, 0, 0);
+  VelocityVariance := Vector(0, 0, 0);
+  InitialAcceleration := Vector(0, 0, 0);
+  AccelerationVariance := Vector(0, 0, 0);
+  InitialPosition := Vector(0, 0, 0);
+  PositionVariance := Vector(0, 0, 0);
+  OriginalPosition := Vector(0, 0, 0);
+  OriginalVariance := Vector(0, 0, 0);
+  InitialRotation := 0;
+  RotationVariance := 0;
+  InitialSpin := 0;
+  SpinExponent := 0;
+  SpinVariance := 0;
+end;
+
+procedure TParticleGroup.Free;
+begin
+  EventManager.CallEvent('TParticleGroup.Deleted', self, nil);
+  inherited Free;
 end;
 
 end.

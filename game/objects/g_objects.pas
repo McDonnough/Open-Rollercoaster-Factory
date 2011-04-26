@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, u_linkedlists, g_resources, u_scene, g_loader_ocf, g_res_textures, g_res_materials, u_xml, u_dom, u_vectors,
-  g_res_lights;
+  g_res_lights, g_res_particles;
 
 type
   TObjectResource = class(TAbstractResource)
@@ -15,6 +15,9 @@ type
       fLightSourceResourceNames: Array of Array of String;
       fLightSourceResourcePositions: Array of Array of TVector3D;
       fLightSourceResources: Array of Array of TLightResource;
+      fParticleGroupResourceNames: Array of Array of String;
+      fParticleGroupResourcePositions: Array of Array of TVector3D;
+      fParticleGroupResources: Array of Array of TParticleResource;
       fMaterialDefined: Array of Boolean;
       fFinalMaterialResourceNames: Array of String;
       fDepCount: Integer;
@@ -54,7 +57,7 @@ type
 implementation
 
 uses
-  u_functions, u_events;
+  u_functions, u_events, u_particles;
 
 class function TObjectResource.Get(ResourceName: String): TObjectResource;
 begin
@@ -91,6 +94,14 @@ begin
       fGeoObject.Meshes[i].LightSources[j] := fLightSourceResources[i, j].Light;
       fGeoObject.Meshes[i].LightSources[j].Position := Vector(fLightSourceResourcePositions[i, j], 1.0);
       fGeoObject.Meshes[i].LightSources[j].OriginalPosition := fGeoObject.Meshes[i].LightSources[j].Position;
+      end;
+
+    setLength(fGeoObject.Meshes[i].ParticleGroups, length(fParticleGroupResources[i]));
+    for j := 0 to high(fParticleGroupResources[i]) do
+      begin
+      TParticleGroup(fGeoObject.Meshes[i].ParticleGroups[j]) := fParticleGroupResources[i, j].Group;
+      TParticleGroup(fGeoObject.Meshes[i].ParticleGroups[j]).InitialPosition := fParticleGroupResourcePositions[i, j];
+      TParticleGroup(fGeoObject.Meshes[i].ParticleGroups[j]).OriginalPosition := fParticleGroupResourcePositions[i, j];
       end;
     end;
     
@@ -237,6 +248,8 @@ begin
   setLength(fMaterialDefined, length(fMaterialDefined) + 1);
   setLength(fLightSourceResourceNames, length(fLightSourceResourceNames) + 1);
   setLength(fLightSourceResourcePositions, length(fLightSourceResourcePositions) + 1);
+  setLength(fParticleGroupResourceNames, length(fParticleGroupResourceNames) + 1);
+  setLength(fParticleGroupResourcePositions, length(fParticleGroupResourcePositions) + 1);
   fMaterialResourceNames[high(fMaterialResourceNames)] := '';
   fMaterialDefined[high(fMaterialResourceNames)] := False;
   CurrElement := TDOMElement(Element.FirstChild);
@@ -249,9 +262,17 @@ begin
       begin
       setLength(fLightSourceResourceNames[high(fLightSourceResourceNames)], length(fLightSourceResourceNames[high(fLightSourceResourceNames)]) + 1);
       fLightSourceResourceNames[high(fLightSourceResourceNames), high(fLightSourceResourceNames[high(fLightSourceResourceNames)])] := CurrElement.GetAttribute('resource:name');
-      
+
       setLength(fLightSourceResourcePositions[high(fLightSourceResourcePositions)], length(fLightSourceResourcePositions[high(fLightSourceResourcePositions)]) + 1);
       fLightSourceResourcePositions[high(fLightSourceResourcePositions), high(fLightSourceResourcePositions[high(fLightSourceResourcePositions)])] := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0.0), StrToFloatWD(CurrElement.GetAttribute('y'), 0.0), StrToFloatWD(CurrElement.GetAttribute('z'), 0.0));
+      end
+    else if CurrElement.TagName = 'particle' then
+      begin
+      setLength(fParticleGroupResourceNames[high(fParticleGroupResourceNames)], length(fParticleGroupResourceNames[high(fParticleGroupResourceNames)]) + 1);
+      fParticleGroupResourceNames[high(fParticleGroupResourceNames), high(fParticleGroupResourceNames[high(fParticleGroupResourceNames)])] := CurrElement.GetAttribute('resource:name');
+
+      setLength(fParticleGroupResourcePositions[high(fParticleGroupResourcePositions)], length(fParticleGroupResourcePositions[high(fParticleGroupResourcePositions)]) + 1);
+      fParticleGroupResourcePositions[high(fParticleGroupResourcePositions), high(fParticleGroupResourcePositions[high(fParticleGroupResourcePositions)])] := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0.0), StrToFloatWD(CurrElement.GetAttribute('y'), 0.0), StrToFloatWD(CurrElement.GetAttribute('z'), 0.0));
       end
     else if CurrElement.TagName = 'geometry' then
       CreateGeometry(CurrElement)
@@ -307,6 +328,12 @@ begin
     setLength(fLightSourceResources[i], length(fLightSourceResourceNames[i]));
     inc(fDepCount, length(fLightSourceResourceNames[i]));
     end;
+  setLength(fParticleGroupResources, length(fParticleGroupResourceNames));
+  for i := 0 to high(fParticleGroupResourceNames) do
+    begin
+    setLength(fParticleGroupResources[i], length(fParticleGroupResourceNames[i]));
+    inc(fDepCount, length(fParticleGroupResourceNames[i]));
+    end;
   if fDepCount = 0 then
     DepLoaded('', nil, nil)
   else
@@ -316,6 +343,12 @@ begin
         begin
         EventManager.AddCallback('TResource.FinishedLoading:' + fLightSourceResourceNames[i, j], @DepLoaded);
         fLightSourceResources[i, j] := TLightResource.Get(fLightSourceResourceNames[i, j]);
+        end;
+    for i := 0 to high(fParticleGroupResourceNames) do
+      for j := 0 to high(fParticleGroupResourceNames[i]) do
+        begin
+        EventManager.AddCallback('TResource.FinishedLoading:' + fParticleGroupResourceNames[i, j], @DepLoaded);
+        fParticleGroupResources[i, j] := TParticleResource.Get(fParticleGroupResourceNames[i, j]);
         end;
     j := 0;
     for i := 0 to high(fMaterialResources) do

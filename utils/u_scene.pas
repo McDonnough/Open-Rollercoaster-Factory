@@ -125,7 +125,7 @@ type
       Texture, BumpMap: TTexture;
       OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
-      function Duplicate(TheObject: TGeoObject): TMaterial;
+      function Duplicate: TMaterial;
       constructor Create;
     end;
 
@@ -145,6 +145,7 @@ type
       ParentObject: TGeoObject;
       Material: TMaterial;
       LightSources: Array of TLightSource;
+      ParticleGroups: Array of Pointer; // Sorry, circular unit reference. Bad class management, I know
       procedure AddBoneToAll(B: TBone);
       procedure AddBone(B: TBone);
       procedure RecalcFaceNormals;
@@ -191,7 +192,7 @@ function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
 implementation
 
 uses
-  u_events;
+  u_events, u_particles;
 
 function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
 begin
@@ -345,7 +346,7 @@ begin
 end;
 
 
-function TMaterial.Duplicate(TheObject: TGeoObject): TMaterial;
+function TMaterial.Duplicate: TMaterial;
 begin
   Result := TMaterial.Create;
   Result.Name := Name;
@@ -471,10 +472,14 @@ begin
   Result.Matrix := Matrix;
   Result.CalculatedMatrix := CalculatedMatrix;
   Result.Material := TheObject.Materials[Material.MaterialID];
-  SetLength(Result.LightSources, length(LightSources));
 
+  SetLength(Result.LightSources, length(LightSources));
   for i := 0 to high(LightSources) do
     Result.LightSources[i] := LightSources[i].Duplicate;
+
+  SetLength(Result.ParticleGroups, length(ParticleGroups));
+  for i := 0 to high(ParticleGroups) do
+    Result.ParticleGroups[i] := TParticleGroup(ParticleGroups[i]).Duplicate;
 end;
 
 function TGeoMesh.AddVertex: PVertex;
@@ -579,6 +584,11 @@ begin
     end;
   for i := 0 to high(LightSources) do
     LightSources[i].Position := LightSources[i].OriginalPosition * CalculatedMatrix;
+  for i := 0 to high(ParticleGroups) do
+    begin
+    TParticleGroup(ParticleGroups[i]).InitialPosition := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalPosition, 1.0) * CalculatedMatrix);
+    TParticleGroup(ParticleGroups[i]).PositionVariance := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalVariance, 0.0) * CalculatedMatrix);
+    end;
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
 end;
@@ -614,6 +624,8 @@ begin
   EventManager.CallEvent('TGeoObject.AddedMesh', ParentObject, self);
   for i := 0 to high(LightSources) do
     LightSources[i].Register;
+  for i := 0 to high(ParticleGroups) do
+    TParticleGroup(ParticleGroups[i]).Register;
 end;
 
 constructor TGeoMesh.Create;
@@ -640,6 +652,8 @@ begin
   SetLength(TextureVertices, 0);
   for i := 0 to high(LightSources) do
     LightSources[i].Free;
+  for i := 0 to high(ParticleGroups) do
+    TParticleGroup(ParticleGroups[i]).Free;
   EventManager.CallEvent('TGeoObject.DeletedMesh', ParentObject, Self);
 end;
 
@@ -688,7 +702,7 @@ begin
 
   setLength(Result.Materials, length(Materials));
   for i := 0 to high(Materials) do
-    Result.Materials[i] := Materials[i].Duplicate(Result);
+    Result.Materials[i] := Materials[i].Duplicate;
 
   setLength(Result.Armatures, length(Armatures));
   for i := 0 to high(Armatures) do

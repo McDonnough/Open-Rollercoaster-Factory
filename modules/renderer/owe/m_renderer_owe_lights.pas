@@ -44,10 +44,11 @@ type
       fCanWork, fWorking: Boolean;
       fShadowBuffers: Array of TShadowCubeMap;
       fMaxShadowBuffers: Integer;
+      function getWorking: Boolean;
     public
       fRegisteredLights: Array of TLight;
       fSun: TSun;
-      property Working: Boolean read fWorking write fCanWork;
+      property Working: Boolean read getWorking write fCanWork;
       procedure Sync;
       procedure Execute; override;
       procedure SetSun(Sun: TSun);
@@ -353,6 +354,11 @@ begin
         end;
       break;
       end;
+end;
+
+function TLightManager.getWorking: Boolean;
+begin
+  Result := fCanWork or fWorking;
 end;
 
 procedure TLightManager.AddLightSource(Event: String; Data, Result: Pointer);

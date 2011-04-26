@@ -16,8 +16,9 @@ type
       fPositions: Array of TVector3D;
       fTexture: TTexture;
       procedure Execute; override;
+      function getWorking: Boolean;
     public
-      property Working: Boolean read fWorking write fCanWork;
+      property Working: Boolean read getWorking write fCanWork;
       property Count: Integer read fCount;
       property Material: Integer read fMaterialID;
       property VBO: TVBO read fVBO;
@@ -70,9 +71,10 @@ begin
           if (Park.pTerrain.TexMap[fPositions[i].X, fPositions[i].Y] <> fMaterialID) then
             fPositions[i].Z := -2;
           end;
-      end;
-    fWorking := false;
-    sleep(10);
+      fWorking := false;
+      end
+    else
+      sleep(1);
     end;
   writeln('Hint: Terminated autoplant renderer thread');
 end;
@@ -103,8 +105,8 @@ begin
         begin
         fVBO.Vertices[4 * i + 0] := Vector(fPositions[i].X, fPositions[i].Y, 0.0);
         fVBO.Vertices[4 * i + 1] := Vector(fPositions[i].X, fPositions[i].Y, 1.0);
-        fVBO.Vertices[4 * i + 2] := Vector(fPositions[i].X + 0.8 * sin(fPositions[i].Z), fPositions[i].Y + 0.8 * cos(fPositions[i].Z), 1.0);
-        fVBO.Vertices[4 * i + 3] := Vector(fPositions[i].X + 0.8 * sin(fPositions[i].Z), fPositions[i].Y + 0.8 * cos(fPositions[i].Z), 0.0);
+        fVBO.Vertices[4 * i + 2] := Vector(fPositions[i].X + 3.2 * sin(fPositions[i].Z), fPositions[i].Y + 3.2 * cos(fPositions[i].Z), 1.0);
+        fVBO.Vertices[4 * i + 3] := Vector(fPositions[i].X + 3.2 * sin(fPositions[i].Z), fPositions[i].Y + 3.2 * cos(fPositions[i].Z), 0.0);
         end
       else
         begin
@@ -116,6 +118,11 @@ begin
       fChanged[i] := false;
       end;
   fVBO.Unbind;
+end;
+
+function TAutoplantGroup.getWorking: Boolean;
+begin
+  Result := fCanWork or fWorking;
 end;
 
 constructor TAutoplantGroup.Create(MaterialID: Integer);
@@ -142,8 +149,8 @@ begin
     begin
     fVBO.TexCoords[4 * i + 0] := Vector(0.0, 1.0);
     fVBO.TexCoords[4 * i + 1] := Vector(0.0, 0.0);
-    fVBO.TexCoords[4 * i + 2] := Vector(1.0, 0.0);
-    fVBO.TexCoords[4 * i + 3] := Vector(1.0, 1.0);
+    fVBO.TexCoords[4 * i + 2] := Vector(4.0, 0.0);
+    fVBO.TexCoords[4 * i + 3] := Vector(4.0, 1.0);
     fVBO.Vertices[4 * i + 0] := Vector(0.0, 0.0, 0.0);
     fVBO.Vertices[4 * i + 1] := Vector(0.0, 0.0, 0.0);
     fVBO.Vertices[4 * i + 2] := Vector(0.0, 0.0, 0.0);

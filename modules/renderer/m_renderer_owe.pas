@@ -867,6 +867,7 @@ begin
       fSSAOBuffer.Textures[0].Bind(5);
 
     RTerrain.TerrainMap.Bind(4);
+    RTerrain.TerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
 
     if UseSunShadows then
       fSunShadowBuffer.Textures[0].Bind(2);

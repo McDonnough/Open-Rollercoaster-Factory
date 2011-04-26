@@ -39,6 +39,7 @@ void main(void) {
   vec3 Position = vec3(Vertex.x, Height, Vertex.z);
 
   vec4 bumpColor = (-1.0 + 2.0 * texture2D(BumpMap, (Vertex.xz + BumpOffset) / 30.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (Vertex.xz + BumpOffset.yx) / 15.0 + 0.5));
+  bumpColor += (-1.0 + 2.0 * texture2D(BumpMap, (15.0 * Vertex.xz + BumpOffset) / 30.0)) - (-1.0 + 2.0 * texture2D(BumpMap, (15.0 * Vertex.xz + BumpOffset.yx) / 15.0 + 0.5));
   vec3 normal = normalize((bumpColor.rbg) + vec3(0.0, 1.0, 0.0));
   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Position, 1.0)).xyz);
 

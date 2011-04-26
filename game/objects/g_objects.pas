@@ -29,7 +29,8 @@ type
       procedure FinalCreation;
       procedure FileLoaded(Data: TOCFFile);
       procedure DepLoaded(Event: String; Data, Result: Pointer);
-      procedure LoadMesh(Element: TDOMElement);
+      function LoadMesh(Element: TDOMElement): TGeoMesh;
+      procedure LoadArmature(Element: TDOMElement);
       procedure Free;
     end;
 
@@ -131,7 +132,7 @@ begin
     end;
 end;
 
-procedure TObjectResource.LoadMesh(Element: TDOMElement);
+function TObjectResource.LoadMesh(Element: TDOMElement): TGeoMesh;
 var
   Mesh: TGeoMesh;
 
@@ -151,6 +152,12 @@ var
             begin
             TheVertex^.Position := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0), StrToFloatWD(CurrElement.GetAttribute('y'), 0), StrToFloatWD(CurrElement.GetAttribute('z'), 0));
             TheVertex^.OriginalPosition := TheVertex^.Position;
+            end
+          else if CurrElement.TagName = 'bone' then
+            begin
+            setLength(TheVertex^.Bones, length(TheVertex^.Bones) + 1);
+            TheVertex^.Bones[high(TheVertex^.Bones)].Bone := fGeoObject.GetBoneByName(CurrElement.GetAttribute('armature'), CurrElement.GetAttribute('name'));
+            TheVertex^.Bones[high(TheVertex^.Bones)].Weight := StrToFloatWD(CurrElement.GetAttribute('weight'), 1.0);
             end;
           CurrElement := TDOMElement(CurrElement.NextSibling);
           end;
@@ -244,20 +251,26 @@ var
 var
   CurrElement: TDOMElement;
 begin
+  Mesh := fGeoObject.AddMesh;
+
   setLength(fMaterialResourceNames, length(fMaterialResourceNames) + 1);
   setLength(fMaterialDefined, length(fMaterialDefined) + 1);
   setLength(fLightSourceResourceNames, length(fLightSourceResourceNames) + 1);
   setLength(fLightSourceResourcePositions, length(fLightSourceResourcePositions) + 1);
   setLength(fParticleGroupResourceNames, length(fParticleGroupResourceNames) + 1);
   setLength(fParticleGroupResourcePositions, length(fParticleGroupResourcePositions) + 1);
+
   fMaterialResourceNames[high(fMaterialResourceNames)] := '';
   fMaterialDefined[high(fMaterialResourceNames)] := False;
+
   CurrElement := TDOMElement(Element.FirstChild);
-  Mesh := fGeoObject.AddMesh;
+
   while CurrElement <> nil do
     begin
     if CurrElement.TagName = 'material' then
       fMaterialResourceNames[high(fMaterialResourceNames)] := CurrElement.GetAttribute('resource:name')
+    else if CurrElement.TagName = 'bone' then
+      Mesh.Bone := fGeoObject.GetBoneByName(CurrElement.GetAttribute('armature'), CurrElement.GetAttribute('name'))
     else if CurrElement.TagName = 'light' then
       begin
       setLength(fLightSourceResourceNames[high(fLightSourceResourceNames)], length(fLightSourceResourceNames[high(fLightSourceResourceNames)]) + 1);
@@ -283,7 +296,57 @@ begin
     else if CurrElement.TagName = 'matrix' then
       Mesh.Matrix := LoadMatrix(CurrElement)
     else if CurrElement.TagName = 'name' then
-      Mesh.Name := CurrElement.FirstChild.NodeValue;
+      Mesh.Name := CurrElement.FirstChild.NodeValue
+    else if CurrElement.TagName = 'mesh' then
+      Mesh.AddChild(LoadMesh(CurrElement));
+    CurrElement := TDOMElement(CurrElement.NextSibling);
+    end;
+  Result := Mesh;
+end;
+
+procedure TObjectResource.LoadArmature(Element: TDOMElement);
+var
+  Armature: TArmature;
+
+  procedure AddBone(TheElement: TDOMElement; Parent: TBone);
+  var
+    CurrElement: TDOMElement;
+    Bone: TBone;
+  begin
+    Bone := Armature.AddBone;
+    Bone.ParentBone := Parent;
+
+    CurrElement := TDOMElement(TheElement.FirstChild);
+    
+    while CurrElement <> nil do
+      begin
+      if CurrElement.TagName = 'name' then
+        Bone.Name := CurrElement.FirstChild.NodeValue
+      else if CurrElement.TagName = 'position' then
+        Bone.SourcePosition := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0), StrToFloatWD(CurrElement.GetAttribute('y'), 0), StrToFloatWD(CurrElement.GetAttribute('z'), 0))
+      else if CurrElement.TagName = 'matrix' then
+        Bone.Matrix := LoadMatrix(CurrElement);
+      
+      CurrElement := TDOMElement(CurrElement.NextSibling);
+      end;
+  end;
+
+var
+  CurrElement: TDOMElement;
+begin
+  Armature := fGeoObject.AddArmature;
+
+  CurrElement := TDOMElement(Element.FirstChild);
+
+  while CurrElement <> nil do
+    begin
+    if CurrElement.TagName = 'name' then
+      Armature.Name := CurrElement.FirstChild.NodeValue
+    else if CurrElement.TagName = 'matrix' then
+      Armature.Matrix := LoadMatrix(CurrElement)
+    else if CurrElement.TagName = 'bone' then
+      AddBone(CurrElement, nil);
+    
     CurrElement := TDOMElement(CurrElement.NextSibling);
     end;
 end;
@@ -304,7 +367,9 @@ begin
     CurrElement := TDOMElement(Doc.GetElementsByTagName('object')[0].FirstChild);
     while CurrElement <> nil do
       begin
-      if CurrElement.TagName = 'mesh' then
+      if CurrElement.TagName = 'armature' then
+        LoadArmature(CurrElement)
+      else if CurrElement.TagName = 'mesh' then
         LoadMesh(CurrElement);
       CurrElement := TDOMElement(CurrElement.NextSibling);
       end;
@@ -378,6 +443,7 @@ begin
   inherited Free;
 end;
 
+
 constructor TRealObject.Create(TheResource: TObjectResource);
 begin
   inherited Create;
@@ -403,6 +469,10 @@ begin
     with CurrentObject.GeoObject do
       begin
       SetUnchanged;
+
+      if GetBoneByName('arm', 'moep') <> nil then
+        GetBoneByName('arm', 'moep').Matrix := GetBoneByName('arm', 'moep').Matrix * RotationMatrix(3, Vector(0, 1, 0));
+      
       UpdateMatrix;
       UpdateArmatures;
       UpdateVertexPositions;

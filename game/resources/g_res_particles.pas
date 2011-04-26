@@ -89,13 +89,10 @@ begin
                                       StrToFloatWD(CurrElement.GetAttribute('b'), fGroup.InitialColor.Z),
                                       StrToFloatWD(CurrElement.GetAttribute('a'), fGroup.InitialColor.W))
       else if CurrElement.TagName = 'colorexp' then
-        begin
         fGroup.ColorExponent := Vector(StrToFloatWD(CurrElement.GetAttribute('r'), fGroup.ColorExponent.X),
                                        StrToFloatWD(CurrElement.GetAttribute('g'), fGroup.ColorExponent.Y),
                                        StrToFloatWD(CurrElement.GetAttribute('b'), fGroup.ColorExponent.Z),
-                                       StrToFloatWD(CurrElement.GetAttribute('a'), fGroup.ColorExponent.W));
-        writeln('a:', CurrElement.GetAttribute('a'));
-        end
+                                       StrToFloatWD(CurrElement.GetAttribute('a'), fGroup.ColorExponent.W))
       else if CurrElement.TagName = 'colorvar' then
         fGroup.ColorVariance := Vector(StrToFloatWD(CurrElement.GetAttribute('r'), fGroup.ColorVariance.X),
                                        StrToFloatWD(CurrElement.GetAttribute('g'), fGroup.ColorVariance.Y),

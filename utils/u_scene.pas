@@ -76,7 +76,7 @@ type
       property CalculatedSourcePosition: TVector3D read fCalculatedSourcePosition;
       procedure AddChild(Bone: TBone);
       procedure UpdateMatrix;
-      function Duplicate(TheObject: TGeoObject): TBone;
+      function Duplicate(TheObject: TGeoObject; TheArmature: TArmature): TBone;
       constructor Create;
     end;
 
@@ -84,23 +84,6 @@ type
     HandleRight, HandleLeft, Position: TVector3D;
     end;
   PBezierPoint = ^TBezierPoint;
-
-  TMotionPath = class
-    public
-      Name: String;
-      BezierPoints: Array of TBezierPoint;
-      FrameDuration: Integer;
-      Infinite: Boolean;
-      function Duplicate: TMotionPath;
-      function AddBezierPoint: PBezierPoint;
-    end;
-
-  TMotionPathConstraint = record
-    MotionPath: TMotionPath;
-    Influence: Single;
-    MotionProgress: Single;
-    end;
-  PMotionPathConstraint = ^TMotionPathConstraint;
 
   TArmature = class
     public
@@ -111,6 +94,7 @@ type
       CalculatedMatrix, Matrix: TMatrix4D;
       function Duplicate(TheObject: TGeoObject): TArmature;
       function AddBone: TBone;
+      function GetBoneByName(Bone: String): TBone;
       procedure UpdateMatrix;
       constructor Create;
     end;
@@ -183,6 +167,7 @@ type
       procedure UpdateArmatures;
       procedure UpdateFaceVertexAssociationForVertexNormalCalculation;
       procedure SetUnchanged;
+      function GetBoneByName(Armature, Bone: String): TBone;
       constructor Create;
       destructor Free;
     end;
@@ -261,7 +246,7 @@ begin
     Children[i].UpdateMatrix;
 end;
 
-function TBone.Duplicate(TheObject: TGeoObject): TBone;
+function TBone.Duplicate(TheObject: TGeoObject; TheArmature: TArmature): TBone;
 begin
   Result := TBone.Create;
   Result.fCalculatedMatrix := fCalculatedMatrix;
@@ -271,11 +256,11 @@ begin
   Result.Matrix := Matrix;
   Result.Name := Name;
   Result.Updated := Updated;
-  Result.ParentArmature := TheObject.Armatures[ParentBone.ParentArmature.ArmatureID];
+  Result.ParentArmature := TheArmature;
   if ParentBone = nil then
     Result.ParentBone := nil
   else
-    TheObject.Armatures[ParentBone.ParentArmature.ArmatureID].Bones[ParentBone.BoneID].AddChild(self);
+    TheArmature.Bones[ParentBone.BoneID].AddChild(Result);
 end;
 
 constructor TBone.Create;
@@ -287,19 +272,6 @@ begin
   ParentArmature := nil;
   SourcePosition := Vector(0, 0, 0);
 end;
-
-
-
-function TMotionPath.Duplicate: TMotionPath;
-begin
-end;
-
-function TMotionPath.AddBezierPoint: PBezierPoint;
-begin
-  SetLength(BezierPoints, length(BezierPoints) + 1);
-  Result := @BezierPoints[high(BezierPoints)];
-end;
-
 
 
 
@@ -315,7 +287,7 @@ begin
   Result.Matrix := Matrix;
   SetLength(Result.Bones, length(Bones));
   for i := 0 to high(Bones) do
-    Result.Bones[i] := Bones[i].Duplicate(TheObject);
+    Result.Bones[i] := Bones[i].Duplicate(TheObject, Result);
 end;
 
 function TArmature.AddBone: TBone;
@@ -325,6 +297,16 @@ begin
   Result := Bones[high(Bones)];
   Result.ParentArmature := Self;
   Result.BoneID := high(Bones);
+end;
+
+function TArmature.GetBoneByName(Bone: String): TBone;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to high(Bones) do
+    if Bones[i].Name = Bone then
+      Result := Bones[i];
 end;
 
 procedure TArmature.UpdateMatrix;
@@ -777,6 +759,16 @@ var
 begin
   for i := 0 to high(Meshes) do
     Meshes[i].UpdateFaceVertexAssociationForVertexNormalCalculation;
+end;
+
+function TGeoObject.GetBoneByName(Armature, Bone: String): TBone;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to high(Armatures) do
+    if Armatures[i].Name = Armature then
+      Result := Armatures[i].GetBoneByName(Bone);
 end;
 
 constructor TGeoObject.Create;

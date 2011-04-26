@@ -53,6 +53,7 @@ end;
 procedure TObjectManager.Advance;
 var
   CurrentObject: TRealObject;
+  fPos: TVector3D;
 begin
   CurrentObject := TRealObject(First);
   while CurrentObject <> nil do
@@ -95,28 +96,29 @@ begin
   fTestPath := TPath.Create;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(160, 65, 160);
-    CP1 := Vector(160, 65, 159);
-    CP2 := Vector(160, 65, 161);
+    Position := Vector(0, 0, 0);
+    CP1 := Vector(0, 0, -1);
+    CP2 := Vector(0, 0, 1);
     end;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(161, 65, 162);
-    CP1 := Vector(161, 65, 161);
-    CP2 := Vector(161, 65, 163);
+    Position := Vector(1, -0.1, 2);
+    CP1 := Vector(1, -0.1, 1);
+    CP2 := Vector(1, -0.1, 3);
     end;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(159, 65, 164);
-    CP1 := Vector(159, 65, 163);
-    CP2 := Vector(159, 65, 165);
+    Position := Vector(-1, 0.1, 4);
+    CP1 := Vector(-1, 0.1, 3);
+    CP2 := Vector(-1, 0.1, 5);
     end;
   with fTestPath.AddPoint do
     begin
-    Position := Vector(159, 65, 166);
-    CP1 := Vector(160, 65, 165);
-    CP2 := Vector(160, 65, 167);
+    Position := Vector(-1, 0, 6);
+    CP1 := Vector(0, 0, 5);
+    CP2 := Vector(0, 0, 7);
     end;
+  fTestPath.Closed := True;
   fTestPath.BuildLookupTable;
   fProgress := 0;
 end;

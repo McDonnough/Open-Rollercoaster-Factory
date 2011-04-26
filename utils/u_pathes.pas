@@ -3,7 +3,7 @@ unit u_pathes;
 interface
 
 uses
-  SysUtils, Classes, u_vectors, u_math, math, u_linkedlists;
+  SysUtils, Classes, u_vectors, math, u_math, u_linkedlists;
 
 type
   TBezierPoint = class;
@@ -51,11 +51,12 @@ type
       fLength: Single;
       fLookupTable: Array of TBezierPoint;
     public
-      Closed: Boolean;
+      Changed, Closed: Boolean;
       property Length: Single read fLength;
       function PointAtDistance(D: Single): TBezierPoint;
       function DataAtDistance(D: Single): TPathPointData;
       procedure BuildLookupTable;
+      function AddPoint: TBezierPoint;
       constructor Create;
       procedure Free;
     end;
@@ -89,21 +90,21 @@ var
   iMax, iMin: Integer;
 begin
   if D >= fLookupTable[high(fLookupTable)].Distance then
-    Result := 1;
-
-  ID := Trunc((high(fLookupTable) - 1) * D);
+    exit(1);
 
   iMin := 0;
   iMax := high(fLookupTable) - 1;
 
+  ID := (iMin + iMax) div 2;
+  
   while iMin <> iMax do
     begin
 
     while fLookupTable[ID + 1].Distance <= D do
       begin
-      ID := Round((ID + iMax) / 2);
+      ID := Ceil((ID + iMax) / 2);
 
-      if fLookupTable[ID].Distance <= D then
+      if fLookupTable[ID].Distance < D then
         iMin := ID;
       end;
 
@@ -221,21 +222,21 @@ begin
   D := Length * fPart(D / Length);
 
   if D >= fLookupTable[high(fLookupTable)].Distance then
-    Result := fLookupTable[high(fLookupTable)];
-
-  ID := Trunc(Clamp(high(fLookupTable) * D / Length, 0, high(fLookupTable) - 1));
+    exit(fLookupTable[high(fLookupTable)]);
 
   iMin := 0;
   iMax := high(fLookupTable) - 1;
+
+  ID := (iMin + iMax) div 2;
 
   while iMin <> iMax do
     begin
 
     while fLookupTable[ID + 1].Distance <= D do
       begin
-      ID := Round((ID + iMax) / 2);
+      ID := Ceil((ID + iMax) / 2);
 
-      if fLookupTable[ID].Distance <= D then
+      if fLookupTable[ID].Distance < D then
         iMin := ID;
       end;
 
@@ -297,6 +298,8 @@ begin
 
       CurrItem := TBezierPoint(CurrItem.Next);
       end;
+
+    Changed := False;
     end;
 end;
 

@@ -68,7 +68,7 @@ begin
           fAngle := Random * 2 * 3.142;
           fPositions[i] := Vector(ModuleManager.ModCamera.ActiveCamera.Position.X + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * sin(fAngle), ModuleManager.ModCamera.ActiveCamera.Position.Z + (0.9 + 0.1 * Random) * ModuleManager.ModRenderer.AutoplantDistance * cos(fAngle), 2 * 3.142 * Random);
           fChanged[i] := true;
-          if (Park.pTerrain.TexMap[fPositions[i].X, fPositions[i].Y] <> fMaterialID) then
+          if (Park.pTerrain.TexMap[fPositions[i].X, fPositions[i].Y] <> fMaterialID) or (Park.pTerrain.TexMap[fPositions[i].X + 3.2 * sin(fPositions[i].Z), fPositions[i].Y + 3.2 * cos(fPositions[i].Z)] <> fMaterialID) then
             fPositions[i].Z := -2;
           end;
       fWorking := false;

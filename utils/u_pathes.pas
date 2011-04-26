@@ -33,6 +33,7 @@ type
     public
       Banking: Single;
       Distance: Single;
+      IgnoreBankingAfter: Boolean;
       property Position: TVector3D read fP write ChangeP;
       property CP1: TVector3D read fC1 write ChangeC1;
       property CP2: TVector3D read fC2 write ChangeC2;
@@ -51,12 +52,15 @@ type
       fLength: Single;
       fLookupTable: Array of TBezierPoint;
     public
+      Name: String;
       Changed, Closed: Boolean;
       property Length: Single read fLength;
       function PointAtDistance(D: Single): TBezierPoint;
       function DataAtDistance(D: Single): TPathPointData;
+      function DataAtT(T: Single): TPathPointData;
       procedure BuildLookupTable;
       function AddPoint: TBezierPoint;
+      function Duplicate: TPath;
       constructor Create;
       procedure Free;
     end;
@@ -136,7 +140,10 @@ end;
 
 function TBezierPoint.BankingAtT(T: Single): Single;
 begin
-  Result := Mix(Banking, fForcedNext.Banking, T);
+  if not IgnoreBankingAfter then
+    Result := Mix(Banking, fForcedNext.Banking, T)
+  else
+    Result := Mix(360 * fPart(Banking / 360), fForcedNext.Banking, T);
 end;
 
 function TBezierPoint.TangentAtT(T: Single): TVector3D;
@@ -200,7 +207,9 @@ end;
 constructor TBezierPoint.Create;
 begin
   inherited Create;
+  Banking := 0;
   Distance := 0;
+  IgnoreBankingAfter := False;
   fChanged := True;
   fLength := 0;
   fParameters[0] := Vector(0, 0, 0);
@@ -269,6 +278,11 @@ begin
   Result := Point.DataAtT(Point.TAtDistance(D - Point.Distance));
 end;
 
+function TPath.DataAtT(T: Single): TPathPointData;
+begin
+  Result := DataAtDistance(Length * T);
+end;
+
 procedure TPath.BuildLookupTable;
 var
   I: Integer;
@@ -309,9 +323,36 @@ begin
   Append(Result);
 end;
 
+function TPath.Duplicate: TPath;
+var
+  CurrItem: TBezierPoint;
+begin
+  Result := TPath.Create;
+  Result.Name := Name;
+  Result.Closed := Closed;
+
+  CurrItem := TBezierPoint(First);
+  while CurrItem <> nil do
+    begin
+    with Result.AddPoint do
+      begin
+      CP1 := CurrItem.CP1;
+      CP2 := CurrItem.CP2;
+      Position := CurrItem.Position;
+      Banking := CurrItem.Banking;
+      IgnoreBankingAfter := CurrItem.IgnoreBankingAfter;
+      end;
+    
+    CurrItem := TBezierPoint(CurrItem.Next);
+    end;
+
+  Result.BuildLookupTable;
+end;
+
 constructor TPath.Create;
 begin
   inherited Create;
+  Name := '';
   Changed := True;
   Closed := False;
   fLength := 0;

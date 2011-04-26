@@ -99,13 +99,19 @@ begin
                                        StrToFloatWD(CurrElement.GetAttribute('b'), fGroup.ColorVariance.Z),
                                        StrToFloatWD(CurrElement.GetAttribute('a'), fGroup.ColorVariance.W))
       else if CurrElement.TagName = 'velocity' then
+        begin
         fGroup.InitialVelocity := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), fGroup.InitialVelocity.X),
                                          StrToFloatWD(CurrElement.GetAttribute('y'), fGroup.InitialVelocity.Y),
-                                         StrToFloatWD(CurrElement.GetAttribute('z'), fGroup.InitialVelocity.Z))
+                                         StrToFloatWD(CurrElement.GetAttribute('z'), fGroup.InitialVelocity.Z));
+        fGroup.OriginalVelocity := fGroup.InitialVelocity;
+        end
       else if CurrElement.TagName = 'velocityvar' then
+        begin
         fGroup.VelocityVariance := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), fGroup.VelocityVariance.X),
                                           StrToFloatWD(CurrElement.GetAttribute('y'), fGroup.VelocityVariance.Y),
-                                          StrToFloatWD(CurrElement.GetAttribute('z'), fGroup.VelocityVariance.Z))
+                                          StrToFloatWD(CurrElement.GetAttribute('z'), fGroup.VelocityVariance.Z));
+        fGroup.OriginalVelocityVariance := fGroup.VelocityVariance;
+        end
       else if CurrElement.TagName = 'acceleration' then
         fGroup.InitialAcceleration := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), fGroup.InitialAcceleration.X),
                                              StrToFloatWD(CurrElement.GetAttribute('y'), fGroup.InitialAcceleration.Y),

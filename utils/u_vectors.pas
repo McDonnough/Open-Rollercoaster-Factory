@@ -164,7 +164,7 @@ function SphereSphereIntersection(A, B: TSphere): Boolean;
 implementation
 
 uses
-  math;
+  math, u_math;
 
 operator + (A, B: TVector2D): TVector2D;
 begin
@@ -653,12 +653,12 @@ begin
     begin
     a := RadToDeg(arccos(dotProduct(normalize(Direction * Vector(1, 0, 1)), Vector(0, 0, 1))));
     if Direction.X < 0 then
-      a := 360 - A;
+      a := -a;
     Result := RotationMatrix(a, Vector(0, 1, 0));
     end;
-  a := RadToDeg(arccos(dotProduct(normalize(Direction * Vector(0, 1, 1)), Vector(0, 0, 1))));
+  a := RadToDeg(arccos(Clamp(dotProduct(Normalize(Direction), Normalize(Direction * Vector(1, 0, 1))), -1, 1)));
   if Direction.Y > 0 then
-    a := 360 - A;
+    a := -a;
   Result := Result * RotationMatrix(a, Vector(1, 0, 0));
 end;
 

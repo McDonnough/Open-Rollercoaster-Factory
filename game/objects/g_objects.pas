@@ -20,8 +20,6 @@ type
 
   TObjectManager = class(TLinkedList)
     protected
-      fTestPath: TPath;
-      fProgress: Single;
     public
       constructor Create;
       procedure AddTestObject(Event: String; Data, Result: Pointer);
@@ -62,13 +60,9 @@ begin
       begin
       SetUnchanged;
 
-      if GetBoneByName('arm', 'moep') <> nil then
-        begin
-        GetBoneByName('arm', 'moep').Matrix := TranslationMatrix(fTestPath.DataAtDistance(fProgress).Position)
-                                             * RotationMatrix(fTestPath.DataAtDistance(fProgress).Tangent);
-        fProgress := fProgress + 0.002 * FPSDisplay.MS;
-        end;
-      
+      if CurrentObject.GeoObject.GetBoneByName('arm', 'moep') <> nil then
+        CurrentObject.GeoObject.GetBoneByName('arm', 'moep').PathConstraint.Progress += 0.002;
+
       UpdateMatrix;
       UpdateArmatures;
       UpdateVertexPositions;
@@ -95,40 +89,12 @@ end;
 constructor TObjectManager.Create;
 begin
   inherited Create;
-  fTestPath := TPath.Create;
-  with fTestPath.AddPoint do
-    begin
-    Position := Vector(0, 1, 0);
-    CP1 := Vector(0, 1, -1);
-    CP2 := Vector(0, 1, 1);
-    end;
-  with fTestPath.AddPoint do
-    begin
-    Position := Vector(1, 2, 2);
-    CP1 := Vector(1, 2, 1);
-    CP2 := Vector(1, 2, 3);
-    end;
-  with fTestPath.AddPoint do
-    begin
-    Position := Vector(-1, 0, 4);
-    CP1 := Vector(-1, 0, 3);
-    CP2 := Vector(-1, 0, 5);
-    end;
-  with fTestPath.AddPoint do
-    begin
-    Position := Vector(-1, 2, 6);
-    CP1 := Vector(0, 2, 5);
-    CP2 := Vector(0, 2, 7);
-    end;
-  fTestPath.BuildLookupTable;
-  fProgress := 0;
 end;
 
 procedure TObjectManager.Free;
 begin
   while First <> nil do
     TRealObject(First).Free;
-  fTestPath.Free;
   inherited Free;
 end;
 

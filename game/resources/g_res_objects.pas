@@ -4,12 +4,19 @@ interface
 
 uses
   SysUtils, Classes, u_linkedlists, g_resources, u_scene, g_loader_ocf, g_res_textures, g_res_materials, u_xml, u_dom, u_vectors,
-  g_res_lights, g_res_particles;
+  g_res_lights, g_res_particles, g_res_pathes;
 
 type
+  TBonePathResourceAssoc = record
+    Bone: TBone;
+    PathResource: TPathResource;
+    PathResourceName: String;
+    end;
+
   TObjectResource = class(TAbstractResource)
     protected
       fGeoObject: TGeoObject;
+      fBonePathResourceAssocs: Array of TBonePathResourceAssoc;
       fMaterialResources: Array of TMaterialResource;
       fMaterialResourceNames: Array of String;
       fLightSourceResourceNames: Array of Array of String;
@@ -84,6 +91,10 @@ begin
       TParticleGroup(fGeoObject.Meshes[i].ParticleGroups[j]).OriginalPosition := fParticleGroupResourcePositions[i, j];
       end;
     end;
+
+  for i := 0 to high(fBonePathResourceAssocs) do
+    if fBonePathResourceAssocs[i].PathResourceName <> '' then
+      fBonePathResourceAssocs[i].Bone.PathConstraint.Path := fBonePathResourceAssocs[i].PathResource.Path;
 
   fGeoObject.UpdateFaceVertexAssociationForVertexNormalCalculation;
   fGeoObject.RecalcFaceNormals;
@@ -295,6 +306,11 @@ var
     Bone := Armature.AddBone;
     Bone.ParentBone := Parent;
 
+    setLength(fBonePathResourceAssocs, length(fBonePathResourceAssocs) + 1);
+    fBonePathResourceAssocs[high(fBonePathResourceAssocs)].Bone := Bone;
+    fBonePathResourceAssocs[high(fBonePathResourceAssocs)].PathResourceName := '';
+    fBonePathResourceAssocs[high(fBonePathResourceAssocs)].PathResource := nil;
+
     CurrElement := TDOMElement(TheElement.FirstChild);
 
     while CurrElement <> nil do
@@ -304,7 +320,15 @@ var
       else if CurrElement.TagName = 'position' then
         Bone.SourcePosition := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0), StrToFloatWD(CurrElement.GetAttribute('y'), 0), StrToFloatWD(CurrElement.GetAttribute('z'), 0))
       else if CurrElement.TagName = 'matrix' then
-        Bone.Matrix := LoadMatrix(CurrElement);
+        Bone.Matrix := LoadMatrix(CurrElement)
+      else if CurrElement.TagName = 'path' then
+        begin
+        Bone.PathConstraint.FollowOrientation := CurrElement.GetAttribute('followorientation') = 'true';
+        Bone.PathConstraint.FollowBanking := CurrElement.GetAttribute('followbanking') = 'true';
+        Bone.PathConstraint.Progress := StrToFloatWD(CurrElement.GetAttribute('progress'), 0);
+        fBonePathResourceAssocs[high(fBonePathResourceAssocs)].PathResourceName := CurrElement.GetAttribute('resource:name');
+        fBonePathResourceAssocs[high(fBonePathResourceAssocs)].PathResource := nil;
+        end;
 
       CurrElement := TDOMElement(CurrElement.NextSibling);
       end;
@@ -354,11 +378,13 @@ begin
       end;
     Doc.Free;
     end;
+
   for i := 0 to high(fMaterialResourceNames) - 1 do
     if not fMaterialDefined[i] then
       for j := i + 1 to high(fMaterialResourceNames) do
         if fMaterialResourceNames[i] = fMaterialResourceNames[j] then
           fMaterialDefined[j] := True;
+
   for i := 0 to high(fMaterialDefined) do
     if not fMaterialDefined[i] then
       begin
@@ -366,18 +392,25 @@ begin
       setLength(fMaterialResources, length(fMaterialResources) + 1);
       setLength(fFinalMaterialResourceNames, length(fFinalMaterialResourceNames) + 1);
       end;
+      
   setLength(fLightSourceResources, length(fLightSourceResourceNames));
   for i := 0 to high(fLightSourceResourceNames) do
     begin
     setLength(fLightSourceResources[i], length(fLightSourceResourceNames[i]));
     inc(fDepCount, length(fLightSourceResourceNames[i]));
     end;
+    
   setLength(fParticleGroupResources, length(fParticleGroupResourceNames));
   for i := 0 to high(fParticleGroupResourceNames) do
     begin
     setLength(fParticleGroupResources[i], length(fParticleGroupResourceNames[i]));
     inc(fDepCount, length(fParticleGroupResourceNames[i]));
     end;
+    
+  for i := 0 to high(fBonePathResourceAssocs) do
+    if fBonePathResourceAssocs[i].PathResourceName <> '' then
+      inc(fDepCount);
+      
   if fDepCount = 0 then
     DepLoaded('', nil, nil)
   else
@@ -388,12 +421,21 @@ begin
         EventManager.AddCallback('TResource.FinishedLoading:' + fLightSourceResourceNames[i, j], @DepLoaded);
         fLightSourceResources[i, j] := TLightResource.Get(fLightSourceResourceNames[i, j]);
         end;
+
     for i := 0 to high(fParticleGroupResourceNames) do
       for j := 0 to high(fParticleGroupResourceNames[i]) do
         begin
         EventManager.AddCallback('TResource.FinishedLoading:' + fParticleGroupResourceNames[i, j], @DepLoaded);
         fParticleGroupResources[i, j] := TParticleResource.Get(fParticleGroupResourceNames[i, j]);
         end;
+
+    for i := 0 to high(fBonePathResourceAssocs) do
+      if fBonePathResourceAssocs[i].PathResourceName <> '' then
+        begin
+        EventManager.AddCallback('TResource.FinishedLoading:' + fBonePathResourceAssocs[i].PathResourceName, @DepLoaded);
+        fBonePathResourceAssocs[i].PathResource := TPathResource.Get(fBonePathResourceAssocs[i].PathResourceName);
+        end;
+        
     j := 0;
     for i := 0 to high(fMaterialResources) do
       begin

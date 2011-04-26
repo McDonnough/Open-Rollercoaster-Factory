@@ -59,6 +59,12 @@ type
     end;
   PFace = ^TFace;
 
+  TMotionPathConstraint = record
+    Path: TPath;
+    Progress: Single;
+    FollowBanking, FollowOrientation: Boolean;
+    end;
+    
   TBone = class
     protected
       fCalculatedMatrix: TMatrix4D;
@@ -72,6 +78,7 @@ type
       ParentBone: TBone;
       ParentArmature: TArmature;
       Children: Array of TBone;
+      PathConstraint: TMotionPathConstraint;
       property CalculatedMatrix: TMatrix4D read fCalculatedMatrix;
       property CalculatedSourcePosition: TVector3D read fCalculatedSourcePosition;
       procedure AddChild(Bone: TBone);
@@ -231,11 +238,30 @@ end;
 procedure TBone.UpdateMatrix;
 var
   i: Integer;
+  fTempMatrix: TMatrix4D;
+  pp: TPathPointData;
 begin
-  if ParentBone <> nil then
-    fCalculatedMatrix := ParentBone.CalculatedMatrix * Matrix
+  if PathConstraint.Path <> nil then
+    begin
+    pp := PathConstraint.Path.DataAtT(PathConstraint.Progress);
+
+    fTempMatrix := TranslationMatrix(pp.Position);
+
+    if PathConstraint.FollowOrientation then
+      fTempMatrix := fTempMatrix * RotationMatrix(pp.Tangent);
+
+    if PathConstraint.FollowBanking then
+      fTempMatrix := fTempMatrix * RotationMatrix(pp.Banking, Vector(0, 0, 1));
+
+    fTempMatrix := fTempMatrix * Matrix;
+    end
   else
-    fCalculatedMatrix := ParentArmature.CalculatedMatrix * Matrix;
+    fTempMatrix := Matrix;
+  
+  if ParentBone <> nil then
+    fCalculatedMatrix := ParentBone.CalculatedMatrix * fTempMatrix
+  else
+    fCalculatedMatrix := ParentArmature.CalculatedMatrix * fTempMatrix;
   fCalculatedSourcePosition := Vector3D(Vector(SourcePosition, 1) * fCalculatedMatrix);
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
@@ -252,6 +278,10 @@ begin
   Result.Name := Name;
   Result.Updated := Updated;
   Result.ParentArmature := TheArmature;
+  Result.PathConstraint.Path := PathConstraint.Path.Duplicate;
+  Result.PathConstraint.Progress := PathConstraint.Progress;
+  Result.PathConstraint.FollowBanking := PathConstraint.FollowBanking;
+  Result.PathConstraint.FollowOrientation := PathConstraint.FollowOrientation;
   if ParentBone = nil then
     Result.ParentBone := nil
   else
@@ -266,6 +296,10 @@ begin
   ParentBone := nil;
   ParentArmature := nil;
   SourcePosition := Vector(0, 0, 0);
+  PathConstraint.Path := nil;
+  PathConstraint.Progress := 0;
+  PathConstraint.FollowBanking := False;
+  PathConstraint.FollowOrientation := False;
 end;
 
 
@@ -556,7 +590,7 @@ begin
   if Bone <> nil then
     begin
     CalculatedMatrix := CalculatedMatrix * TranslationMatrix(Bone.SourcePosition);
-    CalculatedMatrix := CalculatedMatrix * Bone.Matrix;
+    CalculatedMatrix := CalculatedMatrix * Bone.CalculatedMatrix;
     CalculatedMatrix := CalculatedMatrix * TranslationMatrix(Bone.SourcePosition * -1);
     end;
   for i := 0 to high(LightSources) do
@@ -565,6 +599,8 @@ begin
     begin
     TParticleGroup(ParticleGroups[i]).InitialPosition := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalPosition, 1.0) * CalculatedMatrix);
     TParticleGroup(ParticleGroups[i]).PositionVariance := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalVariance, 0.0) * CalculatedMatrix);
+    TParticleGroup(ParticleGroups[i]).InitialVelocity := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalVelocity, 0.0) * CalculatedMatrix);
+    TParticleGroup(ParticleGroups[i]).VelocityVariance := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalVelocityVariance, 0.0) * CalculatedMatrix);
     end;
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
@@ -584,7 +620,7 @@ begin
       begin
       CalculatedVertexPosition := Vector3D(Vector(Vertices[i].OriginalPosition, 1)) + RelativeMeshOffset;
       for j := 0 to high(Vertices[i].Bones) do
-        CalculatedVertexPosition := MixVec(CalculatedVertexPosition, Vector3D(Vector(CalculatedVertexPosition - Vertices[i].Bones[j].Bone.CalculatedSourcePosition, 1) * Vertices[i].Bones[j].Bone.CalculatedMatrix) + Vertices[i].Bones[j].Bone.SourcePosition, Vertices[i].Bones[j].Weight);
+        CalculatedVertexPosition := MixVec(CalculatedVertexPosition, Vector3D(Vector(CalculatedVertexPosition - Vertices[i].Bones[j].Bone.SourcePosition, 1) * Vertices[i].Bones[j].Bone.CalculatedMatrix) + Vertices[i].Bones[j].Bone.SourcePosition, Vertices[i].Bones[j].Weight);
       if VecLengthNoRoot(CalculatedVertexPosition - RelativeMeshOffset) > 0.001 then
         begin
         Vertices[i].Position := CalculatedVertexPosition - RelativeMeshOffset;

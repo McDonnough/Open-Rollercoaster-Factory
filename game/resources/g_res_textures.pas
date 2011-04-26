@@ -33,6 +33,7 @@ end;
 
 constructor TTextureResource.Create(ResourceName: String);
 begin
+  fTexture := TTexture.Create;
   inherited Create(ResourceName, @FileLoaded);
 end;
 
@@ -51,7 +52,6 @@ begin
       TexFormat := GL_RGBA;
       CompressedTexFormat := GL_COMPRESSED_RGBA;
       end;
-    fTexture := TTexture.Create;
     fTexture.CreateNew(A.Width, A.Height, TexFormat);
     fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
     fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);

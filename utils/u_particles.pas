@@ -30,6 +30,7 @@ type
       InitialSize, SizeExponent, SizeVariance: TVector2D;
       InitialColor, ColorExponent, ColorVariance: TVector4D;
       InitialVelocity, VelocityVariance: TVector3D;
+      OriginalVelocity, OriginalVelocityVariance: TVector3D;
       InitialAcceleration, AccelerationVariance: TVector3D;
       InitialPosition, PositionVariance: TVector3D;
       OriginalPosition, OriginalVariance: TVector3D;
@@ -145,6 +146,8 @@ begin
   Result.ColorVariance := ColorVariance;
   Result.InitialVelocity := InitialVelocity;
   Result.VelocityVariance := VelocityVariance;
+  Result.OriginalVelocity := OriginalVelocity;
+  Result.OriginalVelocityVariance := OriginalVelocityVariance;
   Result.InitialAcceleration := InitialAcceleration;
   Result.AccelerationVariance := AccelerationVariance;
   Result.InitialPosition := InitialPosition;
@@ -183,6 +186,8 @@ begin
   ColorVariance := Vector(0, 0, 0, 0);
   InitialVelocity := Vector(0, 0, 0);
   VelocityVariance := Vector(0, 0, 0);
+  OriginalVelocity := Vector(0, 0, 0);
+  OriginalVelocityVariance := Vector(0, 0, 0);
   InitialAcceleration := Vector(0, 0, 0);
   AccelerationVariance := Vector(0, 0, 0);
   InitialPosition := Vector(0, 0, 0);

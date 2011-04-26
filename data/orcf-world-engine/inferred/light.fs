@@ -49,7 +49,7 @@ void main(void) {
   float attenuation = gl_LightSource[1].diffuse.a * (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a / (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a + dot(Light, Light)));
 
 // IF [ EQ owe.shadows.light 1 ]
-  if (UseShadow == 1 && dotprod > 0.0) {
+  if (UseShadow == 1 && attenuation > 0.01 && dotprod > 0.0) {
   // IF [ NEQ owe.shadows.light.blur 1 ]
     vec4 ShadowColor = texture2D(ShadowTexture, ProjectShadowVertex(-Light));
     if (dot(Light, Light) > ShadowColor.a * ShadowColor.a * 1.05 * 1.05)

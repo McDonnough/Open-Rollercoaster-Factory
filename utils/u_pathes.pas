@@ -66,18 +66,21 @@ procedure TBezierPoint.ChangeC1(P: TVector3D);
 begin
   fC1 := P;
   fChanged := True;
+  TPath(List).Changed := True;
 end;
 
 procedure TBezierPoint.ChangeC2(P: TVector3D);
 begin
   fC2 := P;
   fChanged := True;
+  TPath(List).Changed := True;
 end;
 
 procedure TBezierPoint.ChangeP(P: TVector3D);
 begin
   fP := P;
   fChanged := True;
+  TPath(List).Changed := True;
 end;
 
 function TBezierPoint.TAtDistance(D: Single): Single;
@@ -270,33 +273,43 @@ var
   I: Integer;
   CurrItem: TBezierPoint;
 begin
-  fLength := 0;
-  
-  if Closed then
-    SetLength(fLookupTable, Count)
-  else
+  if Changed then
     begin
-    SetLength(fLookupTable, Count - 1);
-    TBezierPoint(Last).BuildLookupTable;
+    fLength := 0;
+
+    if Closed then
+      SetLength(fLookupTable, Count)
+    else
+      begin
+      SetLength(fLookupTable, Count - 1);
+      TBezierPoint(Last).BuildLookupTable;
+      end;
+
+    CurrItem := TBezierPoint(First);
+
+    for i := 0 to high(fLookupTable) do
+      begin
+      CurrItem.BuildLookupTable;
+      CurrItem.Distance := fLength;
+
+      fLookupTable[i] := CurrItem;
+      fLength := fLength + CurrItem.Length;
+
+      CurrItem := TBezierPoint(CurrItem.Next);
+      end;
     end;
+end;
 
-  CurrItem := TBezierPoint(First);
-
-  for i := 0 to high(fLookupTable) do
-    begin
-    CurrItem.BuildLookupTable;
-    CurrItem.Distance := fLength;
-
-    fLookupTable[i] := CurrItem;
-    fLength := fLength + CurrItem.Length;
-
-    CurrItem := TBezierPoint(CurrItem.Next);
-    end;
+function TPath.AddPoint: TBezierPoint;
+begin
+  Result := TBezierPoint.Create;
+  Append(Result);
 end;
 
 constructor TPath.Create;
 begin
   inherited Create;
+  Changed := True;
   Closed := False;
   fLength := 0;
 end;

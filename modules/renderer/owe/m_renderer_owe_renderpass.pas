@@ -180,7 +180,6 @@ begin
     ModuleManager.ModRenderer.SunShader.UniformI('UseSSAO', 0);
     ModuleManager.ModRenderer.SunShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
     ModuleManager.ModRenderer.SunShader.UniformF('ShadowOffset', ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
-    ModuleManager.ModRenderer.SunShader.UniformI('BlurSamples', ModuleManager.ModRenderer.ShadowBlurSamples);
     DrawFullscreenQuad;
     ModuleManager.ModRenderer.SunShader.Unbind;
 

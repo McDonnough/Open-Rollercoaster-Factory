@@ -15,8 +15,9 @@ uniform vec2 BumpOffset;
 uniform vec2 TerrainSize;
 uniform float ShadowSize;
 uniform vec3 ShadowOffset;
-uniform int BlurSamples;
 uniform int UseSSAO;
+
+const int BlurSamples = {{{owe.shadows.blur}}};
 
 // IF [ EQ owe.shadows.sun 1 ]
 vec2 ProjectShadowVertex(vec3 V) {
@@ -53,7 +54,7 @@ void main(void) {
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
   if (dotprod > 0.0 && ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
 
-    // IF [ EQ owe.shadows.blur 1 ]
+    // IF [ NEQ owe.shadows.blur 0 ]
     float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);
     int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);
     for (int i = -BlurSamples; i <= BlurSamples; i++)
@@ -64,7 +65,7 @@ void main(void) {
       }
     // END
 
-    // IF [ NEQ owe.shadows.blur 1 ]
+    // IF [ EQ owe.shadows.blur 0 ]
     if (ShadowColor.a > Vertex.y + 0.1)
       factor -= 2.0 * ShadowColor.rgb;
     // END

@@ -27,14 +27,14 @@ void main() {
   gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
 
   for(int i = 0; i < NUM_SAMPLES; i++) {
-      textCoo -= deltaTextCoord;
-      vec4 sample = vec4(texture2D(MaterialTexture, textCoo).rgb * 0.3, 0.2);
-      vec3 a = texture2D(NormalTexture, textCoo).rgb;
-      if (abs(a.r) + abs(a.g) + abs(a.b) > 0.0)
-        sample *= 0.0;
-      sample *= illuminationDecay * weight * 100.0 / float(NUM_SAMPLES);
-      gl_FragColor += sample;
-      illuminationDecay *= decay;
+    textCoo -= deltaTextCoord;
+    vec4 sample = vec4(texture2D(MaterialTexture, textCoo).rgb * 0.3, 0.2);
+    vec3 a = texture2D(NormalTexture, textCoo).rgb;
+    if (abs(a.r) + abs(a.g) + abs(a.b) > 0.0)
+      sample *= 0.0;
+    sample *= illuminationDecay * weight * 100.0 / float(NUM_SAMPLES);
+    gl_FragColor += sample;
+    illuminationDecay *= decay;
   }
 
   gl_FragColor *= exposure * angleFactor;

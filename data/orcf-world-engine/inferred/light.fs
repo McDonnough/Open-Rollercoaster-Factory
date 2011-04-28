@@ -7,7 +7,8 @@ uniform sampler2D NormalTexture;
 uniform sampler2D ShadowTexture;
 uniform sampler2D MaterialTexture;
 uniform int UseShadow;
-uniform int Samples;
+
+const int Samples = {{{owe.shadows.light.blur}}};
 
 // IF [ EQ owe.shadows.light 1 ]
 vec2 ProjectShadowVertex(vec3 vector) {
@@ -50,12 +51,12 @@ void main(void) {
 
 // IF [ EQ owe.shadows.light 1 ]
   if (UseShadow == 1 && attenuation > 0.01 && dotprod > 0.0) {
-  // IF [ NEQ owe.shadows.light.blur 1 ]
+  // IF [ EQ owe.shadows.light.blur 0 ]
     vec4 ShadowColor = texture2D(ShadowTexture, ProjectShadowVertex(-Light));
     if (dot(Light, Light) > ShadowColor.a * ShadowColor.a * 1.05 * 1.05)
       factor -= 2.0 * ShadowColor.rgb;
   // END
-  // IF [ EQ owe.shadows.light.blur 1 ]
+  // IF [ NEQ owe.shadows.light.blur 0 ]
     int SampleCount = (Samples * 2 + 1) * (Samples * 2 + 1);
     vec3 bvrl = 0.025 * normalize(cross(-Light, vec3(0.0, 1.0, 0.0)));
     vec3 bvud = 0.025 * normalize(cross(-Light, bvrl));

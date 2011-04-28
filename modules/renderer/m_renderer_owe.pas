@@ -385,8 +385,6 @@ begin
   fSSAOShader.UniformI('GeometryTexture', 0);
   fSSAOShader.UniformI('NormalTexture', 1);
   fSSAOShader.UniformI('EmissionTexture', 2);
-  fSSAOShader.UniformI('SamplesFirstRing', SSAOSamples);
-  fSSAOShader.UniformI('Rings', SSAORings);
   fSSAOShader.UniformI('ScreenSize', ResX, ResY);
 
   fLightShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/light.fs');
@@ -394,7 +392,6 @@ begin
   fLightShader.UniformI('NormalTexture', 1);
   fLightShader.UniformI('ShadowTexture', 2);
   fLightShader.UniformI('MaterialTexture', 3);
-  fLightShader.UniformI('Samples', LightShadowBlurSamples);
 
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
@@ -884,7 +881,6 @@ begin
     SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
     SunShader.UniformF('ShadowSize', ShadowSize);
     SunShader.UniformF('ShadowOffset', ShadowOffset);
-    SunShader.UniformI('BlurSamples', ShadowBlurSamples);
     SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
     DrawFullscreenQuad;
     SunShader.Unbind;
@@ -1387,12 +1383,14 @@ begin
   fWaterRefractAutoplants := GetConfVal('water.refract.autoplants') = '1';
 
   ModuleManager.ModShdMng.SetVar('owe.samples', fFSAASamples);
+  ModuleManager.ModShdMng.SetVar('owe.shadows.blur', fShadowBlurSamples);
+  ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', fLightShadowBlurSamples);
+  ModuleManager.ModShdMng.SetVar('owe.ssao.rings', fSSAORings);
+  ModuleManager.ModShdMng.SetVar('owe.ssao.ringsamples', fSSAOSamples);
   ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 0);
   ModuleManager.ModShdMng.SetVar('owe.shadows.light', 0);
   ModuleManager.ModShdMng.SetVar('owe.ssao', 0);
   ModuleManager.ModShdMng.SetVar('owe.ssao.indirectlighting', 0);
-  ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 0);
-  ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 0);
   ModuleManager.ModShdMng.SetVar('owe.gamma', 0);
@@ -1406,10 +1404,6 @@ begin
     if fUseScreenSpaceIndirectLighting then
       ModuleManager.ModShdMng.SetVar('owe.ssao.indirectlighting', 1);
     end;
-  if fShadowBlurSamples > 0 then
-    ModuleManager.ModShdMng.SetVar('owe.shadows.blur', 1);
-  if fLightShadowBlurSamples > 0 then
-    ModuleManager.ModShdMng.SetVar('owe.shadows.light.blur', 1);
   if fTerrainTesselationDistance > 0 then
     ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 1);
   if fTerrainBumpmapDistance > 0 then

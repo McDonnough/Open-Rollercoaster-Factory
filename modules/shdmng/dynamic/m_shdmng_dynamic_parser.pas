@@ -148,11 +148,20 @@ procedure TShaderFile.Preprocess;
     i, j: Integer;
     BlockCount: Integer;
     mStart, mEnd: Integer;
+    OpenBraceCount: Integer;
+    RecordConstMode: Boolean;
+    fConstName: String;
+    fConstModeStart: Integer;
   begin
     mStart := -1;
     mEnd := -1;
     BlockCount := 0;
+    OpenBraceCount := 0;
+    RecordConstMode := False;
+    fConstName := '';
+    fConstModeStart := tStart;
     for i := tStart to tEnd do
+      begin
       if (fTokens[i].TType = ttSingleLineComment) and (SubString(fTokens[i].Value, 1, 6) = '// IF ') then
         begin
         if BlockCount = 0 then
@@ -177,6 +186,43 @@ procedure TShaderFile.Preprocess;
             CheckBlock(mStart + 1, mEnd - 1);
           end;
         end;
+      if RecordConstMode then
+        begin
+        if (fTokens[i].TType = ttBrace) and (fTokens[i].Value = '}') then
+          begin
+          dec(OpenBraceCount);
+          if OpenBraceCount = 0 then
+            begin
+            for j := fConstModeStart to i - 1 do
+              begin
+              fTokens[j].Value := '';
+              fTokens[j].TType := ttUnknown;
+              end;
+            fTokens[i].Value := ModuleManager.ModShdMng.Vars[fConstName];
+            fTokens[i].TType := ttNumber;
+            RecordConstMode := False;
+            end;
+          end
+        else
+          fConstName := fConstName + fTokens[i].Value;
+        end
+      else
+        begin
+        if (fTokens[i].TType = ttBrace) and (fTokens[i].Value = '{') then
+          begin
+          if OpenBraceCount = 0 then
+            fConstModeStart := i;
+          inc(OpenBraceCount);
+          if OpenBraceCount = 3 then
+            begin
+            RecordConstMode := True;
+            fConstName := '';
+            end;
+          end
+        else
+          OpenBraceCount := 0;
+        end;
+      end;
   end;
 begin
   CheckBlock(0, high(fTokens));

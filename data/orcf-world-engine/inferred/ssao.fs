@@ -5,10 +5,11 @@ uniform sampler2D NormalTexture;
 uniform sampler2D EmissionTexture;
 
 uniform float RandomOffset;
-uniform int SamplesFirstRing;
-uniform int Rings;
 uniform ivec2 ScreenSize;
 uniform float FSAASamples;
+
+const int SamplesFirstRing = {{{owe.ssao.ringsamples}}};
+const int Rings = {{{owe.ssao.rings}}};
 
 void main(void) {
   float value = 0.0;

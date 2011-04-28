@@ -358,7 +358,6 @@ var
         Pixels[j * W + i, 1] := Park.pTerrain.ExactWaterMap[X + I, Y + J];
         Pixels[j * W + i, 2] := Park.pTerrain.ExactHeightMap[X + I, Y + J];
         end;
-    writeln(X, ' ', Y, ' ', W, ' ', H);
     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, W, H, GL_RGB, GL_UNSIGNED_SHORT, @Pixels[0, 0]);
     setLength(Pixels, 0);
   end;

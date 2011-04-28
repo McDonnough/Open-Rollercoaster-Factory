@@ -278,7 +278,7 @@ begin
 
   if BloomFactor > 0 then
     begin
-    fBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
+    fBloomBuffer := TFBO.Create(Round(ResX * SSAOSize), Round(ResY * SSAOSize), false);
     fBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);    // Pseudo-HDR/Color Bleeding
     fBloomBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fBloomBuffer.Unbind;
@@ -298,7 +298,7 @@ begin
 
   if UseSunRays then
     begin
-    fSunRayBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), false);
+    fSunRayBuffer := TFBO.Create(Round(ResX * SSAOSize * 0.5), Round(ResY * SSAOSize * 0.5), false);
     fSunRayBuffer.AddTexture(GL_RGBA, GL_LINEAR, GL_LINEAR);  // Color overlay
     fSunRayBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fSunRayBuffer.Unbind;
@@ -308,7 +308,7 @@ begin
 
   if BloomFactor > 0 then
     begin
-    fTmpBloomBuffer := TFBO.Create(Round(ResX * ShadowBufferSamples), Round(ResY * ShadowBufferSamples), true);
+    fTmpBloomBuffer := TFBO.Create(Round(ResX * SSAOSize), Round(ResY * SSAOSize), true);
     fTmpBloomBuffer.AddTexture(GL_RGB, GL_LINEAR, GL_LINEAR);
     fTmpBloomBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fTmpBloomBuffer.Unbind;
@@ -1167,7 +1167,7 @@ begin
     fBloomBlurShader.Bind;
 
     // Abuse shadow buffer here for blurring - possible because it is the same size
-    fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width, 0.0);
+    fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width * SSAOSize, 0.0);
     BloomBuffer.Textures[0].Bind(0);
 
     fTmpBloomBuffer.Bind;
@@ -1175,7 +1175,7 @@ begin
     fTmpBloomBuffer.Unbind;
 
     //...and use the bloom buffer again
-    fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height);
+    fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height * SSAOSize);
     fTmpBloomBuffer.Textures[0].Bind(0);
 
     BloomBuffer.Bind;

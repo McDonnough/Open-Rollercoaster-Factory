@@ -327,7 +327,7 @@ procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
   Pixel: Array[0..2] of Word;
   HasBlock: Array of Array of Boolean;
-  i, j, k: Integer;
+  i, j, k, x, y, h, w: Integer;
   Radius1, Radius2, Random1, Random2: Single;
   Center: TVector3D;
 
@@ -336,13 +336,31 @@ var
     fTerrainMap.Bind(0);
   end;
 
-  procedure UpdateVertex(X, Y: Word);
-  begin
-    Pixel[0] := Park.pTerrain.ExactTexMap[X, Y];
-    Pixel[1] := Park.pTerrain.ExactWaterMap[X, Y];
-    Pixel[2] := Park.pTerrain.ExactHeightMap[X, Y];
+//   procedure UpdateVertex(X, Y: Word);
+//   begin
+//     Pixel[0] := Park.pTerrain.ExactTexMap[X, Y];
+//     Pixel[1] := Park.pTerrain.ExactWaterMap[X, Y];
+//     Pixel[2] := Park.pTerrain.ExactHeightMap[X, Y];
+// 
+//     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGB, GL_UNSIGNED_SHORT, @Pixel[0]);
+//   end;
 
-    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGB, GL_UNSIGNED_SHORT, @Pixel[0]);
+  procedure UpdateQuad(X, Y, W, H: Word);
+  var
+    Pixels: Array of Array[0..2] of Word;
+    i, j: Integer;
+  begin
+    setLength(Pixels, W * H);
+    for i := 0 to W - 1 do
+      for j := 0 to H - 1 do
+        begin
+        Pixels[j * W + i, 0] := Park.pTerrain.ExactTexMap[X + I, Y + J];
+        Pixels[j * W + i, 1] := Park.pTerrain.ExactWaterMap[X + I, Y + J];
+        Pixels[j * W + i, 2] := Park.pTerrain.ExactHeightMap[X + I, Y + J];
+        end;
+    writeln(X, ' ', Y, ' ', W, ' ', H);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, W, H, GL_RGB, GL_UNSIGNED_SHORT, @Pixels[0, 0]);
+    setLength(Pixels, 0);
   end;
 
   procedure EndUpdate;
@@ -775,21 +793,36 @@ begin
           end;
 
     StartUpdate;
-    for i := 0 to Park.pTerrain.SizeX - 1 do
-      for j := 0 to Park.pTerrain.SizeY - 1 do
-        UpdateVertex(I, J);
+//     for i := 0 to Park.pTerrain.SizeX - 1 do
+//       for j := 0 to Park.pTerrain.SizeY - 1 do
+//         UpdateVertex(I, J);
+    UpdateQuad(0, 0, Park.pTerrain.SizeX, Park.pTerrain.SizeY);
     EndUpdate;
     end;
 
   if (Data <> nil) and ((Event = 'TTerrain.Changed') or (Event = 'TTerrain.ChangedTexmap') or (Event = 'TTerrain.ChangedWater')) then
     begin
     k := Integer(Data^);
-    StartUpdate;
-    for i := 0 to k - 1 do
-      UpdateVertex(Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^), Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
-    EndUpdate;
-    if Event <> 'TTerrain.ChangedTexmap' then
-      fCanWork := True;
+    if k > 0 then
+      begin
+      x := Park.pTerrain.SizeX + 1; y := Park.pTerrain.SizeY + 1; w := -1; h := -1;
+      StartUpdate;
+
+      for i := 0 to k - 1 do
+        begin
+        X := Min(X, Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^));
+        W := Max(X, Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^));
+        Y := Min(Y, Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
+        H := Max(H, Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
+        end;
+
+      if (X < Park.pTerrain.SizeX) and (Y < Park.pTerrain.SizeY) and (W > -1) and (H > -1) then
+        UpdateQuad(X, Y, W - X + 1, H - Y + 1);
+        
+      EndUpdate;
+      if Event <> 'TTerrain.ChangedTexmap' then
+        fCanWork := True;
+      end;
     end;
 
 end;

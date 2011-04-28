@@ -336,14 +336,14 @@ var
     fTerrainMap.Bind(0);
   end;
 
-//   procedure UpdateVertex(X, Y: Word);
-//   begin
-//     Pixel[0] := Park.pTerrain.ExactTexMap[X, Y];
-//     Pixel[1] := Park.pTerrain.ExactWaterMap[X, Y];
-//     Pixel[2] := Park.pTerrain.ExactHeightMap[X, Y];
-// 
-//     glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGB, GL_UNSIGNED_SHORT, @Pixel[0]);
-//   end;
+  procedure UpdateVertex(X, Y: Word);
+  begin
+    Pixel[0] := Park.pTerrain.ExactTexMap[X, Y];
+    Pixel[1] := Park.pTerrain.ExactWaterMap[X, Y];
+    Pixel[2] := Park.pTerrain.ExactHeightMap[X, Y];
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, 1, 1, GL_RGB, GL_UNSIGNED_SHORT, @Pixel[0]);
+  end;
 
   procedure UpdateQuad(X, Y, W, H: Word);
   var
@@ -804,19 +804,20 @@ begin
     k := Integer(Data^);
     if k > 0 then
       begin
-      x := Park.pTerrain.SizeX + 1; y := Park.pTerrain.SizeY + 1; w := -1; h := -1;
+//       x := Park.pTerrain.SizeX + 1; y := Park.pTerrain.SizeY + 1; w := -1; h := -1;
       StartUpdate;
 
       for i := 0 to k - 1 do
         begin
-        X := Min(X, Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^));
-        W := Max(X, Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^));
-        Y := Min(Y, Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
-        H := Max(H, Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
+        UpdateVertex(Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^), Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
+//         X := Min(X, Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^));
+//         W := Max(X, Integer((Data + 2 * sizeof(Integer) * i + sizeof(Integer))^));
+//         Y := Min(Y, Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
+//         H := Max(H, Integer((Data + 2 * sizeof(Integer) * i + 2 * sizeof(Integer))^));
         end;
 
-      if (X < Park.pTerrain.SizeX) and (Y < Park.pTerrain.SizeY) and (W > -1) and (H > -1) then
-        UpdateQuad(X, Y, W - X + 1, H - Y + 1);
+//       if (X < Park.pTerrain.SizeX) and (Y < Park.pTerrain.SizeY) and (W > -1) and (H > -1) then
+//         UpdateQuad(X, Y, W - X + 1, H - Y + 1);
         
       EndUpdate;
       if Event <> 'TTerrain.ChangedTexmap' then

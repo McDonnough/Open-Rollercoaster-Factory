@@ -52,8 +52,6 @@ var
       CTimer: TTimer(Component).Render;
       CImage: TImage(Component).Render;
       CCheckBox: TCheckBox(Component).Render;
-    else
-      Component.Render;
       end;
     glPushMatrix;
     glTranslatef(Round(Component.Left), Round(Component.Top), 1);

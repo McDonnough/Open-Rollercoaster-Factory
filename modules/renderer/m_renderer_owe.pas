@@ -328,7 +328,7 @@ begin
 
   if UseSunShadows then
     begin
-    fSunShadowBuffer := TFBO.Create(Round(2048 * ShadowBufferSamples), Round(2048 * ShadowBufferSamples), true);
+    fSunShadowBuffer := TFBO.Create(Round(1024 * ShadowBufferSamples), Round(1024 * ShadowBufferSamples), true);
     fSunShadowBuffer.AddTexture(GL_RGBA32F_ARB, GL_LINEAR, GL_LINEAR);
     fSunShadowBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fSunShadowBuffer.Unbind;
@@ -593,7 +593,7 @@ var
     glEnd;
   end;
 var
-  MX, MY: Single;
+  MX, MY, hdiff: Single;
   i, ResX, ResY: Integer;
   Coord: TVector4D;
 begin
@@ -804,7 +804,8 @@ begin
     begin
     glDisable(GL_CULL_FACE);
     fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
-    fShadowSize := 50 + 2 * (fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
+    hdiff := fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight;
+    fShadowSize := 50 * Power(0.9, hdiff) + (3 - abs(dotProduct(Vector(0, 1, 0), Normalize(Vector3D(RSky.Sun.Position))))) * hdiff;
     fShadowOffset.Y := 0.5 * (fShadowOffset.Y + RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
 
     fSunShadowBuffer.Bind;
@@ -1162,7 +1163,6 @@ begin
 
     fBloomBlurShader.Bind;
 
-    // Abuse shadow buffer here for blurring - possible because it is the same size
     fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width * SSAOSize, 0.0);
     BloomBuffer.Textures[0].Bind(0);
 
@@ -1170,7 +1170,6 @@ begin
     DrawFullscreenQuad;
     fTmpBloomBuffer.Unbind;
 
-    //...and use the bloom buffer again
     fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height * SSAOSize);
     fTmpBloomBuffer.Textures[0].Bind(0);
 

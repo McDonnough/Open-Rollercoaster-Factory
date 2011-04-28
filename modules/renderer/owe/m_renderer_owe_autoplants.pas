@@ -63,6 +63,9 @@ begin
       fCanWork := false;
       fWorking := true;
       for i := 0 to high(fPositions) do
+        begin
+        if i mod 100 = 0 then
+          sleep(1);
         if (fPositions[i].Z = -1) or (VecLengthNoRoot(Vector2D(fPositions[i]) - Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z)) > ModuleManager.ModRenderer.AutoplantDistance * ModuleManager.ModRenderer.AutoplantDistance) then
           begin
           fAngle := Random * 2 * 3.142;
@@ -71,6 +74,7 @@ begin
           if (Park.pTerrain.TexMap[fPositions[i].X, fPositions[i].Y] <> fMaterialID) or (Park.pTerrain.TexMap[fPositions[i].X + 3.2 * sin(fPositions[i].Z), fPositions[i].Y + 3.2 * cos(fPositions[i].Z)] <> fMaterialID) then
             fPositions[i].Z := -2;
           end;
+        end;
       fWorking := false;
       end
     else

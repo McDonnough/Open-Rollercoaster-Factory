@@ -10,7 +10,5 @@ void main(void) {
   float HDRLighting = length(HDRAverage) / 1.73;
   float HDRLightingFactor = 1.0 / (HDRLighting * HDRLighting + 0.5) / 1.5;
   gl_FragColor = texture2D(Tex, gl_TexCoord[0].xy) * HDRLightingFactor;
-  gl_FragColor.r = (pow(15.0, gl_FragColor.r - 2.0));
-  gl_FragColor.g = (pow(15.0, gl_FragColor.g - 2.0));
-  gl_FragColor.b = (pow(15.0, gl_FragColor.b - 2.0));
+  gl_FragColor.rgb = vec3(pow(15.0, gl_FragColor.r - 2.0), pow(15.0, gl_FragColor.g - 2.0), pow(15.0, gl_FragColor.b - 2.0));
 }

@@ -82,8 +82,10 @@ procedure TObjectManager.Test;
 begin
   EventManager.AddCallback('TResource.FinishedLoading:scenery/test.ocf/object', @AddTestObject);
   EventManager.AddCallback('TResource.FinishedLoading:scenery/test2.ocf/object', @AddTestObject);
+  EventManager.AddCallback('TResource.FinishedLoading:scenery/test/moep.ocf/object', @AddTestObject);
   TObjectResource.Get('scenery/test.ocf/object');
   TObjectResource.Get('scenery/test2.ocf/object');
+  TObjectResource.Get('scenery/test/moep.ocf/object');
 end;
 
 constructor TObjectManager.Create;

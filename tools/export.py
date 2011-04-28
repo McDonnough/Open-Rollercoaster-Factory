@@ -154,7 +154,7 @@ def lampXML(lamp):
   # object data for lamp
   objLamp = bpy.data.objects[lamp.name]
   
-  result = '<color>\n'
+  result = '<light>\n'
   result += '  <name>{0}</name>\n'.format(lamp.name)
   result += '  <position x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" />\n'.format(objLamp.matrix_local[3][0], objLamp.matrix_local[3][2], objLamp.matrix_local[3][1])
   result += '  <color r="{0:.3f}" g="{1:.3f}" b="{2:.3f}" />\n'.format(lamp.color[0], lamp.color[1], lamp.color[2])
@@ -167,7 +167,7 @@ def lampXML(lamp):
   else:
     result += '  <castshadows>true</castshadows>\n'
   
-  result += '</color>\n'
+  result += '</light>\n'
   return result
 
 def saveLamp(lamp, directory):
@@ -282,7 +282,7 @@ class mVertex:
       result = '        <vertex usefacenormal="true">\n'
     else:
       result = '        <vertex usefacenormal="false">\n'
-    result += '          <position x="{0:.3f}" y="{1:.3f}" z="{1:.3f}" />\n'.format(self.position[0], self.position[1], self.position[2])
+    result += '          <position x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" />\n'.format(self.position[0], self.position[2], self.position[1])
     result += '        </vertex>\n'
     return result
 
@@ -301,9 +301,9 @@ class mFace:
 
   def __repr__(self):
     result = '        <face>\n'
-    result += '          <index vid="{0}" tid="{1}" />\n'.format(self.vindices[0], self.tindices[0])
-    result += '          <index vid="{0}" tid="{1}" />\n'.format(self.vindices[1], self.tindices[1])
     result += '          <index vid="{0}" tid="{1}" />\n'.format(self.vindices[2], self.tindices[2])
+    result += '          <index vid="{0}" tid="{1}" />\n'.format(self.vindices[1], self.tindices[1])
+    result += '          <index vid="{0}" tid="{1}" />\n'.format(self.vindices[0], self.tindices[0])
     result += '        </face>\n'
     return result
 
@@ -328,27 +328,22 @@ def geometryXML(mesh):
     t.position = tv.uv3
     tmpTexVertices.append(t)
 
+  for vert in mesh.vertices:
+    v = mVertex()
+    v.usefacenormal = True
+    v.position = vert.co
+    tmpVertices.append(v)
+
   c = 0
   for face in mesh.faces:
     f = mFace()
     f.tindices = [3 * c, 3 * c + 1, 3 * c + 2]
-    f.vindices = [3 * c, 3 * c + 1, 3 * c + 2]
+    f.vindices = [face.vertices[0], face.vertices[1], face.vertices[2]]
     tmpFaces.append(f)
     
-    v = mVertex()
-    v.usefacenormal = not(face.use_smooth)
-    v.position = mesh.vertices[face.vertices[0]].co
-    tmpVertices.append(v)
-
-    v = mVertex()
-    v.usefacenormal = not(face.use_smooth)
-    v.position = mesh.vertices[face.vertices[1]].co
-    tmpVertices.append(v)
-
-    v = mVertex()
-    v.usefacenormal = not(face.use_smooth)
-    v.position = mesh.vertices[face.vertices[2]].co
-    tmpVertices.append(v)
+    tmpVertices[face.vertices[0]].usefacenormal &= not(face.use_smooth)
+    tmpVertices[face.vertices[1]].usefacenormal &= not(face.use_smooth)
+    tmpVertices[face.vertices[2]].usefacenormal &= not(face.use_smooth)
 
     c += 1
 
@@ -414,7 +409,7 @@ def saveObject(directory):
   print('Saving meshes and armatures to {0}'.format(filepath))
   objectfile = open(filepath, mode='w', encoding='Latin-1')
   objectfile.write(objectXML())
-  objectfile.close()
+  mResource(None, 'xmlobject', filepath)
 
 
 def resourceTableXML():
@@ -443,12 +438,9 @@ def runOCFgen(fileName):
   ocfgen_exe = '/home/philip/Delphi/orcf/tools/ocfgen'
   if (ocfgen_exe != ''):
     print('Generating OCF file {0}'.format(fileName))
-    cmd = ocfgen_exe
+    cmd = ocfgen_exe + ' -x {0}'.format(os.path.splitext(fileName)[0] + '.xml')
     for resource in localResources:
-      if (resource.fmt == 'xmlobject'):
-        cmd += ' -x {0}'.format(resource.fileName)
-      else:
-        cmd += ' -b {0}'.format(resource.fileName)
+      cmd += ' -b {0}'.format(resource.fileName)
     cmd += ' -o {0}'.format(fileName)
     os.system(cmd)
   return True
@@ -457,8 +449,6 @@ def writeFiles(fileName):
   global fullFileName
   fullFileName = fileName
   directory = os.path.dirname(fileName) + '/'
-
-  mResource(None, 'xmlobject', os.path.splitext(fullFileName)[0] + ".xml")
 
   # Save textures as TGA files by name
   for texture in bpy.data.textures:

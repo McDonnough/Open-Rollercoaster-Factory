@@ -439,15 +439,15 @@ begin
         fBonePathResourceAssocs[i].PathResource := TPathResource.Get(fBonePathResourceAssocs[i].PathResourceName);
         end;
         
-    j := 0;
-    for i := 0 to high(fMaterialResources) do
-      begin
-      while fMaterialDefined[j] do
-        inc(j);
-      EventManager.AddCallback('TResource.FinishedLoading:' + fMaterialResourceNames[j], @DepLoaded);
-      fFinalMaterialResourceNames[i] := fMaterialResourceNames[j];
-      fMaterialResources[i] := TMaterialResource.Get(fMaterialResourceNames[j]);
-      end;
+    i := 0;
+    for j := 0 to high(fMaterialDefined) do
+      if not fMaterialDefined[j] then
+        begin
+        EventManager.AddCallback('TResource.FinishedLoading:' + fMaterialResourceNames[j], @DepLoaded);
+        fFinalMaterialResourceNames[i] := fMaterialResourceNames[j];
+        fMaterialResources[i] := TMaterialResource.Get(fMaterialResourceNames[j]);
+        inc(i);
+        end;
     end;
 end;
 

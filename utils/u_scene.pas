@@ -278,7 +278,10 @@ begin
   Result.Name := Name;
   Result.Updated := Updated;
   Result.ParentArmature := TheArmature;
-  Result.PathConstraint.Path := PathConstraint.Path.Duplicate;
+  if PathConstraint.Path <> nil then
+    Result.PathConstraint.Path := PathConstraint.Path.Duplicate
+  else
+    Result.PathConstraint.Path := nil;
   Result.PathConstraint.Progress := PathConstraint.Progress;
   Result.PathConstraint.FollowBanking := PathConstraint.FollowBanking;
   Result.PathConstraint.FollowOrientation := PathConstraint.FollowOrientation;
@@ -482,7 +485,10 @@ begin
 
   Result.Matrix := Matrix;
   Result.CalculatedMatrix := CalculatedMatrix;
-  Result.Material := TheObject.Materials[Material.MaterialID];
+  if Material = nil then
+    Result.Material := nil
+  else
+    Result.Material := TheObject.Materials[Material.MaterialID];
 
   SetLength(Result.LightSources, length(LightSources));
   for i := 0 to high(LightSources) do

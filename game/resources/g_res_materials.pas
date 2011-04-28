@@ -62,7 +62,9 @@ begin
     CurrElement := TDOMElement(Doc.GetElementsByTagName('material')[0].FirstChild);
     while CurrElement <> nil do
       begin
-      if CurrElement.TagName = 'texture' then
+      if CurrElement.TagName = 'name' then
+        fMaterial.Name := CurrElement.FirstChild.NodeValue
+      else if CurrElement.TagName = 'texture' then
         begin
         inc(fDepCount);
         fTextureResourceName := CurrElement.GetAttribute('resource:name');

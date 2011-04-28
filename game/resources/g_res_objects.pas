@@ -298,7 +298,7 @@ procedure TObjectResource.LoadArmature(Element: TDOMElement);
 var
   Armature: TArmature;
 
-  procedure AddBone(TheElement: TDOMElement; Parent: TBone);
+  function AddBone(TheElement: TDOMElement; Parent: TBone): TBone;
   var
     CurrElement: TDOMElement;
     Bone: TBone;
@@ -317,6 +317,8 @@ var
       begin
       if CurrElement.TagName = 'name' then
         Bone.Name := CurrElement.FirstChild.NodeValue
+      else if CurrElement.TagName = 'bone' then
+        Bone.AddChild(AddBone(CurrElement, Bone))
       else if CurrElement.TagName = 'position' then
         Bone.SourcePosition := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0), StrToFloatWD(CurrElement.GetAttribute('y'), 0), StrToFloatWD(CurrElement.GetAttribute('z'), 0))
       else if CurrElement.TagName = 'matrix' then
@@ -332,6 +334,7 @@ var
 
       CurrElement := TDOMElement(CurrElement.NextSibling);
       end;
+    Result := Bone
   end;
 
 var

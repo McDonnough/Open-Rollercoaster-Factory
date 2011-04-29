@@ -3,7 +3,7 @@ unit u_scene;
 interface
 
 uses
-  SysUtils, Classes, u_math, u_vectors, m_texmng_class, u_pathes;
+  SysUtils, Classes, u_math, u_vectors, m_texmng_class, u_pathes, u_scripts;
 
 type
   TLightSource = class

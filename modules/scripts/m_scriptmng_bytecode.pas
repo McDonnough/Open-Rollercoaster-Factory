@@ -3,10 +3,16 @@ unit m_scriptmng_bytecode;
 interface
 
 uses
-  SysUtils, Classes, u_scripts, m_scriptmng_class;
+  SysUtils, Classes, u_scripts, m_scriptmng_class, m_scriptmng_bytecode_compiler, m_scriptmng_bytecode_vm, m_scriptmng_bytecode_classes;
 
 type
   TModuleScriptManagerBytecode = class(TModuleScriptManagerClass)
+    protected
+      fCodeHandles: Array of TBytecodeScriptHandle;
+      fScriptHandles: Array of TScriptInstanceHandle;
+      fLastUsedCode: TBytecodeScriptHandle;
+      fLastUsedScript: TScriptInstanceHandle;
+      procedure SetScriptHandles(Script: TScript);
     public
       procedure SetInVar(Script: TScript; Name: String; Location: Pointer);
       procedure SetInOutVar(Script: TScript; Name: String; Location: Pointer);
@@ -20,28 +26,94 @@ type
 
 implementation
 
+procedure TModuleScriptManagerBytecode.SetScriptHandles(Script: TScript);
+var
+  i: Integer;
+begin
+  if fLastUsedCode <> nil then
+    if fLastUsedCode.Code <> Script.Code then
+      fLastUsedCode := nil;
+  if fLastUsedCode = nil then
+    for i := 0 to high(fCodeHandles) do
+      if fCodeHandles[i].Code = Script.Code then
+        fLastUsedCode := fCodeHandles[i];
+
+  if fLastUsedScript <> nil then
+    if fLastUsedScript.Script <> Script then
+      fLastUsedScript := nil;
+  if fLastUsedScript = nil then
+    for i := 0 to high(fScriptHandles) do
+      if fScriptHandles[i].Script = Script then
+        fLastUsedScript := fScriptHandles[i];
+end;
+
 procedure TModuleScriptManagerBytecode.SetInVar(Script: TScript; Name: String; Location: Pointer);
 begin
+  SetScriptHandles(Script);
+  Pointer((fLastUsedScript.Stack.FirstByte + fLastUsedCode.UniformLocations[Name])^) := Location;
 end;
 
 procedure TModuleScriptManagerBytecode.SetInOutVar(Script: TScript; Name: String; Location: Pointer);
 begin
+  SetScriptHandles(Script);
+  Pointer((fLastUsedScript.Stack.FirstByte + fLastUsedCode.UniformLocations[Name])^) := Location;
 end;
 
 procedure TModuleScriptManagerBytecode.Execute(Script: TScript);
 begin
+  SetScriptHandles(Script);
+  fLastUsedScript.Execute;
 end;
 
 procedure TModuleScriptManagerBytecode.AddScript(Script: TScript);
 begin
+  SetScriptHandles(Script);
+  if fLastUsedScript <> nil then
+    exit;
+  if fLastUsedCode = nil then
+    begin
+    setLength(fCodeHandles, length(fCodeHandles) + 1);
+    fCodeHandles[high(fCodeHandles)] := TBytecodeScriptHandle.Create;
+    fCodeHandles[high(fCodeHandles)].Code := Script.Code;
+    fCodeHandles[high(fCodeHandles)].Compile;
+    end;
+  SetLength(fScriptHandles, length(fScriptHandles) + 1);
+  fScriptHandles[high(fScriptHandles)] := TScriptInstanceHandle.Create;
+  fScriptHandles[high(fScriptHandles)].Script := Script;
+  fScriptHandles[high(fScriptHandles)].Init;
+  SetScriptHandles(Script);
+  fScriptHandles[high(fScriptHandles)].CodeHandle := fLastUsedCode;
 end;
 
 procedure TModuleScriptManagerBytecode.DestroyScript(Script: TScript);
+var
+  i: Integer;
 begin
+  fLastUsedScript := nil;
+  for i := 0 to high(fScriptHandles) do
+    if fScriptHandles[i].Script = Script then
+      begin
+      fScriptHandles[i].Free;
+      fScriptHandles[i] := fScriptHandles[high(fScriptHandles)];
+      setLength(fScriptHandles, length(fScriptHandles) - 1);
+      exit;
+      end;
 end;
 
 procedure TModuleScriptManagerBytecode.DestroyCode(Code: TScriptCode);
+var
+  i: Integer;
 begin
+  fLastUsedCode := nil;
+  fLastUsedScript := nil;
+  for i := 0 to high(fCodeHandles) do
+    if fCodeHandles[i].Code = Code then
+      begin
+      fCodeHandles[i].Free;
+      fCodeHandles[i] := fCodeHandles[high(fCodeHandles)];
+      setLength(fCodeHandles, length(fCodeHandles) - 1);
+      exit;
+      end;
 end;
 
 procedure TModuleScriptManagerBytecode.CheckModConf;
@@ -52,6 +124,9 @@ constructor TModuleScriptManagerBytecode.Create;
 begin
   fModName := 'ScriptManagerBytecode';
   fModType := 'ScriptManager';
+
+  fLastUsedCode := nil;
+  fLastUsedScript := nil;
 end;
 
 end.

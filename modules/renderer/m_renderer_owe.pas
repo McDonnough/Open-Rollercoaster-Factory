@@ -806,6 +806,7 @@ begin
     fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
     hdiff := fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight;
     fShadowSize := 50 * Power(0.9, hdiff) + (3 - abs(dotProduct(Vector(0, 1, 0), Normalize(Vector3D(RSky.Sun.Position))))) * hdiff;
+    fShadowOffset := fShadowOffset + Normalize(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(RSky.Sun.Position)) * 20 * DotProduct(Normalize(fVecToFront), Normalize(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(RSky.Sun.Position)));
     fShadowOffset.Y := 0.5 * (fShadowOffset.Y + RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
 
     fSunShadowBuffer.Bind;

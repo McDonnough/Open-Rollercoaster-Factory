@@ -84,10 +84,6 @@ def saveTexture(texture, directory):
   '''
   if (texture.type == 'IMAGE'):
     if (texture.library == None):
-      texture.image.filepath = directory + os.path.basename(texture.name) + '.tga'
-      texture.image.file_format = 'TARGA'
-      print('Saving texture {0} as {1}'.format(texture.name, texture.image.filepath))
-      texture.image.save()
       mResource(texture, 'tga', texture.image.filepath)
     else:
       print('Not saving linked texture {0}'.format(texture.name))
@@ -308,6 +304,8 @@ class mFace:
     return result
 
 def geometryXML(mesh):
+  objMesh = bpy.data.objects[mesh.name]
+
   tmpVertices = []
   tmpTexVertices = []
   tmpFaces = []
@@ -332,6 +330,9 @@ def geometryXML(mesh):
     v = mVertex()
     v.usefacenormal = True
     v.position = vert.co
+    v.position = [vert.co[0] * objMesh.matrix_local[0][0] + vert.co[1] * objMesh.matrix_local[1][0] + vert.co[2] * objMesh.matrix_local[2][0],
+                  vert.co[0] * objMesh.matrix_local[0][1] + vert.co[1] * objMesh.matrix_local[1][1] + vert.co[2] * objMesh.matrix_local[2][1],
+                  vert.co[0] * objMesh.matrix_local[0][2] + vert.co[1] * objMesh.matrix_local[1][2] + vert.co[2] * objMesh.matrix_local[2][2]]
     tmpVertices.append(v)
 
   c = 0
@@ -374,9 +375,9 @@ def meshXML(mesh):
     if (objLamp.parent == objMesh):
       result += '    <light resource:name="{0}" x="{1:.3f}" y="{2:.3f}" z="{3:.3f}" />\n'.format(getFullResourceName(lamp), objLamp.matrix_local[3][0], objLamp.matrix_local[3][2], objLamp.matrix_local[3][1])
   result += '    <matrix>\n'
-  result += '      <row x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" w="{3:.3f}" />\n'.format(objMesh.matrix_local[0][0], objMesh.matrix_local[2][0], objMesh.matrix_local[1][0], objMesh.matrix_local[3][0])
-  result += '      <row x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" w="{3:.3f}" />\n'.format(objMesh.matrix_local[0][2], objMesh.matrix_local[2][2], objMesh.matrix_local[1][2], objMesh.matrix_local[3][2])
-  result += '      <row x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" w="{3:.3f}" />\n'.format(objMesh.matrix_local[0][1], objMesh.matrix_local[2][1], objMesh.matrix_local[1][1], objMesh.matrix_local[3][1])
+  result += '      <row x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" w="{3:.3f}" />\n'.format(1, 0, 0, objMesh.matrix_local[3][0])
+  result += '      <row x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" w="{3:.3f}" />\n'.format(0, 1, 0, objMesh.matrix_local[3][2])
+  result += '      <row x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" w="{3:.3f}" />\n'.format(0, 0, 1, objMesh.matrix_local[3][1])
   result += '      <row x="{0:.3f}" y="{1:.3f}" z="{2:.3f}" w="{3:.3f}" />\n'.format(objMesh.matrix_local[0][3], objMesh.matrix_local[2][3], objMesh.matrix_local[1][3], objMesh.matrix_local[3][3])
   result += '    </matrix>\n'
   result += '    <mindist>{0:.3f}</mindist>\n'.format(mesh.get('min_dist', -10000))
@@ -443,6 +444,9 @@ def runOCFgen(fileName):
       cmd += ' -b {0}'.format(resource.fileName)
     cmd += ' -o {0}'.format(fileName)
     os.system(cmd)
+    scriptfile = open(os.path.splitext(fileName)[0] + '.sh', mode='w', encoding='Latin-1')
+    scriptfile.write(cmd)
+    scriptfile.close()
   return True
 
 def writeFiles(fileName):
@@ -488,6 +492,9 @@ class EXPORT_OT_ocfl(bpy.types.Operator):
   def execute(self, context):
     global localResources
     localResources = []
+
+    # remove relative file paths
+    bpy.ops.file.make_paths_absolute()
     
     # split all quads to single triangles
     if bpy.context.mode == 'OBJECT':

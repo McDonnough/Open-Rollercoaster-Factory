@@ -143,7 +143,7 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, math;
 
 const
   OBJECT_VBO_VERTEX_OFFSET   =  0 * SizeOf(Single);
@@ -360,8 +360,7 @@ end;
 
 procedure TObjectVBO.setVertex(ID: DWord; Vec: TVector3D);
 begin
-  if VecLengthNoRoot(Vec) > fRadius * fRadius then
-    fRadius := VecLength(Vec);
+  fRadius := Max(fRadius, VecLength(Vec));
   fVertexData[ID].Vertex := Vec;
   if not fVerticesChanged[ID] then
     begin

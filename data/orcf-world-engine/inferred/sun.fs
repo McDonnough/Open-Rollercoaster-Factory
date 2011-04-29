@@ -81,7 +81,7 @@ void main(void) {
     gl_FragData[0].rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
   // END
   // IF [ NEQ owe.ssao 1 ]
-  gl_FragData[0].rgb += (0.3 + 0.7 * max(0.0, dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
+    gl_FragData[0].rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
   // END
   vec4 v = (gl_ModelViewMatrix * vec4(Vertex, 1.0));
   vec3 Eye = normalize(-v.xyz);

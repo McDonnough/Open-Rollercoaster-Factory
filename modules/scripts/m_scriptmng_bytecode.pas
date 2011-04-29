@@ -3,7 +3,9 @@ unit m_scriptmng_bytecode;
 interface
 
 uses
-  SysUtils, Classes, u_scripts, m_scriptmng_class, m_scriptmng_bytecode_compiler, m_scriptmng_bytecode_vm, m_scriptmng_bytecode_classes;
+  SysUtils, Classes, u_scripts, m_scriptmng_class, m_scriptmng_bytecode_compiler, m_scriptmng_bytecode_vm,
+  m_scriptmng_bytecode_classes, m_scriptmng_bytecode_vm_runner, m_scriptmng_bytecode_compiler_assembler,
+  m_scriptmng_bytecode_cmdlist;
 
 type
   TModuleScriptManagerBytecode = class(TModuleScriptManagerClass)
@@ -12,8 +14,14 @@ type
       fScriptHandles: Array of TScriptInstanceHandle;
       fLastUsedCode: TBytecodeScriptHandle;
       fLastUsedScript: TScriptInstanceHandle;
+      fVM: TScriptVM;
+      fASM: TScriptAssembler;
+      fCommandList: TScriptCMDList;
       procedure SetScriptHandles(Script: TScript);
     public
+      property VM: TScriptVM read fVM;
+      property Assembler: TScriptAssembler read fASM;
+      property CommandList: TScriptCMDList read fCommandList;
       procedure SetInVar(Script: TScript; Name: String; Location: Pointer);
       procedure SetInOutVar(Script: TScript; Name: String; Location: Pointer);
       procedure Execute(Script: TScript);
@@ -22,6 +30,7 @@ type
       procedure DestroyCode(Code: TScriptCode);
       procedure CheckModConf;
       constructor Create;
+      destructor Free;
     end;
 
 implementation
@@ -76,6 +85,7 @@ begin
     fCodeHandles[high(fCodeHandles)] := TBytecodeScriptHandle.Create;
     fCodeHandles[high(fCodeHandles)].Code := Script.Code;
     fCodeHandles[high(fCodeHandles)].Compile;
+    fCodeHandles[high(fCodeHandles)].Assemble;
     end;
   SetLength(fScriptHandles, length(fScriptHandles) + 1);
   fScriptHandles[high(fScriptHandles)] := TScriptInstanceHandle.Create;
@@ -118,6 +128,9 @@ end;
 
 procedure TModuleScriptManagerBytecode.CheckModConf;
 begin
+  fCommandList := TScriptCMDList.Create;
+  fVM := TScriptVM.Create;
+  fASM := TScriptAssembler.Create;
 end;
 
 constructor TModuleScriptManagerBytecode.Create;
@@ -127,6 +140,13 @@ begin
 
   fLastUsedCode := nil;
   fLastUsedScript := nil;
+end;
+
+destructor TModuleScriptManagerBytecode.Free;
+begin
+  fASM.Free;
+  fVM.Free;
+  fCommandList.Free;
 end;
 
 end.

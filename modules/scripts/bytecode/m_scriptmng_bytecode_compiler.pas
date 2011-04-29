@@ -9,25 +9,44 @@ type
   TBytecodeScriptHandle = class
     protected
       fFirstByte: Pointer;
-      fByteCode: Array of Byte;
       fFunctionTable: TLocationTable;
       fUniformLocations: TLocationTable;
       fGlobalLocations: TLocationTable;
     public
       Code: TScriptCode;
+      ASMCode: String;
+      ByteCode: Array of Byte;
       property FirstByte: Pointer read fFirstByte;
       property Functions: TLocationTable read fFunctionTable;
       property UniformLocations: TLocationTable read fUniformLocations;
       property GlobalLocations: TLocationTable read fGlobalLocations;
       procedure Compile;
+      procedure Assemble;
       constructor Create;
       destructor Free;
     end;
 
 implementation
 
+uses
+  m_varlist, u_functions;
+
 procedure TBytecodeScriptHandle.Compile;
 begin
+  if SubString(Code.SourceCode, 1, 4) = 'ASM:' then
+    ASMCode := Code.SourceCode;
+//   else
+//     begin
+//     ModuleManager.ModScriptManager.Compiler.Compile(self);
+//     ASMCode := ModuleManager.ModScriptManager.Compiler.Result;
+//     end;
+end;
+
+procedure TBytecodeScriptHandle.Assemble;
+begin
+  ModuleManager.ModScriptManager.Assembler.Assemble(self);
+  fFirstByte := @ByteCode[0];
+  ASMCode := '';
 end;
 
 constructor TBytecodeScriptHandle.Create;
@@ -43,6 +62,7 @@ begin
   fGlobalLocations.Free;
   fUniformLocations.Free;
   fFunctionTable.Free;
+  setLength(ByteCode, 0);
 end;
 
 end.

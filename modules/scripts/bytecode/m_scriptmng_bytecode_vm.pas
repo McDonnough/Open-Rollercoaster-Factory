@@ -11,10 +11,8 @@ type
     protected
       fMainFunction: PtrUInt;
       fStack: TStack;
-      fPC, fSP: PtrUInt;
-      Registers: Array[0..15] of TVector4D;
+      fSP: PtrUInt;
       procedure SetStackPointer(A: PtrUInt); inline;
-      procedure Run;
     public
       CodeHandle: TBytecodeScriptHandle;
       Script: TScript;
@@ -29,21 +27,19 @@ type
 
 implementation
 
-procedure TScriptInstanceHandle.Run;
-begin
-end;
+uses
+  m_varlist;
 
 procedure TScriptInstanceHandle.SetStackPointer(A: PtrUInt);
 begin
   fSP := A;
-  if fSP + 64 >= fStack.Size then
+  if fSP + SizeOf(TMatrix4D) >= fStack.Size then
     fStack.Expand;
 end;
 
 procedure TScriptInstanceHandle.ExecFunction(Name: String);
 begin
-  fPC := CodeHandle.Functions[Name];
-  Run;
+  ModuleManager.ModScriptManager.VM.Run(self, CodeHandle.Functions[Name]);
 end;
 
 procedure TScriptInstanceHandle.Init;
@@ -54,15 +50,13 @@ end;
 
 procedure TScriptInstanceHandle.Execute;
 begin
-  fPC := fMainFunction;
-  Run;
+  ModuleManager.ModScriptManager.VM.Run(self, fMainFunction);
 end;
 
 constructor TScriptInstanceHandle.Create;
 begin
   fStack := TStack.Create;
-  fPC := 0;
-  fSP := 0;
+  fSP := SizeOf(Pointer);
   fMainFunction := 0;
 end;
 

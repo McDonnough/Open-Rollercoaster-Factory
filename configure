@@ -99,7 +99,7 @@ done
 incdirs=""
 
 for i in `find . -type d | grep -v .git`; do
-  incdirs="${incdirs} -Fu$i"
+  incdirs="${incdirs} -Fu$i -Fi$i"
 done
 
 echo "all:" > Makefile

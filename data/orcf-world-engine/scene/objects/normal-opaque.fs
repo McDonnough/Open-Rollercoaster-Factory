@@ -56,5 +56,5 @@ void main(void) {
     gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;
   gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);
   gl_FragData[0].a = gl_FrontMaterial.specular.r;
-  gl_FragData[1] = vec4(normal, 1.0);
+  gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
 }

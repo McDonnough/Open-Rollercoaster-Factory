@@ -1225,8 +1225,7 @@ begin
     glColor4f(1, 1, 1, 1);
     fFullscreenShader.Bind;
 
-//     MotionBlurBuffer.Textures[0].Bind(0);
-    GBuffer.Textures[1].Bind(0);
+    MotionBlurBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
 
     fFullscreenShader.Unbind;

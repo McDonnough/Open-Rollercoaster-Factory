@@ -22,9 +22,9 @@ void main(void) {
   if (gl_FragData[0].a <= texture2D(TransparencyMask, (gl_FragCoord.xy) / MaskSize + MaskOffset).a)
     discard;
   gl_FragData[0].a = gl_FrontMaterial.specular.r;
-  gl_FragData[1] = vec4(Normal, gl_FrontMaterial.shininess);
   gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);
   gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
   gl_FragData[2].rgb = Vertex;
   gl_FragData[2].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
+  gl_FragData[1] = vec4(Normal, gl_FrontMaterial.shininess);
 }

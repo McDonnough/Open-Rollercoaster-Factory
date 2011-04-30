@@ -180,7 +180,7 @@ function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
 implementation
 
 uses
-  u_events, u_particles;
+  u_events, u_particles, main;
 
 function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
 begin
@@ -818,6 +818,7 @@ procedure TGeoObject.ExecuteScript;
 begin
   if Script <> nil then
     begin
+    Script.SetIO(@FPSDisplay.ms, SizeOf(Single));
     Script.SetIO(@Meshes[0].Matrix, SizeOf(TMatrix4D));
     Script.Execute;
     end;

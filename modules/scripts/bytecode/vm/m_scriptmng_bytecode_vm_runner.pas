@@ -3,14 +3,15 @@ unit m_scriptmng_bytecode_vm_runner;
 interface
 
 uses
-  SysUtils, Classes, m_scriptmng_bytecode_vm_stack, m_scriptmng_bytecode_vm, m_scriptmng_bytecode_compiler, math, u_math, u_vectors;
+  SysUtils, Classes, m_scriptmng_bytecode_vm_stack, m_scriptmng_bytecode_vm, m_scriptmng_bytecode_compiler, math, u_math, u_vectors,
+  u_scripts;
 
 type
   TScriptVM = class
     private
       fPC: PtrUInt;
       fRegisters: Array[0..15] of TVector4D;
-      fIRegisters: Array[0..15] of PtrUInt;
+      fIRegisters: Array[0..15] of SInt;
       fUpdatePC: PtrUInt;
     public
       procedure Run(TheScript: TScriptInstanceHandle; Start: PtrUInt);
@@ -40,15 +41,19 @@ begin
   Script := TheScript;
 
   fPC := Start;
-  
-  while fPC > 0 do
-    begin
-    P := fPC + TheScript.CodeHandle.FirstByte;
-    Command := @Commands.List[Word(P^)];
-    fUpdatePC := Command^.Length;
-    Command^.Operation(P);
-    inc(fPC, fUpdatePC);
-    end;
+
+  try
+    while fPC > 0 do
+      begin
+      P := fPC + TheScript.CodeHandle.FirstByte;
+      Command := @Commands.List[Word(P^)];
+      fUpdatePC := Command^.Length;
+      Command^.Operation(P);
+      inc(fPC, fUpdatePC);
+      end;
+  except
+    ModuleManager.ModLog.AddError('Script of ' + TheScript.Script.Code.Name + ' caused exception at ' + IntToStr(fPC));
+  end;
 end;
 
 constructor TScriptVM.Create;

@@ -22,8 +22,8 @@ type
       property VM: TScriptVM read fVM;
       property Assembler: TScriptAssembler read fASM;
       property CommandList: TScriptCMDList read fCommandList;
-      procedure SetInVar(Script: TScript; Name: String; Location: Pointer);
-      procedure SetInOutVar(Script: TScript; Name: String; Location: Pointer);
+      function GetLocation(Script: TScript; Bytes: Integer): PtrUInt;
+      function GetRealPointer(Script: TScript; Location: PtrUInt): Pointer;
       procedure Execute(Script: TScript);
       procedure AddScript(Script: TScript);
       procedure DestroyScript(Script: TScript);
@@ -56,16 +56,16 @@ begin
         fLastUsedScript := fScriptHandles[i];
 end;
 
-procedure TModuleScriptManagerBytecode.SetInVar(Script: TScript; Name: String; Location: Pointer);
+function TModuleScriptManagerBytecode.GetLocation(Script: TScript; Bytes: Integer): PtrUInt;
 begin
   SetScriptHandles(Script);
-  Pointer((fLastUsedScript.Stack.FirstByte + fLastUsedCode.UniformLocations[Name])^) := Location;
+  Result := fLastUsedScript.GetLocation(Bytes);
 end;
 
-procedure TModuleScriptManagerBytecode.SetInOutVar(Script: TScript; Name: String; Location: Pointer);
+function TModuleScriptManagerBytecode.GetRealPointer(Script: TScript; Location: PtrUInt): Pointer;
 begin
   SetScriptHandles(Script);
-  Pointer((fLastUsedScript.Stack.FirstByte + fLastUsedCode.UniformLocations[Name])^) := Location;
+  Result := fLastUsedScript.GetRealPointer(Location);
 end;
 
 procedure TModuleScriptManagerBytecode.Execute(Script: TScript);
@@ -90,9 +90,9 @@ begin
   SetLength(fScriptHandles, length(fScriptHandles) + 1);
   fScriptHandles[high(fScriptHandles)] := TScriptInstanceHandle.Create;
   fScriptHandles[high(fScriptHandles)].Script := Script;
-  fScriptHandles[high(fScriptHandles)].Init;
   SetScriptHandles(Script);
   fScriptHandles[high(fScriptHandles)].CodeHandle := fLastUsedCode;
+  fScriptHandles[high(fScriptHandles)].Init;
 end;
 
 procedure TModuleScriptManagerBytecode.DestroyScript(Script: TScript);

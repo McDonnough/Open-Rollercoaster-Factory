@@ -9,22 +9,18 @@ type
   TModuleScriptManagerClass = class(TBasicModule)
     public
       (**
-        * Send a variable to script that can only be read.
-        * Ideally, a script manager copies its content to another location
-        * to prevent any unwanted overwriting.
-        *@param The script instance to pass the variable to.
-        *@param Name of the variable.
-        *@param Pointer to the variable's contents
+        * Get virtual memory location for a datablock
+        *@param Number of bytes
+        *@return Virtual location, module-dependent
         *)
-      procedure SetInVar(Script: TScript; Name: String; Location: Pointer); virtual abstract;
+      function GetLocation(Script: TScript; Bytes: Integer): PtrUInt; virtual abstract;
 
       (**
-        * Send a variable to script that can only be read and written to.
-        *@param The script instance to pass the variable to.
-        *@param Name of the variable.
-        *@param Pointer to the variable's contents
+        * Get real memory address for a virtual location
+        *@param Location
+        *@return Pointer to first byte of datablock
         *)
-      procedure SetInOutVar(Script: TScript; Name: String; Location: Pointer); virtual abstract;
+      function GetRealPointer(Script: TScript; Location: PtrUInt): Pointer; virtual abstract;
 
       (**
         * Execute the main function of the script.

@@ -8,11 +8,11 @@ uses
 type
   TStack = class
     protected
-      fFirstElementPointer: Pointer;
       fSize: Integer;
       fData: Array of Byte;
+      function getFirstElementPointer: Pointer;
     public
-      property FirstByte: Pointer read fFirstElementPointer;
+      property FirstByte: Pointer read getFirstElementPointer;
       property Size: Integer read fSize;
       procedure Expand;
       constructor Create;
@@ -21,11 +21,15 @@ type
 
 implementation
 
+function TStack.getFirstElementPointer: Pointer;
+begin
+  Result := @fData[0];
+end;
+
 procedure TStack.Expand;
 begin
   fSize := fSize + 1024;
   setLength(fData, fSize);
-  fFirstElementPointer := @fData[0];
 end;
 
 constructor TStack.Create;

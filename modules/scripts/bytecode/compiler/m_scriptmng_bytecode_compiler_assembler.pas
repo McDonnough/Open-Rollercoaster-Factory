@@ -142,7 +142,7 @@ begin
 
   // Create tokens
   setLength(Commands, Length(Lines) - Start);
-  for i := 0 to high(Lines) do
+  for i := 0 to high(Commands) do
     Commands[i] := ParseLine(Lines[i + Start]);
 
   // Generate command masks and label offsets
@@ -156,13 +156,17 @@ begin
     if length(Commands[i]) > 0 then
       begin
       if Commands[i, 0].TType = atLabel then
-        Script.Functions[Commands[i, 0].Value] := fOffset
+        begin
+        Script.Functions[Commands[i, 0].Value] := fOffset;
+        OPCodes[i].Operation := nil;
+        end
       else
         begin
         for j := 0 to high(Commands[i]) do
           begin
-          if CmdMasks[i] <> '' then
-            CmdMasks[i] += ' ';
+          if j > 0 then
+            if (Commands[i, j - 1].TType <> atBracketL) and (Commands[i, j].TType <> atBracketR) then
+              CmdMasks[i] += ' ';
           if Commands[i, j].TType = atInstruction then
             CmdMasks[i] += Commands[i, j].Value
           else
@@ -180,10 +184,6 @@ begin
   for i := 0 to high(Commands) do
     for j := 1 to high(Commands[i]) do
       begin
-      if Commands[i, j].TType = atLabel then
-        Commands[i, j].TType := atInt
-      else if Commands[i, j].TType = atReferenceLabel then
-        Commands[i, j].TType := atAddress;
       if (Commands[i, j].TType = atReferenceLabel) or (Commands[i, j].TType = atLabel) then
         begin
         LabelName := Commands[i, j].Value;
@@ -191,6 +191,10 @@ begin
         if Commands[i, j].Value = '0' then
           ModuleManager.ModLog.AddError('Label ' + LabelName + ' not defined, setting it to ' + Commands[i, j].Value);
         end;
+      if Commands[i, j].TType = atLabel then
+        Commands[i, j].TType := atInt
+      else if Commands[i, j].TType = atReferenceLabel then
+        Commands[i, j].TType := atAddress;
       end;
 
   // Create final bytecode
@@ -200,32 +204,34 @@ begin
   fOffset := 2;
 
   for i := 0 to high(Commands) do
-    begin
-    Word((@Script.ByteCode[fOffset])^) := OPCodes[i].OPCode;
-    inc(fOffset, 2);
-    for j := 1 to high(Commands[i]) do
-      try
-        case Commands[i, j].TType of
-          atAddress, atInt:
-            begin
-            PtrUInt((@Script.ByteCode[fOffset])^) := StrToInt(Commands[i, j].Value);
-            inc(fOffset, SizeOf(PtrUInt));
-            end;
-          atFloat:
-            begin
-            Single((@Script.ByteCode[fOffset])^) := StrToFloat(Commands[i, j].Value);
-            inc(fOffset, SizeOf(Single));
-            end;
-          atVecRegister, atIntRegister:
-            begin
-            Byte((@Script.ByteCode[fOffset])^) := StrToInt(Commands[i, j].Value);
-            inc(fOffset, SizeOf(Byte));
-            end;
+    if Length(Commands[i]) > 0 then
+      if Commands[i, 0].TType <> atLabel then
+        begin
+        Word((@Script.ByteCode[fOffset])^) := OPCodes[i].OPCode;
+        inc(fOffset, 2);
+        for j := 1 to high(Commands[i]) do
+          try
+            case Commands[i, j].TType of
+              atAddress, atInt:
+                begin
+                PtrUInt((@Script.ByteCode[fOffset])^) := StrToInt(Commands[i, j].Value);
+                inc(fOffset, SizeOf(PtrUInt));
+                end;
+              atFloat:
+                begin
+                Single((@Script.ByteCode[fOffset])^) := StrToFloat(Commands[i, j].Value);
+                inc(fOffset, SizeOf(Single));
+                end;
+              atVecRegister, atIntRegister:
+                begin
+                Byte((@Script.ByteCode[fOffset])^) := StrToInt(Commands[i, j].Value);
+                inc(fOffset, SizeOf(Byte));
+                end;
+              end;
+          except
+            ModuleManager.ModLog.AddError('Error assembling ' + TokNames[Commands[i, j].TType] + ' ' + Commands[i, j].Value + ': Type mismatch?');
           end;
-      except
-        ModuleManager.ModLog.AddError('Error assembling ' + TokNames[Commands[i, j].TType] + ' ' + Commands[i, j].Value + ': Type mismatch?');
-      end;
-    end;
+        end;
 end;
 
 end.

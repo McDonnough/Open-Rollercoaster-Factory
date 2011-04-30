@@ -36,7 +36,7 @@ implementation
 
 uses
   m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events, g_parkui,
-  g_resources;
+  g_resources, u_scripts, u_vectors;
 
 type
   TParkLoadDialog = class
@@ -48,6 +48,10 @@ type
 var
   ParkLoadDialog: TParkLoadDialog = nil;
   ParkFileName: String = '';
+
+  Script: TScript;
+  ScriptCode: TScriptCode = nil;
+  
 
 procedure TParkLoadDialog.FileLoaded(Event: String; Data, Result: Pointer);
 begin

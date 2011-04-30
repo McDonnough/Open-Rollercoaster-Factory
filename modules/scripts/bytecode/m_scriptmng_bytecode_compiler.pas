@@ -10,7 +10,6 @@ type
     protected
       fFirstByte: Pointer;
       fFunctionTable: TLocationTable;
-      fUniformLocations: TLocationTable;
       fGlobalLocations: TLocationTable;
     public
       Code: TScriptCode;
@@ -18,7 +17,6 @@ type
       ByteCode: Array of Byte;
       property FirstByte: Pointer read fFirstByte;
       property Functions: TLocationTable read fFunctionTable;
-      property UniformLocations: TLocationTable read fUniformLocations;
       property GlobalLocations: TLocationTable read fGlobalLocations;
       procedure Compile;
       procedure Assemble;
@@ -52,7 +50,6 @@ end;
 constructor TBytecodeScriptHandle.Create;
 begin
   fFunctionTable := TLocationTable.Create;
-  fUniformLocations := TLocationTable.Create;
   fGlobalLocations := TLocationTable.Create;
   fFirstByte := nil;
 end;
@@ -60,7 +57,6 @@ end;
 destructor TBytecodeScriptHandle.Free;
 begin
   fGlobalLocations.Free;
-  fUniformLocations.Free;
   fFunctionTable.Free;
   setLength(ByteCode, 0);
 end;

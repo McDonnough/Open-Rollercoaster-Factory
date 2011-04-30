@@ -115,7 +115,9 @@ function VecLengthNoRoot(A: TVector4D): Single;
 
 function Cross(VectorA, VectorB: TVector3D): TVector3D;
 function Normal(VectorA, VectorB: TVector3D): TVector3D;
+function DotProduct(VectorA, VectorB: TVector2D): Single;
 function DotProduct(VectorA, VectorB: TVector3D): Single;
+function DotProduct(VectorA, VectorB: TVector4D): Single;
 
 function Normalize(A: TVector2D): TVector2D;
 function Normalize(A: TVector3D): TVector3D;
@@ -522,9 +524,19 @@ begin
   Result := Normalize(Cross(VectorA, VectorB));
 end;
 
+function DotProduct(VectorA, VectorB: TVector2D): Single;
+begin
+  Result := VectorA.x * VectorB.x + VectorA.y * VectorB.y;
+end;
+
 function DotProduct(VectorA, VectorB: TVector3D): Single;
 begin
   Result := VectorA.x * VectorB.x + VectorA.y * VectorB.y + VectorA.z * VectorB.z;
+end;
+
+function DotProduct(VectorA, VectorB: TVector4D): Single;
+begin
+  Result := VectorA.x * VectorB.x + VectorA.y * VectorB.y + VectorA.z * VectorB.z + VectorA.w * VectorB.w;
 end;
 
 

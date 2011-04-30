@@ -259,11 +259,11 @@ begin
   fSceneBuffer.Unbind;
 
   fHDRBuffer := TFBO.Create(BufferSizeX, 1, false);
-  fHDRBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
+  fHDRBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);
   fHDRBuffer.Unbind;
 
   fHDRBuffer2 := TFBO.Create(1, 1, false);
-  fHDRBuffer2.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);
+  fHDRBuffer2.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);
   fHDRBuffer2.Unbind;
 
   if UseScreenSpaceAmbientOcclusion then

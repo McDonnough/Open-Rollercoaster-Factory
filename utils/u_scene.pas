@@ -154,7 +154,7 @@ type
       Meshes: Array of TGeoMesh;
       Armatures: Array of TArmature;
       Materials: Array of TMaterial;
-//       Script: TScript;
+      Script: TScript;
       Matrix: TMatrix4D;
       function AddArmature: TArmature;
       function AddMesh: TGeoMesh;
@@ -170,6 +170,7 @@ type
       procedure UpdateFaceVertexAssociationForVertexNormalCalculation;
       procedure SetUnchanged;
       function GetBoneByName(Armature, Bone: String): TBone;
+      procedure ExecuteScript;
       constructor Create;
       destructor Free;
     end;
@@ -719,6 +720,11 @@ var
 begin
   Result := TGeoObject.Create;
 
+  if Result.Script <> nil then
+    Result.Script.Code.CreateInstance
+  else
+    Result.Script := nil;
+
   setLength(Result.Materials, length(Materials));
   for i := 0 to high(Materials) do
     Result.Materials[i] := Materials[i].Duplicate;
@@ -808,15 +814,26 @@ begin
       Result := Armatures[i].GetBoneByName(Bone);
 end;
 
+procedure TGeoObject.ExecuteScript;
+begin
+  if Script <> nil then
+    begin
+    Script.SetIO(@Meshes[0].Matrix, SizeOf(TMatrix4D));
+    Script.Execute;
+    end;
+end;
+
 constructor TGeoObject.Create;
 begin
   Matrix := Identity4D;
+  Script := nil;
 end;
 
 destructor TGeoObject.Free;
 var
   i: Integer;
 begin
+  Script.Free;
   for i := 0 to high(Meshes) do
     Meshes[i].Free;
   for i := 0 to high(Materials) do

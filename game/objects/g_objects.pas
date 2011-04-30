@@ -63,6 +63,7 @@ begin
       if CurrentObject.GeoObject.GetBoneByName('arm', 'moep') <> nil then
         CurrentObject.GeoObject.GetBoneByName('arm', 'moep').PathConstraint.Progress += 0.002;
 
+      ExecuteScript;
       UpdateMatrix;
       UpdateArmatures;
       UpdateVertexPositions;

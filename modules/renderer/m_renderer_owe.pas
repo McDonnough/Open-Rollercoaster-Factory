@@ -1008,14 +1008,14 @@ begin
     glDepthMask(false);
   fSceneBuffer.Unbind;
 
-  GBuffer.Bind;
+  SpareBuffer.Bind;
     // Get depth under mouse
     fFullscreenShader.Bind;
     GBuffer.Textures[2].Bind(0);
     DrawFullscreenQuad;
     glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
     fFullscreenShader.Unbind;
-  GBuffer.Unbind;
+  SpareBuffer.Unbind;
 
   // Under-water view
   if fIsUnderWater then

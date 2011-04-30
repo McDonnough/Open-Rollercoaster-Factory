@@ -833,7 +833,8 @@ destructor TGeoObject.Free;
 var
   i: Integer;
 begin
-  Script.Free;
+  if Script <> nil then
+    Script.Free;
   for i := 0 to high(Meshes) do
     Meshes[i].Free;
   for i := 0 to high(Materials) do

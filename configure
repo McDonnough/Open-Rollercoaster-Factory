@@ -38,7 +38,6 @@ while [ $# -gt 0 ]; do
 done
 
 if [ `uname` == "Linux" ]; then
-  echo "Performing library checks (Linux only)"
   if [ ${Modules[9]} == "SDL" ] || [ ${Modules[11]} == "SDL" ]; then
     echo "Checking for SDL"
     if [ -z "`ldconfig -p | grep libSDL-`" ]; then echo "libSDL-1.2.0 or later not found"; exit 1; fi
@@ -102,12 +101,25 @@ for i in `find . -type d | grep -v .git`; do
   incdirs="${incdirs} -Fu$i -Fi$i"
 done
 
-echo "all:" > Makefile
-echo "	fpc -MObjFPC -g -Sghi $options -vewnhi $incdirs $LinkerOpt orcf.lpr" >> Makefile
-echo "" >> Makefile
-echo "clean:" >> Makefile
+DEPS=""
+
+for i in `find . -name "*.pas"` `find . -name "*.inc"`; do
+  DEPS="${DEPS}${i} "
+done
+
+echo "DEPS = ${DEPS}" > Makefile
+echo "FPCFLAGS = -MObjFPC -g -Sghi $options -vewnhi $incdirs $LinkerOpt" >> Makefile
+echo '' >> Makefile
+echo 'all: ${DEPS} orcf.lpr' >> Makefile
+echo '	fpc ${FPCFLAGS} orcf.lpr' >> Makefile
+echo '' >> Makefile
+echo 'clean:' >> Makefile
 echo '	find . -name "*.o" -exec rm {} \;' >> Makefile
 echo '	find . -name "*.ppu" -exec rm {} \;' >> Makefile
 echo '	rm orcf' >> Makefile
+echo '' >> Makefile
+echo 'tools: ${DEPS} ./tools/ocfgen.lpr ./tools/texconv.lpr' >> Makefile
+echo '	fpc ${FPCFLAGS} ./tools/ocfgen.lpr' >> Makefile
+echo '	fpc ${FPCFLAGS} ./tools/texconv.lpr' >> Makefile
 
 echo "Configure done"

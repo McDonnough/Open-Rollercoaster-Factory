@@ -207,6 +207,7 @@ end;
 procedure TRObjects.BindMaterial(Material: TMaterial);
 var
   Spec: TVector4D;
+  MyHardness: Single;
 begin
   with Material do
     begin
@@ -233,10 +234,11 @@ begin
       fCurrentShader.UniformI('HasTexture', 0);
       end;
     Spec := Vector(Specularity, Reflectivity, 0, 0);
+    MyHardness := Clamp(Hardness, 0, 128);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, @Color.X);
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, @Emission.X);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, @Spec.X);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, @Hardness);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, @MyHardness);
     end;
 end;
 

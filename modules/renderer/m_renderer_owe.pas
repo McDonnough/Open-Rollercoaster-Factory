@@ -1136,10 +1136,7 @@ begin
     fHDRBuffer.Textures[0].Bind(0);
     fHDRAverageShader.UniformI('Size', BufferSizeX);
     fHDRAverageShader.UniformI('Dir', 1, 0);
-//     DrawFullscreenQuad;
-    glBegin(GL_POINTS);
-      glVertex2f(-1, -1);
-    glEnd;
+    DrawFullscreenQuad;
   fHDRBuffer2.Unbind;
 
   fHDRAverageShader.Unbind;

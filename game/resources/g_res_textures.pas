@@ -53,7 +53,6 @@ begin
       CompressedTexFormat := GL_COMPRESSED_RGBA;
       end;
     fTexture.CreateNew(A.Width, A.Height, TexFormat);
-    fTexture.SetClamp(GL_CLAMP, GL_CLAMP);
     fTexture.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
     fTexture.Fill(@A.Data[0], TexFormat);
     gluBuild2DMipmaps(GL_TEXTURE_2D, A.BPP div 8, A.Width, A.Height, TexFormat, GL_UNSIGNED_BYTE, @A.Data[0]);

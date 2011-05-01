@@ -315,15 +315,20 @@ def geometryXML(mesh):
     if (uvTexture == None and u.active):
       uvTexture = u
 
-  for tv in uvTexture.data:
+  if (uvTexture != None):
+    for tv in uvTexture.data:
+      t = mTexVertex()
+      t.position = tv.uv1
+      tmpTexVertices.append(t)
+      t = mTexVertex()
+      t.position = tv.uv2
+      tmpTexVertices.append(t)
+      t = mTexVertex()
+      t.position = tv.uv3
+      tmpTexVertices.append(t)
+  else:
     t = mTexVertex()
-    t.position = tv.uv1
-    tmpTexVertices.append(t)
-    t = mTexVertex()
-    t.position = tv.uv2
-    tmpTexVertices.append(t)
-    t = mTexVertex()
-    t.position = tv.uv3
+    t.position = [0, 0]
     tmpTexVertices.append(t)
 
   for vert in mesh.vertices:
@@ -338,7 +343,10 @@ def geometryXML(mesh):
   c = 0
   for face in mesh.faces:
     f = mFace()
-    f.tindices = [3 * c, 3 * c + 1, 3 * c + 2]
+    if (uvTexture != None):
+      f.tindices = [3 * c, 3 * c + 1, 3 * c + 2]
+    else:
+      f.tindices = [0, 0, 0]
     f.vindices = [face.vertices[0], face.vertices[1], face.vertices[2]]
     tmpFaces.append(f)
     
@@ -497,11 +505,13 @@ class EXPORT_OT_ocfl(bpy.types.Operator):
     bpy.ops.file.make_paths_absolute()
     
     # split all quads to single triangles
-    if bpy.context.mode == 'OBJECT':
+    for mesh in bpy.data.meshes:
+      bpy.context.scene.objects.active = bpy.data.objects[mesh.name]
+      if bpy.context.mode == 'OBJECT':
+        bpy.ops.object.editmode_toggle()
+      bpy.ops.mesh.select_all(action='SELECT')
+      bpy.ops.mesh.quads_convert_to_tris()
       bpy.ops.object.editmode_toggle()
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.quads_convert_to_tris()
-    bpy.ops.object.editmode_toggle()
     
     writeFiles(self.properties.filepath)
     

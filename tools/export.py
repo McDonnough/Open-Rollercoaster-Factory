@@ -503,6 +503,11 @@ class EXPORT_OT_ocfl(bpy.types.Operator):
 
     # remove relative file paths
     bpy.ops.file.make_paths_absolute()
+
+    # rename all meshes, ... to their corresponding object name
+    for o in bpy.data.objects:
+      if (o.type != 'EMPTY'):
+        o.data.name = o.name
     
     # split all quads to single triangles
     for mesh in bpy.data.meshes:

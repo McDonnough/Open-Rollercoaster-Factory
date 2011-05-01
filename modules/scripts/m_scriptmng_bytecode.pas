@@ -16,10 +16,12 @@ type
       fLastUsedScript: TScriptInstanceHandle;
       fVM: TScriptVM;
       fASM: TScriptAssembler;
+      fCompiler: TScriptCompiler;
       fCommandList: TScriptCMDList;
       procedure SetScriptHandles(Script: TScript);
     public
       property VM: TScriptVM read fVM;
+      property Compiler: TScriptCompiler read fCompiler;
       property Assembler: TScriptAssembler read fASM;
       property CommandList: TScriptCMDList read fCommandList;
       function GetLocation(Script: TScript; Bytes: Integer): PtrUInt;
@@ -131,6 +133,7 @@ begin
   fCommandList := TScriptCMDList.Create;
   fVM := TScriptVM.Create;
   fASM := TScriptAssembler.Create;
+  fCompiler := TScriptCompiler.Create;
 end;
 
 constructor TModuleScriptManagerBytecode.Create;
@@ -144,6 +147,7 @@ end;
 
 destructor TModuleScriptManagerBytecode.Free;
 begin
+  fCompiler.Free;
   fASM.Free;
   fVM.Free;
   fCommandList.Free;

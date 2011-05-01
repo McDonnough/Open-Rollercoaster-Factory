@@ -39,7 +39,6 @@ begin
   fResource := TheResource;
   fGeoObject := Resource.GeoObject.Duplicate;
   fGeoObject.Register;
-  fGeoObject.Matrix := TranslationMatrix(Vector(160, 64.5, 160));
 end;
 
 procedure TRealObject.Free;
@@ -75,18 +74,22 @@ begin
 end;
 
 procedure TObjectManager.AddTestObject(Event: String; Data, Result: Pointer);
+var
+  a: TRealObject;
 begin
-  Append(TRealObject.Create(TObjectResource(ResourceManager.Resources[TAbstractResource(Data).Name])));
+  a := TRealObject.Create(TObjectResource(ResourceManager.Resources[TAbstractResource(Data).Name]));
+  a.GeoObject.Matrix := TranslationMatrix(Vector(160 + 40 * Random - 20, 64.5, 160 + 40 * Random - 20));
+  Append(a);
 end;
 
 procedure TObjectManager.Test;
 begin
   EventManager.AddCallback('TResource.FinishedLoading:scenery/test.ocf/object', @AddTestObject);
   EventManager.AddCallback('TResource.FinishedLoading:scenery/test2.ocf/object', @AddTestObject);
-  EventManager.AddCallback('TResource.FinishedLoading:scenery/test/moep2.ocf/object', @AddTestObject);
+  EventManager.AddCallback('TResource.FinishedLoading:scenery/test/moep.ocf/object', @AddTestObject);
   TObjectResource.Get('scenery/test.ocf/object');
   TObjectResource.Get('scenery/test2.ocf/object');
-  TObjectResource.Get('scenery/test/moep2.ocf/object');
+  TObjectResource.Get('scenery/test/moep.ocf/object');
 end;
 
 constructor TObjectManager.Create;

@@ -114,6 +114,25 @@ end;
 
 procedure ChangeRenderState(New: TRenderState);
 begin
+  if ScriptCode = nil then
+    begin
+    ScriptCode := TScriptCode.Create(
+      'extern struct Bla;' + #10
+    + 'struct Uniform {' + #10
+    + '  float ms;' + #10
+    + '  vec4 bla;' + #10
+    + '}' + #10
+    + 'Uniform uniform = 0^^;' + #10
+    + 'void main() {' + #10
+    + '  int i = int(-1000.0 * uniform.ms - 1.0);' + #10
+    + '  write(i);' + #10
+    + '}' + #10);
+    ScriptCode.Name := 'Test';
+    Script := ScriptCode.CreateInstance;
+    end;
+  Script.Execute;
+
+
   if FPSDisplay = nil then
     FPSDisplay := TFPSDisplay.Create;
   RenderState := New;

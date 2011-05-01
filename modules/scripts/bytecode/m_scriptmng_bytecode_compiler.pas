@@ -3,9 +3,24 @@ unit m_scriptmng_bytecode_compiler;
 interface
 
 uses
-  SysUtils, Classes, u_scripts, m_scriptmng_bytecode_classes;
+  SysUtils, Classes, u_scripts, m_scriptmng_bytecode_classes, m_scriptmng_bytecode_compiler_tokenizer,
+  m_scriptmng_bytecode_compiler_tree_generator;
 
 type
+  TBytecodeScriptHandle = class;
+
+  TScriptCompiler = class
+    protected
+      fTokenList: TTokenList;
+      fTokenizer: TTokenizer;
+      fStatementTree: TStatementTree;
+      fStatementTreeGenerator: TStatementTreeGenerator;
+    public
+      procedure Compile(Handle: TBytecodeScriptHandle);
+      constructor Create;
+      destructor Free;
+    end;
+
   TBytecodeScriptHandle = class
     protected
       fFirstByte: Pointer;
@@ -29,15 +44,34 @@ implementation
 uses
   m_varlist, u_functions;
 
+procedure TScriptCompiler.Compile(Handle: TBytecodeScriptHandle);
+begin
+  Handle.ASMCode := 'ASM:' + #10;
+  writeln('Compiling ' + Handle.Code.Name);
+  try
+    fTokenList := fTokenizer.Tokenize(Handle.Code.SourceCode);
+    fStatementTree := fStatementTreeGenerator.GenerateTree(fTokenList);
+  except
+    ModuleManager.ModLog.AddError('Compilation aborted.');
+  end;
+end;
+
+constructor TScriptCompiler.Create;
+begin
+  fTokenizer := TTokenizer.Create;
+  fStatementTreeGenerator := TStatementTreeGenerator.Create;
+end;
+
+destructor TScriptCompiler.Free;
+begin
+  fStatementTreeGenerator.Free;
+  fTokenizer.Free;
+end;
+
+
 procedure TBytecodeScriptHandle.Compile;
 begin
-  if SubString(Code.SourceCode, 1, 4) = 'ASM:' then
-    ASMCode := Code.SourceCode;
-//   else
-//     begin
-//     ModuleManager.ModScriptManager.Compiler.Compile(self);
-//     ASMCode := ModuleManager.ModScriptManager.Compiler.Result;
-//     end;
+  ModuleManager.ModScriptManager.Compiler.Compile(self);
 end;
 
 procedure TBytecodeScriptHandle.Assemble;

@@ -763,7 +763,6 @@ begin
           raise EScriptTreeException.Create('Compilation aborted');
           end;
       else
-//         OutputTree(Tree);
         ErrLine(Min);
         ModuleManager.ModLog.AddError('Expected one of ' + ScriptTokenTypeNames[stKeyword] + ', '
         + ScriptTokenTypeNames[stIdentifier] + ', '

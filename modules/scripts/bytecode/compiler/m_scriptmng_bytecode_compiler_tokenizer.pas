@@ -54,7 +54,7 @@ function TTokenizer.Tokenize(S: String): TTokenList;
 var
   fPrev: TScriptToken;
   fLine: Integer;
-  
+
   function getNextToken(var Pos: Integer): TScriptToken;
   var
     i: Integer;
@@ -90,7 +90,7 @@ var
         inc(Pos);
         exit;
         end;
-      '+', '/', '*', '^', '.', ',', ';', '=', '&', '|', '!', '<', '>', '?':
+      '+', '/', '*', '^', '.', ',', ';', '=', '&', '|', '!', '<', '>', '?', '%':
         begin
         Result.TType := stOperator;
         case S[Pos] of
@@ -102,7 +102,7 @@ var
         Result.Value := S[Pos];
         inc(Pos);
         if Result.TType = stOperator then
-          while S[Pos] in ['+', '*', '/', '-', '&', '|', '!', '<', '>', '?'] do
+          while S[Pos] in ['+', '*', '/', '-', '&', '|', '!', '<', '>', '?', '%', '='] do
             begin
             Result.Value += S[Pos];
             inc(Pos);
@@ -118,7 +118,7 @@ var
           begin
           Result.TType := stOperator;
           inc(Pos);
-          while S[Pos] in ['+', '*', '/', '-', '&', '|', '!', '<', '>', '?'] do
+          while S[Pos] in ['+', '*', '/', '-', '&', '|', '!', '<', '>', '?', '%', '='] do
             begin
             Result.Value += S[Pos];
             inc(Pos);

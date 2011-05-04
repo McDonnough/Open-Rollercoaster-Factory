@@ -123,9 +123,30 @@ begin
     + '  vec4 bla;' + #10
     + '}' + #10
     + 'Uniform uniform = 0^^;' + #10
-    + 'void main() {' + #10
+    + 'void main(int main, bool bla) {' + #10
+    + '  if (bla && bli || blubb) {' + #10
+    + '    moep();' + #10
+    + '    int bla = moep(2);' + #10
+    + '  }' + #10
+    + '  else if (a == b) {' + #10
+    + '    blibb(moep());' + #10
+    + '  }' + #10
+    + '  else {' + #10
+    + '    moep(blibb());' + #10
+    + '  }' + #10
     + '  int i = int(-1000.0 * uniform.ms - 1.0);' + #10
-    + '  write(i);' + #10
+    + '  do {' + #10
+    + '    write(something);' + #10
+    + '    writeln(bla);' + #10
+    + '  }' + #10
+    + '  while (bla == bli);' + #10
+    + '  while (moep^) {' + #10
+    + '    hallo(5 + 3);' + #10
+    + '  }' + #10
+    + '  for (int i = 0; i < 99; i = i + 1) {' + #10
+    + '    bool this_is_a_loop = 1;' + #10
+    + '  }' + #10
+    + '  write(i + (2.5 * 1.0 + dot(a, b)));' + #10
     + '}' + #10);
     ScriptCode.Name := 'Test';
     Script := ScriptCode.CreateInstance;

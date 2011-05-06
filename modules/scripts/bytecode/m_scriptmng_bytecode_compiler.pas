@@ -4,7 +4,8 @@ interface
 
 uses
   SysUtils, Classes, u_scripts, m_scriptmng_bytecode_classes, m_scriptmng_bytecode_compiler_tokenizer,
-  m_scriptmng_bytecode_compiler_tree_generator;
+  m_scriptmng_bytecode_compiler_tree_generator, m_scriptmng_bytecode_compiler_code_generator,
+  m_scriptmng_bytecode_compiler_asm_optimizer;
 
 type
   TBytecodeScriptHandle = class;
@@ -14,7 +15,10 @@ type
       fTokenList: TTokenList;
       fTokenizer: TTokenizer;
       fStatementTree: TStatementTree;
+      fASMTable: TASMTable;
       fStatementTreeGenerator: TStatementTreeGenerator;
+      fCodeGenerator: TCodeGenerator;
+      fASMOptimizer: TASMOptimizer;
     public
       procedure Compile(Handle: TBytecodeScriptHandle);
       constructor Create;
@@ -51,6 +55,11 @@ begin
   try
     fTokenList := fTokenizer.Tokenize(Handle.Code.SourceCode);
     fStatementTree := fStatementTreeGenerator.GenerateTree(fTokenList);
+    fASMTable := fCodeGenerator.GenerateCode(fStatementTree);
+    Handle.ASMCode := fASMOptimizer.Optimize(fASMTable);
+    fASMTable.Free;
+    fStatementTree.Free;
+    fTokenList.Free;
   except
     ModuleManager.ModLog.AddError('Compilation aborted.');
   end;
@@ -60,10 +69,14 @@ constructor TScriptCompiler.Create;
 begin
   fTokenizer := TTokenizer.Create;
   fStatementTreeGenerator := TStatementTreeGenerator.Create;
+  fCodeGenerator := TCodeGenerator.Create;
+  fASMOptimizer := TASMOptimizer.Create;
 end;
 
 destructor TScriptCompiler.Free;
 begin
+  fASMOptimizer.Free;
+  fCodeGenerator.Free;
   fStatementTreeGenerator.Free;
   fTokenizer.Free;
 end;

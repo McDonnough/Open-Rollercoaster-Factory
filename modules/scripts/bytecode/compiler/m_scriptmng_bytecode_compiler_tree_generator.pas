@@ -11,15 +11,19 @@ type
   TTreeNodeType = (ntScript, ntAssignment, ntDeclaration, ntExternStruct, ntIdentifier, ntStruct, ntFunction, ntCall, ntBlock,
     ntIf, ntFor, ntWhile, ntDo, ntOperation, ntInt, ntFloat, ntDereference, ntParameters);
 
+  TDataType = (dtVoid, dtInt, dtBool, dtFloat, dtVec2, dtVec3, dtVec4, dtMat4, dtStruct);
+
   TStatementTreeNode = record
     Token: Integer;
     NodeType: TTreeNodeType;
+    DataType: TDataType;
     end;
 
   TStatementTree = class
     Node: TStatementTreeNode;
     Children: Array of TStatementTree;
     procedure AddChild(C: TStatementTree);
+    constructor Create;
     end;
 
   TStatementTreeGenerator = class
@@ -33,6 +37,15 @@ const
     'SCRIPT', '=', 'DECL', 'EXTSTRUCT', 'IDENT', 'STRUCT', 'FUNCTION', 'CALL', 'BLOCK', 'IF', 'FOR', 'WHILE', 'DO', 'OP',
     'INT', 'FLOAT', 'DEREF', 'PARAM');
 
+  DataTypeNames: Array[TDataType] of String = (
+    'void', 'int', 'bool', 'float', 'vec2', 'vec3', 'vec4', 'mat4', '#STRUCT');
+
+  DataTypeSizes: Array[TDataType] of PtrUInt = (
+    0, SizeOf(Pointer), SizeOf(Pointer), SizeOf(Single), 2 * SizeOf(Single), 3 * SizeOf(Single), 4 * SizeOf(Single), 16 * SizeOf(Single), 0);
+
+var
+  T: TTokenList;
+
 function OperationTree(var Start: Integer; Last: Integer): TStatementTree;
 function BlockTree(var Start: integer): TStatementTree;
 
@@ -41,8 +54,10 @@ implementation
 uses
   m_varlist, u_functions;
 
-var
-  T: TTokenList;
+constructor TStatementTree.Create;
+begin
+  Node.DataType := dtVoid;
+end;
 
 procedure TStatementTree.AddChild(C: TStatementTree);
 begin

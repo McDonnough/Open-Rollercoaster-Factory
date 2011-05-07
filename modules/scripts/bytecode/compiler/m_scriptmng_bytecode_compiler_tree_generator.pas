@@ -11,7 +11,7 @@ type
   TTreeNodeType = (ntScript, ntAssignment, ntDeclaration, ntExternStruct, ntIdentifier, ntStruct, ntFunction, ntCall, ntBlock,
     ntIf, ntFor, ntWhile, ntDo, ntOperation, ntInt, ntFloat, ntDereference, ntParameters);
 
-  TDataType = (dtVoid, dtInt, dtBool, dtFloat, dtVec2, dtVec3, dtVec4, dtMat4, dtStruct);
+  TDataType = (dtVoid, dtInt, dtBool, dtFloat, dtVec2, dtVec3, dtVec4, dtMat4, dtPointer, dtStruct);
 
   TStatementTreeNode = record
     Token: Integer;
@@ -38,10 +38,10 @@ const
     'INT', 'FLOAT', 'DEREF', 'PARAM');
 
   DataTypeNames: Array[TDataType] of String = (
-    'void', 'int', 'bool', 'float', 'vec2', 'vec3', 'vec4', 'mat4', '#STRUCT');
+    'void', 'int', 'bool', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'pointer', '#STRUCT');
 
   DataTypeSizes: Array[TDataType] of PtrUInt = (
-    0, SizeOf(Pointer), SizeOf(Pointer), SizeOf(Single), 2 * SizeOf(Single), 3 * SizeOf(Single), 4 * SizeOf(Single), 16 * SizeOf(Single), 0);
+    0, SizeOf(Pointer), SizeOf(Pointer), 4 * SizeOf(Single), 4 * SizeOf(Single), 4 * SizeOf(Single), 4 * SizeOf(Single), 16 * SizeOf(Single), SizeOf(Pointer), 0);
 
 var
   T: TTokenList;
@@ -179,7 +179,7 @@ begin
   inc(Start);
 end;
 
-function GetLowPriorityOperator(Start, Last: Integer; Priority: Integer = 5): Integer;
+function GetLowPriorityOperator(Start, Last: Integer; Priority: Integer = 6): Integer;
 var
   CurrentOperator, Parentheses: Integer;
   V: String;
@@ -195,7 +195,8 @@ begin
           begin
           V := T.Tokens[CurrentOperator].Value;
           case Priority of
-            5: if (V = '||') or (V = '&&') or (V = '??') then exit(CurrentOperator);
+            6: if (V = '||') or (V = '??') then exit(CurrentOperator);
+            5: if (V = '&&') then exit(CurrentOperator);
             4: if (V = '<') or (V = '<=') or (V = '==') or (V = '>=') or (V = '>') or (V = '!=') then exit(CurrentOperator);
             3: if (V = '+') or (V = '-') or (V = '|') or (V = '?') then exit(CurrentOperator);
             2: if (V = '*') or (V = '/') or (V = '&') or (V = '%') then exit(CurrentOperator);

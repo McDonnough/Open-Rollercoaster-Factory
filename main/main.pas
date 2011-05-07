@@ -117,17 +117,22 @@ begin
   if ScriptCode = nil then
     begin
     ScriptCode := TScriptCode.Create(
-        'struct Test {' + #10
-      + '  float ms;' + #10
-      + '  vec4 bla;' + #10
+        'vec4 a = vec4(0.0, 0.0, 0.0, 1.0);' + #10
+      + 'mat4 b = vec4(0.0, 0.0, 0.0, 1.0);' + #10
+      + 'void main() {' + #10
+      + '  a = vec4(4.0, 3.0, 2.0, 1.0);' + #10
+      + '  b = mat4(1.0, 0.0, 0.0, 1.0,' + #10
+      + '           0.0, 1.0, 0.0, 1.0,' + #10
+      + '           0.0, 0.0, 1.0, 1.0,' + #10
+      + '           0.0, 0.0, 0.0, 1.0);' + #10
+      + '  write(b * a);' + #10
       + '}' + #10
-      + 'Test uniform = 0^;' + #10
     );
     ScriptCode.Name := 'Test';
     Script := ScriptCode.CreateInstance;
     end;
   Script.Execute;
-  halt(1);
+//   halt(0);
 
   if FPSDisplay = nil then
     FPSDisplay := TFPSDisplay.Create;

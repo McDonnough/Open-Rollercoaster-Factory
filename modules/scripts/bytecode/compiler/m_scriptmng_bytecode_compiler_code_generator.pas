@@ -1091,7 +1091,6 @@ var
   i: Integer;
 begin
   fCurrentOffset := 0;
-  fLabelID := 0;
   
   F := AddFunction(T.Tokens[Tree.Node.Token + 1].Value);
   F.Return.DataType := GetDatatype(T.Tokens[Tree.Node.Token].Value);
@@ -1157,6 +1156,7 @@ var
   i: Integer;
   FinishedInitProcedure: Boolean;
 begin
+  fLabelID := 0;
   fCurrentOffset := SizeOf(Pointer);
 
   Result := TASMTable.Create;

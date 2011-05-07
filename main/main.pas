@@ -118,7 +118,11 @@ begin
     begin
     ScriptCode := TScriptCode.Create(
         'int moep(int n) {' + #10
-      + '  result = 2 * n;' + #10
+      + '  if (n <= 1) {' + #10
+      + '    result = n;' + #10
+      + '  } else {' + #10
+      + '    result = 2 * n;' + #10
+      + '  }' + #10
       + '}' + #10
       + 'void main() {' + #10
       + '  int bla = 1;' + #10

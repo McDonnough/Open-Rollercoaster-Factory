@@ -45,7 +45,7 @@ end;
 
 procedure _CALLI(C: Pointer);
 begin
-  PtrUInt((Script.Stack.FirstByte + Script.SP)^) := VM.fPC + SizeOf(Word) + SizeOf(PtrUInt);
+  PtrUInt((Script.Stack.FirstByte + Script.SP)^) := PtrUInt(VM.fPC + SizeOf(Word) + SizeOf(PtrUInt));
   Script.SP := Script.SP + SizeOf(PtrUInt);
   VM.fUpdatePC := 0;
   VM.fPC := PtrUInt((C + SizeOf(Word))^);
@@ -53,7 +53,7 @@ end;
 
 procedure _CALLIR(C: Pointer);
 begin
-  PtrUInt((Script.Stack.FirstByte + Script.SP)^) := VM.fPC + SizeOf(Word) + SizeOf(Byte);
+  PtrUInt((Script.Stack.FirstByte + Script.SP)^) := PtrUInt(VM.fPC + SizeOf(Word) + SizeOf(Byte));
   Script.SP := Script.SP + SizeOf(PtrUInt);
   VM.fUpdatePC := 0;
   VM.fPC := PtrUInt((C + SizeOf(Word))^);
@@ -75,8 +75,8 @@ end;
 
 procedure _RET(C: Pointer);
 begin
-  Script.SP := Script.SP - SizeOf(PtrUInt);
   VM.fUpdatePC := 0;
+  Script.SP := Script.SP - SizeOf(PtrUInt);
   VM.fPC := PtrUInt((Script.Stack.FirstByte + Script.SP)^);
 end;
 

@@ -117,15 +117,20 @@ begin
   if ScriptCode = nil then
     begin
     ScriptCode := TScriptCode.Create(
-        'vec4 a = vec4(0.0, 0.0, 0.0, 1.0);' + #10
-      + 'mat4 b = vec4(0.0, 0.0, 0.0, 1.0);' + #10
+        'int moep(int n) {' + #10
+      + '  result = 2 * n;' + #10
+      + '}' + #10
       + 'void main() {' + #10
-      + '  a = vec4(4.0, 3.0, 2.0, 1.0);' + #10
-      + '  b = mat4(1.0, 0.0, 0.0, 1.0,' + #10
-      + '           0.0, 1.0, 0.0, 1.0,' + #10
-      + '           0.0, 0.0, 1.0, 1.0,' + #10
-      + '           0.0, 0.0, 0.0, 1.0);' + #10
-      + '  write(b * a);' + #10
+      + '  int bla = 1;' + #10
+      + '  while (bla <= 5) {' + #10
+      + '    if (bla == 3) {' + #10
+      + '      write(bla);' + #10
+      + '    }' + #10
+      + '    else if (bla != 3) {' + #10
+      + '      write(moep(bla));' + #10
+      + '    }' + #10
+      + '    bla = bla + 1;' + #10
+      + '  }' + #10
       + '}' + #10
     );
     ScriptCode.Name := 'Test';

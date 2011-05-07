@@ -51,6 +51,7 @@ type
       fStructs: Array of TStruct;
       fFunctions: Array of TFunction;
       fCurrentOffset: PtrUInt;
+      fLabelID: Integer;
       function GetDatatype(Name: String): TDataType;
       function GetVar(Name: String; Scope: TFunction; MustExist: Boolean = True): TVariable;
       function GetFunction(Name: String; MustExist: Boolean = True): TFunction;
@@ -67,6 +68,8 @@ type
       procedure CreateStruct(Tree: TStatementTree);
       procedure GenBuiltin(Tree: TStatementTree; Result: TASMTable; Method: TFunction);
       procedure GenOperation(Tree: TStatementTree; Result: TASMTable; Scope: TFunction; WantedType: TDataType = dtInt);
+      procedure GenIf(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
+      procedure GenWhile(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
       procedure GenCode(Tree: TStatementTree; Method: TFunction; Result: TASMTable);
     public
       function GenerateCode(Tree: TStatementTree): TASMTable;
@@ -181,8 +184,8 @@ end;
 
 function TCodeGenerator.GetBuiltinFunction(A: String): String;
 const
-  Builtins: Array[0..8] of String = (
-    'bool', 'int', 'pointer', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'write');
+  Builtins: Array[0..10] of String = (
+    'bool', 'int', 'pointer', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'write', 'sqrt', 'power');
 var
   i: Integer;
 begin
@@ -221,6 +224,30 @@ begin
         Result.AddCommand('WRITE R3');
         end;
       end;
+    Result.AddCommand(' ');
+    end
+// TEMPLATE
+//   else if F = '' then
+//     begin
+//     end
+  else if F = 'sqrt' then
+    begin
+    GenOperation(Tree.Children[0], Result, Method);
+    Tree.Node.DataType := Tree.Children[0].Node.DataType;
+    Result.AddCommand('POP R0');
+    Result.AddCommand('SQRT R0 R0');
+    Result.AddCommand('PUSH R0');
+    Result.AddCommand(' ');
+    end
+  else if F = 'power' then
+    begin
+    GenOperation(Tree.Children[1], Result, Method);
+    GenOperation(Tree.Children[0], Result, Method);
+    Tree.Node.DataType := Tree.Children[0].Node.DataType;
+    Result.AddCommand('POP R0');
+    Result.AddCommand('POP R1');
+    Result.AddCommand('POW R0 R1 R0');
+    Result.AddCommand('PUSH R0');
     Result.AddCommand(' ');
     end
   else if F = 'bool' then
@@ -780,7 +807,30 @@ begin
       begin
       Op := T.Tokens[Tree.Node.Token].Value;
       Tree.Node.DataType := Tree.Children[0].Node.DataType;
-      if Op <> '!' then
+      if (Op = '<') or (Op = '<=') or (Op = '==') or (Op = '>=') or (Op = '>') or (Op = '!=') then
+        begin
+        if Tree.Children[0].Node.DataType = Tree.Children[1].Node.DataType then
+          begin
+          Tree.Node.DataType := dtBool;
+          case Tree.Children[0].Node.DataType of
+            dtBool, dtInt, dtPointer:
+              begin
+              Result.AddCommand('POP I0');
+              Result.AddCommand('POP I1');
+              Result.AddCommand(OperatorInst(OP) + ' I0 I1');
+              Result.AddCommand('PUSH I15');
+              end;
+            dtFloat, dtVec2, dtVec3, dtVec4:
+              begin
+              Result.AddCommand('POP R0');
+              Result.AddCommand('POP R1');
+              Result.AddCommand(OperatorInst(OP) + ' R0 R1 R0');
+              Result.AddCommand('PUSH I15');
+              end;
+            end;
+          end;
+        end
+      else if Op <> '!' then
         begin
         if Tree.Children[0].Node.DataType = Tree.Children[1].Node.DataType then
           begin
@@ -798,7 +848,7 @@ begin
               Result.AddCommand('POP R1');
               Result.AddCommand(OperatorInst(OP) + ' R0 R1 R0');
               Result.AddCommand('PUSH R0');
-            end;
+              end;
             dtMat4:
               begin
               Result.AddCommand('POPM R0');
@@ -828,6 +878,69 @@ begin
   Result.AddCommand(' ');
 end;
 
+procedure TCodeGenerator.GenIf(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
+var
+  i, FirstLabel, SecondLabel: Integer;
+begin
+  FirstLabel := fLabelID;
+  SecondLabel := fLabelID + 1;
+  inc(fLabelID, 2);
+
+  GenOperation(Tree.Children[0], Result, Scope);
+
+  Result.AddCommand('POP I0');
+  Result.AddCommand('LD I1 0');
+  Result.AddCommand('EQ I0 I1');
+  Result.AddCommand('JMP0 [@_' + IntToStr(FirstLabel) + ']');
+  Result.AddCommand(' ');
+
+  // If block
+  for i := 0 to high(Tree.Children[1].Children) do
+    GenCode(Tree.Children[1].Children[i], Scope, Result);
+
+  Result.AddCommand('JMP [@_' + IntToStr(SecondLabel) + ']');
+  Result.AddCommand('@_' + IntToStr(FirstLabel));
+
+  // Else block
+  if Length(Tree.Children) > 2 then
+    if Tree.Children[2].Node.NodeType = ntBlock then
+      begin
+      for i := 0 to high(Tree.Children[2].Children) do
+        GenCode(Tree.Children[2].Children[i], Scope, Result);
+      end
+    else if Tree.Children[2].Node.NodeType = ntIf then
+      GenIf(Tree.Children[2], Result, Scope);
+
+  Result.AddCommand('@_' + IntToStr(SecondLabel));
+
+  inc(fLabelID, 2);
+end;
+
+procedure TCodeGenerator.GenWhile(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
+var
+  i, FirstLabel, SecondLabel: Integer;
+begin
+  FirstLabel := fLabelID;
+  SecondLabel := fLabelID + 1;
+  inc(fLabelID, 2);
+
+  Result.AddCommand('@_' + IntToStr(FirstLabel));
+
+  GenOperation(Tree.Children[0], Result, Scope);
+
+  Result.AddCommand('POP I0');
+  Result.AddCommand('LD I1 0');
+  Result.AddCommand('EQ I0 I1');
+  Result.AddCommand('JMP0 [@_' + IntToStr(SecondLabel) + ']');
+  Result.AddCommand(' ');
+
+  for i := 0 to high(Tree.Children[1].Children) do
+    GenCode(Tree.Children[1].Children[i], Scope, Result);
+
+  Result.AddCommand('JMP [@_' + IntToStr(FirstLabel) + ']');
+  Result.AddCommand('@_' + IntToStr(SecondLabel));
+end;
+
 procedure TCodeGenerator.GenCode(Tree: TStatementTree; Method: TFunction; Result: TASMTable);
 var
   TmpVar: TVariable;
@@ -842,6 +955,10 @@ begin
       end;
 
   case Tree.Node.NodeType of
+    ntIf:
+      GenIf(Tree, Result, Method);
+    ntWhile:
+      GenWhile(Tree, Result, Method);
     ntDeclaration:
       begin
       ParseDeclaration(Tree, AddVar(T.Tokens[Tree.Node.Token + 1].Value, Method));
@@ -974,33 +1091,37 @@ var
   i: Integer;
 begin
   fCurrentOffset := 0;
+  fLabelID := 0;
   
   F := AddFunction(T.Tokens[Tree.Node.Token + 1].Value);
   F.Return.DataType := GetDatatype(T.Tokens[Tree.Node.Token].Value);
   if F.Return.DataType = dtStruct then
     F.Return.Struct := GetStruct(T.Tokens[Tree.Node.Token].Value);
 
-  V := AddVar('result', F);
-  V.DataType := F.Return.DataType;
-  V.Struct := F.Return.Struct;
-  V.InternalOffset := fCurrentOffset;
-  inc(fCurrentOffset, V.GetSize);
-
-  for i := 0 to high(Tree.Children[0].Children) do
+  if F.GetFullName <> 'main' then
     begin
-    V := F.AddParam;
-    ParseDeclaration(Tree.Children[0].Children[i], V);
+    V := AddVar('result', F);
+    V.DataType := F.Return.DataType;
+    V.Struct := F.Return.Struct;
     V.InternalOffset := fCurrentOffset;
     inc(fCurrentOffset, V.GetSize);
-    with AddVar(V.Name, F) do
-      begin
-      InternalOffset := V.InternalOffset;
-      DataType := V.DataType;
-      Struct := V.Struct;
-      end;
-    end;
 
-  inc(fCurrentOffset, 3 * SizeOf(Pointer));
+    for i := 0 to high(Tree.Children[0].Children) do
+      begin
+      V := F.AddParam;
+      ParseDeclaration(Tree.Children[0].Children[i], V);
+      V.InternalOffset := fCurrentOffset;
+      inc(fCurrentOffset, V.GetSize);
+      with AddVar(V.Name, F) do
+        begin
+        InternalOffset := V.InternalOffset;
+        DataType := V.DataType;
+        Struct := V.Struct;
+        end;
+      end;
+
+    inc(fCurrentOffset, 3 * SizeOf(Pointer));
+    end;
 
   Result.AddCommand('@' + F.GetFullName);
   if F.GetFullName = 'main' then

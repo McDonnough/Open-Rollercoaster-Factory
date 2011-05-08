@@ -48,9 +48,6 @@ type
 var
   ParkLoadDialog: TParkLoadDialog = nil;
   ParkFileName: String = '';
-
-  Script: TScript;
-  ScriptCode: TScriptCode = nil;
   
 
 procedure TParkLoadDialog.FileLoaded(Event: String; Data, Result: Pointer);
@@ -74,8 +71,6 @@ end;
 procedure TFPSDisplay.SetTime;
 begin
   fTime := ModuleManager.ModGUITimer.GetTime;
-  fFPS := 1000 / fMS;
-  fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 
 procedure TFPSDisplay.Calculate;
@@ -89,6 +84,8 @@ begin
   fMSHistory[2] := fMSHistory[1];
   fMSHistory[1] := fMSHistory[0];
   fMSHistory[0] := fMS;
+  fFPS := 1000 / fMS;
+  fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 
 constructor TFPSDisplay.Create;
@@ -114,21 +111,6 @@ end;
 
 procedure ChangeRenderState(New: TRenderState);
 begin
-  if ScriptCode = nil then
-    begin
-    ModuleManager.ModScriptManager.SetDataStructure('Test', 'float ms');
-    ScriptCode := TScriptCode.Create(
-        'extern struct Test;' + #10
-      + 'Test test = 0^;' + #10
-      + 'void main() {' + #10
-      + '  test = 0^;' + #10
-      + '  test.ms = 40.0;' + #10
-      + '}' + #10
-    );
-    ScriptCode.Name := 'Test';
-    Script := ScriptCode.CreateInstance;
-    end;
-
   if FPSDisplay = nil then
     FPSDisplay := TFPSDisplay.Create;
   RenderState := New;
@@ -161,15 +143,10 @@ end;
 procedure MainLoop; cdecl;
 var
   ResX, ResY: Integer;
+const
+  Bla: Single = 40.0;
 begin
   FPSDisplay.Calculate;
-
-  if Script <> nil then
-    begin
-    Script.SetIO(@FPSDisplay.fMS, SizeOf(Single), True);
-    Script.Execute;
-    end;
-
   FPSDisplay.SetTime;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModInputHandler.UpdateData;

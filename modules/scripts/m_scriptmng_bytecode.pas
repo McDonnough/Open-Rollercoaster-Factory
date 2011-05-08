@@ -31,6 +31,7 @@ type
       procedure DestroyScript(Script: TScript);
       procedure DestroyCode(Code: TScriptCode);
       procedure SetDataStructure(Name, Fields: String);
+      procedure SetGlobal(Script: TScript; Name: String; Data: PByte; Bytes: Integer);
       procedure CheckModConf;
       constructor Create;
       destructor Free;
@@ -132,6 +133,29 @@ end;
 procedure TModuleScriptManagerBytecode.SetDataStructure(Name, Fields: String);
 begin
   fCompiler.CodeGenerator.AddExternalStruct(Name, Fields);
+end;
+
+procedure TModuleScriptManagerBytecode.SetGlobal(Script: TScript; Name: String; Data: PByte; Bytes: Integer);
+var
+  FB: PByte;
+  Offset: PtrUInt;
+begin
+  SetScriptHandles(Script);
+
+  Offset := fLastUsedCode.GlobalLocations[Name];
+
+  if Offset = 0 then
+    exit;
+
+  FB := fLastUsedScript.Stack.FirstByte + Offset;
+
+  while Bytes > 0 do
+    begin
+    FB^ := Data^;
+    inc(Data);
+    inc(FB);
+    dec(Bytes);
+    end;
 end;
 
 procedure TModuleScriptManagerBytecode.CheckModConf;

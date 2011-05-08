@@ -56,7 +56,7 @@ begin
   try
     fTokenList := fTokenizer.Tokenize(Handle.Code.SourceCode);
     fStatementTree := fStatementTreeGenerator.GenerateTree(fTokenList);
-    fASMTable := fCodeGenerator.GenerateCode(fStatementTree);
+    fASMTable := fCodeGenerator.GenerateCode(fStatementTree, Handle.GlobalLocations);
     Handle.ASMCode := fASMOptimizer.Optimize(fASMTable);
     fASMTable.Free;
     fStatementTree.Free;

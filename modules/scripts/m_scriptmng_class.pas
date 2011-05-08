@@ -52,6 +52,15 @@ type
         *@param Fields in it
         *)
       procedure SetDataStructure(Name, Fields: String); virtual abstract;
+
+      (**
+        * Set the value of a global variable
+        *@param Script to change the variable of
+        *@param Name ot the variable
+        *@param First byte of data
+        *@param Length of data
+        *)
+      procedure SetGlobal(Script: TScript; Name: String; Data: PByte; Bytes: Integer); virtual abstract;
     end;
 
 implementation

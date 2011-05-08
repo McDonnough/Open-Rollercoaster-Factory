@@ -41,6 +41,7 @@ type
       property Code: TScriptCode read fCode;
       procedure Execute;
       procedure SetIO(Data: PByte; Bytes: Integer; Writeback: Boolean = False);
+      procedure SetGlobal(Name: String; Data: PByte; Bytes: Integer);
       constructor Create;
       destructor Free;
     end;
@@ -101,6 +102,11 @@ begin
   P := ModuleManager.ModScriptManager.GetRealPointer(self, fIOSections[fIOSectionCount - 1].Location);
   for i := 0 to Bytes - 1 do
     (P + i)^ := (Data + i)^;
+end;
+
+procedure TScript.SetGlobal(Name: String; Data: PByte; Bytes: Integer);
+begin
+  ModuleManager.ModScriptManager.SetGlobal(Self, Name, Data, Bytes);
 end;
 
 constructor TScript.Create;

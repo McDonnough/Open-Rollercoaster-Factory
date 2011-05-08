@@ -3,7 +3,7 @@ unit m_scriptmng_bytecode_compiler_code_generator;
 interface
 
 uses
-  SysUtils, Classes, m_scriptmng_bytecode_compiler_tree_generator, u_functions;
+  SysUtils, Classes, m_scriptmng_bytecode_compiler_tree_generator, u_functions, m_scriptmng_bytecode_classes;
 
 type
   EScriptCodeException = class(Exception);
@@ -80,7 +80,7 @@ type
       procedure Cleanup;
     public
       procedure AddExternalStruct(Name, Fields: String);
-      function GenerateCode(Tree: TStatementTree): TASMTable;
+      function GenerateCode(Tree: TStatementTree; Globs: TLocationTable): TASMTable;
       destructor Free;
     end;
 
@@ -1278,7 +1278,7 @@ begin
     end;
 end;
 
-function TCodeGenerator.GenerateCode(Tree: TStatementTree): TASMTable;
+function TCodeGenerator.GenerateCode(Tree: TStatementTree; Globs: TLocationTable): TASMTable;
 var
   i: Integer;
   FinishedInitProcedure: Boolean;
@@ -1330,6 +1330,10 @@ begin
       Result.AddCommand('JMP [0]');
       Result.AddCommand(' ');
       end;
+
+    for i := 0 to high(fVars) do
+      if fVars[i].Parent = nil then
+        Globs[fVars[i].Name] := fVars[i].InternalOffset;
   except
     Cleanup;
     raise EScriptCodeException.Create('Compilation aborted');

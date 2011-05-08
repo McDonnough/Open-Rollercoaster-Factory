@@ -30,6 +30,7 @@ type
       procedure AddScript(Script: TScript);
       procedure DestroyScript(Script: TScript);
       procedure DestroyCode(Code: TScriptCode);
+      procedure SetDataStructure(Name, Fields: String);
       procedure CheckModConf;
       constructor Create;
       destructor Free;
@@ -126,6 +127,11 @@ begin
       setLength(fCodeHandles, length(fCodeHandles) - 1);
       exit;
       end;
+end;
+
+procedure TModuleScriptManagerBytecode.SetDataStructure(Name, Fields: String);
+begin
+  fCompiler.CodeGenerator.AddExternalStruct(Name, Fields);
 end;
 
 procedure TModuleScriptManagerBytecode.CheckModConf;

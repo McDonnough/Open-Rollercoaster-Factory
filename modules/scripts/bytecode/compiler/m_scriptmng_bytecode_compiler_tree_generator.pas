@@ -128,7 +128,7 @@ begin
   Expect(Start + 2, stIdentifier);
   Expect(Start + 3, stSemicolon);
 
-  Result.AddChild(IdentifierNode(Start));
+  Result.AddChild(IdentifierNode(Start + 2));
 
   inc(Start, 4);
 end;

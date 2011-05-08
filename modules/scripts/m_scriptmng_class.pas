@@ -45,6 +45,13 @@ type
         *@param The script
         *)
       procedure DestroyCode(Code: TScriptCode); virtual abstract;
+
+      (**
+        * Add an extern struct
+        *@param Name of it
+        *@param Fields in it
+        *)
+      procedure SetDataStructure(Name, Fields: String); virtual abstract;
     end;
 
 implementation

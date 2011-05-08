@@ -18,10 +18,12 @@ type
 
   TStruct = class
     Name: String;
+    External: Boolean;
     Fields: Array of TVariable;
     function GetField(FieldName: String): TVariable;
     function GetSize: PtrUInt;
     function Add: TVariable;
+    constructor Create;
     destructor Free;
     end;
 
@@ -48,7 +50,7 @@ type
   TCodeGenerator = class
     protected
       fVars: Array of TVariable;
-      fStructs: Array of TStruct;
+      fStructs, fExternalStructs: Array of TStruct;
       fFunctions: Array of TFunction;
       fCurrentOffset: PtrUInt;
       fLabelID: Integer;
@@ -62,6 +64,8 @@ type
       function GetVarOffset(Name: String; Scope: TFunction): PtrUInt;
       function GetVarType(Name: String; Scope: TFunction): TDataType;
       function GetBuiltinFunction(A: String): String;
+      function GetExternalStruct(Name: String): TStruct;
+      procedure CreateExtStruct(Tree: TStatementTree);
       procedure CreateFunction(Tree: TStatementTree; Result: TASMTable);
       procedure ParsePointerDeclaration(Tree: TStatementTree; Variable: TVariable);
       procedure ParseDeclaration(Tree: TStatementTree; Variable: TVariable);
@@ -70,8 +74,12 @@ type
       procedure GenOperation(Tree: TStatementTree; Result: TASMTable; Scope: TFunction; WantedType: TDataType = dtInt);
       procedure GenIf(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
       procedure GenWhile(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
+      procedure GenFor(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
+      procedure GenDo(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
       procedure GenCode(Tree: TStatementTree; Method: TFunction; Result: TASMTable);
+      procedure Cleanup;
     public
+      procedure AddExternalStruct(Name, Fields: String);
       function GenerateCode(Tree: TStatementTree): TASMTable;
       destructor Free;
     end;
@@ -114,6 +122,11 @@ begin
   Result.InternalOffset := GetSize;
   SetLength(Fields, length(Fields) + 1);
   Fields[high(Fields)] := Result;
+end;
+
+constructor TStruct.Create;
+begin
+  External := False;
 end;
 
 destructor TStruct.Free;
@@ -181,6 +194,52 @@ begin
     Parameters[i].Free;
 end;
 
+
+function TCodeGenerator.GetExternalStruct(Name: String): TStruct;
+var
+  i: Integer;
+begin
+  for i := 0 to high(fExternalStructs) do
+    if fExternalStructs[i].Name = Name then
+      exit(fExternalStructs[i]);
+  Result := nil;
+end;
+
+procedure TCodeGenerator.AddExternalStruct(Name, Fields: String);
+var
+  TheStruct: TStruct;
+  i: Integer;
+  F, G: AString;
+begin
+  if GetExternalStruct(Name) <> nil then
+    ModuleManager.ModLog.AddError('Cannot redeclare external struct ' + Name)
+  else
+    begin
+    TheStruct := TStruct.Create;
+    TheStruct.Name := Name;
+    TheStruct.External := True;
+
+    F := Explode(#10, Fields);
+    for i := 0 to high(F) do
+      begin
+      G := Explode(' ', F[i]);
+      with TheStruct.Add do
+        begin
+        Name := G[1];
+        DataType := GetDatatype(G[0]);
+        if DataType = dtStruct then
+          begin
+          Struct := GetExternalStruct(G[0]);
+          if Struct = nil then
+            ModuleManager.ModLog.AddError('Extern struct ' + G[0] + ' not declared');
+          end;
+        end;
+      end;
+   
+    SetLength(fExternalStructs, length(fExternalStructs) + 1);
+    fExternalStructs[high(fExternalStructs)] := TheStruct;
+    end;
+end;
 
 function TCodeGenerator.GetBuiltinFunction(A: String): String;
 const
@@ -941,6 +1000,53 @@ begin
   Result.AddCommand('@_' + IntToStr(SecondLabel));
 end;
 
+procedure TCodeGenerator.GenDo(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
+var
+  i, FirstLabel: Integer;
+begin
+  FirstLabel := fLabelID;
+  inc(fLabelID);
+
+  Result.AddCommand('@_' + IntToStr(FirstLabel));
+
+  for i := 0 to high(Tree.Children[0].Children) do
+    GenCode(Tree.Children[0].Children[i], Scope, Result);
+
+  GenOperation(Tree.Children[1], Result, Scope);
+
+  Result.AddCommand('POP I15');
+  Result.AddCommand('JMP0 [@_' + IntToStr(FirstLabel) + ']');
+  Result.AddCommand(' ');
+end;
+
+procedure TCodeGenerator.GenFor(Tree: TStatementTree; Result: TASMTable; Scope: TFunction);
+var
+  i, FirstLabel, SecondLabel: Integer;
+begin
+  FirstLabel := fLabelID;
+  SecondLabel := fLabelID + 1;
+  inc(fLabelID, 2);
+
+  GenCode(Tree.Children[0], Scope, Result);
+
+  Result.AddCommand('@_' + IntToStr(FirstLabel));
+  GenOperation(Tree.Children[1], Result, Scope);
+
+  Result.AddCommand('POP I0');
+  Result.AddCommand('LD I1 0');
+  Result.AddCommand('EQ I0 I1');
+  Result.AddCommand('JMP0 [@_' + IntToStr(SecondLabel) + ']');
+  Result.AddCommand(' ');
+
+  for i := 0 to high(Tree.Children[3].Children) do
+    GenCode(Tree.Children[3].Children[i], Scope, Result);
+
+  GenCode(Tree.Children[2], Scope, Result);
+  
+  Result.AddCommand('JMP [@_' + IntToStr(FirstLabel) + ']');
+  Result.AddCommand('@_' + IntToStr(SecondLabel));
+end;
+
 procedure TCodeGenerator.GenCode(Tree: TStatementTree; Method: TFunction; Result: TASMTable);
 var
   TmpVar: TVariable;
@@ -959,6 +1065,10 @@ begin
       GenIf(Tree, Result, Method);
     ntWhile:
       GenWhile(Tree, Result, Method);
+    ntFor:
+      GenFor(Tree, Result, Method);
+    ntDo:
+      GenDo(Tree, Result, Method);
     ntDeclaration:
       begin
       ParseDeclaration(Tree, AddVar(T.Tokens[Tree.Node.Token + 1].Value, Method));
@@ -1017,7 +1127,7 @@ begin
             Result.AddCommand('ADD I14 I0 I0');
           if (TmpVar.DataType = dtStruct) or ((TmpVar.DataType = dtPointer) and (TmpVar.PointerType = dtStruct)) then
             begin
-            if TmpVar.DataType = dtPointer then
+            if (T.Tokens[Tree.Node.Token].Value <> TmpVar.Name) and (TmpVar.DataType = dtPointer) then
               Result.AddCommand('LD I0 [I0]');
             if GetVarOffset(T.Tokens[Tree.Node.Token].Value, Method) > 0 then
               begin
@@ -1151,6 +1261,23 @@ begin
   Result.AddCommand(' ');
 end;
 
+procedure TCodeGenerator.CreateExtStruct(Tree: TStatementTree);
+var
+  ExtStruct: TStruct;
+begin
+  ExtStruct := GetExternalStruct(T.Tokens[Tree.Children[0].Node.Token].Value);
+  if ExtStruct = nil then
+    begin
+    ModuleManager.ModLog.AddError('External Struct ' + T.Tokens[Tree.Children[0].Node.Token].Value + ' not declared');
+    raise EScriptCodeException.Create('Compilation aborted');
+    end
+  else
+    begin
+    SetLength(fStructs, length(fStructs) + 1);
+    fStructs[high(fStructs)] := ExtStruct;
+    end;
+end;
+
 function TCodeGenerator.GenerateCode(Tree: TStatementTree): TASMTable;
 var
   i: Integer;
@@ -1159,49 +1286,71 @@ begin
   fLabelID := 0;
   fCurrentOffset := SizeOf(Pointer);
 
-  Result := TASMTable.Create;
-  Result.AddCommand('@__INIT__');
-  Result.AddCommand('LD I0 ' + IntToStr(fCurrentOffset));
-  Result.AddCommand('LD SP I0');
-  Result.AddCommand(' ');
-
-  FinishedInitProcedure := False;
-
-  for i := 0 to high(Tree.Children) do
-    case Tree.Children[i].Node.NodeType of
-      ntStruct: CreateStruct(Tree.Children[i]);
-//       ntExternalStruct: CreateExtStruct(Tree.Children[i]);
-      ntFunction:
-        begin
-        if not FinishedInitProcedure then
-          begin
-          Result.AddCommand('LD I0 SP');
-          Result.AddCommand('LD I1 0');
-          Result.AddCommand('LD [I1] I0');
-          Result.AddCommand('JMP [0]');
-          Result.AddCommand(' ');
-          end;
-        FinishedInitProcedure := True;
-        CreateFunction(Tree.Children[i], Result);
-        end;
-      else
-        if FinishedInitProcedure then
-          begin
-          ModuleManager.ModLog.AddError('Commands outside a function are not allowed after a function');
-          raise EScriptCodeException.Create('Compilation aborted');
-          end
-        else
-          GenCode(Tree.Children[i], nil, Result);
-      end;
-
-  if not FinishedInitProcedure then
-    begin
-    Result.AddCommand('LD I0 SP');
-    Result.AddCommand('LD I1 0');
-    Result.AddCommand('LD [I1] I0');
-    Result.AddCommand('JMP [0]');
+  try
+    Result := TASMTable.Create;
+    Result.AddCommand('@__INIT__');
+    Result.AddCommand('LD I0 ' + IntToStr(fCurrentOffset));
+    Result.AddCommand('LD SP I0');
     Result.AddCommand(' ');
-    end;
+
+    FinishedInitProcedure := False;
+
+    for i := 0 to high(Tree.Children) do
+      case Tree.Children[i].Node.NodeType of
+        ntStruct: CreateStruct(Tree.Children[i]);
+        ntExternStruct: CreateExtStruct(Tree.Children[i]);
+        ntFunction:
+          begin
+          if not FinishedInitProcedure then
+            begin
+            Result.AddCommand('LD I0 SP');
+            Result.AddCommand('LD I1 0');
+            Result.AddCommand('LD [I1] I0');
+            Result.AddCommand('JMP [0]');
+            Result.AddCommand(' ');
+            end;
+          FinishedInitProcedure := True;
+          CreateFunction(Tree.Children[i], Result);
+          end;
+        else
+          if FinishedInitProcedure then
+            begin
+            ModuleManager.ModLog.AddError('Commands outside a function are not allowed after a function');
+            raise EScriptCodeException.Create('Compilation aborted');
+            end
+          else
+            GenCode(Tree.Children[i], nil, Result);
+        end;
+
+    if not FinishedInitProcedure then
+      begin
+      Result.AddCommand('LD I0 SP');
+      Result.AddCommand('LD I1 0');
+      Result.AddCommand('LD [I1] I0');
+      Result.AddCommand('JMP [0]');
+      Result.AddCommand(' ');
+      end;
+  except
+    Cleanup;
+    raise EScriptCodeException.Create('Compilation aborted');
+  end;
+  Cleanup;
+end;
+
+procedure TCodeGenerator.Cleanup;
+var
+  i: Integer;
+begin
+  for i := 0 to high(fStructs) do
+    if not fStructs[i].External then
+      fStructs[i].Free;
+  SetLength(fStructs, 0);
+  for i := 0 to high(fFunctions) do
+    fFunctions[i].Free;
+  SetLength(fFunctions, 0);
+  for i := 0 to high(fVars) do
+    fVars[i].Free;
+  SetLength(fVars, 0);
 end;
 
 destructor TCodeGenerator.Free;

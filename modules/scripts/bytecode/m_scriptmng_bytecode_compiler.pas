@@ -20,6 +20,7 @@ type
       fCodeGenerator: TCodeGenerator;
       fASMOptimizer: TASMOptimizer;
     public
+      property CodeGenerator: TCodeGenerator read fCodeGenerator;
       procedure Compile(Handle: TBytecodeScriptHandle);
       constructor Create;
       destructor Free;

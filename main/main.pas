@@ -11,7 +11,7 @@ type
   TRenderState = (rsMainMenu, rsLoadPark, rsGame, rsHelp, rsSettings);
 
   TFPSDisplay = class
-    protected
+    private
       fLabel: TLabel;
       fWindow: TWindow;
       fMS, fFPS: Single;
@@ -74,6 +74,8 @@ end;
 procedure TFPSDisplay.SetTime;
 begin
   fTime := ModuleManager.ModGUITimer.GetTime;
+  fFPS := 1000 / fMS;
+  fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 
 procedure TFPSDisplay.Calculate;
@@ -87,8 +89,6 @@ begin
   fMSHistory[2] := fMSHistory[1];
   fMSHistory[1] := fMSHistory[0];
   fMSHistory[0] := fMS;
-  fFPS := 1000 / fMS;
-  fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 
 constructor TFPSDisplay.Create;
@@ -116,32 +116,18 @@ procedure ChangeRenderState(New: TRenderState);
 begin
   if ScriptCode = nil then
     begin
+    ModuleManager.ModScriptManager.SetDataStructure('Test', 'float ms');
     ScriptCode := TScriptCode.Create(
-        'int moep(int n) {' + #10
-      + '  if (n <= 1) {' + #10
-      + '    result = n;' + #10
-      + '  } else {' + #10
-      + '    result = 2 * n;' + #10
-      + '  }' + #10
-      + '}' + #10
+        'extern struct Test;' + #10
+      + 'Test test = 0^;' + #10
       + 'void main() {' + #10
-      + '  int bla = 1;' + #10
-      + '  while (bla <= 5) {' + #10
-      + '    if (bla == 3) {' + #10
-      + '      write(bla);' + #10
-      + '    }' + #10
-      + '    else if (bla != 3) {' + #10
-      + '      write(moep(bla));' + #10
-      + '    }' + #10
-      + '    bla = bla + 1;' + #10
-      + '  }' + #10
+      + '  test = 0^;' + #10
+      + '  test.ms = 40.0;' + #10
       + '}' + #10
     );
     ScriptCode.Name := 'Test';
     Script := ScriptCode.CreateInstance;
     end;
-  Script.Execute;
-//   halt(0);
 
   if FPSDisplay = nil then
     FPSDisplay := TFPSDisplay.Create;
@@ -177,6 +163,13 @@ var
   ResX, ResY: Integer;
 begin
   FPSDisplay.Calculate;
+
+  if Script <> nil then
+    begin
+    Script.SetIO(@FPSDisplay.fMS, SizeOf(Single), True);
+    Script.Execute;
+    end;
+
   FPSDisplay.SetTime;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModInputHandler.UpdateData;
@@ -184,6 +177,7 @@ begin
   ModuleManager.ModGUI.CallSignals;
   ModuleManager.ModOCFManager.CheckLoaded;
   ResourceManager.Notify;
+
 
   if ModuleManager.ModSettings.CanBeDestroyed then
     ModuleManager.ModSettings.HideConfigurationInterface;

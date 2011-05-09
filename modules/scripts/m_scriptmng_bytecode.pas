@@ -39,6 +39,9 @@ type
 
 implementation
 
+uses
+  u_scene;
+
 procedure TModuleScriptManagerBytecode.SetScriptHandles(Script: TScript);
 var
   i: Integer;
@@ -164,6 +167,13 @@ begin
   fVM := TScriptVM.Create;
   fASM := TScriptAssembler.Create;
   fCompiler := TScriptCompiler.Create;
+
+  TLightSource.RegisterStruct;
+  TMaterial.RegisterStruct;
+  TBone.RegisterStruct;
+  TArmature.RegisterStruct;
+  TGeoMesh.RegisterStruct;
+  TGeoObject.RegisterStruct;
 end;
 
 constructor TModuleScriptManagerBytecode.Create;

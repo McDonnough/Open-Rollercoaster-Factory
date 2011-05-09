@@ -16,6 +16,8 @@ type
       CastShadows: Boolean;
       function Duplicate: TLightSource;
       procedure Register;
+      procedure SetIO;
+      class procedure RegisterStruct;
       constructor Create;
       destructor Free;
     end;
@@ -84,6 +86,8 @@ type
       procedure AddChild(Bone: TBone);
       procedure UpdateMatrix;
       function Duplicate(TheObject: TGeoObject; TheArmature: TArmature): TBone;
+      procedure SetIO;
+      class procedure RegisterStruct;
       constructor Create;
     end;
 
@@ -98,6 +102,8 @@ type
       function AddBone: TBone;
       function GetBoneByName(Bone: String): TBone;
       procedure UpdateMatrix;
+      procedure SetIO;
+      class procedure RegisterStruct;
       constructor Create;
     end;
 
@@ -112,6 +118,8 @@ type
       OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
       function Duplicate: TMaterial;
+      procedure SetIO;
+      class procedure RegisterStruct;
       constructor Create;
     end;
 
@@ -145,6 +153,8 @@ type
       procedure UpdateMatrix;
       procedure UpdateVertexPositions;
       procedure Register;
+      procedure SetIO;
+      class procedure RegisterStruct;
       constructor Create;
       destructor Free;
     end;
@@ -171,6 +181,8 @@ type
       procedure SetUnchanged;
       function GetBoneByName(Armature, Bone: String): TBone;
       procedure ExecuteScript;
+      procedure SetIO;
+      class procedure RegisterStruct;
       constructor Create;
       destructor Free;
     end;
@@ -180,7 +192,7 @@ function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
 implementation
 
 uses
-  u_events, u_particles, main;
+  u_events, u_particles, main, m_varlist;
 
 function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
 begin
@@ -208,6 +220,14 @@ end;
 procedure TLightSource.Register;
 begin
   EventManager.CallEvent('TLightSource.Added', self, nil);
+end;
+
+procedure TLightSource.SetIO;
+begin
+end;
+
+class procedure TLightSource.RegisterStruct;
+begin
 end;
 
 constructor TLightSource.Create;
@@ -292,6 +312,14 @@ begin
     TheArmature.Bones[ParentBone.BoneID].AddChild(Result);
 end;
 
+procedure TBone.SetIO;
+begin
+end;
+
+class procedure TBone.RegisterStruct;
+begin
+end;
+
 constructor TBone.Create;
 begin
   fCalculatedMatrix := Identity4D;
@@ -352,6 +380,14 @@ begin
       Bones[i].UpdateMatrix;
 end;
 
+procedure TArmature.SetIO;
+begin
+end;
+
+class procedure TArmature.RegisterStruct;
+begin
+end;
+
 constructor TArmature.Create;
 begin
   ArmatureID := -1;
@@ -382,6 +418,14 @@ begin
     exit(true);
   if Texture <> nil then
     Result := Texture.BPP = 4;
+end;
+
+procedure TMaterial.SetIO;
+begin
+end;
+
+class procedure TMaterial.RegisterStruct;
+begin
 end;
 
 constructor TMaterial.Create;
@@ -648,6 +692,14 @@ begin
     TParticleGroup(ParticleGroups[i]).Register;
 end;
 
+procedure TGeoMesh.SetIO;
+begin
+end;
+
+class procedure TGeoMesh.RegisterStruct;
+begin
+end;
+
 constructor TGeoMesh.Create;
 begin
   MeshID := -1;
@@ -818,10 +870,32 @@ procedure TGeoObject.ExecuteScript;
 begin
   if Script <> nil then
     begin
-    Script.SetIO(@FPSDisplay.ms, SizeOf(Single));
-    Script.SetIO(@Meshes[0].Matrix, SizeOf(TMatrix4D));
+    SetIO;
     Script.Execute;
     end;
+end;
+
+procedure TGeoObject.SetIO;
+var
+  Counts: Array[0..2] of SInt;
+begin
+  Counts[0] := Length(Meshes);
+  Counts[1] := Length(Armatures);
+  Counts[2] := Length(Materials);
+
+  Script.SetIO(@FPSDisplay.ms, SizeOf(Single));
+  Script.SetIO(@Matrix, SizeOf(TMatrix4D), True);
+  Script.SetIO(@Counts[0], 3 * SizeOf(SInt));
+end;
+
+class procedure TGeoObject.RegisterStruct;
+begin
+  ModuleManager.ModScriptManager.SetDataStructure('Object',
+   'float ms' + #10 +
+   'mat4 matrix' + #10 +
+   'int meshCount' + #10 +
+   'int armatureCount' + #10 +
+   'int materialCount');
 end;
 
 constructor TGeoObject.Create;

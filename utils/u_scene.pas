@@ -160,6 +160,9 @@ type
     end;
 
   TGeoObject = class
+    private
+      Counts: Array[0..5] of PtrUInt;
+      Offsets: Array[0..5] of PtrUInt;
     public
       Meshes: Array of TGeoMesh;
       Armatures: Array of TArmature;
@@ -922,28 +925,38 @@ end;
 
 procedure TGeoObject.SetIO;
 var
-  Counts: Array[0..5] of SInt;
   i, j, k: SInt;
 begin
-  Counts[0] := Length(Meshes);
-  Counts[1] := Length(Armatures);
-  Counts[2] := Length(Materials);
-  Counts[3] := 0;
-  Counts[4] := 0;
-  Counts[5] := 0;
-
-  for i := 0 to high(Armatures) do
-    inc(Counts[3], length(Armatures[i].Bones));
-
-  for i := 0 to high(Meshes) do
+  if FirstRun then
     begin
-    inc(Counts[4], length(Meshes[i].LightSources));
-    inc(Counts[5], length(Meshes[i].ParticleGroups));
+    Counts[0] := Length(Meshes);
+    Counts[1] := Length(Armatures);
+    Counts[2] := Length(Materials);
+    Counts[3] := 0;
+    Counts[4] := 0;
+    Counts[5] := 0;
+
+    for i := 0 to high(Armatures) do
+      inc(Counts[3], length(Armatures[i].Bones));
+
+    for i := 0 to high(Meshes) do
+      begin
+      inc(Counts[4], length(Meshes[i].LightSources));
+      inc(Counts[5], length(Meshes[i].ParticleGroups));
+      end;
+
+    Offsets[0] := ModuleManager.ModScriptManager.DataStructureSize('Object');
+    Offsets[1] := Offsets[0] + Counts[0] * ModuleManager.ModScriptManager.DataStructureSize('Mesh');
+    Offsets[2] := Offsets[1] + Counts[1] * ModuleManager.ModScriptManager.DataStructureSize('Armature');
+    Offsets[3] := Offsets[2] + Counts[2] * ModuleManager.ModScriptManager.DataStructureSize('Material');
+    Offsets[4] := Offsets[3] + Counts[3] * ModuleManager.ModScriptManager.DataStructureSize('Bone');
+    Offsets[5] := Offsets[4] + Counts[4] * ModuleManager.ModScriptManager.DataStructureSize('Lamp');
     end;
 
-  Script.SetIO(@FPSDisplay.ms, SizeOf(Single));
+  Script.SetIO(@FPSDisplay.ms, SizeOf(Single), False);
   Script.SetIO(@Matrix, SizeOf(TMatrix4D), True);
-  Script.SetIO(@Counts[0], 6 * SizeOf(SInt));
+  Script.SetIO(@Counts[0], 6 * SizeOf(PtrUInt), False);
+  Script.SetIO(@Offsets[0], 6 * SizeOf(PtrUInt), False);
 
   for i := 0 to high(Meshes) do
     Meshes[i].SetIO(Script);
@@ -1015,7 +1028,13 @@ begin
    'int materialCount' + #10 +
    'int boneCount' + #10 +
    'int lampCount' + #10 +
-   'int particleCount');
+   'int particleCount' + #10 +
+   'int firstMeshOffset' + #10 + 
+   'int firstArmatureOffset' + #10 + 
+   'int firstMaterialOffset' + #10 + 
+   'int firstBoneOffset' + #10 + 
+   'int firstLampOffset' + #10 + 
+   'int firstParticleOffset');
 end;
 
 constructor TGeoObject.Create;

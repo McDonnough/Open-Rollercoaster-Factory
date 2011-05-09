@@ -5,7 +5,7 @@ interface
 uses
   SysUtils, Classes, u_scripts, m_scriptmng_class, m_scriptmng_bytecode_compiler, m_scriptmng_bytecode_vm,
   m_scriptmng_bytecode_classes, m_scriptmng_bytecode_vm_runner, m_scriptmng_bytecode_compiler_assembler,
-  m_scriptmng_bytecode_cmdlist;
+  m_scriptmng_bytecode_cmdlist, m_scriptmng_bytecode_compiler_code_generator;
 
 type
   TModuleScriptManagerBytecode = class(TModuleScriptManagerClass)
@@ -32,6 +32,7 @@ type
       procedure DestroyCode(Code: TScriptCode);
       procedure SetDataStructure(Name, Fields: String);
       procedure SetGlobal(Script: TScript; Name: String; Data: PByte; Bytes: Integer);
+      function DataStructureSize(Name: String): PtrUInt;
       procedure CheckModConf;
       constructor Create;
       destructor Free;
@@ -40,7 +41,7 @@ type
 implementation
 
 uses
-  u_scene;
+  u_scene, m_varlist;
 
 procedure TModuleScriptManagerBytecode.SetScriptHandles(Script: TScript);
 var
@@ -159,6 +160,17 @@ begin
     inc(FB);
     dec(Bytes);
     end;
+end;
+
+function TModuleScriptManagerBytecode.DataStructureSize(Name: String): PtrUInt;
+var
+  S: TStruct;
+begin
+  S := fCompiler.CodeGenerator.GetExternalStruct(Name);
+  if S <> nil then
+    Result := S.GetSize
+  else
+    ModuleManager.ModLog.AddError('Extern struct ' + Name + ' not defined');
 end;
 
 procedure TModuleScriptManagerBytecode.CheckModConf;

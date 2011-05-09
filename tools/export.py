@@ -393,6 +393,13 @@ def meshXML(mesh):
   result += '    <geometry>\n'
   result += geometryXML(mesh)
   result += '    </geometry>\n'
+
+  for child in bpy.data.meshes:
+    o2 = bpy.data.objects[child.name]
+    if o2.parent == objMesh:
+      result += meshXML(child)
+
+  
   result += '  </mesh>\n'
   return result
 
@@ -408,7 +415,9 @@ def objectXML():
     result += armatureXML(armature)
 
   for mesh in bpy.data.meshes:
-    result += meshXML(mesh)
+    objMesh = bpy.data.objects[mesh.name]
+    if objMesh.parent == None:
+      result += meshXML(mesh)
   
   result += '</object>\n'
   return result

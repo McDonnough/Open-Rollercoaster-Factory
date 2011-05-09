@@ -61,6 +61,13 @@ type
         *@param Length of data
         *)
       procedure SetGlobal(Script: TScript; Name: String; Data: PByte; Bytes: Integer); virtual abstract;
+
+      (**
+        * Get size of an external struct.
+        *@param name of the struct
+        *@return Number of bytes it consumes.
+        *)
+      function DataStructureSize(Name: String): PtrUInt; virtual abstract;
     end;
 
 implementation

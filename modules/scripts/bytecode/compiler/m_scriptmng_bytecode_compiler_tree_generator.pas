@@ -587,7 +587,7 @@ begin
         Expect(i, stDataType);
         Expect(i + 1, stIdentifier);
         case T.Tokens[i + 2].TType of
-          stSemicolon: Result.AddChild(DeclarationTree(Start));
+//           stSemicolon: Result.AddChild(DeclarationTree(Start));
           stAssign: Result.AddChild(AssignmentTree(Start, i + 2));
           else
             ErrLine(i + 2);
@@ -745,7 +745,7 @@ begin
         Expect(i + 1, stIdentifier);
 
         case T.Tokens[i + 2].TType of
-          stSemicolon: Tree.AddChild(DeclarationTree(Min));
+//           stSemicolon: Tree.AddChild(DeclarationTree(Min));
           stAssign: Tree.AddChild(AssignmentTree(Min, i + 2));
           stParentheseL: Tree.AddChild(FunctionTree(Min));
           else

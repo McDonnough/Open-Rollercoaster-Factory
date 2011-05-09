@@ -64,7 +64,6 @@ type
       function GetVarOffset(Name: String; Scope: TFunction): PtrUInt;
       function GetVarType(Name: String; Scope: TFunction): TDataType;
       function GetBuiltinFunction(A: String): String;
-      function GetExternalStruct(Name: String): TStruct;
       procedure CreateExtStruct(Tree: TStatementTree);
       procedure CreateFunction(Tree: TStatementTree; Result: TASMTable);
       procedure ParsePointerDeclaration(Tree: TStatementTree; Variable: TVariable);
@@ -79,6 +78,7 @@ type
       procedure GenCode(Tree: TStatementTree; Method: TFunction; Result: TASMTable);
       procedure Cleanup;
     public
+      function GetExternalStruct(Name: String): TStruct;
       procedure AddExternalStruct(Name, Fields: String);
       function GenerateCode(Tree: TStatementTree; Globs: TLocationTable): TASMTable;
       destructor Free;
@@ -294,7 +294,6 @@ begin
     begin
     Tree.Node.DataType := dtInt;
     Result.AddCommand('PUSH ' + IntToStr(GetStruct(T.Tokens[Tree.Children[0].Node.Token].Value).GetSize));
-    Result.AddCommand(' ');
     end
   else if F = 'translationMatrix' then
     begin

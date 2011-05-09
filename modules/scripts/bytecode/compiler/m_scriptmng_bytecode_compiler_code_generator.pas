@@ -243,8 +243,9 @@ end;
 
 function TCodeGenerator.GetBuiltinFunction(A: String): String;
 const
-  Builtins: Array[0..10] of String = (
-    'bool', 'int', 'pointer', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'write', 'sqrt', 'power');
+  Builtins: Array[0..13] of String = (
+    'bool', 'int', 'pointer', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'write', 'sqrt', 'power',
+    'translationMatrix', 'orientationMatrix', 'rotationMatrix');
 var
   i: Integer;
 begin
@@ -289,6 +290,33 @@ begin
 //   else if F = '' then
 //     begin
 //     end
+  else if F = 'translationMatrix' then
+    begin
+    Tree.Node.DataType := dtMat4;
+    GenOperation(Tree.Children[0], Result, Method, dtVec3);
+    Result.AddCommand('POP R4');
+    Result.AddCommand('TRANSLM R0 R4');
+    Result.AddCommand('PUSHM R0');
+    end
+  else if F = 'rotationMatrix' then
+    begin
+    Tree.Node.DataType := dtMat4;
+    GenOperation(Tree.Children[0], Result, Method, dtFloat);
+    GenOperation(Tree.Children[1], Result, Method, dtVec3);
+    Result.AddCommand('POP R4');
+    Result.AddCommand('POP R5');
+    Result.AddCommand('LD R4 3 R5 0');
+    Result.AddCommand('ROTM R0 R4');
+    Result.AddCommand('PUSHM R0');
+    end
+  else if F = 'orientationMatrix' then
+    begin
+    Tree.Node.DataType := dtMat4;
+    GenOperation(Tree.Children[0], Result, Method, dtVec3);
+    Result.AddCommand('POP R4');
+    Result.AddCommand('ORIENTM R0 R4');
+    Result.AddCommand('PUSHM R0');
+    end
   else if F = 'sqrt' then
     begin
     GenOperation(Tree.Children[0], Result, Method);

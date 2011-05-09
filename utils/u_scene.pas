@@ -772,8 +772,8 @@ var
 begin
   Result := TGeoObject.Create;
 
-  if Result.Script <> nil then
-    Result.Script.Code.CreateInstance
+  if Script <> nil then
+    Result.Script := Script.Code.CreateInstance
   else
     Result.Script := nil;
 

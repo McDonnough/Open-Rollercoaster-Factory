@@ -400,6 +400,10 @@ def meshXML(mesh):
 def objectXML():
   result = '<object>\n'
   
+  for world in bpy.data.worlds:
+    if (world.get('script', '') != ''):
+      result += '  <script resource:name="{0}" />\n'.format(getFullResourceName(bpy.data.texts[world.get('script', '')]))
+
   for armature in bpy.data.armatures:
     result += armatureXML(armature)
 
@@ -457,6 +461,23 @@ def runOCFgen(fileName):
     scriptfile.close()
   return True
 
+def textString(text):
+  result = ''
+  for line in text.lines:
+    result += line.body + "\n"
+  return result
+
+def saveText(text, directory):
+  if (text.library == None):
+    filepath = directory + os.path.basename(text.name) + '.os'
+    print('Saving curve {0} to {1}'.format(text.name, filepath))
+    textfile = open(filepath, mode='w', encoding='Latin-1')
+    textfile.write(textString(text))
+    textfile.close()
+    mResource(text, 'plainscript', filepath)
+  else:
+    print('Not saving linked script {0}'.format(text.name))
+
 def writeFiles(fileName):
   global fullFileName
   fullFileName = fileName
@@ -477,6 +498,9 @@ def writeFiles(fileName):
   # Save curves
   for curve in bpy.data.curves:
     saveCurve(curve, directory)
+
+  for text in bpy.data.texts:
+    saveText(text, directory)
 
   # Save object itself
   saveObject(directory)

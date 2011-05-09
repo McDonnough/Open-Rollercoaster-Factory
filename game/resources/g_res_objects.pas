@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, u_linkedlists, g_resources, u_scene, g_loader_ocf, g_res_textures, g_res_materials, u_xml, u_dom, u_vectors,
-  g_res_lights, g_res_particles, g_res_pathes;
+  g_res_lights, g_res_particles, g_res_pathes, g_res_scripts;
 
 type
   TBonePathResourceAssoc = record
@@ -25,6 +25,8 @@ type
       fParticleGroupResourceNames: Array of Array of String;
       fParticleGroupResourcePositions: Array of Array of TVector3D;
       fParticleGroupResources: Array of Array of TParticleResource;
+      fScriptResourceName: String;
+      fScriptResource: TScriptResource;
       fMaterialDefined: Array of Boolean;
       fFinalMaterialResourceNames: Array of String;
       fDepCount: Integer;
@@ -66,6 +68,9 @@ procedure TObjectResource.FinalCreation;
 var
   i, j: Integer;
 begin
+  if fScriptResource <> nil then
+    fGeoObject.Script := fScriptResource.ScriptCode.CreateInstance;
+
   for i := 0 to high(fMaterialResources) do
     fGeoObject.AddMaterial(fMaterialResources[i].Material);
 
@@ -364,6 +369,9 @@ var
   i, j: Integer;
   CurrElement: TDOMElement;
 begin
+  fScriptResource := nil;
+  fScriptResourceName := '';
+
   with Data.ResourceByName(SubResourceName) do
     begin
     setLength(S, length(Data.Bin[Section].Stream.Data));
@@ -375,6 +383,8 @@ begin
       begin
       if CurrElement.TagName = 'armature' then
         LoadArmature(CurrElement)
+      else if CurrElement.TagName = 'script' then
+        fScriptResourceName := CurrElement.GetAttribute('resource:name')
       else if CurrElement.TagName = 'mesh' then
         LoadMesh(CurrElement);
       CurrElement := TDOMElement(CurrElement.NextSibling);
@@ -413,11 +423,20 @@ begin
   for i := 0 to high(fBonePathResourceAssocs) do
     if fBonePathResourceAssocs[i].PathResourceName <> '' then
       inc(fDepCount);
-      
+
+  if fScriptResourceName <> '' then
+    inc(fDepCount);
+  
   if fDepCount = 0 then
     DepLoaded('', nil, nil)
   else
     begin
+    if fScriptResourceName <> '' then
+      begin
+      EventManager.AddCallback('TResource.FinishedLoading:' + fScriptResourceName, @DepLoaded);
+      fScriptResource := TScriptResource.Get(fScriptResourceName);
+      end;
+    
     for i := 0 to high(fLightSourceResourceNames) do
       for j := 0 to high(fLightSourceResourceNames[i]) do
         begin

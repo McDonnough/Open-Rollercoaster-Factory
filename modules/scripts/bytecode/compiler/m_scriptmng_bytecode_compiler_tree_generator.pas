@@ -41,7 +41,7 @@ const
     'void', 'int', 'bool', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'pointer', '#STRUCT');
 
   DataTypeSizes: Array[TDataType] of PtrUInt = (
-    0, SizeOf(Pointer), SizeOf(Pointer), 4 * SizeOf(Single), 4 * SizeOf(Single), 4 * SizeOf(Single), 4 * SizeOf(Single), 16 * SizeOf(Single), SizeOf(Pointer), 0);
+    0, SizeOf(Pointer), SizeOf(Pointer), 1 * SizeOf(Single), 2 * SizeOf(Single), 3 * SizeOf(Single), 4 * SizeOf(Single), 16 * SizeOf(Single), SizeOf(Pointer), 0);
 
 var
   T: TTokenList;

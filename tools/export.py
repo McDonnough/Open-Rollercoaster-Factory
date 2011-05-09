@@ -406,10 +406,12 @@ def meshXML(mesh):
 
 def objectXML():
   result = '<object>\n'
-  
-  for world in bpy.data.worlds:
-    if (world.get('script', '') != ''):
-      result += '  <script resource:name="{0}" />\n'.format(getFullResourceName(bpy.data.texts[world.get('script', '')]))
+
+  textUsed = None
+  for text in bpy.data.texts:
+    if (textUsed == None):
+      result += '  <script resource:name="{0}" />\n'.format(getFullResourceName(text))
+      textUsed = text
 
   for armature in bpy.data.armatures:
     result += armatureXML(armature)

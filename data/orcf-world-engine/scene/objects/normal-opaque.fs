@@ -38,7 +38,7 @@ void main(void) {
   gl_FragData[2].rgb = Vertex;
   gl_FragData[2].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
   vec3 normal = Normal;
-/*  if (HasNormalMap == 1) {
+  if (HasNormalMap == 1) {
     vec3 q0 = dFdx(Vertex.xyz);
     vec3 q1 = dFdy(Vertex.xyz);
     vec2 st0 = dFdx(gl_TexCoord[0].st);
@@ -49,7 +49,7 @@ void main(void) {
 
     mat3 M = mat3(-T, -S, normal);
     normal = normalize(M * (vec3(texture2D(NormalMap, gl_TexCoord[0].xy)) - vec3(0.5, 0.5, 0.5)));
-  }*/
+  }
   gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g);
   gl_FragData[0].rgb = gl_FrontMaterial.diffuse.rgb;
   if (HasTexture == 1)

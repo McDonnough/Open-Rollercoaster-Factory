@@ -52,7 +52,7 @@ void main(void) {
   // IF [ EQ owe.shadows.sun 1 ]
   vec2 ShadowCoord = 0.5 + 0.5 * ProjectShadowVertex(Vertex);
   vec4 ShadowColor = texture2D(ShadowTexture, ShadowCoord);
-  if (dotprod > 0.0 && ShadowColor.a > Vertex.y + 0.1 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
+  if (dotprod > 0.0 && ShadowColor.a > Vertex.y + 0.02 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
 
     // IF [ NEQ owe.shadows.blur 0 ]
     float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);
@@ -60,13 +60,13 @@ void main(void) {
     for (int i = -BlurSamples; i <= BlurSamples; i++)
       for (int j = -BlurSamples; j <= BlurSamples; j++) {
         ShadowColor = texture2D(ShadowTexture, ShadowCoord + 0.0004 * CoordFactor * vec2(i, j));
-        if (ShadowColor.a > Vertex.y + 0.1)
+        if (ShadowColor.a > Vertex.y + 0.02)
           factor -= 2.0 * ShadowColor.rgb / Samples;
       }
     // END
 
     // IF [ EQ owe.shadows.blur 0 ]
-    if (ShadowColor.a > Vertex.y + 0.1)
+    if (ShadowColor.a > Vertex.y + 0.02)
       factor -= 2.0 * ShadowColor.rgb;
     // END
   }

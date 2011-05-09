@@ -16,7 +16,7 @@ type
       CastShadows: Boolean;
       function Duplicate: TLightSource;
       procedure Register;
-      procedure SetIO;
+      procedure SetIO(Script: TScript);
       class procedure RegisterStruct;
       constructor Create;
       destructor Free;
@@ -86,7 +86,7 @@ type
       procedure AddChild(Bone: TBone);
       procedure UpdateMatrix;
       function Duplicate(TheObject: TGeoObject; TheArmature: TArmature): TBone;
-      procedure SetIO;
+      procedure SetIO(Script: TScript);
       class procedure RegisterStruct;
       constructor Create;
     end;
@@ -102,7 +102,7 @@ type
       function AddBone: TBone;
       function GetBoneByName(Bone: String): TBone;
       procedure UpdateMatrix;
-      procedure SetIO;
+      procedure SetIO(Script: TScript);
       class procedure RegisterStruct;
       constructor Create;
     end;
@@ -118,7 +118,7 @@ type
       OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
       function Duplicate: TMaterial;
-      procedure SetIO;
+      procedure SetIO(Script: TScript);
       class procedure RegisterStruct;
       constructor Create;
     end;
@@ -129,12 +129,12 @@ type
       Name: String;
       Bone: TBone;
       Changed: Boolean;
-      MinDistance, MaxDistance: Single;
       Vertices: Array of TVertex;
       TextureVertices: Array of TTextureVertex;
       Faces: Array of TFace;
       Parent: TGeoMesh;
       Children: Array of TGeoMesh;
+      MinDistance, MaxDistance: Single;
       Matrix, CalculatedMatrix: TMatrix4D;
       ParentObject: TGeoObject;
       Material: TMaterial;
@@ -153,7 +153,7 @@ type
       procedure UpdateMatrix;
       procedure UpdateVertexPositions;
       procedure Register;
-      procedure SetIO;
+      procedure SetIO(Script: TScript);
       class procedure RegisterStruct;
       constructor Create;
       destructor Free;
@@ -166,6 +166,7 @@ type
       Materials: Array of TMaterial;
       Script: TScript;
       Matrix: TMatrix4D;
+      FirstRun: Boolean;
       function AddArmature: TArmature;
       function AddMesh: TGeoMesh;
       function AddMaterial: TMaterial;
@@ -222,12 +223,21 @@ begin
   EventManager.CallEvent('TLightSource.Added', self, nil);
 end;
 
-procedure TLightSource.SetIO;
+procedure TLightSource.SetIO(Script: TScript);
+const
+  SIZE: Integer = SizeOf(TVector4D) + SizeOf(TVector3D) + 3 * SizeOf(Single);
 begin
+  Script.SetIO(@Self.Position, SIZE, true);
 end;
 
 class procedure TLightSource.RegisterStruct;
 begin
+  ModuleManager.ModScriptManager.SetDataStructure('Lamp',
+   'vec4 position' + #10 +
+   'vec3 color' + #10 +
+   'float energy' + #10 +
+   'float falloff' + #10 +
+   'float factor');
 end;
 
 constructor TLightSource.Create;
@@ -312,12 +322,20 @@ begin
     TheArmature.Bones[ParentBone.BoneID].AddChild(Result);
 end;
 
-procedure TBone.SetIO;
+procedure TBone.SetIO(Script: TScript);
+const
+  SIZE: Integer = SizeOf(TVector3D) + SizeOf(TMatrix4D);
 begin
+  Script.SetIO(@Self.SourcePosition, SIZE, true);
+  Script.SetIO(@Self.PathConstraint.Progress, SizeOf(Single), true);
 end;
 
 class procedure TBone.RegisterStruct;
 begin
+  ModuleManager.ModScriptManager.SetDataStructure('Bone',
+   'vec3 position' + #10 +
+   'mat4 matrix' + #10 +
+   'float progress');
 end;
 
 constructor TBone.Create;
@@ -380,12 +398,17 @@ begin
       Bones[i].UpdateMatrix;
 end;
 
-procedure TArmature.SetIO;
+procedure TArmature.SetIO(Script: TScript);
+const
+  SIZE: Integer = SizeOf(TMatrix4D);
 begin
+  Script.SetIO(@Self.Matrix, SIZE, true);
 end;
 
 class procedure TArmature.RegisterStruct;
 begin
+  ModuleManager.ModScriptManager.SetDataStructure('Armature',
+   'mat4 matrix');
 end;
 
 constructor TArmature.Create;
@@ -420,12 +443,21 @@ begin
     Result := Texture.BPP = 4;
 end;
 
-procedure TMaterial.SetIO;
+procedure TMaterial.SetIO(Script: TScript);
+const
+  SIZE: Integer = 2 * SizeOf(TVector4D) + 3 * SizeOf(Single);
 begin
+  Script.SetIO(@Self.Color, SIZE, true);
 end;
 
 class procedure TMaterial.RegisterStruct;
 begin
+  ModuleManager.ModScriptManager.SetDataStructure('Material',
+   'vec4 color' + #10 +
+   'vec4 emission' + #10 +
+   'float reflectivity' + #10 +
+   'float hardness' + #10 +
+   'float specularity');
 end;
 
 constructor TMaterial.Create;
@@ -692,12 +724,24 @@ begin
     TParticleGroup(ParticleGroups[i]).Register;
 end;
 
-procedure TGeoMesh.SetIO;
+procedure TGeoMesh.SetIO(Script: TScript);
+const
+  SIZE: Integer = 2 * SizeOf(Single) + SizeOf(TMatrix4D);
+var
+  Mat: SInt;
 begin
+  Script.SetIO(@Self.MinDistance, SIZE, true);
+  Mat := Material.MaterialID;
+  Script.SetIO(@Mat, SizeOf(SInt), false);
 end;
 
 class procedure TGeoMesh.RegisterStruct;
 begin
+  ModuleManager.ModScriptManager.SetDataStructure('Mesh',
+   'float minDist' + #10 +
+   'float maxDist' + #10 +
+   'mat4 matrix' + #10 +
+   'int material');
 end;
 
 constructor TGeoMesh.Create;
@@ -872,20 +916,93 @@ begin
     begin
     SetIO;
     Script.Execute;
+    FirstRun := False;
     end;
 end;
 
 procedure TGeoObject.SetIO;
 var
-  Counts: Array[0..2] of SInt;
+  Counts: Array[0..5] of SInt;
+  i, j, k: SInt;
 begin
   Counts[0] := Length(Meshes);
   Counts[1] := Length(Armatures);
   Counts[2] := Length(Materials);
+  Counts[3] := 0;
+  Counts[4] := 0;
+  Counts[5] := 0;
+
+  for i := 0 to high(Armatures) do
+    inc(Counts[3], length(Armatures[i].Bones));
+
+  for i := 0 to high(Meshes) do
+    begin
+    inc(Counts[4], length(Meshes[i].LightSources));
+    inc(Counts[5], length(Meshes[i].ParticleGroups));
+    end;
 
   Script.SetIO(@FPSDisplay.ms, SizeOf(Single));
   Script.SetIO(@Matrix, SizeOf(TMatrix4D), True);
-  Script.SetIO(@Counts[0], 3 * SizeOf(SInt));
+  Script.SetIO(@Counts[0], 6 * SizeOf(SInt));
+
+  for i := 0 to high(Meshes) do
+    Meshes[i].SetIO(Script);
+
+  for i := 0 to high(Armatures) do
+    Armatures[i].SetIO(Script);
+
+  for i := 0 to high(Materials) do
+    Materials[i].SetIO(Script);
+
+  for i := 0 to high(Armatures) do
+    for j := 0 to high(Armatures[i].Bones) do
+      Armatures[i].Bones[j].SetIO(Script);
+
+  for i := 0 to high(Meshes) do
+    for j := 0 to high(Meshes[i].LightSources) do
+      Meshes[i].LightSources[j].SetIO(Script);
+
+//   for i := 0 to high(Meshes) do
+//     for j := 0 to high(Meshes[i].ParticleGroups) do
+//       Meshes[i].ParticleGroups[j].SetIO(Script);
+
+  
+
+  if FirstRun then
+    begin
+    for i := 0 to high(Materials) do
+      Script.SetGlobal(Materials[i].Name, @i, SizeOf(Sint));
+
+    for i := 0 to high(Meshes) do
+      Script.SetGlobal(Meshes[i].Name, @i, SizeOf(Sint));
+
+    k := 0;
+    for i := 0 to high(Meshes) do
+      for j := 0 to high(Meshes[i].LightSources) do
+        begin
+        Script.SetGlobal(Meshes[i].LightSources[j].Name, @k, SizeOf(Sint));
+        inc(k);
+        end;
+
+    k := 0;
+    for i := 0 to high(Meshes) do
+      for j := 0 to high(Meshes[i].ParticleGroups) do
+        begin
+        Script.SetGlobal(TParticleGroup(Meshes[i].ParticleGroups[j]).Name, @k, SizeOf(Sint));
+        inc(k);
+        end;
+
+    for i := 0 to high(Armatures) do
+      Script.SetGlobal(Armatures[i].Name, @i, SizeOf(Sint));
+
+    k := 0;
+    for i := 0 to high(Armatures) do
+      for j := 0 to high(Armatures[i].Bones) do
+        begin
+        Script.SetGlobal(Armatures[i].Bones[j].Name, @k, SizeOf(Sint));
+        inc(k);
+        end;
+    end;
 end;
 
 class procedure TGeoObject.RegisterStruct;
@@ -895,13 +1012,17 @@ begin
    'mat4 matrix' + #10 +
    'int meshCount' + #10 +
    'int armatureCount' + #10 +
-   'int materialCount');
+   'int materialCount' + #10 +
+   'int boneCount' + #10 +
+   'int lampCount' + #10 +
+   'int particleCount');
 end;
 
 constructor TGeoObject.Create;
 begin
   Matrix := Identity4D;
   Script := nil;
+  FirstRun := True;
 end;
 
 destructor TGeoObject.Free;

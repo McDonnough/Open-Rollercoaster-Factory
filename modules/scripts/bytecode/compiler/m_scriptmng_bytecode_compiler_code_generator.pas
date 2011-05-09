@@ -243,9 +243,9 @@ end;
 
 function TCodeGenerator.GetBuiltinFunction(A: String): String;
 const
-  Builtins: Array[0..13] of String = (
+  Builtins: Array[0..14] of String = (
     'bool', 'int', 'pointer', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'write', 'sqrt', 'power',
-    'translationMatrix', 'orientationMatrix', 'rotationMatrix');
+    'translationMatrix', 'orientationMatrix', 'rotationMatrix', 'sizeof');
 var
   i: Integer;
 begin
@@ -290,6 +290,12 @@ begin
 //   else if F = '' then
 //     begin
 //     end
+  else if F = 'sizeof' then
+    begin
+    Tree.Node.DataType := dtInt;
+    Result.AddCommand('PUSH ' + IntToStr(GetStruct(T.Tokens[Tree.Children[0].Node.Token].Value).GetSize));
+    Result.AddCommand(' ');
+    end
   else if F = 'translationMatrix' then
     begin
     Tree.Node.DataType := dtMat4;

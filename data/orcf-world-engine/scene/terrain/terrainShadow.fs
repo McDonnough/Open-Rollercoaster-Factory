@@ -14,6 +14,6 @@ void main(void) {
   if (Border == 0 && max(abs(Camera.x - VData.x), abs(Camera.y - VData.z)) < TerrainTesselationDistance - 1.0)
     discard;
 
-  gl_FragColor = vec4(1.0, 1.0, 1.0, VData.y);
+  gl_FragColor = vec4(1.0, 1.0, 1.0, VData.y - 0.08);
   gl_FragDepth = 1.0 - VData.y / 1000.0;
 }

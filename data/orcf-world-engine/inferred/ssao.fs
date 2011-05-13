@@ -31,7 +31,7 @@ void main(void) {
       vec2 coord = gl_TexCoord[0].xy + (Radius * vec2(sin(Coeff * j + RandomOffset), cos(Coeff * j + RandomOffset))) / ScreenSize;
       vec3 Dest = texture2D(GeometryTexture, coord).xyz;
       vec3 dir = Dest - Vertex.xyz;
-      float distfactor = pow(2.7183, -0.4 * length(dir));
+      float distfactor = 1.5 * pow(2.7183, -0.4 * length(dir));
       value += 1.0 - max(0.0, dot(normalize(dir), Normal)) * distfactor;
       // IF [ EQ owe.ssao.indirectlighting 1 ]
       vec4 Emission = texture2D(EmissionTexture, coord);
@@ -40,12 +40,13 @@ void main(void) {
     }
   }
 
+  value = max(value, 0.0);
   value /= Samples;
   // IF [ EQ owe.ssao.indirectlighting 1 ]
   finalEmission /= Samples;
   gl_FragColor = vec4(finalEmission, value);
   // END
   // IF [ NEQ owe.ssao.indirectlighting 1 ]
-  gl_FragColor = vec4(0.0, 0.0, 0.0, value);
+  gl_FragColor = vec4(value, value, value, value);
   // END
 }

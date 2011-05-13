@@ -36,8 +36,10 @@ void main(void) {
   vec4 Emission = texelFetch2D(EmissionTexture, Coords, 0);
   // IF [ EQ owe.ssao 1 ]
   vec4 ssaoColor = texture2D(SSAOTexture, gl_TexCoord[0].xy);
-  if (UseSSAO == 1)
-    Emission.rgb += ssaoColor.rgb;
+    // IF [ EQ owe.ssao.indirectlighting 1 ]
+    if (UseSSAO == 1)
+      Emission.rgb += ssaoColor.rgb;
+    // END
   // END
 
   vec3 Vertex = AllCoord.rgb;

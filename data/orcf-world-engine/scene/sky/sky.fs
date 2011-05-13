@@ -31,7 +31,7 @@ void main(void) {
   gl_FragData[0].rgb += gl_LightSource[0].diffuse.rgb * angle * 0.05;
   gl_FragData[0].rgb += gl_LightSource[0].diffuse.rgb * pow(angle, 20.0) * 0.2;
   gl_FragData[0].rgb += 1.5 * gl_LightSource[0].diffuse.rgb * pow(angle, 1000.0);
-  gl_FragData[0].rgb *= 0.9 * Factor;
+  gl_FragData[0].rgb *= 0.8 * Factor;
   gl_FragData[0].rgb += StarFac * texture2D(StarTexture, vec2(pow(abs(Vertex.x / 5000.0), 0.33), pow(abs(Vertex.z / 5000.0), 0.33)) * 3.0 * sign(Vertex.xz)).rgb;
   gl_FragData[0].a = 1.0;
 }

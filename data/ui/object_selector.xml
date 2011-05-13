@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window width="750" height="500" left="25" top="50" btnleft="724" btntop="287" icon="park-objects.tga" name="object_selector">
+  <panel leftspace="150" rightspace="200" bottomspace="0" topspace="32" />
+  <edit name="object_selector.filter" top="8" left="158" width="384" height="32" />
+  
+</window>

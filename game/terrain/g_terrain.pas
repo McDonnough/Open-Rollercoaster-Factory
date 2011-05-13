@@ -133,6 +133,7 @@ var
       Result := TTexture.Create;
       Result.CreateNew(Temptex.Width, Temptex.Height, TexFormat);
       Result.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+      Result.SetClamp(GL_REPEAT, GL_CLAMP);
       Result.Fill(@TempTex.Data[0], TexFormat);
       gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
       end;

@@ -84,7 +84,7 @@ var
 implementation
 
 uses
-  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings;
+  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings, g_object_selector;
 
 type
   TParkUIWindowList = record
@@ -92,6 +92,7 @@ type
     fLeaveWindow: TGameLeave;
     fInfoWindow: TGameInfo;
     fTerrainEdit: TGameTerrainEdit;
+    fObjectSelector: TGameObjectSelector;
     end;
 
 var
@@ -510,6 +511,7 @@ begin
   WindowList.fInfoWindow := TGameInfo.Create('ui/info.xml', self);
   WindowList.fTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
   WindowList.fParkSettings := TGameParkSettings.Create('ui/park_settings.xml', self);
+  WindowList.fObjectSelector := TGameObjectSelector.Create('ui/object_selector.xml', self);
 end;
 
 destructor TParkUI.Free;
@@ -519,6 +521,7 @@ begin
   WindowList.fInfoWindow.Free;
   WindowList.fTerrainEdit.Free;
   WindowList.fParkSettings.Free;
+  WindowList.fObjectSelector.Free;
 end;
 
 end.

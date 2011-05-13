@@ -243,9 +243,10 @@ end;
 
 function TCodeGenerator.GetBuiltinFunction(A: String): String;
 const
-  Builtins: Array[0..14] of String = (
+  Builtins: Array[0..18] of String = (
     'bool', 'int', 'pointer', 'float', 'vec2', 'vec3', 'vec4', 'mat4', 'write', 'sqrt', 'power',
-    'translationMatrix', 'orientationMatrix', 'rotationMatrix', 'sizeof');
+    'translationMatrix', 'orientationMatrix', 'rotationMatrix', 'sizeof',
+    'cross', 'dot', 'normalize', 'length');
 var
   i: Integer;
 begin
@@ -290,6 +291,50 @@ begin
 //   else if F = '' then
 //     begin
 //     end
+  else if F = 'cross' then
+    begin
+    Tree.Node.DataType := dtVec3;
+    GenOperation(Tree.Children[0], Result, Method, dtVec3);
+    GenOperation(Tree.Children[1], Result, Method, dtVec3);
+    end
+  else if F = 'dot' then
+    begin
+    Tree.Node.DataType := dtFloat;
+    GenOperation(Tree.Children[0], Result, Method);
+    GenOperation(Tree.Children[1], Result, Method);
+    Result.AddCommand('POP R1');
+    Result.AddCommand('POP R0');
+    case Tree.Children[0].Node.DataType of
+      dtVec2: Result.AddCommand('DOT2 R0 R1 R2');
+      dtVec3: Result.AddCommand('DOT3 R0 R1 R2');
+      dtVec4: Result.AddCommand('DOT4 R0 R1 R2');
+      end;
+    Result.AddCommand('PUSH R2');
+    end
+  else if F = 'normalize' then
+    begin
+    Tree.Node.DataType := Tree.Children[0].Node.DataType;
+    GenOperation(Tree.Children[0], Result, Method);
+    Result.AddCommand('POP R0');
+    case Tree.Children[0].Node.DataType of
+      dtVec2: Result.AddCommand('NORM2 R0 R1');
+      dtVec3: Result.AddCommand('NORM3 R0 R1');
+      dtVec4: Result.AddCommand('NORM4 R0 R1');
+      end;
+    Result.AddCommand('PUSH R1');
+    end
+  else if F = 'length' then
+    begin
+    Tree.Node.DataType := dtFloat;
+    GenOperation(Tree.Children[0], Result, Method);
+    Result.AddCommand('POP R0');
+    case Tree.Children[0].Node.DataType of
+      dtVec2: Result.AddCommand('LEN2 R0 R1');
+      dtVec3: Result.AddCommand('LEN3 R0 R1');
+      dtVec4: Result.AddCommand('LEN4 R0 R1');
+      end;
+    Result.AddCommand('PUSH R1');
+    end
   else if F = 'sizeof' then
     begin
     Tree.Node.DataType := dtInt;
@@ -357,6 +402,12 @@ begin
       GenOperation(Tree.Children[0], Result, Method, dtInt)
     else
       GenOperation(Tree.Children[0], Result, Method);
+    if Tree.Children[0].Node.DataType = dtFloat then
+      begin
+      Result.AddCommand('POP R0');
+      Result.AddCommand('LD I0 R0');
+      Result.AddCommand('PUSH I0');
+      end;
     end
   else if F = 'pointer' then
     begin
@@ -373,6 +424,12 @@ begin
       GenOperation(Tree.Children[0], Result, Method, dtFloat)
     else
       GenOperation(Tree.Children[0], Result, Method);
+    if Tree.Children[0].Node.DataType = dtINT then
+      begin
+      Result.AddCommand('POP I0');
+      Result.AddCommand('LD R0 I0');
+      Result.AddCommand('PUSH R0');
+      end;
     end
   else if F = 'vec2' then
     begin

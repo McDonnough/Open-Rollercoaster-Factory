@@ -217,7 +217,8 @@ begin
           end;
         MMVAL_SETCREATOR:
           begin
-          SetCreator := TSetCreator.Create;
+          if SetCreator = nil then
+            SetCreator := TSetCreator.Create;
           ModuleManager.ModMainMenu.Reset;
           end;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;

@@ -104,6 +104,7 @@ type
       fObjectName, fObjectDescription: TEdit;
       fObjectPreview: TTextureSelect;
 //       fTagList: TTagSelect;
+      fTagName: TEdit;
       fAddTag, fDelTag: TIconifiedButton;
       fAddObject, fDelObject: TIconifiedButton;
 

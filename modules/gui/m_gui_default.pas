@@ -35,6 +35,7 @@ var
   begin
     if Component = nil then
       exit;
+    Component.Rendered := True;
     Component.Render;
     if (Component.ComponentType <> CLabel) and (Component.ComponentType <> CTimer) then
       if ((Component.Alpha = 0) or (Component.Width <= 0) or (Component.Height <= 0)) then
@@ -67,6 +68,8 @@ var
   end;
 
 begin
+  fBasicComponent.Rendered := True;
+
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   glDisable(GL_DEPTH_TEST);
   glDepthMask(false);

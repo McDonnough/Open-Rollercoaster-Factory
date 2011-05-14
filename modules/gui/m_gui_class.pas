@@ -211,8 +211,6 @@ var
   i: Integer;
   MS: Single;
 begin
-  Rendered := True;
-
   MS := 10;
   if FPSDisplay <> nil then
     MS := FPSDisplay.MS;

@@ -39,6 +39,7 @@ type
       function AddChild(Child: TGUIComponent): Integer;
       procedure RemoveChild(Child: TGUIComponent);
     public
+      Rendered: Boolean;
       Tag: Integer;
       Name: String;
       TranslateContent: Boolean;
@@ -210,6 +211,8 @@ var
   i: Integer;
   MS: Single;
 begin
+  Rendered := True;
+
   MS := 10;
   if FPSDisplay <> nil then
     MS := FPSDisplay.MS;

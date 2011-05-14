@@ -31,8 +31,12 @@ uses
 
 procedure TWindow.Render;
 begin
+  Rendered := False;
   if (Max(Width, 0) * Max(Height, 0) > 64) and not ((Top > ResY + 8) or (Top + Height < -8) or (Left > ResX + 8) or (Left + Width < -8)) then
+    begin
+    Rendered := True;
     ModuleManager.ModGUIWindow.Render(Self);
+    end;
 end;
 
 constructor TWindow.Create(mParent: TGUIComponent);

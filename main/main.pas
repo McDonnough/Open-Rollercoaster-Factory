@@ -96,7 +96,7 @@ begin
   fMSHistory[1] := fMSHistory[0];
   fMSHistory[0] := fMS;
   fFPS := 1000 / fMS;
-  if fWindow.Width > 1 then
+  if fWindow.Left > -33 then
     fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 

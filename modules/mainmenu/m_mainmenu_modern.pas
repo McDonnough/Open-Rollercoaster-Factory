@@ -67,6 +67,7 @@ type
       procedure SetMenuState(Sender: TGUIComponent);
       procedure HighlightItem(Sender: TGUIComponent);
       procedure UnHighlightItem(Sender: TGUIComponent);
+      procedure KeyPressed(Sender: TGUIComponent; Key: Integer);
     public
       fMainBackground: TTexture;
       property MainBackground: TTexture read fMainBackground;
@@ -81,7 +82,7 @@ type
 implementation
 
 uses
-  u_functions, m_varlist, main, u_vectors;
+  u_functions, m_varlist, main, u_vectors, m_inputhandler_class;
 
 procedure TMainMenuDescriptionUI.Hide;
 begin
@@ -220,6 +221,15 @@ begin
   fLabel.Free;
 end;
 
+procedure TModuleMainMenuModern.KeyPressed(Sender: TGUIComponent; Key: Integer);
+begin
+  case Key of
+    K_o: fValue := MMVAL_OBJECTCREATOR;
+    K_s: fValue := MMVAL_SETCREATOR;
+    end;
+  ModuleManager.ModGUI.BasicComponent.BringToFront(fLogoBG);
+end;
+
 procedure TModuleMainMenuModern.MoveQuitButtonLeft(Sender: TGUIComponent);
 begin
   fQuit.Left := ResX - 48 - ModuleManager.ModFont.CalculateTextWidth(fQuit.Caption, 24);
@@ -319,6 +329,7 @@ begin
   fWindow.Height := 488;
   fWindow.OfsX2 := 768;
   fWindow.OfsY2 := 488;
+  fWindow.OnKeyDown := @KeyPressed;
 
   fCoasterTrack := TImage.Create(fWindow);
   fCoasterTrack.Tex := TTexture.Create;

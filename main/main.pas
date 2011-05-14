@@ -17,9 +17,11 @@ type
       fMS, fFPS: Single;
       fTime: UInt64;
       fMSHistory: Array[0..3] of Single;
+      procedure ShowHideFPSDisplay(Event: String; Data, Result: Pointer);
     public
       property MS: Single read fMS;
       property FPS: Single read fFPS;
+      property Window: TWindow read fWindow;
       procedure SetTime;
       procedure Calculate;
       constructor Create;
@@ -68,6 +70,15 @@ end;
 
 
 
+procedure TFPSDisplay.ShowHideFPSDisplay(Event: String; Data, Result: Pointer);
+begin
+  if Integer(Result^) = K_f then
+    if fWindow.Left < -33 then
+      fWindow.Left := -32
+    else
+      fWindow.Left := -160;
+end;
+
 procedure TFPSDisplay.SetTime;
 begin
   fTime := ModuleManager.ModGUITimer.GetTime;
@@ -85,7 +96,8 @@ begin
   fMSHistory[1] := fMSHistory[0];
   fMSHistory[0] := fMS;
   fFPS := 1000 / fMS;
-  fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
+  if fWindow.Width > 1 then
+    fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 
 constructor TFPSDisplay.Create;
@@ -95,7 +107,7 @@ begin
   fMSHistory[2] := 10;
   fMSHistory[3] := 10;
   fWindow := TWindow.Create(nil);
-  fWindow.Left := -32;
+  fWindow.Left := -160;
   fWindow.Top := -32;
   fWindow.Width := 128;
   fWindow.Height := 72;
@@ -106,6 +118,8 @@ begin
   fLabel.Height := 16;
   fLabel.Size := 16;
   SetTime;
+
+  EventManager.AddCallback('BasicComponent.OnKeyDown', @ShowHideFPSDisplay);
 end;
 
 

@@ -40,6 +40,10 @@ from bpy.props import *
 fullFileName = ''
 localResources = []
 
+ocfgen_exe = '/home/philip/Delphi/orcf/tools/ocfgen'
+orcf_data_path = '/home/philip/Delphi/orcf/data/'
+orcf_personal_data_path = '/home/philip/orcf-data/'
+
 class mResource:
   def __init__(self, resource, formatName, fileName):
     if (resource != None):
@@ -57,8 +61,8 @@ class mResource:
     return '    <resource resource:name="{0}" resource:id="{1}" resource:section="{2}" resource:format="{3}" resource:version="{4}" />\n'.format(self.name, self.rid, self.sid, self.fmt, self.version)
 
 def getRelativeResourcePath(resource):
-  orcf_data_path = '/home/philip/Delphi/orcf/data/'
-  orcf_personal_data_path = '/home/philip/orcf-data/'
+  global orcf_data_path
+  global orcf_personal_data_path
   
   resource = resource.replace(orcf_data_path, '')
   resource = resource.replace(orcf_personal_data_path, '')
@@ -459,7 +463,7 @@ def saveResourceTable(directory):
   resourcetablefile.close()
 
 def runOCFgen(fileName):
-  ocfgen_exe = '/home/philip/Delphi/orcf/tools/ocfgen'
+  global ocfgen_exe
   if (ocfgen_exe != ''):
     print('Generating OCF file {0}'.format(fileName))
     cmd = ocfgen_exe + ' -x {0}'.format(os.path.splitext(fileName)[0] + '.xml')
@@ -469,6 +473,9 @@ def runOCFgen(fileName):
     os.system(cmd)
     scriptfile = open(os.path.splitext(fileName)[0] + '.sh', mode='w', encoding='Latin-1')
     scriptfile.write(cmd)
+    scriptfile.close()
+    scriptfile = open(os.path.splitext(fileName)[0] + '.bat', mode='w', encoding='Latin-1')
+    scriptfile.write(cmd.replace('/', '\\'))
     scriptfile.close()
   return True
 

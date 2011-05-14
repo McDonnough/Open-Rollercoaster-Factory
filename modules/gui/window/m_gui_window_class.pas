@@ -10,7 +10,7 @@ uses
 type
   TWindow = class(TGUIComponent)
     public
-      OfsX1, OfsX2, OfsY1, OfsY2: Integer;
+      OfsX1, OfsX2, OfsY1, OfsY2, ResX, ResY: Integer;
       procedure Render;
       constructor Create(mParent: TGUIComponent);
     end;
@@ -27,11 +27,11 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, math;
 
 procedure TWindow.Render;
 begin
-  if Width * Height > 0 then
+  if (Max(Width, 0) * Max(Height, 0) > 64) and not ((Top > ResY + 8) or (Top + Height < -8) or (Left > ResX + 8) or (Left + Width < -8)) then
     ModuleManager.ModGUIWindow.Render(Self);
 end;
 
@@ -42,6 +42,7 @@ begin
   OfsX2 := 0;
   OfsY1 := 0;
   OfsY2 := 0;
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 end;
 
 end.

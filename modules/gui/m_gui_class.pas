@@ -79,6 +79,8 @@ type
       fClicking: Boolean;
       procedure BasicComponentOnClick(Sender: TGUIComponent);
       procedure BasicComponentOnRelease(Sender: TGUIComponent);
+      procedure BasicComponentOnKeyDown(Sender: TGUIComponent; Key: Integer);
+      procedure BasicComponentOnKeyUp(Sender: TGUIComponent; Key: Integer);
     public
       property Clicking: Boolean read fClicking;
       property BasicComponent: TGUIComponent read fBasicComponent;
@@ -109,6 +111,16 @@ end;
 procedure TModuleGUIClass.BasicComponentOnRelease(Sender: TGUIComponent);
 begin
   EventManager.CallEvent('BasicComponent.OnRelease', Sender, nil);
+end;
+
+procedure TModuleGUIClass.BasicComponentOnKeyDown(Sender: TGUIComponent; Key: Integer);
+begin
+  EventManager.CallEvent('BasicComponent.OnKeyDown', Sender, @Key);
+end;
+
+procedure TModuleGUIClass.BasicComponentOnKeyUp(Sender: TGUIComponent; Key: Integer);
+begin
+  EventManager.CallEvent('BasicComponent.OnKeyUp', Sender, @Key);
 end;
 
 

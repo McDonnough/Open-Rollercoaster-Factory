@@ -183,6 +183,8 @@ begin
   fBasicComponent := TGUIComponent.Create(nil, CNothing);
   fBasicComponent.OnClick := @BasicComponentOnClick;
   fBasicComponent.OnRelease := @BasicComponentOnRelease;
+  fBasicComponent.OnKeyDown := @BasicComponentOnKeyDown;
+  fBasicComponent.OnKeyUp := @BasicComponentOnKeyUp;
 
   fFocusComponent := nil;
   fHoverComponent := nil;

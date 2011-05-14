@@ -22,6 +22,8 @@ const
   MMVAL_SETTINGS = 3;
   MMVAL_HELP = 4;
   MMVAL_QUIT = 5;
+  MMVAL_SETCREATOR = 6;
+  MMVAL_OBJECTCREATOR = 7;
 
 implementation
 

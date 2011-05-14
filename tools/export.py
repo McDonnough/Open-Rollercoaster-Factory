@@ -160,7 +160,7 @@ def lampXML(lamp):
   result += '  <color r="{0:.3f}" g="{1:.3f}" b="{2:.3f}" />\n'.format(lamp.color[0], lamp.color[1], lamp.color[2])
   result += '  <energy>{0:.3f}</energy>\n'.format(lamp.energy)
   result += '  <falloff>{0:.3f}</falloff>\n'.format(lamp.distance)
-  result += '  <factor>{0:.3f}</factor>\n'.format(lamp.get('diffuse_factor', 0))
+  result += '  <factor>{0:.3f}</factor>\n'.format(lamp.get('diffuse_factor', 1))
   
   if (lamp.shadow_method == 'NOSHADOW'):
     result += '  <castshadows>false</castshadows>\n'

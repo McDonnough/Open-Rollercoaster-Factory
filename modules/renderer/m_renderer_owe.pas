@@ -1288,7 +1288,7 @@ begin
     SetConfVal('ssao.indirectlighting', '0');
     SetConfVal('ssao.samples', '5');
     SetConfVal('ssao.rings', '6');
-    SetConfVal('ssao.size', '0.5');
+    SetConfVal('ssao.size', '0.25');
     SetConfVal('refractions', '1');
     SetConfVal('shadows', '0');
     SetConfVal('shadows.samples', '1');
@@ -1361,7 +1361,7 @@ begin
   fWaterReflectionBufferSamples := StrToFloatWD(GetConfVal('water.samples'), 0.5);
   fSSAOSamples := StrToIntWD(GetConfVal('ssao.samples'), 5);
   fSSAORings := StrToIntWD(GetConfVal('ssao.rings'), 6);
-  fSSAOSize := StrToFloatWD(GetConfVal('ssao.size'), 0.5);
+  fSSAOSize := StrToFloatWD(GetConfVal('ssao.size'), 0.25);
   fLODDistanceOffset := StrToFloatWD(GetConfVal('lod.distanceoffset'), 0.0);
   fLODDistanceFactor := StrToFloatWD(GetConfVal('lod.distancefactor'), 1.0);
   fSubdivisionCuts := StrToIntWD(GetConfVal('subdiv.cuts'), 0);

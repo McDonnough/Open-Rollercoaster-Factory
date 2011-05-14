@@ -83,6 +83,8 @@ function HexToInt(A: String): Integer;
 
 function IsWhitespace(C: Char): Boolean;
 
+function Basename(S: String): String;
+
 implementation
 
 uses
@@ -310,6 +312,16 @@ end;
 function IsWhitespace(C: Char): Boolean;
 begin
   Result := C in [' ', #10, #13, #9];
+end;
+
+function Basename(S: String): String;
+var
+  A: AString;
+begin
+  A := Explode(ModuleManager.ModPathes.Delimiter, S);
+  if length(A) = 1 then
+    A := Explode('/', S);
+  Result := A[high(A)];
 end;
 
 end.

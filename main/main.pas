@@ -73,7 +73,7 @@ end;
 procedure TFPSDisplay.ShowHideFPSDisplay(Event: String; Data, Result: Pointer);
 begin
   if Integer(Result^) = K_f then
-    if fWindow.Left < -33 then
+    if fWindow.Left < -128 then
       fWindow.Left := -32
     else
       fWindow.Left := -160;
@@ -96,7 +96,7 @@ begin
   fMSHistory[1] := fMSHistory[0];
   fMSHistory[0] := fMS;
   fFPS := 1000 / fMS;
-  if fWindow.Left > -33 then
+  if fWindow.Left > -128 then
     fLabel.Caption := 'FPS: $' + IntToStr(Round(fFPS)) + '$';
 end;
 
@@ -169,6 +169,12 @@ begin
   ModuleManager.ModOCFManager.CheckLoaded;
   ResourceManager.Notify;
 
+  if SetCreator <> nil then
+    if SetCreator.CanClose then
+      begin
+      SetCreator.Free;
+      SetCreator := nil;
+      end;
 
   if ModuleManager.ModSettings.CanBeDestroyed then
     ModuleManager.ModSettings.HideConfigurationInterface;
@@ -207,6 +213,11 @@ begin
         MMVAL_SETTINGS:
           begin
           ModuleManager.ModSettings.ShowConfigurationInterface;
+          ModuleManager.ModMainMenu.Reset;
+          end;
+        MMVAL_SETCREATOR:
+          begin
+          SetCreator := TSetCreator.Create;
           ModuleManager.ModMainMenu.Reset;
           end;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;

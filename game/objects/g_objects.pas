@@ -74,14 +74,16 @@ var
   a: TRealObject;
 begin
   a := TRealObject.Create(TObjectResource(ResourceManager.Resources[TAbstractResource(Data).Name]));
-  a.GeoObject.Matrix := TranslationMatrix(Vector(160 + 40 * Random - 20, 64.5, 160 + 40 * Random - 20));
+  a.GeoObject.Matrix := TranslationMatrix(Vector(160 + 40 * Random - 20, 64, 160 + 40 * Random - 20));
   Append(a);
 end;
 
 procedure TObjectManager.Test;
 begin
   EventManager.AddCallback('TResource.FinishedLoading:scenery/test/moep.ocf/object', @AddTestObject);
+  EventManager.AddCallback('TResource.FinishedLoading:scenery/test/lamp.ocf/object', @AddTestObject);
   TObjectResource.Get('scenery/test/moep.ocf/object');
+  TObjectResource.Get('scenery/test/lamp.ocf/object');
 end;
 
 constructor TObjectManager.Create;

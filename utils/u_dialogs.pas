@@ -7,6 +7,9 @@ uses
   m_gui_edit_class, m_gui_button_class, m_texmng_class, m_gui_scrollbox_class, u_vectors, m_gui_image_class, DGLOpenGL;
 
 type
+  TDialogFileType = (ftOCF, ftIMG);
+  TDialogFileTypes = set of TDialogFileType;
+
   TDialogFileUI = record
     BG: TLabel;
     Name, Description: TLabel;
@@ -40,6 +43,7 @@ type
 
   TFileDialog = class
     protected
+      fFileTypes: TDialogFileTypes;
       fRO: Boolean;
       FileArea, DirArea: TScrollBox;
       fDirList, fFileList: TStringList;
@@ -60,7 +64,7 @@ type
     public
       property Directory: String read fDirectory;
       property FileName: String read fFileName;
-      constructor Create(ReadOnly: Boolean; InitialDirectory, TitleString: String);
+      constructor Create(ReadOnly: Boolean; InitialDirectory, TitleString: String; FileTypes: TDialogFileTypes = [ftOCF]);
       destructor Free;
     end;
 
@@ -322,7 +326,15 @@ begin
     fFileList.Clear;
 
     GetDirectoriesInDirectory(fDirectory, fDirList);
-    GetFilesInDirectory(fDirectory, '*.ocf', fFileList, false, false);
+
+    if ftOCF in fFileTypes then
+      GetFilesInDirectory(fDirectory, '*.ocf', fFileList, false, false);
+    if ftIMG in fFileTypes then
+      begin
+      GetFilesInDirectory(fDirectory, '*.tga', fFileList, false, false);
+      GetFilesInDirectory(fDirectory, '*.dbcg', fFileList, false, false);
+      end;
+      
     fDirList.Sort;
     fFileList.Sort;
 
@@ -378,7 +390,7 @@ begin
         Description.Height := 72;
         Description.Size := 16;
         Description.Width := 396;
-        Description.Caption := '[Waiting]';
+        Description.Caption := '';
 
         Select := TIconifiedButton.Create(BG);
         Select.Width := 32;
@@ -397,7 +409,16 @@ begin
         Preview.Tag := i;
         Preview.FreeTextureOnDestroy := true;
 
-        ModuleManager.ModOCFManager.RequestOCFFile(fFileList.Strings[i], 'TFileOpenDialog.LoadedOCFFile', @Preview.Tag);
+        if SubString(fFileList.Strings[i], length(fFileList.Strings[i]) - 3, 4) = '.ocf' then
+          begin
+          Description.Caption := '[Waiting]';
+          ModuleManager.ModOCFManager.RequestOCFFile(fFileList.Strings[i], 'TFileOpenDialog.LoadedOCFFile', @Preview.Tag)
+          end
+        else
+          begin
+          Preview.Tex := TTexture.Create;
+          Preview.Tex.FromFile(fFileList.Strings[i]);
+          end;
         end;
   except
     ModuleManager.ModLog.AddError('Cannot change directory from ' + fDirectory);
@@ -406,12 +427,13 @@ begin
   end;
 end;
 
-constructor TFileDialog.Create(ReadOnly: Boolean; InitialDirectory, TitleString: String);
+constructor TFileDialog.Create(ReadOnly: Boolean; InitialDirectory, TitleString: String; FileTypes: TDialogFileTypes = [ftOCF]);
 var
   ResX, ResY: Integer;
 begin
   ModuleManager.ModGlContext.GetResolution(ResX, ResY);
 
+  fFileTypes := FileTypes;
   fRO := ReadOnly;
 
   InitialDirectory := GetFirstExistingFileName(InitialDirectory);

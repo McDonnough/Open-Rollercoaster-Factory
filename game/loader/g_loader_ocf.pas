@@ -61,7 +61,7 @@ type
 implementation
 
 uses
-  m_varlist, u_huffman;
+  m_varlist, u_huffman, u_functions;
 
 type
   EOCFWrongInternalFormat = class(Exception);
@@ -147,7 +147,7 @@ function TOCFFile.GetName: String;
 begin
   if fOCFName <> '' then
     exit(fOCFName);
-  Result := 'No name';
+  Result := Basename(Filename);
   if GetOCFType = 'terraincollection' then
     Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('texturecollection')[0]).GetAttribute('name')
   else if GetOCFType = 'savedgame' then

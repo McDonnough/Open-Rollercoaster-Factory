@@ -50,6 +50,7 @@ type
       OnLeave: TCallbackProcedure;
       OnKeyDown: TKeyCallbackProcedure;
       OnKeyUp: TKeyCallbackProcedure;
+      OnRender: TCallbackProcedure;
       property Alpha: GLFloat read fAlpha write fDestAlpha;
       property Left: GLFloat read fPosX write fDestX;
       property Top: GLFloat read fPosY write fDestY;
@@ -237,6 +238,9 @@ begin
     fSpeedHeight := clamp(sign(fDestHeight - fHeight) * 0.5 * (-SPEED_ADD + sqrt(SPEED_ADD * SPEED_ADD + 8 * SPEED_ADD * abs(fHeight - fDestHeight))), max(fSpeedHeight - SPEED_ADD, -MAX_MOTION_SPEED), min(fSpeedHeight + SPEED_ADD, MAX_MOTION_SPEED));
     end;
   fRendered := 1;
+
+  if OnRender <> nil then
+    OnRender(Self);
 end;
 
 function TGUIComponent.GetChildByName(S: String): TGUIComponent;
@@ -314,6 +318,7 @@ begin
   OnLeave := nil;
   OnKeyDown := nil;
   OnKeyUp := nil;
+  OnRender := nil;
 end;
 
 destructor TGUIComponent.Free;

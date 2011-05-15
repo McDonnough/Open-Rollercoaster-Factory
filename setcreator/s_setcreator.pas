@@ -10,6 +10,7 @@ uses
 type
   TTextureSelect = class;
   TObjectSelect = class;
+  TTagSelect = class;
 
   TTextureSelectItem = class(TLabel)
     private
@@ -75,6 +76,40 @@ type
       constructor Create(TheParent: TGUIComponent);
     end;
 
+  TTagSelectItem = class(TLabel)
+    private
+      fSelected: Boolean;
+      fSelect: TTagSelect;
+      fBasicColor: TVector4D;
+      fRemoveButton: TIconifiedButton;
+      fRealLabel: TLabel;
+      fTagName: String;
+      procedure fOnClick(Sender: TGUIComponent);
+      procedure fRemove(Sender: TGUIComponent);
+      procedure Select(A: Boolean);
+      procedure SetTagName(S: String);
+    public
+      property RealName: String read fTagName write setTagName;
+      property Selected: Boolean read fSelected write Select;
+      constructor Create(TagName: String; TheParent: TTagSelect);
+    end;
+
+  TTagSelect = class(TScrollBox)
+    private
+      fItems: Array of TTagSelectItem;
+      fItemToDelete: TTagSelectItem;
+      function getItem(I: Integer): TTagSelectItem;
+      function getCount: Integer;
+      procedure FinalDeleteItem(Sender: TGUIComponent);
+    public
+      property Count: Integer read getCount;
+      property Items[I: Integer]: TTagSelectItem read getItem;
+      function GetItem(TagName: String): TTagSelectItem;
+      procedure AddItem(TheItem: TTagSelectItem);
+      procedure DeleteItem(TheItem: TTagSelectItem);
+      constructor Create(TheParent: TGUIComponent);
+    end;
+
   TSetCreator = class
     protected
       fFilepath: String;    
@@ -103,9 +138,9 @@ type
       fObjectList: TObjectSelect;
       fObjectName, fObjectDescription: TEdit;
       fObjectPreview: TTextureSelect;
-//       fTagList: TTagSelect;
+      fTagList: TTagSelect;
       fTagName: TEdit;
-      fAddTag, fDelTag: TIconifiedButton;
+      fAddTag: TIconifiedButton;
       fAddObject, fDelObject: TIconifiedButton;
 
       // Dialog
@@ -113,6 +148,7 @@ type
       fSaveDialog: TFileDialog;
       fPreviewDialog: TFileDialog;
       fOpenDialog: TFileDialog;
+      fOpenDialogPath, fPreviewDialogPath: String;
 
       // Callbacks
       procedure CloseEvent(Event: String; Data, Result: Pointer);
@@ -121,6 +157,8 @@ type
       procedure ImageFileSelected(Event: String; Data, Result: Pointer);
       procedure AssignSelectedPreview(Event: String; Data, Result: Pointer);
       procedure SelectCorrectPreview(Event: String; Data, Result: Pointer);
+      procedure AssignTags(Event: String; Data, Result: Pointer);
+      procedure DeleteTags(Event: String; Data, Result: Pointer);
 
       procedure ChangeData(Sender: TGUIComponent);
       procedure TabChanged(Sender: TGUIComponent);
@@ -130,6 +168,7 @@ type
       procedure RemovePreview(Sender: TGUIComponent);
       procedure AddObject(Sender: TGUIComponent);
       procedure DeleteObject(Sender: TGUIComponent);
+      procedure AddTag(Sender: TGUIComponent);
     public
       property CanClose: Boolean read fCanClose;
       constructor Create;
@@ -152,7 +191,7 @@ begin
   if fSelect.SelectedItem <> nil then
     fSelect.SelectedItem.Color := fSelect.SelectedItem.fBasicColor;
 
-  Color := Vector(0.5, 0.7, 1.0, 1.0);
+  Color := Vector(0.5, 0.7, 1.0, 1.0) * fBasicColor;
   fSelect.fSelectedItem := Self;
 end;
 
@@ -209,7 +248,7 @@ begin
   if fSelect.SelectedItem <> nil then
     fSelect.SelectedItem.Color := fSelect.SelectedItem.fBasicColor;
 
-  Color := Vector(0.5, 0.7, 1.0, 1.0);
+  Color := Vector(0.5, 0.7, 1.0, 1.0) * fBasicColor;
   fSelect.fSelectedItem := Self;
 end;
 
@@ -301,7 +340,9 @@ begin
       fItems[i].Top := (i - 1) * 96;
       fItems[i].fBasicColor := Colors[(i - 1) mod 2];
       if fItems[i] <> SelectedItem then
-        fItems[i].Color := fItems[i].fBasicColor;
+        fItems[i].Color := fItems[i].fBasicColor
+      else
+        fItems[i].Color := fItems[i].fBasicColor * Vector(0.5, 0.7, 1.0, 1.0);
       fItems[i - 1] := fItems[i];
       end;
     SetLength(fItems, length(fItems) - 1);
@@ -361,7 +402,7 @@ var
   Colors: Array[0..1] of TVector4D;
 begin
   Colors[0] := Vector(1.0, 1.0, 1.0, 1.0);
-  Colors[1] := Vector(0.8, 0.8, 0.8, 1.0);
+  Colors[1] := Vector(0.9, 0.9, 0.9, 1.0);
 
   itemID := -1;
   for i := 0 to high(fItems) do
@@ -377,7 +418,9 @@ begin
       fItems[i].Top := (i - 1) * 96;
       fItems[i].fBasicColor := Colors[(i - 1) mod 2];
       if fItems[i] <> SelectedItem then
-        fItems[i].Color := fItems[i].fBasicColor;
+        fItems[i].Color := fItems[i].fBasicColor
+      else
+        fItems[i].Color := fItems[i].fBasicColor * Vector(0.5, 0.7, 1.0, 1.0);
       fItems[i - 1] := fItems[i];
       end;
     SetLength(fItems, length(fItems) - 1);
@@ -399,21 +442,228 @@ constructor TObjectSelect.Create(TheParent: TGUIComponent);
 begin
   inherited Create(TheParent);
 
-  fSelectedItem := nil;
-
   Width := 416;
   Top := 0;
+  fSelectedItem := nil;
+
   Left := 0;
   Height := 0;
 end;
 
 
+procedure TTagSelectItem.fOnClick(Sender: TGUIComponent);
+begin
+  Selected := not Selected;
+  if Sender <> nil then
+    EventManager.CallEvent('TTagSelectItem.Selected', fSelect, Self);
+end;
+
+procedure TTagSelectItem.fRemove(Sender: TGUIComponent);
+begin
+  if Selected then
+    fOnClick(Self);
+  fSelect.DeleteItem(Self);
+  EventManager.CallEvent('TTagSelectItem.Deleted', fSelect, Self);
+end;
+
+procedure TTagSelectItem.Select(A: Boolean);
+begin
+  fSelected := A;
+  if A then
+    Color := Vector(0.5, 0.7, 1.0, 1.0) * fBasicColor
+  else
+    Color := fBasicColor;
+end;
+
+procedure TTagSelectItem.SetTagName(S: String);
+begin
+  fRealLabel.Caption := S;
+  fTagName := S;
+end;
+
+constructor TTagSelectItem.Create(TagName: String; TheParent: TTagSelect);
+begin
+  inherited Create(TheParent.Surface);
+
+  fSelect := TheParent;
+  fTagName := TagName;
+  fSelected := false;
+  fBasicColor := Vector(1.0, 1.0, 1.0, 1.0);
+
+  Width := TheParent.Width - 16;
+  Height := 32;
+  Size := 16;
+  Left := 0;
+  Top := 0;
+  OnClick := @fOnClick;
+
+  fRealLabel := TLabel.Create(Self);
+  fRealLabel.Left := 8;
+  fRealLabel.Top := 8;
+  fRealLabel.Size := 16;
+  fRealLabel.Height := 16;
+  fRealLabel.Width := TheParent.Width - 56;
+  fRealLabel.Caption := TagName;
+  fRealLabel.OnClick := @fOnClick;
+
+  fRemoveButton := TIconifiedButton.Create(Self);
+  fRemoveButton.Left := TheParent.Width - 48;
+  fRemoveButton.Top := 0;
+  fRemoveButton.Width := 32;
+  fRemoveButton.Height := 32;
+  fRemoveButton.Icon := 'list-remove.tga';
+  fRemoveButton.OnClick := @fRemove;
+
+  TheParent.AddItem(Self);
+end;
+
+
+
+function TTagSelect.getItem(I: Integer): TTagSelectItem;
+begin
+  Result := fItems[i];
+end;
+
+function TTagSelect.getCount: Integer;
+begin
+  Result := Length(fItems);
+end;
+
+function TTagSelect.GetItem(TagName: String): TTagSelectItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to high(fItems) do
+    if fItems[i].RealName = TagName then
+      Result := fItems[i];
+end;
+
+procedure TTagSelect.AddItem(TheItem: TTagSelectItem);
+var
+  Colors: Array[0..1] of TVector4D;
+begin
+  Colors[0] := Vector(1.0, 1.0, 1.0, 1.0);
+  Colors[1] := Vector(0.9, 0.9, 0.9, 1.0);
+
+  setLength(fItems, length(fItems) + 1);
+  fItems[high(fItems)] := TheItem;
+
+  TheItem.fBasicColor := Colors[(Count - 1) mod 2];
+  TheItem.Selected := False;
+  TheItem.Top := (Count - 1) * 32;
+end;
+
+procedure TTagSelect.DeleteItem(TheItem: TTagSelectItem);
+begin
+  fItemToDelete := TheItem;
+end;
+
+procedure TTagSelect.FinalDeleteItem(Sender: TGUIComponent);
+var
+  i, itemID: Integer;
+  Colors: Array[0..1] of TVector4D;
+begin
+  Colors[0] := Vector(1.0, 1.0, 1.0, 1.0);
+  Colors[1] := Vector(0.9, 0.9, 0.9, 1.0);
+  if fItemToDelete <> nil then
+    begin
+    itemID := -1;
+    for i := 0 to high(fItems) do
+      if fItems[i] = fItemToDelete then
+        itemID := i;
+
+    if itemID > -1 then
+      begin
+      for i := itemID + 1 to Count - 1 do
+        begin
+        fItems[i].Top := (i - 1) * 32;
+        fItems[i].fBasicColor := Colors[(i - 1) mod 2];
+        if not fItems[i].Selected then
+          fItems[i].Color := fItems[i].fBasicColor
+        else
+          fItems[i].Color := fItems[i].fBasicColor * Vector(0.5, 0.7, 1.0, 1.0);
+        fItems[i - 1] := fItems[i];
+        end;
+      SetLength(fItems, Count - 1);
+      fItemToDelete.Free;
+      end;
+    end;
+
+  fItemToDelete := nil;
+end;
+
+constructor TTagSelect.Create(TheParent: TGUIComponent);
+begin
+  inherited Create(TheParent);
+
+  Width := 200;
+  Left := 0;
+  Top := 0;
+  Height := 200;
+
+  fItemToDelete := nil;
+
+  OnRender := @FinalDeleteItem;
+end;
+
+
+
+
 procedure TSetCreator.SelectCorrectPreview(Event: String; Data, Result: Pointer);
+var
+  i: Integer;
 begin
   if fObjectPreview.GetItem(TObjectSelectItem(Result).fImageFileName) <> nil then
     fObjectPreview.GetItem(TObjectSelectItem(Result).fImageFileName).fOnClick(nil);
   fObjectName.Text := TObjectSelectItem(Result).fObjectName;
   fObjectDescription.Text := TObjectSelectItem(Result).fDescription;
+
+  for i := 0 to fTagList.Count - 1 do
+    fTagList.Items[i].Selected := False;
+
+  for i := 0 to high(TObjectSelectItem(Result).fTags) do
+    if fTagList.GetItem(TObjectSelectItem(Result).fTags[i]) <> nil then
+      fTagList.GetItem(TObjectSelectItem(Result).fTags[i]).Selected := True
+    else
+      with TTagSelectItem.Create(TObjectSelectItem(Result).fTags[i], fTagList) do
+        Selected := True;
+end;
+
+procedure TSetCreator.AssignTags(Event: String; Data, Result: Pointer);
+var
+  c: Integer;
+  i: Integer;
+begin
+  if (Data <> nil) and (fObjectList.SelectedItem <> nil) then
+    begin
+    c := 0;
+    for i := 0 to TTagSelect(Data).Count - 1 do
+      if TTagSelect(Data).Items[i].Selected then
+        inc(c);
+    SetLength(fObjectList.SelectedItem.fTags, C);
+    c := 0;
+    for i := 0 to TTagSelect(Data).Count - 1 do
+      if TTagSelect(Data).Items[i].Selected then
+        begin
+        fObjectList.SelectedItem.fTags[c] := TTagSelect(Data).Items[i].RealName;
+        inc(c);
+        end;
+    end;
+end;
+
+procedure TSetCreator.DeleteTags(Event: String; Data, Result: Pointer);
+var
+  i, j: Integer;
+begin
+  for i := 0 to fObjectList.Count - 1 do
+    for j := 0 to high(fObjectList.Items[i].fTags) do
+      if fObjectList.Items[i].fTags[j] = TTagSelectItem(Result).RealName then
+        begin
+        fObjectList.Items[i].fTags[j] := fObjectList.Items[i].fTags[high(fObjectList.Items[i].fTags)];
+        Setlength(fObjectList.Items[i].fTags, length(fObjectList.Items[i].fTags) - 1);
+        break;
+        end;
 end;
 
 procedure TSetCreator.AssignSelectedPreview(Event: String; Data, Result: Pointer);
@@ -447,6 +697,7 @@ procedure TSetCreator.OCFFileSelected(Event: String; Data, Result: Pointer);
 begin
   if Event = 'TFileDialog.Selected' then
     TObjectSelectItem.Create(fOpenDialog.FileName, fObjectList);
+  fOpenDialogPath := fOpenDialog.Directory;
   EventManager.RemoveCallback(@OCFFileSelected);
   fOpenDialog.Free;
 end;
@@ -459,6 +710,7 @@ begin
     TTextureSelectItem.Create(fPreviewDialog.FileName, fObjectPreview);
     TTextureSelectItem.Create(fPreviewDialog.FileName, fSetPreview);
     end;
+  fPreviewDialogPath := fPreviewDialog.Directory;
   EventManager.RemoveCallback(@ImageFileSelected);
   fPreviewDialog.Free;
 end;
@@ -481,7 +733,7 @@ procedure TSetCreator.AddPreview(Sender: TGUIComponent);
 begin
   EventManager.AddCallback('TFileDialog.Selected', @ImageFileSelected);
   EventManager.AddCallback('TFileDialog.Aborted', @ImageFileSelected);
-  fPreviewDialog := TFileDialog.Create(True, 'scenery', 'Load preview image', [ftIMG]);
+  fPreviewDialog := TFileDialog.Create(True, fPreviewDialogPath, 'Load preview image', [ftIMG]);
 end;
 
 procedure TSetCreator.RemovePreview(Sender: TGUIComponent);
@@ -507,7 +759,7 @@ procedure TSetCreator.AddObject(Sender: TGUIComponent);
 begin
   EventManager.AddCallback('TFileDialog.Selected', @OCFFileSelected);
   EventManager.AddCallback('TFileDialog.Aborted', @OCFFileSelected);
-  fOpenDialog := TFileDialog.Create(True, 'scenery', 'Load object file', [ftOCF]);
+  fOpenDialog := TFileDialog.Create(True, fOpenDialogPath, 'Load object file', [ftOCF]);
 end;
 
 procedure TSetCreator.DeleteObject(Sender: TGUIComponent);
@@ -528,6 +780,17 @@ end;
 procedure TSetCreator.TabChanged(Sender: TGUIComponent);
 begin
   fTabContainer.Left := -784 * fTabBar.SelectedTab;
+end;
+
+procedure TSetCreator.AddTag(Sender: TGUIComponent);
+var
+  ToAdd: String;
+begin
+  ToAdd := fTagName.Text;
+  fTagName.Text := '';
+
+  if fTagList.GetItem(ToAdd) = nil then
+    TTagSelectItem.Create(ToAdd, fTagList);
 end;
 
 constructor TSetCreator.Create;
@@ -569,7 +832,7 @@ begin
   fTabContainer2.Height := 552;
   
   fTabContainer := TLabel.Create(fTabContainer2);
-  fTabContainer.Left := 8;
+  fTabContainer.Left := 0;
   fTabContainer.Top := 0;
   fTabContainer.Width := 3 * 784;
   fTabContainer.Height := 552;
@@ -782,6 +1045,42 @@ begin
   fObjectDescription.Width := 254;
   fObjectDescription.Height := 32;
   fObjectDescription.OnChange := @ChangeData;
+
+  with TLabel.Create(fObjectTab) do
+    begin
+    Left := 264;
+    Width := 200;
+    Height := 16;
+    Size := 16;
+    Top := 112;
+    Caption := 'Tags:';
+    end;
+
+  fTagList := TTagSelect.Create(fObjectTab);
+  fTagList.Left := 264;
+  fTagList.Top := 128;
+  fTagList.Height := 392;
+  fTagList.Width := 254;
+  fTagList.HScrollBar := sbmInvisible;
+  EventManager.AddCallback('TTagSelectItem.Selected', @AssignTags);
+  EventManager.AddCallback('TTagSelectItem.Deleted', @DeleteTags);
+
+  fTagName := TEdit.Create(fObjectTab);
+  fTagName.Top := 520;
+  fTagName.Left := 264;
+  fTagName.Width := 222;
+  fTagName.Height := 32;
+
+  fAddTag := TIconifiedButton.Create(fObjectTab);
+  fAddTag.Top := 520;
+  fAddTag.Left := 264 + 174 + 48;
+  fAddTag.Width := 32;
+  fAddTag.Height := 32;
+  fAddTag.Icon := 'list-add.tga';
+  fAddTag.OnClick := @AddTag;
+
+  fOpenDialogPath := 'scenery';
+  fPreviewDialogPath := 'scenery';
 end;
 
 destructor TSetCreator.Free;

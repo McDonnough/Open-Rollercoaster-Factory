@@ -11,9 +11,9 @@ type
   TDialogFileTypes = set of TDialogFileType;
 
   TDialogFileUI = record
+    OrigColor: TVector4D;
     BG: TLabel;
     Name, Description: TLabel;
-    Select: TIconifiedButton;
     Preview: TImage;
     end;
 
@@ -43,6 +43,7 @@ type
 
   TFileDialog = class
     protected
+      PrevSelected: Integer;
       fFileTypes: TDialogFileTypes;
       fRO: Boolean;
       FileArea, DirArea: TScrollBox;
@@ -290,6 +291,10 @@ end;
 
 procedure TFileDialog.SelectFile(Sender: TGUIComponent);
 begin
+  if (PrevSelected >= 0) and (PrevSelected <= high(Files)) then
+    Files[PrevSelected].BG.Color := Files[PrevSelected].OrigColor;
+  PrevSelected := Sender.Tag;
+  Files[Sender.Tag].BG.Color := Files[Sender.Tag].OrigColor * Vector(0.5, 0.7, 1.0, 1.0);
   fFileName := fFileList.Strings[Sender.Tag];
   if fRO then
     Name.Caption := 'Selected file: $' + fFileName + '$'
@@ -367,12 +372,16 @@ begin
     for i := 0 to high(Files) do
       with Files[i] do
         begin
+        OrigColor := Vector(1.0 - 0.1 * (i mod 2), 1.0 - 0.1 * (i mod 2), 1.0 - 0.1 * (i mod 2), 1.0);
+        
         BG := TLabel.Create(FileArea.Surface);
         BG.Top := 96 * i;
+        BG.Tag := i;
         BG.Left := 0;
         BG.Width := 500;
         BG.Height := 96;
-        BG.Color := Vector(0, 0, 0, 0.1 - 0.1 * (i mod 2));
+        BG.Color := OrigColor;
+        BG.OnClick := @SelectFile;
 
         Name := TLabel.Create(BG);
         Name.TranslateContent := False;
@@ -382,6 +391,8 @@ begin
         Name.Height := 24;
         Name.Size := 24;
         Name.Caption := ExtractFileName(fFileList.Strings[i]);
+        Name.OnClick := @SelectFile;
+        Name.Tag := i;
 
         Description := TLabel.Create(BG);
         Description.TranslateContent := False;
@@ -391,15 +402,8 @@ begin
         Description.Size := 16;
         Description.Width := 396;
         Description.Caption := '';
-
-        Select := TIconifiedButton.Create(BG);
-        Select.Width := 32;
-        Select.Height := 32;
-        Select.Left := 468;
-        Select.Top := 64;
-        Select.Icon := 'dialog-ok-apply.tga';
-        Select.Tag := i;
-        Select.OnClick := @SelectFile;
+        Description.OnClick := @SelectFile;
+        Description.Tag := i;
 
         Preview := TImage.Create(BG);
         Preview.Left := 0;
@@ -408,6 +412,7 @@ begin
         Preview.Height := 96;
         Preview.Tag := i;
         Preview.FreeTextureOnDestroy := true;
+        Preview.OnClick := @SelectFile;
 
         if SubString(fFileList.Strings[i], length(fFileList.Strings[i]) - 3, 4) = '.ocf' then
           begin
@@ -433,6 +438,7 @@ var
 begin
   ModuleManager.ModGlContext.GetResolution(ResX, ResY);
 
+  PrevSelected := 0;
   fFileTypes := FileTypes;
   fRO := ReadOnly;
 

@@ -711,7 +711,10 @@ begin
   if Event = 'TFileDialog.Selected' then
     begin
     fFilepath := fOpenSetDialog.FileName + '.xml';
-    LoadFromFile(fFilepath);
+    if FileExists(fFilepath) then
+      LoadFromFile(fFilepath)
+    else
+      ModuleManager.ModLog.AddError('Corresponding XML file not found');
     end;
   EventManager.RemoveCallback(@SetFileSelected);
   fOpenSetDialog.Free;
@@ -994,111 +997,115 @@ var
   coName, coDescription, coFile, coPreview: String;
   coTags: Array of String;
 begin
-  // Clear everything
+  try
+    // Clear everything
 
-  // Objects
-  while fObjectList.Count > 0 do
-    fObjectList.DeleteItem(fObjectList.Items[fObjectList.Count - 1]);
+    // Objects
+    while fObjectList.Count > 0 do
+      fObjectList.DeleteItem(fObjectList.Items[fObjectList.Count - 1]);
 
-  // Tags
-  while fTagList.Count > 0 do
-    fTagList.DeleteItem(fTagList.Items[fTagList.Count - 1]);
+    // Tags
+    while fTagList.Count > 0 do
+      fTagList.DeleteItem(fTagList.Items[fTagList.Count - 1]);
 
-  // Previews
-  while fAllPreviews.Count > 0 do
-    begin
-    fAllPreviews.fSelectedItem := fAllPreviews.Items[fAllPreviews.Count - 1];
-    RemovePreview(nil);
-    end;
-
-  fSetName.Text := '';
-  fSetDescription.Text := '';
-
-  // Now add the stuff in the set
-
-  A := LoadXMLFile(FileName);
-
-  // Previews
-  E := TDOMElement(A.GetElementsByTagName('previews')[0].FirstChild);
-  while E <> nil do
-    begin
-    TTextureSelectItem.Create(E.FirstChild.NodeValue, fAllPreviews);
-    TTextureSelectItem.Create(E.FirstChild.NodeValue, fObjectPreview);
-    TTextureSelectItem.Create(E.FirstChild.NodeValue, fSetPreview);
-    
-    E := TDOMElement(E.NextSibling);
-    end;
-
-  // Objects
-  E := TDOMElement(A.GetElementsByTagName('objects')[0].FirstChild);
-  while E <> nil do
-    begin
-    F := TDOMElement(E.FirstChild);
-
-    coName := '';
-    coFile := '';
-    coDescription := '';
-    coPreview := '';
-    setLength(coTags, 0);
-    
-    while F <> nil do
+    // Previews
+    while fAllPreviews.Count > 0 do
       begin
-      if F.TagName = 'name' then
-        coName := F.FirstChild.NodeValue
-      else if F.TagName = 'description' then
-        coDescription := F.FirstChild.NodeValue
-      else if F.TagName = 'file' then
-        coFile := F.FirstChild.NodeValue
-      else if F.TagName = 'preview' then
-        coPreview := F.FirstChild.NodeValue
-      else if F.TagName = 'tags' then
+      fAllPreviews.fSelectedItem := fAllPreviews.Items[fAllPreviews.Count - 1];
+      RemovePreview(nil);
+      end;
+
+    fSetName.Text := '';
+    fSetDescription.Text := '';
+
+    // Now add the stuff in the set
+
+    A := LoadXMLFile(FileName);
+
+    // Previews
+    E := TDOMElement(A.GetElementsByTagName('previews')[0].FirstChild);
+    while E <> nil do
+      begin
+      TTextureSelectItem.Create(E.FirstChild.NodeValue, fAllPreviews);
+      TTextureSelectItem.Create(E.FirstChild.NodeValue, fObjectPreview);
+      TTextureSelectItem.Create(E.FirstChild.NodeValue, fSetPreview);
+
+      E := TDOMElement(E.NextSibling);
+      end;
+
+    // Objects
+    E := TDOMElement(A.GetElementsByTagName('objects')[0].FirstChild);
+    while E <> nil do
+      begin
+      F := TDOMElement(E.FirstChild);
+
+      coName := '';
+      coFile := '';
+      coDescription := '';
+      coPreview := '';
+      setLength(coTags, 0);
+
+      while F <> nil do
         begin
-        G := TDOMElement(F.FirstChild);
-
-        while G <> nil do
+        if F.TagName = 'name' then
+          coName := F.FirstChild.NodeValue
+        else if F.TagName = 'description' then
+          coDescription := F.FirstChild.NodeValue
+        else if F.TagName = 'file' then
+          coFile := F.FirstChild.NodeValue
+        else if F.TagName = 'preview' then
+          coPreview := F.FirstChild.NodeValue
+        else if F.TagName = 'tags' then
           begin
-          SetLength(coTags, length(coTags) + 1);
-          coTags[high(coTags)] := G.FirstChild.NodeValue;
-          
-          if fTagList.GetItem(coTags[high(coTags)]) = nil then
-            TTagSelectItem.Create(coTags[high(coTags)], fTagList);
+          G := TDOMElement(F.FirstChild);
 
-          G := TDOMElement(G.NextSibling);
+          while G <> nil do
+            begin
+            SetLength(coTags, length(coTags) + 1);
+            coTags[high(coTags)] := G.FirstChild.NodeValue;
+
+            if fTagList.GetItem(coTags[high(coTags)]) = nil then
+              TTagSelectItem.Create(coTags[high(coTags)], fTagList);
+
+            G := TDOMElement(G.NextSibling);
+            end;
           end;
+
+        F := TDOMElement(F.NextSibling);
         end;
 
-      F := TDOMElement(F.NextSibling);
+      with TObjectSelectItem.Create(coFile, fObjectList) do
+        begin
+        fDescription := coDescription;
+        fObjectName := coName;
+        fImageFileName := coPreview;
+        setLength(fTags, length(coTags));
+        for i := 0 to high(fTags) do
+          fTags[i] := coTags[i];
+        fImage.Tex := fObjectPreview.GetItem(coPreview).fImage.Tex;
+        end;
+
+      E := TDOMElement(E.NextSibling);
       end;
 
-    with TObjectSelectItem.Create(coFile, fObjectList) do
+    // Set
+    E := TDOMElement(A.GetElementsByTagName('info')[0].FirstChild);
+    while E <> nil do
       begin
-      fDescription := coDescription;
-      fObjectName := coName;
-      fImageFileName := coPreview;
-      setLength(fTags, length(coTags));
-      for i := 0 to high(fTags) do
-        fTags[i] := coTags[i];
-      fImage.Tex := fObjectPreview.GetItem(coPreview).fImage.Tex;
+      if E.TagName = 'name' then
+        fSetName.Text := E.FirstChild.NodeValue
+      else if E.TagName = 'description' then
+        fSetDescription.Text := E.FirstChild.NodeValue
+      else if E.TagName = 'preview' then
+        fSetPreview.GetItem(E.FirstChild.NodeValue).fOnClick(nil);
+
+      E := TDOMElement(E.NextSibling);
       end;
 
-    E := TDOMElement(E.NextSibling);
-    end;
-
-  // Set
-  E := TDOMElement(A.GetElementsByTagName('info')[0].FirstChild);
-  while E <> nil do
-    begin
-    if E.TagName = 'name' then
-      fSetName.Text := E.FirstChild.NodeValue
-    else if E.TagName = 'description' then
-      fSetDescription.Text := E.FirstChild.NodeValue
-    else if E.TagName = 'preview' then
-      fSetPreview.GetItem(E.FirstChild.NodeValue).fOnClick(nil);
-    
-    E := TDOMElement(E.NextSibling);
-    end;
-
-  A.Free;
+    A.Free;
+  except
+    ModuleManager.ModLog.AddError('Loading of ' + FileName + ' failed: Corrupt file?');
+  end;
 end;
 
 constructor TSetCreator.Create;

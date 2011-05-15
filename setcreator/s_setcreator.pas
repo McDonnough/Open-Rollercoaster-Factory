@@ -5,7 +5,7 @@ interface
 uses
   SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_button_class, m_gui_edit_class, m_gui_iconifiedbutton_class, m_gui_label_class,
   m_gui_scrollbox_class, m_gui_slider_class, m_gui_progressbar_class, m_gui_checkbox_class, m_gui_tabbar_class, m_gui_image_class, u_dialogs,
-  m_texmng_class, u_vectors;
+  m_texmng_class, u_vectors, u_xml, u_dom, g_loader_ocf, u_files;
 
 type
   TTextureSelect = class;
@@ -124,7 +124,7 @@ type
       fSetTab, fPreviewTab, fObjectTab: TLabel;
 
       // Set tab
-      fCloseButton, fSaveButton: TIconifiedButton;
+      fCloseButton, fSaveButton, fLoadButton: TIconifiedButton;
       fLogo: TImage;
       fSetName: TEdit;
       fSetDescription: TEdit;
@@ -148,11 +148,13 @@ type
       fSaveDialog: TFileDialog;
       fPreviewDialog: TFileDialog;
       fOpenDialog: TFileDialog;
+      fOpenSetDialog: TFileDialog;
       fOpenDialogPath, fPreviewDialogPath: String;
 
       // Callbacks
       procedure CloseEvent(Event: String; Data, Result: Pointer);
       procedure FileSelected(Event: String; Data, Result: Pointer);
+      procedure SetFileSelected(Event: String; Data, Result: Pointer);
       procedure OCFFileSelected(Event: String; Data, Result: Pointer);
       procedure ImageFileSelected(Event: String; Data, Result: Pointer);
       procedure AssignSelectedPreview(Event: String; Data, Result: Pointer);
@@ -164,11 +166,17 @@ type
       procedure TabChanged(Sender: TGUIComponent);
       procedure Close(Sender: TGUIComponent);
       procedure Save(Sender: TGUIComponent);
+      procedure Load(Sender: TGUIComponent);
       procedure AddPreview(Sender: TGUIComponent);
       procedure RemovePreview(Sender: TGUIComponent);
       procedure AddObject(Sender: TGUIComponent);
       procedure DeleteObject(Sender: TGUIComponent);
       procedure AddTag(Sender: TGUIComponent);
+
+      // Backend
+      procedure LoadFromFile(FileName: String);
+      function GatherData: TDOMDocument;
+      function GetOCFFile: TOCFFile;
     public
       property CanClose: Boolean read fCanClose;
       constructor Create;
@@ -181,7 +189,7 @@ var
 implementation
 
 uses
-  m_varlist, math, u_math, u_events, u_functions;
+  m_varlist, math, u_math, u_events, u_functions, u_graphics;
 
 procedure TTextureSelectItem.fOnClick(Sender: TGUIComponent);
 begin
@@ -668,11 +676,12 @@ end;
 
 procedure TSetCreator.AssignSelectedPreview(Event: String; Data, Result: Pointer);
 begin
-  if (Result <> nil) and (fObjectPreview.SelectedItem <> nil) then
-    begin
-    fObjectList.SelectedItem.fImageFileName := TTextureSelectItem(Result).Name;
-    fObjectList.SelectedItem.fImage.Tex := TTextureSelectItem(Result).fImage.Tex;
-    end;
+  if Data = Pointer(fObjectPreview) then
+    if (Result <> nil) and (fObjectPreview.SelectedItem <> nil) then
+      begin
+      fObjectList.SelectedItem.fImageFileName := TTextureSelectItem(Result).Name;
+      fObjectList.SelectedItem.fImage.Tex := TTextureSelectItem(Result).fImage.Tex;
+      end;
 end;
 
 procedure TSetCreator.CloseEvent(Event: String; Data, Result: Pointer);
@@ -688,9 +697,24 @@ end;
 procedure TSetCreator.FileSelected(Event: String; Data, Result: Pointer);
 begin
   if Event = 'TFileDialog.Selected' then
+    begin
     fFilepath := fSaveDialog.FileName;
+    WriteXMLFile(GatherData, fFilepath + '.xml');
+    GetOCFFile.SaveTo(fFilepath);
+    end;
   EventManager.RemoveCallback(@FileSelected);
   fSaveDialog.Free;
+end;
+
+procedure TSetCreator.SetFileSelected(Event: String; Data, Result: Pointer);
+begin
+  if Event = 'TFileDialog.Selected' then
+    begin
+    fFilepath := fOpenSetDialog.FileName + '.xml';
+    LoadFromFile(fFilepath);
+    end;
+  EventManager.RemoveCallback(@SetFileSelected);
+  fOpenSetDialog.Free;
 end;
 
 procedure TSetCreator.OCFFileSelected(Event: String; Data, Result: Pointer);
@@ -727,6 +751,13 @@ begin
   EventManager.AddCallback('TFileDialog.Selected', @FileSelected);
   EventManager.AddCallback('TFileDialog.Aborted', @FileSelected);
   fSaveDialog := TFileDialog.Create(False, 'scenery', 'Save set');
+end;
+
+procedure TSetCreator.Load(Sender: TGUIComponent);
+begin
+  EventManager.AddCallback('TFileDialog.Selected', @SetFileSelected);
+  EventManager.AddCallback('TFileDialog.Aborted', @SetFileSelected);
+  fOpenSetDialog := TFileDialog.Create(True, 'scenery', 'Open set');
 end;
 
 procedure TSetCreator.AddPreview(Sender: TGUIComponent);
@@ -791,6 +822,283 @@ begin
 
   if fTagList.GetItem(ToAdd) = nil then
     TTagSelectItem.Create(ToAdd, fTagList);
+end;
+
+
+function TSetCreator.GatherData: TDOMDocument;
+var
+  i, j: Integer;
+begin
+  Result := TDOMDocument.Create;
+  Result.AppendChild(Result.CreateElement('set'));
+
+  // Set info - everything from the first page
+  Result.LastChild.AppendChild(Result.CreateElement('info'));
+  
+  Result.LastChild.LastChild.AppendChild(Result.CreateElement('name'));
+  Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(fSetName.Text));
+
+  Result.LastChild.LastChild.AppendChild(Result.CreateElement('description'));
+  Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(fSetDescription.Text));
+
+  Result.LastChild.LastChild.AppendChild(Result.CreateElement('preview'));
+
+  if fSetPreview.SelectedItem = nil then
+    ModuleManager.ModLog.AddError('No set preview selected!')
+  else
+    Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(SystemIndependentFileName(fSetPreview.SelectedItem.Name)));
+
+
+  // All the previews
+  Result.LastChild.AppendChild(Result.CreateElement('previews'));
+
+  for i := 0 to fAllPreviews.Count - 1 do
+    begin
+    Result.LastChild.LastChild.AppendChild(Result.CreateElement('image'));
+    Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(SystemIndependentFileName(fAllPreviews.Items[i].Name)));
+    end;
+
+  // All the objects
+  Result.LastChild.AppendChild(Result.CreateElement('objects'));
+
+  for i := 0 to fObjectList.Count - 1 do
+    begin
+    Result.LastChild.LastChild.AppendChild(Result.CreateElement('object'));
+
+    Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateElement('name'));
+    Result.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(fObjectList.Items[i].fObjectName));
+
+    Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateElement('description'));
+    Result.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(fObjectList.Items[i].fDescription));
+
+    Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateElement('file'));
+    Result.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(SystemIndependentFileName(fObjectList.Items[i].Name)));
+
+    Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateElement('preview'));
+    Result.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(SystemIndependentFileName(fObjectList.Items[i].fImageFileName)));
+
+    Result.LastChild.LastChild.LastChild.AppendChild(Result.CreateElement('tags'));
+
+    for j := 0 to high(fObjectList.Items[i].fTags) do
+      begin
+      Result.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.CreateElement('tag'));
+      Result.LastChild.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.CreateTextNode(fObjectList.Items[i].fTags[j]));
+      end;
+    end;
+end;
+
+function TSetCreator.GetOCFFile: TOCFFile;
+var
+  i, j: Integer;
+  Images, Authors: Array of String;
+  b: TOCFBinarySection;
+  AuthorString: String;
+
+  function GetID(Name: String): String;
+  var
+    i: Integer;
+  begin
+    Result := '0';
+    for i := 0 to high(Images) do
+      if Images[i] = Name then
+        Result := IntToStr(I);
+  end;
+begin
+  Result := TOCFFile.Create('');
+
+  SetLength(Images, fAllPreviews.Count);
+  for i := 0 to high(Images) do
+    begin
+    Images[i] := SystemIndependentFileName(fAllPreviews.Items[i].Name);
+    b := TOCFBinarySection.Create;
+    with DBCGFromTex(TexFromStream(ByteStreamFromFile(Images[i]), ExtractFileExt(Images[i]))) do
+      b.Replace(@Data[0], length(Data));
+    Result.AddBinarySection(b);
+    end;
+
+  // TODO: Get authors from files
+
+  AuthorString := '';
+
+  for i := 0 to high(Authors) do
+    begin
+    if AuthorString <> '' then
+      AuthorString += ', ';
+    AuthorString += Authors[i];
+    end;
+  
+  TDOMElement(Result.XML.Document.FirstChild).SetAttribute('author', AuthorString);
+  TDOMElement(Result.XML.Document.FirstChild).SetAttribute('type', 'set');
+
+  Result.XML.Document.FirstChild.AppendChild(Result.XML.Document.CreateElement('resources'));
+  for i := 0 to high(Images) do
+    begin
+    Result.XML.Document.FirstChild.LastChild.AppendChild(Result.XML.Document.CreateElement('resource'));
+    TDOMElement(Result.XML.Document.FirstChild.LastChild.LastChild).SetAttribute('resource:id', IntToStr(i));
+    TDOMElement(Result.XML.Document.FirstChild.LastChild.LastChild).SetAttribute('resource:section', IntToStr(i));
+    TDOMElement(Result.XML.Document.FirstChild.LastChild.LastChild).SetAttribute('resource:format', 'dbcg');
+    TDOMElement(Result.XML.Document.FirstChild.LastChild.LastChild).SetAttribute('resource:version', '1.0');
+    end;
+
+  Result.XML.Document.FirstChild.AppendChild(Result.XML.Document.CreateElement('set'));
+
+  // Set info - everything from the first page
+  Result.XML.Document.FirstChild.LastChild.AppendChild(Result.XML.Document.CreateElement('info'));
+
+  Result.XML.Document.FirstChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('name'));
+  Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateTextNode(fSetName.Text));
+
+  Result.XML.Document.FirstChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('description'));
+  Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateTextNode(fSetDescription.Text));
+
+  Result.XML.Document.FirstChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('preview'));
+
+  if fSetPreview.SelectedItem = nil then
+    TDOMElement(Result.XML.Document.LastChild.LastChild.LastChild.LastChild).SetAttribute('resource:id', '0')
+  else
+    TDOMElement(Result.XML.Document.LastChild.LastChild.LastChild.LastChild).SetAttribute('resource:id', GetID(SystemIndependentFileName(fSetPreview.SelectedItem.Name)));
+
+  Result.XML.Document.FirstChild.LastChild.AppendChild(Result.XML.Document.CreateElement('objects'));
+
+  for i := 0 to fObjectList.Count - 1 do
+    begin
+    Result.XML.Document.FirstChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('object'));
+
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('name'));
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateTextNode(fObjectList.Items[i].fObjectName));
+
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('description'));
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateTextNode(fObjectList.Items[i].fDescription));
+
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('file'));
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateTextNode(SystemIndependentFileName(fObjectList.Items[i].Name)));
+
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('preview'));
+    TDOMElement(Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.LastChild).SetAttribute('resource:id', GetID(SystemIndependentFileName(fObjectList.Items[i].fImageFileName)));
+
+    Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('tags'));
+
+    for j := 0 to high(fObjectList.Items[i].fTags) do
+      begin
+      Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateElement('tag'));
+      Result.XML.Document.FirstChild.LastChild.LastChild.LastChild.LastChild.LastChild.AppendChild(Result.XML.Document.CreateTextNode(fObjectList.Items[i].fTags[j]));
+      end;
+    end;
+end;
+
+procedure TSetCreator.LoadFromFile(FileName: String);
+var
+  A: TDOMDocument;
+  i: Integer;
+  E, F, G: TDOMElement;
+  coName, coDescription, coFile, coPreview: String;
+  coTags: Array of String;
+begin
+  // Clear everything
+
+  // Objects
+  while fObjectList.Count > 0 do
+    fObjectList.DeleteItem(fObjectList.Items[fObjectList.Count - 1]);
+
+  // Tags
+  while fTagList.Count > 0 do
+    fTagList.DeleteItem(fTagList.Items[fTagList.Count - 1]);
+
+  // Previews
+  while fAllPreviews.Count > 0 do
+    begin
+    fAllPreviews.fSelectedItem := fAllPreviews.Items[fAllPreviews.Count - 1];
+    RemovePreview(nil);
+    end;
+
+  fSetName.Text := '';
+  fSetDescription.Text := '';
+
+  // Now add the stuff in the set
+
+  A := LoadXMLFile(FileName);
+
+  // Previews
+  E := TDOMElement(A.GetElementsByTagName('previews')[0].FirstChild);
+  while E <> nil do
+    begin
+    TTextureSelectItem.Create(E.FirstChild.NodeValue, fAllPreviews);
+    TTextureSelectItem.Create(E.FirstChild.NodeValue, fObjectPreview);
+    TTextureSelectItem.Create(E.FirstChild.NodeValue, fSetPreview);
+    
+    E := TDOMElement(E.NextSibling);
+    end;
+
+  // Objects
+  E := TDOMElement(A.GetElementsByTagName('objects')[0].FirstChild);
+  while E <> nil do
+    begin
+    F := TDOMElement(E.FirstChild);
+
+    coName := '';
+    coFile := '';
+    coDescription := '';
+    coPreview := '';
+    setLength(coTags, 0);
+    
+    while F <> nil do
+      begin
+      if F.TagName = 'name' then
+        coName := F.FirstChild.NodeValue
+      else if F.TagName = 'description' then
+        coDescription := F.FirstChild.NodeValue
+      else if F.TagName = 'file' then
+        coFile := F.FirstChild.NodeValue
+      else if F.TagName = 'preview' then
+        coPreview := F.FirstChild.NodeValue
+      else if F.TagName = 'tags' then
+        begin
+        G := TDOMElement(F.FirstChild);
+
+        while G <> nil do
+          begin
+          SetLength(coTags, length(coTags) + 1);
+          coTags[high(coTags)] := G.FirstChild.NodeValue;
+          
+          if fTagList.GetItem(coTags[high(coTags)]) = nil then
+            TTagSelectItem.Create(coTags[high(coTags)], fTagList);
+
+          G := TDOMElement(G.NextSibling);
+          end;
+        end;
+
+      F := TDOMElement(F.NextSibling);
+      end;
+
+    with TObjectSelectItem.Create(coFile, fObjectList) do
+      begin
+      fDescription := coDescription;
+      fObjectName := coName;
+      fImageFileName := coPreview;
+      setLength(fTags, length(coTags));
+      for i := 0 to high(fTags) do
+        fTags[i] := coTags[i];
+      fImage.Tex := fObjectPreview.GetItem(coPreview).fImage.Tex;
+      end;
+
+    E := TDOMElement(E.NextSibling);
+    end;
+
+  // Set
+  E := TDOMElement(A.GetElementsByTagName('info')[0].FirstChild);
+  while E <> nil do
+    begin
+    if E.TagName = 'name' then
+      fSetName.Text := E.FirstChild.NodeValue
+    else if E.TagName = 'description' then
+      fSetDescription.Text := E.FirstChild.NodeValue
+    else if E.TagName = 'preview' then
+      fSetPreview.GetItem(E.FirstChild.NodeValue).fOnClick(nil);
+    
+    E := TDOMElement(E.NextSibling);
+    end;
+
+  A.Free;
 end;
 
 constructor TSetCreator.Create;
@@ -872,6 +1180,14 @@ begin
   fSaveButton.Height := 48;
   fSaveButton.Icon := 'document-save.tga';
   fSaveButton.OnClick := @Save;
+
+  fLoadButton := TIconifiedButton.Create(fSetTab);
+  fLoadButton.Left := 784 - 64 - 56 - 56;
+  fLoadButton.Top := 552 - 56;
+  fLoadButton.Width := 48;
+  fLoadButton.Height := 48;
+  fLoadButton.Icon := 'document-open.tga';
+  fLoadButton.OnClick := @Load;
 
   fLogo := TImage.Create(fSetTab);
   fLogo.Left := 784 - 200;

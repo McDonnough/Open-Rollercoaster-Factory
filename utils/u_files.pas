@@ -11,7 +11,7 @@ type
     Data: Array of Byte;
     end;
 
-function GetFirstExistingFilename(FileName: String): String;
+function GetFirstExistingFilename(FileName: String; ShowErrors: Boolean = True): String;
 function SystemIndependentFileName(FileName: String): String;
 function ByteStreamFromFile(FileName: String): TByteStream;
 procedure ByteStreamToFile(FileName: String; Stream: TByteStream);
@@ -24,13 +24,13 @@ uses
 function SystemIndependentFileName(FileName: String): String;
 begin
   Result := FileName;
-  if GetFirstExistingFilename(SubString(FileName, length(ModuleManager.ModPathes.PersonalDataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.PersonalDataPath))) = FileName then
+  if GetFirstExistingFilename(SubString(FileName, length(ModuleManager.ModPathes.PersonalDataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.PersonalDataPath)), false) = FileName then
     exit(SubString(FileName, length(ModuleManager.ModPathes.PersonalDataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.PersonalDataPath)))
-  else if GetFirstExistingFilename(SubString(FileName, length(ModuleManager.ModPathes.DataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.DataPath))) = FileName then
+  else if GetFirstExistingFilename(SubString(FileName, length(ModuleManager.ModPathes.DataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.DataPath)), false) = FileName then
     exit(SubString(FileName, length(ModuleManager.ModPathes.DataPath) + 1, length(FileName) - length(ModuleManager.ModPathes.DataPath)));
 end;
 
-function GetFirstExistingFilename(FileName: String): String;
+function GetFirstExistingFilename(FileName: String; ShowErrors: Boolean = True): String;
 begin
   if FileName = '' then
     exit('');
@@ -44,7 +44,8 @@ begin
     Exit(ModuleManager.ModPathes.PersonalDataPath + FileName)
   else if FileExists(ModuleManager.ModPathes.DataPath + FileName) then
     Exit(ModuleManager.ModPathes.DataPath + FileName);
-  ModuleManager.ModLog.AddError('File ''' + FileName + ''' does not exist');
+  if ShowErrors then
+    ModuleManager.ModLog.AddError('File ''' + FileName + ''' does not exist');
 end;
 
 function ByteStreamFromFile(FileName: String): TByteStream;

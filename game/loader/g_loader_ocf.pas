@@ -115,17 +115,27 @@ end;
 
 function TOCFFile.GetPreview: TTexImage;
 var
-  i, ResourceCount: Integer;
+  i, ResourceCount, ResourceID: Integer;
 begin
   if fPreview.BPP <> 0 then
     exit(fPreview);
   Result := fPreview;
-  if GetOCFType = 'terraincollection' then
-    begin
-    ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
-    fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].section].Stream, '.' + Resources[ResourceCount].Format);
-    Result := fPreview;
-    end;
+  try
+    if GetOCFType = 'terraincollection' then
+      begin
+      ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
+      fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].Section].Stream, '.' + Resources[ResourceCount].Format);
+      Result := fPreview;
+      end
+    else if GetOCFType = 'set' then
+      begin
+      ResourceID := StrToInt(TDOMElement(TDOMElement(fXMLSection.Document.GetElementsByTagName('info')[0]).GetElementsByTagName('preview')[0]).GetAttribute('resource:id'));
+      fPreview := TexFromStream(fBinarySections[Resources[ResourceID].Section].Stream, '.' + Resources[ResourceID].Format);
+      Result := fPreview;
+      end;
+  except
+    ModuleManager.ModLog.AddError('Error loading preview of an OCF file: Internal error');
+  end;
 end;
 
 function TOCFFile.GetDescription: String;
@@ -134,7 +144,7 @@ begin
     exit(fDescription);
   Result := '';
   try
-    if (GetOCFType = 'savedgame') then
+    if (GetOCFType = 'savedgame') or (GetOCFType = 'set') then
       Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('description')[0]).FirstChild.NodeValue;
   except
     ModuleManager.ModLog.AddError('Error loading description of an OCF file: Internal error');
@@ -151,7 +161,9 @@ begin
   if GetOCFType = 'terraincollection' then
     Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('texturecollection')[0]).GetAttribute('name')
   else if GetOCFType = 'savedgame' then
-    Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('park')[0]).GetAttribute('name');
+    Result := TDOMElement(fXMLSection.Document.GetElementsByTagName('park')[0]).GetAttribute('name')
+  else if GetOCFType = 'set' then
+    Result := TDOMElement(TDOMElement(fXMLSection.Document.GetElementsByTagName('info')[0]).GetElementsByTagName('name')[0]).FirstChild.NodeValue;
   fOCFName := Result;
 end;
 

@@ -701,6 +701,7 @@ begin
     fFilepath := fSaveDialog.FileName;
     WriteXMLFile(GatherData, fFilepath + '.xml');
     GetOCFFile.SaveTo(fFilepath);
+    ModuleManager.ModOCFManager.ReloadOCFFile(fFilepath, '', nil);
     end;
   EventManager.RemoveCallback(@FileSelected);
   fSaveDialog.Free;
@@ -892,10 +893,12 @@ end;
 
 function TSetCreator.GetOCFFile: TOCFFile;
 var
-  i, j: Integer;
-  Images, Authors: Array of String;
+  i, j, k: Integer;
+  Images, Authors, SingleFileAuthors: AString;
   b: TOCFBinarySection;
   AuthorString: String;
+  O: TOCFFile;
+  Found: Boolean;
 
   function GetID(Name: String): String;
   var
@@ -919,7 +922,29 @@ begin
     Result.AddBinarySection(b);
     end;
 
-  // TODO: Get authors from files
+  for i := 0 to fObjectList.Count - 1 do
+    begin
+    O := TOCFFile.Create(fObjectList.Items[i].Name);
+
+    SingleFileAuthors := Explode(',', TDOMElement(O.XML.Document.FirstChild).GetAttribute('author'));
+
+    for j := 0 to high(SingleFileAuthors) do
+      begin
+      Found := False;
+
+      for k := 0 to high(Authors) do
+        if Authors[k] = SingleFileAuthors[j] then
+          Found := True;
+
+      if not Found then
+        begin
+        setLength(Authors, length(Authors) + 1);
+        Authors[high(Authors)] := SingleFileAuthors[j];
+        end;
+      end;
+
+    O.Free;
+    end;
 
   AuthorString := '';
 

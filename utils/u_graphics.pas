@@ -23,7 +23,7 @@ function StreamFromTex(TexImg: TTexImage; Format: String): TByteStream;
 function TexFromTGA(Stream: TByteStream): TTexImage;
 function TexFromDBCG(Stream: TByteStream): TTexImage;
 
-function TGAFromTex(TexImg: TTexImage): TByteStream;
+function TGAFromTex(TexImg: TTexImage; Flags: Integer = 32): TByteStream;
 function DBCGFromTex(TexImg: TTexImage): TByteStream;
 
 implementation
@@ -358,29 +358,32 @@ begin
       end;
 end;
 
-function TGAFromTex(TexImg: TTexImage): TByteStream;
+function TGAFromTex(TexImg: TTexImage; Flags: Integer = 32): TByteStream;
 var
   i, j: Integer;
+  ByPP: Integer;
 begin
-  SetLength(Result.Data, 18 + TexImg.Width * TexImg.Height * 4 + 26);
+  ByPP := TexImg.BPP div 8;
+  SetLength(Result.Data, 18 + TexImg.Width * TexImg.Height * ByPP + 26);
   Result.Data[0] := 0;
   Result.Data[1] := 0;
   Result.Data[2] := 2;
   Word((@Result.Data[3])^) := 0;
   Word((@Result.Data[5])^) := 0;
-  Result.Data[6] := 32;
+  Result.Data[7] := TexImg.BPP;
   Word((@Result.Data[8])^) := 0;
   Word((@Result.Data[10])^) := 0;
   Word((@Result.Data[12])^) := TexImg.Width;
   Word((@Result.Data[14])^) := TexImg.Height;
-  Result.Data[16] := 32;
-  Result.Data[17] := 32;
+  Result.Data[16] := TexImg.BPP;
+  Result.Data[17] := Flags;
   for i := 0 to high(TexImg.Data) div 4 do
     begin
-    Result.Data[18 + 4 * i + 0] := TexImg.Data[4 * i + 2];
-    Result.Data[18 + 4 * i + 1] := TexImg.Data[4 * i + 1];
-    Result.Data[18 + 4 * i + 2] := TexImg.Data[4 * i + 0];
-    Result.Data[18 + 4 * i + 3] := TexImg.Data[4 * i + 3];
+    Result.Data[18 + ByPP * i + 0] := TexImg.Data[ByPP * i + 2];
+    Result.Data[18 + ByPP * i + 1] := TexImg.Data[ByPP * i + 1];
+    Result.Data[18 + ByPP * i + 2] := TexImg.Data[ByPP * i + 0];
+    if ByPP = 4 then
+      Result.Data[18 + ByPP * i + 3] := TexImg.Data[ByPP * i + 3];
     end;
   DWord((@Result.Data[Length(Result.Data) - 26])^) := 0;
   DWord((@Result.Data[Length(Result.Data) - 22])^) := 0;

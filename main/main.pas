@@ -19,8 +19,8 @@ type
       fMSHistory: Array[0..3] of Single;
       procedure ShowHideFPSDisplay(Event: String; Data, Result: Pointer);
     public
-      property MS: Single read fMS;
-      property FPS: Single read fFPS;
+      property MS: Single read fMS write fMS;
+      property FPS: Single read fFPS write fFPS;
       property Window: TWindow read fWindow;
       procedure SetTime;
       procedure Calculate;

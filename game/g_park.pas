@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml, g_particles,
-  g_resources, g_objects, g_res_textures;
+  g_resources, g_objects, g_res_textures, g_screen_capture;
 
 type
   TPark = class
@@ -15,6 +15,7 @@ type
       fLoadState: Integer;
       fSelectionEngine: TSelectionEngine;
       fNormalSelectionEngine: TSelectionEngine;
+      fScreenCaptureTool: TScreenCaptureTool;
       procedure SetSelectionEngine(E: TSelectionEngine);
     public
       // Parts of the park
@@ -193,6 +194,7 @@ begin
   ModuleManager.ModCamera.ActiveCamera := TCamera.Create;
   ModuleManager.ModCamera.ActiveCamera.LoadDefaults;
   ModuleManager.ModRenderer.PostInit;
+  fScreenCaptureTool := TScreenCaptureTool.Create;
 end;
 
 procedure TPark.Render;
@@ -201,6 +203,7 @@ begin
     ModuleManager.ModLoadScreen.Render
   else
     begin
+    fScreenCaptureTool.Advance;
     ModuleManager.ModRenderer.RenderScene;
     ParkUI.Drag;
     pSky.Advance;
@@ -274,6 +277,7 @@ end;
 destructor TPark.Free;
 begin
   writeln('Hint: Deleting Park object');
+  fScreenCaptureTool.Free;
   EventManager.RemoveCallback(@StartLoading);
   fSelectionEngine := nil;
   fNormalSelectionEngine.Free;

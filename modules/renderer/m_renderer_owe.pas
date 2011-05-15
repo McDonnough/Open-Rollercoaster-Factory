@@ -178,6 +178,7 @@ type
       procedure CreateConfigInterface(Event: String; Data, Result: Pointer);
       procedure DestroyConfigInterface(Event: String; Data, Result: Pointer);
       function GetRay(MX, MY: Single): TVector3D;
+      function Capture: TByteStream;
       constructor Create;
       destructor Free;
     end;
@@ -209,6 +210,8 @@ procedure TModuleRendererOWE.PostInit;
 var
   ResX, ResY: Integer;
 begin
+  CaptureNextFrame := False;
+
   fFrontFace := GL_CCW;
 
   fFrameID := 0;
@@ -1198,7 +1201,7 @@ begin
 
   // Output
 
-  if UseMotionBlur then
+  if (UseMotionBlur) and (not CaptureNextFrame) then
     begin
     // Render output to MB buffer
     MotionBlurBuffer.Bind;
@@ -1261,6 +1264,12 @@ begin
 
   inc(fFrameID);
 //   writeln(glGetError());
+
+  if CaptureNextFrame then
+    begin
+    CaptureNextFrame := False;
+    EventManager.CallEvent('TRenderer.CaptureNow', self, nil);
+    end;
 end;
 
 procedure TModuleRendererOWE.CheckModConf;
@@ -1492,6 +1501,57 @@ end;
 procedure TModuleRendererOWE.DestroyConfigInterface(Event: String; Data, Result: Pointer);
 begin
   fOWEConfigInterface.Free;
+end;
+
+function TModuleRendererOWE.Capture: TByteStream;
+var
+  ResX, ResY: Integer;
+  A: Byte;
+  B, C: PByte;
+  i, j: Integer;
+  Tex: TTexImage;
+  ByPP: Integer;
+begin
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+
+  ByPP := 4;
+  SetLength(Result.Data, 18 + ResX * ResY * ByPP + 26);
+  Result.Data[0] := 0;
+  Result.Data[1] := 0;
+  Result.Data[2] := 2;
+  Word((@Result.Data[3])^) := 0;
+  Word((@Result.Data[5])^) := 0;
+  Result.Data[7] := 32;
+  Word((@Result.Data[8])^) := 0;
+  Word((@Result.Data[10])^) := 0;
+  Word((@Result.Data[12])^) := ResX;
+  Word((@Result.Data[14])^) := ResY;
+  Result.Data[16] := 32;
+  Result.Data[17] := 0;
+  
+  glFlush;
+  glReadPixels(0, 0, ResX, ResY, GL_BGRA, GL_UNSIGNED_BYTE, @Result.Data[18]);
+  
+  DWord((@Result.Data[Length(Result.Data) - 26])^) := 0;
+  DWord((@Result.Data[Length(Result.Data) - 22])^) := 0;
+  Result.Data[Length(Result.Data) - 18] := Ord('T');
+  Result.Data[Length(Result.Data) - 17] := Ord('R');
+  Result.Data[Length(Result.Data) - 16] := Ord('U');
+  Result.Data[Length(Result.Data) - 15] := Ord('E');
+  Result.Data[Length(Result.Data) - 14] := Ord('V');
+  Result.Data[Length(Result.Data) - 13] := Ord('I');
+  Result.Data[Length(Result.Data) - 12] := Ord('S');
+  Result.Data[Length(Result.Data) - 11] := Ord('I');
+  Result.Data[Length(Result.Data) - 10] := Ord('O');
+  Result.Data[Length(Result.Data) - 09] := Ord('N');
+  Result.Data[Length(Result.Data) - 08] := Ord('-');
+  Result.Data[Length(Result.Data) - 07] := Ord('X');
+  Result.Data[Length(Result.Data) - 06] := Ord('F');
+  Result.Data[Length(Result.Data) - 05] := Ord('I');
+  Result.Data[Length(Result.Data) - 04] := Ord('L');
+  Result.Data[Length(Result.Data) - 03] := Ord('E');
+  Result.Data[Length(Result.Data) - 02] := Ord('.');
+  Result.Data[Length(Result.Data) - 01] := 0;
 end;
 
 constructor TModuleRendererOWE.Create;

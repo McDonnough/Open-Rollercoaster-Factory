@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml, g_particles,
-  g_resources, g_objects, g_res_textures, g_screen_capture;
+  g_resources, g_objects, g_res_textures, g_screen_capture, g_sets;
 
 type
   TPark = class

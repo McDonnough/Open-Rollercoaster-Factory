@@ -34,6 +34,9 @@ void main(void) {
       float distfactor = 1.5 * pow(2.7183, -0.4 * length(dir));
       value += 1.0 - max(0.0, dot(normalize(dir), Normal)) * distfactor;
       // IF [ EQ owe.ssao.indirectlighting 1 ]
+      coord = gl_TexCoord[0].xy + (6.0 * Radius * vec2(sin(Coeff * j + RandomOffset), cos(Coeff * j + RandomOffset))) / ScreenSize;
+      Dest = texture2D(GeometryTexture, coord).xyz;
+      dir = Dest - Vertex.xyz;
       vec4 Emission = texture2D(EmissionTexture, coord);
       finalEmission += 2.0 * Emission.rgb * Emission.a * Emission.a / (Emission.a * Emission.a + dot(dir, dir)) * max(0.0, dot(normalize(dir), Normal));
       // END

@@ -191,6 +191,9 @@ procedure TRAutoplants.Render;
 var
   i: Integer;
 begin
+  if ModuleManager.ModRenderer.RTerrain.TerrainEditorIsOpen then
+    exit;
+  
   if CurrentShader = fMaterialPassShader then
     ModuleManager.ModRenderer.RObjects.CurrentGBuffer.Textures[3].Bind(6);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(1);

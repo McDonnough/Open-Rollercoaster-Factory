@@ -3,7 +3,8 @@ unit g_terrain;
 interface
 
 uses
-  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf, u_dom, u_arrays;
+  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf, u_dom, u_arrays, g_res_objects,
+  u_scene;
 
 type
   TTerrainMapPoint = record
@@ -52,6 +53,8 @@ type
       fCoordsToUpdate: Array of Integer;
       fMarks, fMarkMap: TTable;
       MinX, MinY, MaxX, MaxY: Integer;
+      fMarkObjects: Array of TGeoObject;
+      fMarkObjectResource: TObjectResource;
       function GetHeightAtPosition(X, Y: Single): Single;
       procedure SetHeightAtPosition(X, Y, Height: Single);
       function GetWaterAtPosition(X, Y: Single): Single;
@@ -98,6 +101,7 @@ type
       procedure RaiseTo(Height: Single = -1);
       procedure LowerTo(Height: Single = -1);
       procedure Smooth;
+      procedure UpdateMarks;
       constructor Create;
       destructor Free;
     end;
@@ -869,6 +873,36 @@ begin
   EndUpdate;
 end;
 
+procedure TTerrain.UpdateMarks;
+var
+  i: Integer;
+begin
+  while fMarks.Height + 1 > length(fMarkObjects) do
+    begin
+    setLength(fMarkObjects, length(fMarkObjects) + 1);
+    fMarkObjects[high(fMarkObjects)] := fMarkObjectResource.GeoObject.Duplicate;
+    fMarkObjects[high(fMarkObjects)].Register;
+    end;
+  while fMarks.Height + 1 < length(fMarkObjects) do
+    begin
+    fMarkObjects[high(fMarkObjects)].Free;
+    setLength(fMarkObjects, length(fMarkObjects) - 1);
+    end;
+    
+  for i := 0 to fMarks.Height - 1 do
+    begin
+    fMarkObjects[i].Matrix := TranslationMatrix(Vector(0.2 * fMarks.Value[0, i], HeightMap[0.2 * fMarks.Value[0, i], 0.2 * fMarks.Value[1, i]], 0.2 * fMarks.Value[1, i]));
+    fMarkObjects[i].UpdateMatrix;
+    fMarkObjects[i].Materials[0].Color := Vector(0, 1, 1, 1);
+    end;
+  if CurrMark.X > 0 then
+    fMarkObjects[high(fMarkObjects)].Matrix := TranslationMatrix(Vector(CurrMark.X, HeightMap[CurrMark.X, CurrMark.Y], CurrMark.Y))
+  else
+    fMarkObjects[high(fMarkObjects)].Matrix := TranslationMatrix(Vector(-10, -10, -10));
+  fMarkObjects[high(fMarkObjects)].UpdateMatrix;
+  fMarkObjects[high(fMarkObjects)].Materials[0].Color := Vector(1, 0, 0, 1);
+end;
+
 constructor TTerrain.Create;
 begin
   writeln('Hint: Creating Terrain object');
@@ -881,12 +915,15 @@ begin
     CurrMark := Vector(-1, -1);
     MarkMode := 0;
     EventManager.AddCallback('TTerrain.CollectionLoaded', @LoadedCollection);
+    fMarkObjectResource := TObjectResource.Get('terrain/terrainmarks/terrainmarks.ocf/object');
   except
     ModuleManager.ModLog.AddError('Could not create terrain: Internal error');
   end;
 end;
 
 destructor TTerrain.Free;
+var
+  i: Integer;
 begin
   writeln('Hint: Deleting Terrain object');
   EventManager.RemoveCallback(@LoadedCollection);
@@ -894,6 +931,8 @@ begin
     fCollection.Free;
   fMarkMap.Free;
   fMarks.Free;
+  for i := 0 to high(fMarkObjects) do
+    fMarkObjects[i].Free;
 end;
 
 end.

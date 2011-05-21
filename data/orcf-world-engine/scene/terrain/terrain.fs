@@ -102,8 +102,8 @@ void main(void) {
   gl_FragData[0].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
   float lf1 = clamp(pow(abs(VY - HeightLine) * 10.0, 4.0), 0.0, 1.0);
   float lf2 = clamp(1.0 - min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)), 0.0, 1.0);
-  gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[5].rgb, lf1);
-  gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[5].rgb, lf2);
+  gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf1);
+  gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf2);
   gl_FragData[5].rgb = mix(vec3(1.0, 1.0, 1.0), gl_FragData[5].rgb, lf1);
   gl_FragData[5].rgb = mix(vec3(1.0, 1.0, 1.0), gl_FragData[5].rgb, lf2);
   if (clamp(Vertex.xz, Min, Max) != Vertex.xz)

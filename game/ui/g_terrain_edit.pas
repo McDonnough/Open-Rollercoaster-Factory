@@ -272,6 +272,7 @@ begin
       Park.pTerrain.CurrMark.Y := Park.pTerrain.Marks.Value[1, Park.pTerrain.Marks.Height - 1] / 5;
     end;
   fSelectionObject := PSelectableObject(Data);
+  Park.pTerrain.UpdateMarks;
 end;
 
 procedure TGameTerrainEdit.CreateNewMark(Event: String; Data, Result: Pointer);
@@ -307,6 +308,7 @@ begin
     Park.pTerrain.Marks.DeleteRow(Park.pTerrain.Marks.HasRow(Row));
     Row.Free;
     end;
+  Park.pTerrain.UpdateMarks;
 end;
 
 procedure TGameTerrainEdit.UpdateTerrainSelectionMap(Event: String; Data, Result: Pointer);
@@ -384,6 +386,7 @@ begin
     Park.pTerrain.CreateMarkMap;
     MarkMode := TIconifiedButton(Data);
     end;
+  Park.pTerrain.UpdateMarks;
 end;
 
 procedure TGameTerrainEdit.changeTab(Event: String; Data, Result: Pointer);
@@ -395,6 +398,7 @@ procedure TGameTerrainEdit.OnClose(Event: String; Data, Result: Pointer);
 begin
   Park.pTerrain.Marks.Resize(2, 0);
   MarksChange('', nil, nil);
+  Park.pTerrain.UpdateMarks;
 end;
 
 constructor TGameTerrainEdit.Create(Resource: String; ParkUI: TXMLUIManager);

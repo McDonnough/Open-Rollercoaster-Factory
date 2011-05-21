@@ -46,6 +46,7 @@ type
       Blocks: Array of TTerrainBlock;
       CurrentShader: TShader;
       BorderEnabled: Boolean;
+      property TerrainEditorIsOpen: Boolean read fTerrainEditorIsOpen;
       property TerrainMap: TTexture read fTerrainMap;
       property XBlocks: Integer read fXBlocks;
       property YBlocks: Integer read fYBlocks;

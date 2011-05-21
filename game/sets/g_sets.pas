@@ -19,6 +19,7 @@ type
       property Name: String read fName;
       property Description: String read fDescription;
       property Preview: TTexture read fPreview;
+      property OrigList: TGameObjectList read fObjects;
       function List: TGameObjectList; // Duplicate the object list
       procedure Add(O: TGameObject);  // Add the object to get a sorted list
       constructor Create(O: TOCFFile);
@@ -81,6 +82,7 @@ type
       property Files: TStringList read fFiles;
       property Done: Boolean read fDone;
       property Loaded: Boolean read fLoaded;
+      property Sets: TLinkedList read fSets;
       procedure LoadSet(FileName: String); // Add a set to the list sorted by nams
       procedure LoadAll;
       function GetObjectsByTags(Tags: AString): TGameObjectList;
@@ -192,6 +194,7 @@ begin
         fO.fDescription := fODescription;
         fO.fPreview := TTexture.Create;
         fO.fPreview.FromTexImage(TexFromStream(O.Bin[O.Resources[fOPreview].Section].Stream, '.' + O.Resources[fOPreview].Format));
+        fO.fTags := fOTags;
         end;
 
       E := TDOMElement(E.NextSibling);
@@ -235,12 +238,12 @@ begin
   fSet := TheSet;
   fName := OName;
 
-  fSet.Add(Self);
-
   fPreview := nil;
 
   fResource := nil;
   fResourceName := FileName + '/object';
+
+  fSet.Add(Self);
 end;
 
 destructor TGameObject.Free;

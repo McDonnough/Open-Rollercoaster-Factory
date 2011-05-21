@@ -8,9 +8,15 @@ uses
   Classes, SysUtils, m_module;
 
 type
+  TMouseCursor = (mcDefault, mcCaret);
+
   TModuleGLContextClass = class(TBasicModule)
+    protected
+      fCurrentCursor: TMouseCursor;
+      procedure ChangeCursor(Cursor: TMouseCursor); virtual abstract;
     public
       AdditionalContextOptions: Integer;
+      property MouseCursor: TMouseCursor read fCurrentCursor write ChangeCursor;
       procedure ChangeWindowTitle(Text: String); virtual abstract;
       procedure GetResolution(var ResX: Integer; var ResY: Integer); virtual abstract;
       procedure SwapBuffers; virtual abstract;

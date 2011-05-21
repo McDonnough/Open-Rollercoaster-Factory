@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, m_glcontext_class, SDL, dglOpenGL, m_gui_class, m_settings_class, m_gui_label_class, m_gui_edit_class,
-  m_gui_checkbox_class;
+  m_gui_checkbox_class, m_texmng_class;
 
 type
   TModuleGLContextSDL = class(TModuleGLContextClass)
@@ -20,7 +20,11 @@ type
       fVFlags: DWord;
       Second: Boolean;
       fResX, fResY: Integer;
+
+      fCursorTextures: Array[TMouseCursor] of TTexture;
+      fCursorTextureNames: Array[TMouseCursor] of String;
       function CreateSurface(w, h, flag: Integer): Boolean;
+      procedure ChangeCursor(Cursor: TMouseCursor); override;
     public
       constructor Create;
       destructor Free;
@@ -34,6 +38,7 @@ type
       procedure StartMainLoop;
       procedure EndMainLoop;
       procedure InitGL;
+      procedure LoadCursors;
       function SetResolution(ResX, ResY: Integer): Boolean;
       function IsFullscreen: Boolean;
       function SetFullscreenState(Fullscreen: Boolean): Boolean;
@@ -43,6 +48,11 @@ implementation
 
 uses
   m_varlist, main, u_functions, u_events;
+
+procedure TModuleGLContextSDL.ChangeCursor(Cursor: TMouseCursor);
+begin
+  fCurrentCursor := Cursor;
+end;
 
 function TModuleGLContextSDL.CreateSurface(w, h, flag: Integer): Boolean;
 begin
@@ -199,6 +209,11 @@ begin
     end;
   fResX := StrToIntWD(GetConfVal('ResX'), 800);
   fResY := StrToIntWD(GetConfVal('ResY'), 600);
+
+  MouseCursor := mcDefault;
+
+  fCursorTextureNames[mcDefault] := 'general/cursor-default.tga';
+  fCursorTextureNames[mcCaret] := 'general/cursor-caret.tga';
 end;
 
 procedure TModuleGLContextSDL.ChangeWindowTitle(Text: String);
@@ -214,17 +229,49 @@ end;
 
 procedure TModuleGLContextSDL.SwapBuffers;
 begin
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  ModuleManager.ModGLMng.SetUp2DMatrix;
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity;
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+
+  glUseProgram(0);
+  fCursorTextures[MouseCursor].Bind(0);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glDisable(GL_CULL_FACE);
+
+  glColor4f(1, 1, 1, 1);
+
+  glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY);
+    glTexCoord2f(1, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY);
+    glTexCoord2f(1, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
+    glTexCoord2f(0, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
+  glEnd;
+
+  glDisable(GL_BLEND);
+
+  fCursorTextures[MouseCursor].Unbind;
   SDL_GL_SwapBuffers;
 end;
 
 procedure TModuleGLContextSDL.StartMainLoop;
 begin
+  LoadCursors;
+  SDL_ShowCursor(0);
+  
   while not ModuleManager.ModInputHandler.QuitRequest do
     MainLoop;
 end;
 
 procedure TModuleGLContextSDL.EndMainLoop;
 begin
+  SDL_ShowCursor(1);
 end;
 
 procedure TModuleGLContextSDL.InitGL;
@@ -260,6 +307,17 @@ end;
 function TModuleGLContextSDL.IsFullscreen: Boolean;
 begin
   Result := GetConfVal('Fullscreen') = '1';
+end;
+
+procedure TModuleGLContextSDL.LoadCursors;
+var
+  i: TMouseCursor;
+begin
+  for i := low(TMouseCursor) to high(TMouseCursor) do
+    begin
+    fCursorTextures[i] := TTexture.Create;
+    fCursorTextures[i].FromFile(fCursorTextureNames[i]);
+    end;
 end;
 
 function TModuleGLContextSDL.SetFullscreenState(Fullscreen: Boolean): Boolean;

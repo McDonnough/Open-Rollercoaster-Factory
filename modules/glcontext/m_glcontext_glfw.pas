@@ -72,6 +72,8 @@ begin
   //Init GLFW
   glfwInit;
   glfwSwapInterval(0);
+  glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 2);
+  glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 1);
   if GetConfVal('Fullscreen') = '1' then
   begin
     if glfwOpenWindow(StrToInt(GetConfVal('ResX')), StrToInt(GetConfVal('ResY')), 8, 8, 8, 0, 24, 0, GLFW_FULLSCREEN) <> 1 then

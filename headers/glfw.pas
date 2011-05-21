@@ -1,11 +1,11 @@
 //========================================================================
 // GLFW - An OpenGL framework
-// File:        glfw.pas
 // Platform:    Delphi/FPC + Windows/Linux/Mac OS
-// API version: 2.6
-// WWW:         http://glfw.sourceforge.net
+// API version: 2.7
+// WWW:         http://www.glfw.org/
 //------------------------------------------------------------------------
-// Copyright (c) 2002-2005 Camilla Berglund
+// Copyright (c) 2002-2006 Marcus Geelnard
+// Copyright (c) 2006-2010 Camilla Berglund <elmindreda@elmindreda.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -30,6 +30,18 @@
 
 unit glfw;
 
+// Use standard linking method
+// This means links dynamically to glfw.dll on Windows, glfw.so on Linux
+// and statically on Mac OS X
+//
+// If you don't like that, comment this define
+{$DEFINE LINK_STANDARD}
+
+// If the define above is commented, remove the dot on your favorite option
+{.$DEFINE LINK_DYNAMIC}
+{.$DEFINE LINK_STATIC}
+
+
 {$IFDEF FPC}
   {$MODE DELPHI}
 {$ENDIF}
@@ -42,7 +54,7 @@ const
   // GLFW version
   //========================================================================
   GLFW_VERSION_MAJOR    = 2;
-  GLFW_VERSION_MINOR    = 6;
+  GLFW_VERSION_MINOR    = 7;
   GLFW_VERSION_REVISION = 0;
 
   //========================================================================
@@ -121,7 +133,14 @@ const
   GLFW_KEY_KP_DECIMAL   = (GLFW_KEY_SPECIAL+60);
   GLFW_KEY_KP_EQUAL     = (GLFW_KEY_SPECIAL+61);
   GLFW_KEY_KP_ENTER     = (GLFW_KEY_SPECIAL+62);
-  GLFW_KEY_LAST         = GLFW_KEY_KP_ENTER;
+  GLFW_KEY_KP_NUM_LOCK  = (GLFW_KEY_SPECIAL+63);
+  GLFW_KEY_CAPS_LOCK    = (GLFW_KEY_SPECIAL+64);
+  GLFW_KEY_SCROLL_LOCK  = (GLFW_KEY_SPECIAL+65);  
+  GLFW_KEY_PAUSE        = (GLFW_KEY_SPECIAL+66);
+  GLFW_KEY_LSUPER       = (GLFW_KEY_SPECIAL+67);
+  GLFW_KEY_RSUPER       = (GLFW_KEY_SPECIAL+68);
+  GLFW_KEY_MENU         = (GLFW_KEY_SPECIAL+69);
+  GLFW_KEY_LAST         = GLFW_KEY_MENU;
 
   // Mouse button definitions
   GLFW_MOUSE_BUTTON_1      = 0;
@@ -190,6 +209,15 @@ const
   GLFW_STEREO               = $00020011;
   GLFW_WINDOW_NO_RESIZE     = $00020012;
   GLFW_FSAA_SAMPLES         = $00020013;
+  GLFW_OPENGL_VERSION_MAJOR = $00020014;
+  GLFW_OPENGL_VERSION_MINOR = $00020015;
+  GLFW_OPENGL_FORWARD_COMPAT= $00020016;
+  GLFW_DEBUG_CONTEXT        = $00020017;
+  GLFW_OPENGL_PROFILE       = $00020018;
+
+  // GLFW_OPENGL_PROFILE tokens
+  GLFW_OPENGL_CORE_PROFILE  = $00050001;
+  GLFW_OPENGL_COMPAT_PROFILE = $00050002;
 
   // glfwEnable/glfwDisable tokens
   GLFW_MOUSE_CURSOR         = $00030001;
@@ -265,6 +293,7 @@ type
 // Prototypes
 //========================================================================
 
+{$IFDEF LINK_DYNAMIC}
 const
   {$IFDEF WIN32}
     DLLNAME = 'glfw.dll';
@@ -272,95 +301,95 @@ const
     {$IFDEF DARWIN}
     DLLNAME = 'libglfw.dylib';
     {$ELSE}
-    DLLNAME = 'libglfw.so.2';
+    DLLNAME = 'libglfw.so';
     {$ENDIF}
   {$ENDIF}
-
+{$ENDIF}
 
 
 // GLFW initialization, termination and version querying
-function  glfwInit: Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwTerminate; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwGetVersion(var major: Integer; var minor: Integer; var Rev: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwInit: Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwTerminate; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwGetVersion(var major: Integer; var minor: Integer; var Rev: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Window handling
-function  glfwOpenWindow(width, height, redbits, greenbits, bluebits, alphabits, depthbits, stencilbits, mode: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwOpenWindowHint(target, hint: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwCloseWindow; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetWindowTitle(title: PChar); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwGetWindowSize(var width: Integer; var height: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetWindowSize(width, height: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetWindowPos(x, y: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwIconifyWindow; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwRestoreWindow; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSwapBuffers; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSwapInterval(interval: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetWindowParam(Param: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetWindowSizeCallback(cbfun: GLFWwindowsizefun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetWindowCloseCallback(cbfun: GLFWwindowclosefun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetWindowRefreshCallback(cbfun: GLFWwindowrefreshfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwOpenWindow(width, height, redbits, greenbits, bluebits, alphabits, depthbits, stencilbits, mode: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwOpenWindowHint(target, hint: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwCloseWindow; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetWindowTitle(title: PChar); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwGetWindowSize(var width: Integer; var height: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetWindowSize(width, height: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetWindowPos(x, y: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwIconifyWindow; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwRestoreWindow; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSwapBuffers; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSwapInterval(interval: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetWindowParam(Param: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetWindowSizeCallback(cbfun: GLFWwindowsizefun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetWindowCloseCallback(cbfun: GLFWwindowclosefun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetWindowRefreshCallback(cbfun: GLFWwindowrefreshfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Video mode functions
-function  glfwGetVideoModes(list: PGLFWvidmode; maxcount: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwGetDesktopMode(mode: PGLFWvidmode); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwGetVideoModes(list: PGLFWvidmode; maxcount: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwGetDesktopMode(mode: PGLFWvidmode); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Input handling
-procedure glfwPollEvents; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwWaitEvents; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetKey(key: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetMouseButton(button: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwGetMousePos(var xpos: Integer; var ypos: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetMousePos(xpos, ypos: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetMouseWheel: Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetMouseWheel(pos: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetKeyCallback( cbfun: GLFWkeyfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetCharCallback( cbfun: GLFWcharfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetMouseButtonCallback( cbfun: GLFWmousebuttonfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetMousePosCallback( cbfun: GLFWmouseposfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetMouseWheelCallback( cbfun: GLFWmousewheelfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+procedure glfwPollEvents; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwWaitEvents; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetKey(key: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetMouseButton(button: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwGetMousePos(var xpos: Integer; var ypos: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetMousePos(xpos, ypos: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetMouseWheel: Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetMouseWheel(pos: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetKeyCallback( cbfun: GLFWkeyfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetCharCallback( cbfun: GLFWcharfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetMouseButtonCallback( cbfun: GLFWmousebuttonfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetMousePosCallback( cbfun: GLFWmouseposfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetMouseWheelCallback( cbfun: GLFWmousewheelfun); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Joystick input
-function  glfwGetJoystickParam(joy, param: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetJoystickPos(joy: Integer; var pos: Single; numaxes: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetJoystickButtons(joy: Integer; buttons: PChar; numbuttons: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwGetJoystickParam(joy, param: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetJoystickPos(joy: Integer; var pos: Single; numaxes: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetJoystickButtons(joy: Integer; buttons: PChar; numbuttons: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Time
-function  glfwGetTime: Double; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSetTime(time: Double); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSleep(time: Double); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwGetTime: Double; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSetTime(time: Double); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSleep(time: Double); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Extension support
-function  glfwExtensionSupported(extension: PChar): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetProcAddress(procname: PChar): Pointer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwGetGLVersion(var major: Integer; var minor: Integer; var Rev: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwExtensionSupported(extension: PChar): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetProcAddress(procname: PChar): Pointer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwGetGLVersion(var major: Integer; var minor: Integer; var Rev: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Threading support
-function  glfwCreateThread(fun: GLFWthreadfun; arg: Pointer): GLFWthread; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwDestroyThread(Id: GLFWthread); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwWaitThread(Id: GLFWthread; waitmode: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetThreadID: GLFWthread; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwCreateMutex: GLFWmutex; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwDestroyMutex( mutex: GLFWmutex); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwLockMutex(mutex: GLFWmutex); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwUnlockMutex(mutex: GLFWmutex); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwCreateCond: GLFWcond; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwDestroyCond(cond: GLFWcond); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwWaitCond(cond: GLFWcond; mutex: GLFWmutex; timeout: Double); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwSignalCond(cond: GLFWcond); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwBroadcastCond(cond: GLFWcond); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwGetNumberOfProcessors: Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwCreateThread(fun: GLFWthreadfun; arg: Pointer): GLFWthread; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwDestroyThread(Id: GLFWthread); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwWaitThread(Id: GLFWthread; waitmode: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetThreadID: GLFWthread; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwCreateMutex: GLFWmutex; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwDestroyMutex( mutex: GLFWmutex); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwLockMutex(mutex: GLFWmutex); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwUnlockMutex(mutex: GLFWmutex); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwCreateCond: GLFWcond; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwDestroyCond(cond: GLFWcond); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwWaitCond(cond: GLFWcond; mutex: GLFWmutex; timeout: Double); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwSignalCond(cond: GLFWcond); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwBroadcastCond(cond: GLFWcond); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwGetNumberOfProcessors: Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Enable/disable functions
-procedure glfwEnable(token: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwDisable(token: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+procedure glfwEnable(token: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwDisable(token: Integer); {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 // Image/texture I/O support
-function  glfwReadImage(name: PChar; image: PGLFWimage; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwReadMemoryImage(data: Pointer; size: LongInt; img: PGLFWimage; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-procedure glfwFreeImage(img: PGLFWimage);  {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwLoadTexture2D(name: PChar; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwLoadMemoryTexture2D(data: Pointer; size: LongInt; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
-function  glfwLoadTextureImage2D(img: PGLFWimage; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external DLLNAME;
+function  glfwReadImage(name: PChar; image: PGLFWimage; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwReadMemoryImage(data: Pointer; size: LongInt; img: PGLFWimage; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+procedure glfwFreeImage(img: PGLFWimage);  {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwLoadTexture2D(name: PChar; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwLoadMemoryTexture2D(data: Pointer; size: LongInt; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
+function  glfwLoadTextureImage2D(img: PGLFWimage; flags: Integer): Integer; {$IFDEF WIN32} stdcall; {$ELSE} cdecl; {$ENDIF} external {$IFDEF LINK_DYNAMIC} DLLNAME {$ENDIF};
 
 implementation
 

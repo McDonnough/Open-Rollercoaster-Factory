@@ -16,6 +16,7 @@ type
       fSelectionEngine: TSelectionEngine;
       fNormalSelectionEngine: TSelectionEngine;
       fScreenCaptureTool: TScreenCaptureTool;
+      fGameObjectManager: TGameObjectManager;
       procedure SetSelectionEngine(E: TSelectionEngine);
     public
       // Parts of the park
@@ -126,6 +127,11 @@ begin
       ModuleManager.ModLoadScreen.Progress := 0;
       ModuleManager.ModLoadScreen.Text := 'Loading park file';
       end;
+    99:
+      begin
+      fGameObjectManager := TGameObjectManager.Create;
+      fGameObjectManager.Resume;
+      end;
     100:
       begin
       ModuleManager.ModLoadScreen.Progress := 2;
@@ -155,27 +161,40 @@ begin
       end;
     104:
       begin
-      ModuleManager.ModLoadScreen.Progress := Round(10 + 88 * (ModuleManager.ModOCFManager.LoadedFiles / Max(1, ModuleManager.ModOCFManager.FileCount)));
-      ModuleManager.ModLoadScreen.Text := 'Loading resource $' + IntToStr(ModuleManager.ModOCFManager.LoadedFiles + 1) + '/' + IntToStr(ModuleManager.ModOCFManager.FileCount) + '$';
-      if ModuleManager.ModOCFManager.LoadedFiles < ModuleManager.ModOCFManager.FileCount then
-        dec(fLoadState);
+      ModuleManager.ModLoadScreen.Text := 'Loading set files';
       end;
     105:
       begin
+      if (fGameObjectManager.Done) and (not fGameObjectManager.Loaded) then
+        fGameObjectManager.LoadAll
+      else
+        dec(fLoadState);
       end;
     106:
+      begin
+      ModuleManager.ModLoadScreen.Progress := Round(10 + 88 * (ModuleManager.ModOCFManager.LoadedFiles / Max(1, ModuleManager.ModOCFManager.FileCount)));
+      ModuleManager.ModLoadScreen.Text := 'Loading resource $' + IntToStr(ModuleManager.ModOCFManager.LoadedFiles + 1) + '/' + IntToStr(ModuleManager.ModOCFManager.FileCount) + '$';
+      if (ModuleManager.ModOCFManager.LoadedFiles < ModuleManager.ModOCFManager.FileCount) or (not fGameObjectManager.Loaded) then
+        dec(fLoadState);
+      end;
+    107:
+      begin
+      if (ModuleManager.ModOCFManager.LoadedFiles < ModuleManager.ModOCFManager.FileCount) then
+        dec(fLoadState, 2);
+      end;
+    108:
       begin
       ModuleManager.ModLoadScreen.Progress := 98;
       ModuleManager.ModLoadScreen.Text := 'Creating sky';
       end;
-    107: pSky := TSky.Create;
-    108:
+    109: pSky := TSky.Create;
+    110:
       begin
       ModuleManager.ModLoadScreen.Progress := 99;
       ModuleManager.ModLoadScreen.Text := 'Loading user interface files';
       end;
-    109: ParkUI := TParkUI.Create;
-    110:
+    111: ParkUI := TParkUI.Create;
+    112:
       begin
       ModuleManager.ModLoadScreen.Progress := 100;
       ModuleManager.ModLoadScreen.Text := 'Preparing for gameplay';
@@ -285,6 +304,7 @@ begin
   pTerrain.Free;
   pObjects.Free;
   pParticles.Free;
+  fGameObjectManager.Free;
   ModuleManager.ModRenderer.Unload;
 end;
 

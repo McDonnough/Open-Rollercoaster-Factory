@@ -85,6 +85,8 @@ function IsWhitespace(C: Char): Boolean;
 
 function Basename(S: String): String;
 
+function StrCmp(A, B: String): Integer;
+
 implementation
 
 uses
@@ -323,6 +325,27 @@ begin
     A := Explode('/', S);
   Result := A[high(A)];
 end;
+
+
+function StrCmp(A, B: String): Integer;
+var
+  i, len: Integer;
+begin
+  A := Lowercase(A);
+  B := Lowercase(B);
+  Len := Min(Length(A), Length(B));
+  i := 1;
+  Result := 0;
+  while (Result = 0) and (i <= Len) do
+    begin
+    Result := Ord(A[i]) - Ord(B[i]);
+    if Result <> 0 then
+      exit;
+    inc(i);
+    end;
+  Result := Length(A) - Length(B);
+end;
+
 
 end.
 

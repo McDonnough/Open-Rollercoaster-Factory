@@ -160,7 +160,7 @@ begin
       begin
       if (fFocusComponent.OnKeyDown <> nil) and (ModuleManager.ModInputHandler.Key[i]) and (fKeys[i] <> ModuleManager.ModInputHandler.Key[i]) then
         fFocusComponent.OnKeyDown(fFocusComponent, i);
-      if (fFocusComponent.OnKeyUp <> nil) and (ModuleManager.ModInputHandler.Key[i]) and (fKeys[i] <> ModuleManager.ModInputHandler.Key[i]) then
+      if (fFocusComponent.OnKeyUp <> nil) and not (ModuleManager.ModInputHandler.Key[i]) and (fKeys[i] <> ModuleManager.ModInputHandler.Key[i]) then
         fFocusComponent.OnKeyUp(fFocusComponent, i);
       end;
     if (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (fClicking) and (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT])then

@@ -440,6 +440,7 @@ end;
 
 function TMaterial.Transparent: Boolean;
 begin
+  Result := False;
   if Color.w < 1 then
     exit(true);
   if Texture <> nil then

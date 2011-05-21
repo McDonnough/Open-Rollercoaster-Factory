@@ -210,10 +210,10 @@ begin
   fResX := StrToIntWD(GetConfVal('ResX'), 800);
   fResY := StrToIntWD(GetConfVal('ResY'), 600);
 
-  MouseCursor := mcDefault;
-
   fCursorTextureNames[mcDefault] := 'general/cursor-default.tga';
   fCursorTextureNames[mcCaret] := 'general/cursor-caret.tga';
+
+  MouseCursor := mcDefault;
 end;
 
 procedure TModuleGLContextSDL.ChangeWindowTitle(Text: String);

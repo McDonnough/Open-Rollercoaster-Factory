@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, m_glcontext_class, glfw, dglOpenGL, m_gui_class, m_settings_class, m_gui_label_class, m_gui_edit_class,
-  m_gui_checkbox_class;
+  m_gui_checkbox_class, m_texmng_class;
 
 type
   TModuleGLContextGLFW = class(TModuleGLContextClass)
@@ -16,9 +16,13 @@ type
       cFullscreen: TCheckBox;
       fConfigInterface: TConfigurationInterfaceBase;
       fResX, fResY: Integer;
+      fCursorTextures: Array[TMouseCursor] of TTexture;
+      fCursorTextureNames: Array[TMouseCursor] of String;
+      procedure ChangeCursor(Cursor: TMouseCursor); override;
     public
       constructor Create;
       destructor Free;
+      procedure LoadCursors;
       procedure ApplyChanges(Event: String; Data, Result: Pointer);
       procedure CreateConfigInterface(Event: String; Data, Result: Pointer);
       procedure DestroyConfigInterface(Event: String; Data, Result: Pointer);
@@ -38,6 +42,22 @@ implementation
 
 uses
   m_varlist, main, u_events, u_functions;
+
+procedure TModuleGLContextGLFW.LoadCursors;
+var
+  i: TMouseCursor;
+begin
+  for i := low(TMouseCursor) to high(TMouseCursor) do
+    begin
+    fCursorTextures[i] := TTexture.Create;
+    fCursorTextures[i].FromFile(fCursorTextureNames[i]);
+    end;
+end;
+
+procedure TModuleGLContextGLFW.ChangeCursor(Cursor: TMouseCursor);
+begin
+  fCurrentCursor := Cursor;
+end;
 
 constructor TModuleGLContextGLFW.Create;
 begin
@@ -89,6 +109,11 @@ begin
     end;
   fResX := StrToIntWD(GetConfVal('ResX'), 800);
   fResY := StrToIntWD(GetConfVal('ResY'), 600);
+
+  fCursorTextureNames[mcDefault] := 'general/cursor-default.tga';
+  fCursorTextureNames[mcCaret] := 'general/cursor-caret.tga';
+
+  MouseCursor := mcDefault;
 end;
 
 procedure TModuleGLContextGLFW.ChangeWindowTitle(Text: String);
@@ -104,17 +129,50 @@ end;
 
 procedure TModuleGLContextGLFW.SwapBuffers;
 begin
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity;
+  ModuleManager.ModGLMng.SetUp2DMatrix;
+  glMatrixMode(GL_TEXTURE);
+  glLoadIdentity;
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity;
+
+  glUseProgram(0);
+  fCursorTextures[MouseCursor].Bind(0);
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glDisable(GL_CULL_FACE);
+
+  glColor4f(1, 1, 1, 1);
+
+  glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY);
+    glTexCoord2f(1, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY);
+    glTexCoord2f(1, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
+    glTexCoord2f(0, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
+  glEnd;
+
+  glDisable(GL_BLEND);
+
+  fCursorTextures[MouseCursor].Unbind;
+
   glfwSwapBuffers;
 end;
 
 procedure TModuleGLContextGLFW.StartMainLoop;
 begin
+  LoadCursors;
+  glfwDisable(GLFW_MOUSE_CURSOR);
+
   while not ModuleManager.ModInputHandler.QuitRequest do
     MainLoop;
 end;
 
 procedure TModuleGLContextGLFW.EndMainLoop;
 begin
+  glfwEnable(GLFW_MOUSE_CURSOR);
   glfwTerminate;
 end;
 

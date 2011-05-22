@@ -184,6 +184,7 @@ type
       procedure UpdateFaceVertexAssociationForVertexNormalCalculation;
       procedure SetUnchanged;
       function GetBoneByName(Armature, Bone: String): TBone;
+      function GetMeshByName(Mesh: String): TGeoMesh;
       procedure ExecuteScript;
       procedure SetIO;
       class procedure RegisterStruct;
@@ -914,6 +915,15 @@ begin
       Result := Armatures[i].GetBoneByName(Bone);
 end;
 
+function TGeoObject.GetMeshByName(Mesh: String): TGeoMesh;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to high(Meshes) do
+    if Meshes[i].Name = Mesh then
+      Result := Meshes[i];
+end;
 procedure TGeoObject.ExecuteScript;
 begin
   if Script <> nil then

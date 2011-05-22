@@ -3,7 +3,7 @@ unit g_terrain;
 interface
 
 uses
-  SysUtils, Classes, u_vectors, m_texmng_class, dglOpenGL, g_loader_ocf, u_dom, u_arrays, g_res_objects,
+  SysUtils, Classes, m_texmng_class, dglOpenGL, u_vectors, g_loader_ocf, u_dom, u_arrays, g_res_objects,
   u_scene;
 
 type
@@ -109,7 +109,7 @@ type
 implementation
 
 uses
-  u_math, m_varlist, u_events, math, u_graphics, u_functions;
+  u_math, m_varlist, u_events, math, u_graphics, u_functions, g_park;
 
 type
   EInvalidFormat = class(Exception);
@@ -876,7 +876,26 @@ end;
 procedure TTerrain.UpdateMarks;
 var
   i: Integer;
+  ConnectionMesh: Integer;
+  EmissionFactor: Single;
+
+  function GetMatrix(X1, Y1, X2, Y2: Single): TMatrix4D;
+  var
+    Len, YDiff: Single;
+  begin
+    YDiff := HeightMap[X2, Y2] - HeightMap[X1, Y1];
+    Len := VecLength(Vector(X2 - X1, Y2 - Y1));
+  
+    Result := Matrix4D(Vector(Len / 1000, 0, 0, 0),
+                       Vector(YDiff / 1000, 1, 0, 0),
+                       Vector(0, 0, 1, 0),
+                       Vector(0, 0, 0, 1));
+    Result := RotationMatrix(Normalize(Vector(Y1 - Y2, 0, X2 - X1))) * Result;
+  end;
 begin
+  ConnectionMesh := fMarkObjectResource.GeoObject.GetMeshByName('Connection').MeshID;
+  EmissionFactor := Clamp(cos(2 * pi * Park.pSky.Time / 86400) + 0.5, 0, 1);
+
   while fMarks.Height + 1 > length(fMarkObjects) do
     begin
     setLength(fMarkObjects, length(fMarkObjects) + 1);
@@ -892,15 +911,27 @@ begin
   for i := 0 to fMarks.Height - 1 do
     begin
     fMarkObjects[i].Matrix := TranslationMatrix(Vector(0.2 * fMarks.Value[0, i], HeightMap[0.2 * fMarks.Value[0, i], 0.2 * fMarks.Value[1, i]], 0.2 * fMarks.Value[1, i]));
-    fMarkObjects[i].UpdateMatrix;
     fMarkObjects[i].Materials[0].Color := Vector(0, 1, 1, 1);
+    fMarkObjects[i].Materials[0].Emission := Vector(EmissionFactor, EmissionFactor, EmissionFactor, fMarkObjects[i].Materials[0].Emission.W);
+    if i < fMarks.Height - 1 then
+      fMarkObjects[i].Meshes[ConnectionMesh].Matrix := GetMatrix(0.2 * fMarks.Value[0, i], 0.2 * fMarks.Value[1, i], 0.2 * fMarks.Value[0, i + 1], 0.2 * fMarks.Value[1, i + 1])
+    else if CurrMark.X >= 0 then
+      fMarkObjects[i].Meshes[ConnectionMesh].Matrix := GetMatrix(0.2 * fMarks.Value[0, i], 0.2 * fMarks.Value[1, i], CurrMark.X, CurrMark.Y)
+    else
+      fMarkObjects[i].Meshes[ConnectionMesh].Matrix := GetMatrix(0.2 * fMarks.Value[0, i], 0.2 * fMarks.Value[1, i], 0.2 * fMarks.Value[0, 0], 0.2 * fMarks.Value[1, 0]);
+    fMarkObjects[i].UpdateMatrix;
     end;
   if CurrMark.X > 0 then
     fMarkObjects[high(fMarkObjects)].Matrix := TranslationMatrix(Vector(CurrMark.X, HeightMap[CurrMark.X, CurrMark.Y], CurrMark.Y))
   else
     fMarkObjects[high(fMarkObjects)].Matrix := TranslationMatrix(Vector(-10, -10, -10));
+  if fMarks.Height > 0 then
+    fMarkObjects[high(fMarkObjects)].Meshes[ConnectionMesh].Matrix := GetMatrix(CurrMark.X, CurrMark.Y, 0.2 * fMarks.Value[0, 0], 0.2 * fMarks.Value[1, 0])
+  else
+    fMarkObjects[high(fMarkObjects)].Meshes[ConnectionMesh].Matrix := Matrix4D(Vector(0, 0, 0, 0), Vector(0, 1, 0, 0), Vector(0, 0, 1, 0), Vector(0, 0, 0, 1));
   fMarkObjects[high(fMarkObjects)].UpdateMatrix;
   fMarkObjects[high(fMarkObjects)].Materials[0].Color := Vector(1, 0, 0, 1);
+  fMarkObjects[high(fMarkObjects)].Materials[0].Emission := Vector(EmissionFactor, EmissionFactor, EmissionFactor, fMarkObjects[high(fMarkObjects)].Materials[0].Emission.W);
 end;
 
 constructor TTerrain.Create;

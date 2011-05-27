@@ -114,6 +114,7 @@ type
       Color, Emission: TVector4D;
       Reflectivity: Single;
       Hardness, Specularity: Single;
+      RefractiveIndex: Single;
       Texture, BumpMap: TTexture;
       OnlyEnvironmentMapHint: Boolean;
       function Transparent: Boolean;
@@ -434,6 +435,7 @@ begin
   Result.Reflectivity := Reflectivity;
   Result.Hardness := Hardness;
   Result.Specularity := Specularity;
+  Result.RefractiveIndex := RefractiveIndex;
   Result.Texture := Texture;
   Result.BumpMap := BumpMap;
   Result.OnlyEnvironmentMapHint := OnlyEnvironmentMapHint;
@@ -462,7 +464,8 @@ begin
    'vec4 emission' + #10 +
    'float reflectivity' + #10 +
    'float hardness' + #10 +
-   'float specularity');
+   'float specularity' + #10 +
+   'float refractiveIndex');
 end;
 
 constructor TMaterial.Create;
@@ -473,6 +476,7 @@ begin
   Emission := Vector(0, 0, 0, 1);
   Reflectivity := 0;
   Specularity := 0;
+  RefractiveIndex := 0;
   Hardness := 20;
   OnlyEnvironmentMapHint := false;
   Texture := nil;

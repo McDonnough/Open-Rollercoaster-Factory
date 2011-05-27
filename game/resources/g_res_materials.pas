@@ -85,6 +85,8 @@ begin
         fMaterial.Specularity := StrToFloatWD(CurrElement.FirstChild.NodeValue, 1)
       else if CurrElement.TagName = 'hardness' then
         fMaterial.Hardness := StrToFloatWD(CurrElement.FirstChild.NodeValue, 20)
+      else if CurrElement.TagName = 'refractiveindex' then
+        fMaterial.RefractiveIndex := StrToFloatWD(CurrElement.FirstChild.NodeValue, 0)
       else if CurrElement.TagName = 'color' then
         fMaterial.Color := Vector(
           StrToFloatWD(CurrElement.GetAttribute('r'), 1),

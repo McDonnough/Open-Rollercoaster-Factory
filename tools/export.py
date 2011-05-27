@@ -124,6 +124,8 @@ def materialXML(material):
       result += '  <reflectivity>{0:.3f}</reflectivity>\n'.format(material.raytrace_mirror.reflect_factor)
     else:
       result += '  <reflectivity onlyenvironmentmap="true">{0:.3f}</reflectivity>\n'.format(material.raytrace_mirror.reflect_factor)
+    if (material.raytrace_mirror.fresnel > 0.0):
+      result += '  <refractiveindex>{0:.3f}</refractiveindex>\n'.format(material.raytrace_mirror.fresnel_factor)
   
   if (textureSlot != None):
     result += '  <texture resource:name="{0}" />\n'.format(getFullResourceName(textureSlot.texture))

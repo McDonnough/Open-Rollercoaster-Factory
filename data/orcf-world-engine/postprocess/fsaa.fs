@@ -5,8 +5,9 @@
 uniform sampler2D Texture;
 uniform sampler2D HDRColor;
 uniform ivec2 ScreenSize;
-uniform int Samples;
 uniform float Gamma;
+
+const int Samples = {{{owe.samples}}};
 
 void main(void) {
   vec3 HDRAverage = texelFetch2D(HDRColor, ivec2(0, 0), 0).rgb;

@@ -233,6 +233,7 @@ begin
       ModuleManager.ModTexMng.BindTexture(-1);
       fCurrentShader.UniformI('HasTexture', 0);
       end;
+    fCurrentShader.UniformF('Mediums', 1.0, Max(0.001, RefractiveIndex));
     Spec := Vector(Specularity, Reflectivity, 0, 0);
     MyHardness := Clamp(Hardness, 0, 128);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, @Color.X);

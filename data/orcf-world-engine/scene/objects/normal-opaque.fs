@@ -9,8 +9,17 @@ uniform vec3 ViewPoint;
 uniform int HasTexture;
 uniform int HasNormalMap;
 
+uniform vec2 Mediums;
+
 varying vec3 Vertex;
 varying vec3 Normal;
+
+float Fresnel(float x) {
+  float theSQRT = sqrt(max(0.0, 1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)));
+  float Rs = pow((Mediums.x * cos(x) - Mediums.y * theSQRT) / (Mediums.x * cos(x) + Mediums.y * theSQRT), 2.0);
+  float Rp = pow((Mediums.x * theSQRT - Mediums.y * cos(x)) / (Mediums.x * theSQRT + Mediums.y * cos(x)), 2.0);
+  return min(1.0, 0.5 * (Rs + Rp));
+}
 
 vec3 GetReflectionColor(vec3 vector) {
   vector = reflect(normalize(Vertex - ViewPoint), -vector);
@@ -50,7 +59,8 @@ void main(void) {
     mat3 M = mat3(-T, -S, normal);
     normal = normalize(M * (vec3(texture2D(NormalMap, gl_TexCoord[0].xy)) - vec3(0.5, 0.5, 0.5)));
   }
-  gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g);
+  vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Vertex, 1.0)).xyz);
+  gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * mix(0.0, 1.0, Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal)))))));
   gl_FragData[0].rgb = gl_FrontMaterial.diffuse.rgb;
   if (HasTexture == 1)
     gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;

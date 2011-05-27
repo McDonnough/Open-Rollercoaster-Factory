@@ -9,6 +9,7 @@ uniform vec3 ViewPoint;
 
 uniform vec2 MaskOffset;
 uniform vec2 MaskSize;
+uniform vec2 Mediums;
 
 uniform int HasTexture;
 uniform int HasNormalMap;
@@ -40,6 +41,8 @@ vec3 GetReflectionColor(vec3 vector) {
 }
 
 void main(void) {
+  vec3 normal = Normal;
+  vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Vertex, 1.0)).xyz);
   gl_FragData[3].a = 1.0;
   gl_FragData[3].rgb = MaterialID;
   gl_FragData[3].rgb /= 255.0;
@@ -48,7 +51,6 @@ void main(void) {
     gl_FragData[0] *= texture2D(Texture, gl_TexCoord[0].xy);
   if (gl_FragData[0].a <= texture2D(TransparencyMask, (gl_FragCoord.xy) / MaskSize + MaskOffset).a)
     discard;
-  vec3 normal = Normal;
   if (HasNormalMap == 1) {
     vec3 q0 = dFdx(Vertex.xyz);
     vec3 q1 = dFdy(Vertex.xyz);

@@ -13,12 +13,13 @@ type
   TGameSet = class
     protected
       fObjects: TGameObjectList;
-      fName, fDescription: String;
+      fName, fDescription, fAuthors: String;
       fPreview: TTexture;
     public
       property Name: String read fName;
       property Description: String read fDescription;
       property Preview: TTexture read fPreview;
+      property Authors: String read fAuthors;
       property OrigList: TGameObjectList read fObjects;
       function List: TGameObjectList; // Duplicate the object list
       procedure Add(O: TGameObject);  // Add the object to get a sorted list
@@ -132,6 +133,7 @@ begin
   fObjects := TGameObjectList.Create;
   fName := '';
   fDescription := '';
+  fAuthors := TDOMElement(O.XML.Document.FirstChild).GetAttribute('author');
   fPreview := nil;
 
   E := TDOMElement(O.XML.Document.GetElementsByTagName('info')[0].FirstChild);

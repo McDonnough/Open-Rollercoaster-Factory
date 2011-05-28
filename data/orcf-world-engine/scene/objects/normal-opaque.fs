@@ -60,7 +60,7 @@ void main(void) {
     normal = normalize(M * (vec3(texture2D(NormalMap, gl_TexCoord[0].xy)) - vec3(0.5, 0.5, 0.5)));
   }
   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Vertex, 1.0)).xyz);
-  gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * mix(0.0, 1.0, Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal)))))));
+  gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal))))));
   gl_FragData[0].rgb = gl_FrontMaterial.diffuse.rgb;
   if (HasTexture == 1)
     gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;

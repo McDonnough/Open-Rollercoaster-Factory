@@ -38,7 +38,7 @@ var
     Component.Rendered := True;
     Component.Render;
     if (Component.ComponentType <> CLabel) and (Component.ComponentType <> CTimer) then
-      if ((Component.Alpha = 0) or (Component.Width <= 0) or (Component.Height <= 0)) then
+      if ((Component.Alpha <= 0.01) or (Component.Width <= 0) or (Component.Height <= 0)) then
         exit;
     case Component.ComponentType of
       CWindow: TWindow(Component).Render;
@@ -98,7 +98,8 @@ procedure TModuleGUIDefault.CallSignals;
     i: integer;
   begin
     if (ModuleManager.ModInputHandler.MouseX >= Component.MinX) and (ModuleManager.ModInputHandler.MouseX <= Component.MaxX)
-    and (ModuleManager.ModInputHandler.MouseY >= Component.MinY)  and (ModuleManager.ModInputHandler.MouseY <=  Component.MaxY) then
+    and (ModuleManager.ModInputHandler.MouseY >= Component.MinY) and (ModuleManager.ModInputHandler.MouseY <= Component.MaxY)
+    and (Component.Alpha > 0.01) then
       begin
       fHoverComponent := Component;
       if fHoverComponent.ComponentType = CScrollBox then
@@ -110,7 +111,7 @@ procedure TModuleGUIDefault.CallSignals;
       try
         SendSignals(Component.ChildrenRightOrder[i]);
       except
-        writeln(Component.ComponentType);
+        writeln('Error sending signals');
       end;
   end;
 var

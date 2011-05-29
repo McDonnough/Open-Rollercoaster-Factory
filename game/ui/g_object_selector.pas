@@ -11,6 +11,7 @@ type
   TGameObjectSelectorTagList = class;
   TGameObjectSelectorObjectTreeList = class;
   TGameObjectSelectorSetEntry = class;
+  TGameObjectSelector = class;
 
   TGameObjectSelectorTagListItem = class(TLabel)
     protected
@@ -30,7 +31,7 @@ type
     end;
 
   TGameObjectSelectorTagList = class(TScrollBox)
-    protected
+    private
       fTags: Array of TGameObjectSelectorTagListItem;
     public
       procedure AddTag(fTag: String);
@@ -40,14 +41,18 @@ type
   TGameObjectSelectorObjectEntry = class(TLabel)
     protected
       fObject: TGameObjectItem;
+      fSet: TGameObjectSelectorSetEntry;
       
       fName, fDescription: TLabel;
       fPreview: TImage;
 
       fID: Integer;
+      fVisible: Boolean;
       procedure fSelect(Sender: TGUIComponent);
     public
       property ID: Integer read fID;
+      property Visible: Boolean read fVisible;
+      property SetEntry: TGameObjectSelectorSetEntry read fSet;
       procedure Show;
       procedure Hide;
       function Match(S: String): Boolean;
@@ -56,21 +61,27 @@ type
 
   TGameObjectSelectorSetEntry = class(TLabel)
     protected
+      fTree: TGameObjectSelectorObjectTreeList;
       fSet: TGameSetItem;
       
       fObjectItems: Array of TGameObjectSelectorObjectEntry;
-      
+
       fName, fAuthors, fDescription: TLabel;
       fPreview: TImage;
       fExpand: TIconifiedButton;
     
-      fExpanded: Boolean;
+      fExpanded, fVisible: Boolean;
       fShownObjects: Integer;
       procedure SwitchState(Sender: TGUIComponent);
       procedure SetState(S: Boolean);
     public
+      property Tree: TGameObjectSelectorObjectTreeList read fTree;
       property ShownObjects: Integer read fShownObjects;
       property Expanded: Boolean read fExpanded write SetState;
+      property Visible: Boolean read fVisible;
+      procedure MoveItems;
+      procedure Show;
+      procedure Hide;
       procedure ReassignColors;
       procedure AddObject(O: TGameObjectItem);
       function Filter(S: String): Boolean;
@@ -80,11 +91,14 @@ type
   TGameObjectSelectorObjectTreeList = class(TScrollBox)
     protected
       fSetItems: Array of TGameObjectSelectorSetEntry;
+      fTheParent: TGameObjectSelector;
     public
+      property Selector: TGameObjectSelector read fTheParent;
       function Filter(S: String): Boolean;
+      procedure MoveItems;
       procedure ReassignColors;
       procedure AddSet(S: TGameSetItem);
-      constructor Create(TheParent: TGUIComponent);
+      constructor Create(TheParent: TGameObjectSelector);
     end;
 
   TGameObjectSelector = class(TXMLUIWindow)
@@ -92,6 +106,9 @@ type
       fTagList: TGameObjectSelectorTagList;
       fSetList: TGameObjectSelectorObjectTreeList;
     public
+      procedure DoFilter(Event: String; Data, Result: Pointer);
+      property TagList: TGameObjectSelectorTagList read fTagList;
+      property SetList: TGameObjectSelectorObjectTreeList read fSetList;
       constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
     end;
@@ -207,12 +224,59 @@ begin
 end;
 
 function TGameObjectSelectorObjectEntry.Match(S: String): Boolean;
+var
+  W: AString;
+  I, J, Matches: Integer;
+  TestOnDescription: Boolean;
 begin
+  Matches := 0;
+  if S <> '' then
+    begin
+    S := Lowercase(S);
+    W := Explode(' ', S);
 
+    for I := 0 to high(W) do
+      begin
+      TestOnDescription := True;
+      for J := 1 to Length(fObject.GameObject.Name) - Length(W[i]) + 1 do
+        if Lowercase(SubString(fObject.GameObject.Name, J, Length(W[i]))) = W[i] then
+          begin
+          inc(Matches);
+          TestOnDescription := False;
+          break;
+          end;
+      if TestOnDescription then
+        for J := 1 to Length(fObject.GameObject.Description) - Length(W[i]) + 1 do
+          if Lowercase(SubString(fObject.GameObject.Description, J, Length(W[i]))) = W[i] then
+            begin
+            inc(Matches);
+            break;
+            end;
+      end;
+    end;
+
+  Result := Matches >= Length(W);
+  if Result then
+    begin
+    Result := False;
+    for I := 0 to high(SetEntry.Tree.Selector.TagList.fTags) do
+      if fObject.GameObject.HasTag(SetEntry.Tree.Selector.TagList.fTags[i].TagName) then
+        begin
+        Result := True;
+        break;
+        end;
+    end;
+
+  if fSet.Expanded then
+    if Result then
+      Show
+    else
+      Hide;
 end;
 
 procedure TGameObjectSelectorObjectEntry.Show;
 begin
+  fVisible := True;
   Alpha := 1;
   fName.Alpha := 1;
   fPreview.Alpha := 1;
@@ -222,6 +286,7 @@ end;
 
 procedure TGameObjectSelectorObjectEntry.Hide;
 begin
+  fVisible := False;
   Alpha := 0;
   fName.Alpha := 0;
   fPreview.Alpha := 0;
@@ -232,6 +297,9 @@ end;
 constructor TGameObjectSelectorObjectEntry.Create(GameObject: TGameObjectItem; TheParent: TGameObjectSelectorSetEntry; TheID: Integer);
 begin
   inherited Create(TheParent);
+  fSet := TheParent;
+
+  fVisible := True;
 
   fObject := GameObject;
   fID := TheID;
@@ -273,6 +341,23 @@ begin
   Expanded := not Expanded;
 end;
 
+procedure TGameObjectSelectorSetEntry.MoveItems;
+var
+  CT, I: Integer;
+begin
+  if (fVisible) and (fExpanded) then
+    begin
+    CT := 96;
+    for I := 0 to high(fObjectItems) do
+      if fObjectItems[I].Visible then
+        begin
+        fObjectItems[I].Top := CT;
+        inc(CT, 96);
+        end;
+    Height := CT;
+    end;
+end;
+
 procedure TGameObjectSelectorSetEntry.SetState(S: Boolean);
 var
   i: Integer;
@@ -282,8 +367,8 @@ begin
     begin
     Height := 96 * (fShownObjects + 1);
     fExpand.Icon := 'list-remove.tga';
-    for i := 0 to high(fObjectItems) do
-      fObjectItems[i].Show;
+    Filter(TEdit(Tree.Selector.Window.GetChildByName('object_selector.filter')).Text);
+    MoveItems;
     end
   else
     begin
@@ -292,6 +377,34 @@ begin
     for i := 0 to high(fObjectItems) do
       fObjectItems[i].Hide;
     end;
+  fTree.MoveItems;
+end;
+
+procedure TGameObjectSelectorSetEntry.Show;
+begin
+  fVisible := True;
+  Alpha := 1;
+  fName.Alpha := 1;
+  fPreview.Alpha := 1;
+  fDescription.Alpha := 1;
+  fExpand.Alpha := 1;
+  fAuthors.Alpha := 1;
+  fTree.MoveItems;
+end;
+
+procedure TGameObjectSelectorSetEntry.Hide;
+var
+  i: Integer;
+begin
+  fVisible := False;
+  Alpha := 0;
+  fName.Alpha := 0;
+  fPreview.Alpha := 0;
+  fDescription.Alpha := 0;
+  fExpand.Alpha := 0;
+  fAuthors.Alpha := 0;
+  fTree.MoveItems;
+  Top := 0;
 end;
 
 procedure TGameObjectSelectorSetEntry.ReassignColors;
@@ -309,8 +422,77 @@ begin
 end;
 
 function TGameObjectSelectorSetEntry.Filter(S: String): Boolean;
+var
+  W: AString;
+  I, J, Matches: Integer;
+  TestOnDescription, TestOnAuthors: Boolean;
+  T: Integer;
 begin
+  if S <> '' then
+    begin
+    S := Lowercase(S);
+    W := Explode(' ', S);
 
+    for I := 0 to high(W) do
+      begin
+      TestOnDescription := True;
+      TestOnAuthors := True;
+      for J := 1 to Length(fSet.GameSet.Name) - Length(W[i]) + 1 do
+        if Lowercase(SubString(fSet.GameSet.Name, J, Length(W[i]))) = W[i] then
+          begin
+          inc(Matches);
+          TestOnDescription := False;
+          TestOnAuthors := False;
+          break;
+          end;
+      if TestOnDescription then
+        for J := 1 to Length(fSet.GameSet.Description) - Length(W[i]) + 1 do
+          if Lowercase(SubString(fSet.GameSet.Description, J, Length(W[i]))) = W[i] then
+            begin
+            inc(Matches);
+            TestOnAuthors := False;
+            break;
+            end;
+      if TestOnAuthors then
+        for J := 1 to Length(fSet.GameSet.Authors) - Length(W[i]) + 1 do
+          if Lowercase(SubString(fSet.GameSet.Authors, J, Length(W[i]))) = W[i] then
+            begin
+            inc(Matches);
+            TestOnAuthors := False;
+            break;
+            end;
+      end;
+    end;
+
+  Result := Matches >= Length(W);
+
+  fShownObjects := 0;
+  if not Result then
+    begin
+    T := 0;
+    for i := 0 to high(fObjectItems) do
+      begin
+      if fObjectItems[i].Match(S) then
+        inc(fShownObjects);
+      end;
+    end
+  else if Expanded then
+    begin
+    for i := 0 to high(fObjectItems) do
+      begin
+      inc(fShownObjects);
+      fObjectItems[i].Show;
+      end
+    end
+  else
+    fShownObjects := Length(fObjectItems);
+
+  Result := fShownObjects <> 0;
+  if Result then
+    Show
+  else
+    Hide;
+  MoveItems;
 end;
 
 constructor TGameObjectSelectorSetEntry.Create(GameSet: TGameSetItem; TheParent: TGameObjectSelectorObjectTreeList);
@@ -318,6 +500,7 @@ var
   O: TGameObjectItem;
 begin
   inherited Create(TheParent.Surface);
+  fTree := TheParent;
 
   Left := 0;
   Top := 0;
@@ -374,6 +557,7 @@ begin
   fExpand.OnClick := @SwitchState;
 
   fExpanded := True;
+  fVisible := True;
 
   fShownObjects := 0;
 
@@ -387,13 +571,32 @@ end;
 
 
 function TGameObjectSelectorObjectTreeList.Filter(S: String): Boolean;
+var
+  I: Integer;
 begin
-
+  for i := 0 to high(fSetItems) do
+    fSetItems[i].Filter(S);
 end;
 
 procedure TGameObjectSelectorObjectTreeList.ReassignColors;
 begin
 
+end;
+
+procedure TGameObjectSelectorObjectTreeList.MoveItems;
+var
+  I: Integer;
+  CT: Integer;
+begin
+  CT := 0;
+  for I := 0 to high(fSetItems) do
+    if fSetItems[i].Visible then
+      begin
+      fSetItems[i].Top := CT;
+      Inc(CT, 96);
+      if fSetItems[i].Expanded then
+        Inc(CT, 96 * fSetItems[i].fShownObjects);
+      end;
 end;
 
 procedure TGameObjectSelectorObjectTreeList.AddSet(S: TGameSetItem);
@@ -404,16 +607,19 @@ begin
   fSetItems[high(fSetItems)].Top := 96 * high(fSetItems);
 end;
 
-constructor TGameObjectSelectorObjectTreeList.Create(TheParent: TGUIComponent);
+constructor TGameObjectSelectorObjectTreeList.Create(TheParent: TGameObjectSelector);
 begin
-  inherited Create(TheParent);
-
-  
+  inherited Create(TheParent.Window);
+  fTheParent := TheParent;
 end;
 
 
 
 
+procedure TGameObjectSelector.DoFilter(Event: String; Data, Result: Pointer);
+begin
+  fSetList.Filter(TEdit(fWindow.GetChildByName('object_selector.filter')).Text);
+end;
 
 constructor TGameObjectSelector.Create(Resource: String; ParkUI: TXMLUIManager);
 var
@@ -432,7 +638,7 @@ begin
   fTagList.HScrollBar := sbmInvisible;
   fTagList.VScrollBar := sbmInverted;
 
-  fSetList := TGameObjectSelectorObjectTreeList.Create(Window);
+  fSetList := TGameObjectSelectorObjectTreeList.Create(Self);
   fSetList.Top := 40;
   fSetList.Left := 188;
   fSetList.Width := 348;
@@ -459,10 +665,13 @@ begin
     fSetList.AddSet(S);
     S := TGameSetItem(S.Next);
     end;
+
+  EventManager.AddCallback('GUIActions.object_selector.do_filter', @DoFilter);
 end;
 
 destructor TGameObjectSelector.Free;
 begin
+  EventManager.RemoveCallback(@DoFilter);
   inherited Free;
 end;
 

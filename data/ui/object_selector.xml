@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window width="750" height="500" left="25" top="50" btnleft="724" btntop="287" icon="park-objects.tga" name="object_selector">
   <panel leftspace="180" rightspace="200" bottomspace="0" topspace="32" />
-  <edit name="object_selector.filter" top="8" left="184" width="362" height="32" />
+  <edit name="object_selector.filter" top="8" left="184" width="362" height="32" onedit="object_selector.do_filter" />
   <label left="550" top="40" size="32" width="192" height="452" name="object_selector.object">
     <label left="0" top="0" size="24" width="192" height="24" name="object_selector.object.name" />
     <label left="0" top="24" size="16" width="192" height="16" name="object_selector.object.author" />

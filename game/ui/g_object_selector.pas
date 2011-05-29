@@ -48,6 +48,7 @@ type
 
       fID: Integer;
       fVisible: Boolean;
+      procedure LoadedObject(Event: String; Data, Result: Pointer);
       procedure fSelect(Sender: TGUIComponent);
     public
       property ID: Integer read fID;
@@ -89,10 +90,13 @@ type
     end;
 
   TGameObjectSelectorObjectTreeList = class(TScrollBox)
+    private
+      fSelected: TGameObjectSelectorObjectEntry;
     protected
       fSetItems: Array of TGameObjectSelectorSetEntry;
       fTheParent: TGameObjectSelector;
     public
+      property Selected: TGameObjectSelectorObjectEntry read fSelected;
       property Selector: TGameObjectSelector read fTheParent;
       function Filter(S: String): Boolean;
       procedure MoveItems;
@@ -116,11 +120,12 @@ type
 implementation
 
 uses
-  m_varlist, u_functions, u_vectors, u_math;
+  m_varlist, u_functions, u_vectors, u_math, u_dom;
 
 procedure TGameObjectSelectorTagListItem.fChangeState(Sender: TGUIComponent);
 begin
   Checked := not Checked;
+  EventManager.CallEvent('GUIActions.object_selector.do_filter', Sender, nil);
 end;
 
 procedure TGameObjectSelectorTagListItem.SetChecked(B: Boolean);
@@ -218,9 +223,37 @@ end;
 
 
 
+procedure TGameObjectSelectorObjectEntry.LoadedObject(Event: String; Data, Result: Pointer);
+begin
+  if fSet.Tree.Selected = Self then
+    begin
+    TLabel(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.author')).Caption := TDOMElement(fObject.GameObject.Resource.OCFFile.XML.Document.FirstChild).GetAttribute('author');
+    TIconifiedButton(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.build')).Alpha := 1;
+    end;
+
+  EventManager.RemoveCallback(Event, @LoadedObject);
+end;
+
 procedure TGameObjectSelectorObjectEntry.fSelect(Sender: TGUIComponent);
 begin
+  if fSet.Tree.Selected <> nil then
+    fSet.Tree.Selected.Color := Vector(0.8, 0.8, 0.8, 1.0);
+  fSet.Tree.fSelected := Self;
+  Color := Vector(0.5, 0.7, 1.0, 1.0);
 
+  TLabel(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.name')).Caption := fObject.GameObject.Name;
+  TLabel(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.set')).Caption := fObject.GameObject.GameSet.Name;
+  TLabel(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.description')).Caption := fObject.GameObject.Description;
+  TLabel(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.tags')).Caption := Implode(#10, fObject.GameObject.ListTags);
+
+  TIconifiedButton(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.build')).Alpha := 0;
+  if fObject.GameObject.Resource = nil then
+    fObject.GameObject.Load(@LoadedObject)
+  else if fObject.GameObject.Resource.FinishedLoading then
+    begin
+    TLabel(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.author')).Caption := TDOMElement(fObject.GameObject.Resource.OCFFile.XML.Document.FirstChild).GetAttribute('author');
+    TIconifiedButton(fSet.Tree.Selector.Window.GetChildByName('object_selector.object.build')).Alpha := 1;
+    end;
 end;
 
 function TGameObjectSelectorObjectEntry.Match(S: String): Boolean;
@@ -260,11 +293,12 @@ begin
     begin
     Result := False;
     for I := 0 to high(SetEntry.Tree.Selector.TagList.fTags) do
-      if fObject.GameObject.HasTag(SetEntry.Tree.Selector.TagList.fTags[i].TagName) then
-        begin
-        Result := True;
-        break;
-        end;
+      if SetEntry.Tree.Selector.TagList.fTags[i].Checked then
+        if fObject.GameObject.HasTag(SetEntry.Tree.Selector.TagList.fTags[i].TagName) then
+          begin
+          Result := True;
+          break;
+          end;
     end;
 
   if fSet.Expanded then
@@ -309,6 +343,7 @@ begin
   Width := 348;
   Height := 96;
   Color := Vector(0.8, 0.8, 0.8, 1.0);
+  OnClick := @fSelect;
 
   fName := TLabel.Create(Self);
   fName.Left := 128;
@@ -317,6 +352,7 @@ begin
   fName.Height := 24;
   fName.Size := 24;
   fName.Caption := fObject.GameObject.Name;
+  fName.OnClick := @fSelect;
   
   fDescription := TLabel.Create(Self);
   fDescription.Left := 128;
@@ -325,6 +361,7 @@ begin
   fDescription.Height := 16;
   fDescription.Size := 16;
   fDescription.Caption := fObject.GameObject.Description;
+  fDescription.OnClick := @fSelect;
   
   fPreview := TImage.Create(Self);
   fPreview.Left := 24;
@@ -333,6 +370,7 @@ begin
   fPreview.Height := 96;
   fPreview.FreeTextureOnDestroy := False;
   fPreview.Tex := fObject.GameObject.Preview;
+  fPreview.OnClick := @fSelect;
 end;
 
 
@@ -428,11 +466,12 @@ var
   TestOnDescription, TestOnAuthors: Boolean;
   T: Integer;
 begin
+  Matches := 0;
+  S := Lowercase(S);
+  W := Explode(' ', S);
+  
   if S <> '' then
     begin
-    S := Lowercase(S);
-    W := Explode(' ', S);
-
     for I := 0 to high(W) do
       begin
       TestOnDescription := True;
@@ -480,9 +519,9 @@ begin
     begin
     for i := 0 to high(fObjectItems) do
       begin
-      inc(fShownObjects);
-      fObjectItems[i].Show;
-      end
+      if fObjectItems[i].Match('') then
+        inc(fShownObjects);
+      end;
     end
   else
     fShownObjects := Length(fObjectItems);
@@ -611,6 +650,7 @@ constructor TGameObjectSelectorObjectTreeList.Create(TheParent: TGameObjectSelec
 begin
   inherited Create(TheParent.Window);
   fTheParent := TheParent;
+  fSelected := nil;
 end;
 
 

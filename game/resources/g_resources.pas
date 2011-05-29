@@ -9,8 +9,9 @@ type
   TResourceLoadedProcedure = procedure(Data: TOCFFile) of object;
 
   TAbstractResource = class(TLinkedListItem)
-    protected
+    private
       fOCFFile: TOCFFile;
+    protected
       fFileName: String;
       fSubResourceName: String;
       fDependencies: TStringList;
@@ -19,6 +20,7 @@ type
       procedure setFinishedLoading(B: Boolean);
     public
       FileLoaded: TResourceLoadedProcedure;
+      property OCFFile: TOCFFile read fOCFFile;
       property FileName: String read fFileName;
       property SubResourceName: String read fSubResourceName;
       property Name: String read getFullName;
@@ -115,6 +117,7 @@ begin
   EventManager.RemoveCallback(Event);
   if TAbstractResource(Result).FileLoaded <> nil then
     try
+      TAbstractResource(Result).fOCFFile := TOCFFile(Data);
       TAbstractResource(Result).FileLoaded(TOCFFile(Data));
     except
       ModuleManager.ModLog.AddError('Loading resource ' + TAbstractResource(Result).Name + ' failed');

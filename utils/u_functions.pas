@@ -36,11 +36,18 @@ type
 function SubString(s: String; Start, Len: Integer): String;
 
 (** Split a string into pieces with a char as delimited
-  *@param the delimiter
+  *@param the separator
   *@param string to split
   *@return Array with Strings
   *)
 function Explode(d: Char; s: String): AString;
+
+(** Unite a string array
+  *@param the separator
+  *@param string array to unite
+  *@return String
+  *)
+function Implode(d: Char; s: AString): String;
 
 (** Find a char in a string
   *@param String to search in
@@ -182,6 +189,19 @@ begin
     Result[high(Result)] := SubString(s, OPos, DPos - OPos);
   until
     DPos = Length(s);
+end;
+
+function Implode(d: Char; s: AString): String;
+var
+  i: integer;
+begin
+  Result := '';
+  for I := 0 to high(S) do
+    begin
+    if I <> 0 then
+      Result := Result + d;
+    Result := Result + s[i];
+    end;
 end;
 
 function StrPos(s: String; c: Char; Ofs: Integer = 1): Integer;

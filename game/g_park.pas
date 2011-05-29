@@ -142,7 +142,6 @@ begin
       PostInit;
     102:
       begin
-      pObjects.Test;
       ModuleManager.ModLoadScreen.Progress := 10;
       ModuleManager.ModLoadScreen.Text := 'Preparing terrain';
       end;

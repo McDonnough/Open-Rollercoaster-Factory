@@ -22,8 +22,6 @@ type
     protected
     public
       constructor Create;
-      procedure AddTestObject(Event: String; Data, Result: Pointer);
-      procedure Test;
       procedure Advance;
       procedure Free;
     end;
@@ -67,23 +65,6 @@ begin
       end;
     CurrentObject := TRealObject(CurrentObject.Next);
     end;
-end;
-
-procedure TObjectManager.AddTestObject(Event: String; Data, Result: Pointer);
-var
-  a: TRealObject;
-begin
-  a := TRealObject.Create(TObjectResource(ResourceManager.Resources[TAbstractResource(Data).Name]));
-  a.GeoObject.Matrix := TranslationMatrix(Vector(160 + 40 * Random - 20, 64, 160 + 40 * Random - 20));
-  Append(a);
-end;
-
-procedure TObjectManager.Test;
-begin
-  EventManager.AddCallback('TResource.FinishedLoading:scenery/test/moep.ocf/object', @AddTestObject);
-  EventManager.AddCallback('TResource.FinishedLoading:scenery/test/lamp.ocf/object', @AddTestObject);
-  TObjectResource.Get('scenery/test/moep.ocf/object');
-  TObjectResource.Get('scenery/test/lamp.ocf/object');
 end;
 
 constructor TObjectManager.Create;

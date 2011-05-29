@@ -183,8 +183,6 @@ begin
     DrawFullscreenQuad;
     ModuleManager.ModRenderer.SunShader.Unbind;
 
-    ModuleManager.ModRenderer.LightShader.Bind;
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
 
@@ -195,10 +193,10 @@ begin
         if ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].ShadowMap <> nil then
           begin
           ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].ShadowMap.Map.Textures[0].Bind(2);
-          ModuleManager.ModRenderer.LightShader.UniformI('UseShadow', 1);
+          ModuleManager.ModRenderer.LightShaderWithShadow.Bind;
           end
         else
-          ModuleManager.ModRenderer.LightShader.UniformI('UseShadow', 0);
+          ModuleManager.ModRenderer.LightShader.Bind;
         DrawFullscreenQuad;
         ModuleManager.ModTexMng.ActivateTexUnit(2);
         ModuleManager.ModTexMng.BindTexture(-1);

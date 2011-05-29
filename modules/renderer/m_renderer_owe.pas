@@ -44,7 +44,7 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
@@ -84,6 +84,7 @@ type
       property RParticles: TRParticles read fRendererParticles;
       property FullscreenShader: TShader read fFullscreenShader;
       property LightShader: TShader read fLightShader;
+      property LightShaderWithShadow: TShader read fLightShaderWithShadow;
       property SunShader: TShader read fSunShader;
       property CompositionShader: TShader read fCompositionShader;
       property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
@@ -396,6 +397,12 @@ begin
   fLightShader.UniformI('ShadowTexture', 2);
   fLightShader.UniformI('MaterialTexture', 3);
 
+  fLightShaderWithShadow := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/lightws.fs');
+  fLightShaderWithShadow.UniformI('GeometryTexture', 0);
+  fLightShaderWithShadow.UniformI('NormalTexture', 1);
+  fLightShaderWithShadow.UniformI('ShadowTexture', 2);
+  fLightShaderWithShadow.UniformI('MaterialTexture', 3);
+
   fCompositionShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/composition.fs');
   fCompositionShader.UniformI('MaterialTexture', 0);
   fCompositionShader.UniformI('GTexture', 2);
@@ -455,6 +462,7 @@ begin
   fBloomShader.Free;
   fLensFlareShader.Free;
   fCompositionShader.Free;
+  fLightShaderWithShadow.Free;
   fLightShader.Free;
   fSSAOShader.Free;
   fSunShader.Free;
@@ -894,7 +902,6 @@ begin
     ModuleManager.ModTexMng.BindTexture(-1);
     ModuleManager.ModTexMng.ActivateTexUnit(0);
 
-    fLightShader.Bind;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
@@ -906,10 +913,10 @@ begin
         if fLightManager.fRegisteredLights[i].ShadowMap <> nil then
           begin
           fLightManager.fRegisteredLights[i].ShadowMap.Map.Textures[0].Bind(2);
-          fLightShader.UniformI('UseShadow', 1);
+          fLightShaderWithShadow.Bind;
           end
         else
-          fLightShader.UniformI('UseShadow', 0);
+          fLightShader.Bind;
         DrawFullscreenQuad;
         ModuleManager.ModTexMng.ActivateTexUnit(2);
         ModuleManager.ModTexMng.BindTexture(-1);

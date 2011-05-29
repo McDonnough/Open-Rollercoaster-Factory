@@ -345,7 +345,7 @@ begin
       begin
       fRegisteredLights[i] := fRegisteredLights[high(fRegisteredLights)];
       SetLength(fRegisteredLights, length(fRegisteredLights) - 1);
-      if length(fRegisteredLights) < fMaxShadowBuffers then
+      if (length(fRegisteredLights) < fMaxShadowBuffers) and (Length(fShadowBuffers) > 0) then
         begin
         fShadowBuffers[high(fShadowBuffers)].Free;
         setLength(fShadowBuffers, length(fShadowBuffers) - 1);
@@ -372,7 +372,10 @@ var
 begin
   for i := 0 to high(fRegisteredLights) do
     if fRegisteredLights[i].LightSource = TLightSource(Data) then
+      begin
       fRegisteredLights[i].Free;
+      exit;
+      end;
 end;
 
 constructor TLightManager.Create;

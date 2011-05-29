@@ -378,7 +378,7 @@ begin
     for j := 0 to high(fManagedObjects[i].Meshes) do
       begin
       MeshPosition := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
-      if fManagedObjects[i].Meshes[j].GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - MeshPosition) - fManagedObjects[i].Meshes[j].VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum then
+      if (fManagedObjects[i].Meshes[j].GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - MeshPosition) - fManagedObjects[i].Meshes[j].VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and not (fManagedObjects[i].Meshes[j].GeoMesh.Material.OnlyEnvironmentMapHint) then
         begin
         if fManagedObjects[i].Meshes[j].ReflectionFramesToGo > 0 then
           dec(fManagedObjects[i].Meshes[j].ReflectionFramesToGo)

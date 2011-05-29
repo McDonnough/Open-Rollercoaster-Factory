@@ -191,7 +191,9 @@ procedure TRAutoplants.Render;
 var
   i: Integer;
 begin
-  if ModuleManager.ModRenderer.RTerrain.TerrainEditorIsOpen then
+//   if ModuleManager.ModRenderer.RTerrain.TerrainEditorIsOpen then
+//     exit;
+  if (Park.pTerrain.CurrMark.X <> -1) and (Park.pTerrain.CurrMark.Y <> -1) then
     exit;
   
   if CurrentShader = fMaterialPassShader then

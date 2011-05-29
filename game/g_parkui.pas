@@ -74,6 +74,7 @@ type
     end;
 
     TParkUI = class(TXMLUIManager)
+      function GetWindowByName(N: String): TXMLUIWindow;
       constructor Create;
       destructor Free;
       end;
@@ -500,6 +501,15 @@ begin
     Dragging.Left := fDragStartLeft + ModuleManager.ModInputHandler.MouseX - fMouseOfsX;
     Dragging.Top := fDragStartTop + ModuleManager.ModInputHandler.MouseY - fMouseOfsY;
     end;
+end;
+
+function TParkUI.GetWindowByName(N: String): TXMLUIWindow;
+begin
+  if WindowList.fLeaveWindow.Window.Name = N then exit(WindowList.fLeaveWindow);
+  if WindowList.fInfoWindow.Window.Name = N then exit(WindowList.fInfoWindow);
+  if WindowList.fTerrainEdit.Window.Name = N then exit(WindowList.fTerrainEdit);
+  if WindowList.fParkSettings.Window.Name = N then exit(WindowList.fParkSettings);
+  if WindowList.fObjectSelector.Window.Name = N then exit(WindowList.fObjectSelector);
 end;
 
 constructor TParkUI.Create;

@@ -5,7 +5,8 @@ interface
 uses
   SysUtils, Classes, u_events, g_park, g_parkui,
   m_gui_label_class, m_gui_edit_class, m_gui_tabbar_class, m_gui_button_class, m_gui_iconifiedbutton_class,
-  m_gui_scrollbox_class, m_gui_class, m_gui_image_class, g_sets;
+  m_gui_scrollbox_class, m_gui_class, m_gui_image_class, g_sets,
+  u_scene;
 
 type
   TGameObjectSelectorTagList = class;
@@ -53,6 +54,7 @@ type
     public
       property ID: Integer read fID;
       property Visible: Boolean read fVisible;
+      property TheObject: TGameObjectItem read fObject;
       property SetEntry: TGameObjectSelectorSetEntry read fSet;
       procedure Show;
       procedure Hide;
@@ -110,7 +112,12 @@ type
       fTagList: TGameObjectSelectorTagList;
       fSetList: TGameObjectSelectorObjectTreeList;
     public
+      Building: TGeoObject;
+      procedure AddObject(Event: String; Data, Result: Pointer);
+      procedure UpdateBOPos(Event: String; Data, Result: Pointer);
+      procedure DoBuild(Event: String; Data, Result: Pointer);
       procedure DoFilter(Event: String; Data, Result: Pointer);
+      procedure OnClose(Event: String; Data, Result: Pointer);
       property TagList: TGameObjectSelectorTagList read fTagList;
       property SetList: TGameObjectSelectorObjectTreeList read fSetList;
       constructor Create(Resource: String; ParkUI: TXMLUIManager);
@@ -120,7 +127,7 @@ type
 implementation
 
 uses
-  m_varlist, u_functions, u_vectors, u_math, u_dom;
+  m_varlist, u_functions, u_vectors, u_math, u_dom, g_terrain_edit, u_selection, g_objects;
 
 procedure TGameObjectSelectorTagListItem.fChangeState(Sender: TGUIComponent);
 begin
@@ -219,8 +226,6 @@ constructor TGameObjectSelectorTagList.Create(TheParent: TGUIComponent);
 begin
   inherited Create(TheParent);
 end;
-
-
 
 
 procedure TGameObjectSelectorObjectEntry.LoadedObject(Event: String; Data, Result: Pointer);
@@ -613,6 +618,7 @@ function TGameObjectSelectorObjectTreeList.Filter(S: String): Boolean;
 var
   I: Integer;
 begin
+  Result := True;
   for i := 0 to high(fSetItems) do
     fSetItems[i].Filter(S);
 end;
@@ -654,7 +660,60 @@ begin
 end;
 
 
+procedure TGameObjectSelector.UpdateBOPos(Event: String; Data, Result: Pointer);
+begin
+  if Building <> nil then
+    begin
+    Building.Matrix := TranslationMatrix(TSelectableObject(Data^).IntersectionPoint);
+    Building.SetUnchanged;
+    Building.ExecuteScript;
+    Building.UpdateMatrix;
+    Building.UpdateArmatures;
+    Building.UpdateVertexPositions;
+    Building.RecalcFaceNormals;
+    Building.RecalcVertexNormals;
+    end;
+end;
 
+procedure TGameObjectSelector.AddObject(Event: String; Data, Result: Pointer);
+var
+  O: TRealObject;
+begin
+  if Building <> nil then
+    begin
+    O := TRealObject.Create(fSetList.Selected.TheObject.GameObject.Resource);
+    O.GeoObject.Matrix := Building.Matrix;
+    Park.pObjects.Append(O);
+    end;
+end;
+
+procedure TGameObjectSelector.OnClose(Event: String; Data, Result: Pointer);
+begin
+  if Building <> nil then
+    Building.Free;
+  Building := nil;
+  Park.SelectionEngine := Park.NormalSelectionEngine;
+  EventManager.RemoveCallback(@UpdateBOPos);
+  EventManager.RemoveCallback(@AddObject);
+  EventManager.RemoveCallback('TPark.Render', @TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).UpdateTerrainSelectionMap);
+  Park.pTerrain.CurrMark := Vector(-1, -1);
+  TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).HeightLine('', nil, nil);
+  EventManager.CallEvent('GUIActions.terrain_edit.removeheightline', nil, nil);
+  Park.pTerrain.MarkMode := 0;
+  Park.pTerrain.UpdateMarks;
+end;
+
+procedure TGameObjectSelector.DoBuild(Event: String; Data, Result: Pointer);
+begin
+  EventManager.AddCallback('BasicComponent.OnClick', @AddObject);
+  Park.SelectionEngine := TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).TerrainSelectionEngine;
+  EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @UpdateBOPos);
+  EventManager.AddCallback('TPark.Render', @TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).UpdateTerrainSelectionMap);
+  if Building <> nil then
+    Building.Free;
+  Building := fSetList.Selected.TheObject.GameObject.Resource.GeoObject.Duplicate;
+  Building.Register;
+end;
 
 procedure TGameObjectSelector.DoFilter(Event: String; Data, Result: Pointer);
 begin
@@ -707,11 +766,17 @@ begin
     end;
 
   EventManager.AddCallback('GUIActions.object_selector.do_filter', @DoFilter);
+  EventManager.AddCallback('GUIActions.object_selector.do_build', @DoBuild);
+  EventManager.AddCallback('GUIActions.object_selector.close', @OnClose);
 end;
 
 destructor TGameObjectSelector.Free;
 begin
   EventManager.RemoveCallback(@DoFilter);
+  EventManager.RemoveCallback(@DoBuild);
+  EventManager.RemoveCallback(@OnClose);
+  EventManager.RemoveCallback(@UpdateBOPos);
+  EventManager.RemoveCallback(@AddObject);
   inherited Free;
 end;
 

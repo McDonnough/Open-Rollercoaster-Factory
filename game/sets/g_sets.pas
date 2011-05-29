@@ -115,8 +115,11 @@ begin
     B := TGameObjectItem(fObjects.First);
     while B <> nil do
       begin
-      if StrCmp(O.Name, B.GameObject.Name) >= 0 then
+      if StrCmp(O.Name, B.GameObject.Name) <= 0 then
+        begin
         fObjects.InsertBefore(B, A);
+        break;
+        end;
       B := TGameObjectItem(B.Next);
       end;
     end;
@@ -337,8 +340,11 @@ begin
     B := TGameSetItem(fSets.First);
     while B <> nil do
       begin
-      if StrCmp(S.Name, B.GameSet.Name) >= 0 then
+      if StrCmp(S.Name, B.GameSet.Name) <= 0 then
+        begin
         fSets.InsertBefore(B, A);
+        break;
+        end;
       B := TGameSetItem(B.Next);
       end;
     end;

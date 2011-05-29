@@ -9,6 +9,6 @@
     <label left="0" top="80" size="16" width="160" height="240" name="object_selector.object.description" />
     <label left="0" top="288" size="24" width="192" height="24">Tags:</label>
     <label left="0" top="312" size="16" width="192" height="128" name="object_selector.object.tags" />
-    <iconbutton left="142" top="404" width="48" height="48" icon="list-add.tga" name="object_selector.object.build" onclick="object_selector.build" />
+    <iconbutton left="142" top="404" width="48" height="48" icon="list-add.tga" name="object_selector.object.build" onclick="object_selector.do_build" />
   </label>
 </window>

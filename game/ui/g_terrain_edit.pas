@@ -18,6 +18,7 @@ type
       fAutoTexMode: TButton;
       fFileDialog: TFileDialog;
     public
+      property TerrainSelectionEngine: TSelectionEngine read fTerrainSelectionEngine;
       procedure LoadTexture(Event: String; Data, Result: Pointer);
       procedure LoadTextureDialog(Event: String; Data, Result: Pointer);
       procedure SetAutotex(Event: String; Data, Result: Pointer);

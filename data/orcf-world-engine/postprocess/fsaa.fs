@@ -28,6 +28,7 @@ void main(void) {
   // END
   
   gl_FragColor *= gl_Color * HDRLightingFactor;
+  gl_FragColor.rgb += 0.5 * max(0.0, max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)) - 1.0);
 
   // IF [ EQ owe.gamma 1 ]
   gl_FragColor.rgb = vec3(pow(gl_FragColor.r, Gamma), pow(gl_FragColor.g, Gamma), pow(gl_FragColor.b, Gamma));

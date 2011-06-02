@@ -87,20 +87,23 @@ begin
   i := 0;
   while i <= high(fEvents) do
     begin
-    for j := 0 to high(fEvents[i].Callbacks) do
-      if j <= high(fEvents[i].Callbacks) then
-        if fEvents[i].Callbacks[j] = Callback then
+    j := 0;
+    while j <= high(fEvents[i].Callbacks) do
+      if fEvents[i].Callbacks[j] = Callback then
+        begin
+        for k := j + 1 to high(fEvents[i].Callbacks) do
+          fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];
+        setLength(fEvents[i].Callbacks, length(fEvents[i].Callbacks) - 1);
+        if length(fEvents[i].Callbacks) = 0 then
           begin
-          for k := j + 1 to high(fEvents[i].Callbacks) do
-            fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];
-          setLength(fEvents[i].Callbacks, length(fEvents[i].Callbacks) - 1);
-          if length(fEvents[i].Callbacks) = 0 then
-            begin
-            fEvents[i] := fEvents[high(fEvents)];
-            SetLength(fEvents, length(fEvents) - 1);
-            dec(i);
-            end;
+          fEvents[i] := fEvents[high(fEvents)];
+          SetLength(fEvents, length(fEvents) - 1);
+          dec(i);
+          break;
           end;
+        end
+      else
+        inc(j);
     inc(i);
     end;
 end;
@@ -112,14 +115,16 @@ begin
   for i := 0 to high(fEvents) do
     if fEvents[i].Name = Event then
       begin
-      for j := 0 to high(fEvents[i].Callbacks) do
-        if j <= high(fEvents[i].Callbacks) then
-          if fEvents[i].Callbacks[j] = Callback then
-            begin
-            for k := j + 1 to high(fEvents[i].Callbacks) do
-              fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];
-            setLength(fEvents[i].Callbacks, length(fEvents[i].Callbacks) - 1);
-            end;
+      j := 0;
+      while j <= high(fEvents[i].Callbacks) do
+        if fEvents[i].Callbacks[j] = Callback then
+          begin
+          for k := j + 1 to high(fEvents[i].Callbacks) do
+            fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];
+          setLength(fEvents[i].Callbacks, length(fEvents[i].Callbacks) - 1);
+          end
+        else
+          inc(j);
       end;
 end;
 

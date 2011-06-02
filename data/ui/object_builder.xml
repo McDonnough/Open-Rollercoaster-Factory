@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window width="400" height="208" left="8" top="364" btnleft="848" btntop="284" icon="object-builder.tga" name="object_builder">
+  <panel leftspace="0" rightspace="0" bottomspace="0" topspace="32" />
+  <tabbar left="40" top="8" width="352" height="32" onchangetab="object_builder.changeTab" name="object_builder.tabbar">
+    <tab>Placement</tab>
+    <tab>Materials</tab>
+  </tabbar>
+  <label width="384" top="40" height="160" left="8">
+    <label width="384" left="0" top="0" height="160" name="object_builder.tab.container">
+      <label width="384" left="0" top="0" height="160">
+        <label left="0" top="0" size="16" width="88" height="16">Offset:</label>
+        <label left="0" top="32" size="16" width="88" height="16">Rotation:</label>
+        <label left="40" top="64" size="16" width="128" height="32">Snap to grid</label>
+        <label left="232" top="64" size="16" width="128" height="32">Snap to objects</label>
+        <label left="0" top="96" size="16" width="88" height="16">Grid offset X:</label>
+        <label left="192" top="96" size="16" width="88" height="16">Grid offset Z:</label>
+        <label left="0" top="128" size="16" width="88" height="16">Grid rotation:</label>
+        <label left="192" top="128" size="16" width="88" height="16">Grid size:</label>
+
+        <slider left="96" top="0" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.offset.x" />
+        <slider left="192" top="0" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.offset.y" />
+        <slider left="288" top="0" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.offset.z" />
+        <slider left="96" top="32" width="96" height="32" min="-180" max="180" digits="0" value="0" name="object_builder.rotation.x" />
+        <slider left="192" top="32" width="96" height="32" min="-180" max="180" digits="0" value="0" name="object_builder.rotation.y" />
+        <slider left="288" top="32" width="96" height="32" min="-180" max="180" digits="0" value="0" name="object_builder.rotation.z" />
+
+        <checkbox left="0" top="64" width="32" height="32" checked="false" name="object_builder.snap.to_grid" />
+        <checkbox left="192" top="64" width="32" height="32" checked="false" name="object_builder.snap.to_objects" />
+
+        <slider left="96" top="96" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.x" />
+        <slider left="288" top="96" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.z" />
+        <slider left="96" top="128" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.x" />
+        <slider left="288" top="128" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.z" />
+      </label>
+      <label width="384" left="384" top="0" height="160">
+      </label>
+    </label>
+  </label>
+</window>

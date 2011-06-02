@@ -4,7 +4,8 @@ interface
 
 uses
   SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml,
-  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, m_gui_tabbar_class, u_functions;
+  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, m_gui_tabbar_class, u_functions,
+  m_gui_slider_class, m_gui_checkbox_class;
 
 type
   TCallbackArray = record
@@ -85,7 +86,7 @@ var
 implementation
 
 uses
-  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings, g_object_selector;
+  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings, g_object_selector, g_object_builder;
 
 type
   TParkUIWindowList = record
@@ -94,6 +95,7 @@ type
     fInfoWindow: TGameInfo;
     fTerrainEdit: TGameTerrainEdit;
     fObjectSelector: TGameObjectSelector;
+    fObjectBuilder: TGameObjectBuilder;
     end;
 
 var
@@ -360,6 +362,26 @@ var
           OnLeave := @HandleOnLeave;
           end;
         end
+      else if NodeName = 'slider' then
+        begin
+        A := TSlider.Create(P);
+        with TSlider(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 64);
+          Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
+          Min := StrToFloatWD(GetAttribute('min'), 0);
+          Max := StrToFloatWD(GetAttribute('max'), 1);
+          Value := StrToFloatWD(GetAttribute('value'), 0);
+          Digits := StrToIntWD(GetAttribute('digits'), 0);
+          OnChange := @HandleOnedit;
+          OnHover := @HandleOnHover;
+          OnLeave := @HandleOnLeave;
+          end;
+        end
       else if NodeName = 'tabbar' then
         begin
         A := TTabBar.Create(P);
@@ -510,6 +532,7 @@ begin
   if WindowList.fTerrainEdit.Window.Name = N then exit(WindowList.fTerrainEdit);
   if WindowList.fParkSettings.Window.Name = N then exit(WindowList.fParkSettings);
   if WindowList.fObjectSelector.Window.Name = N then exit(WindowList.fObjectSelector);
+  if WindowList.fObjectBuilder.Window.Name = N then exit(WindowList.fObjectBuilder);
 end;
 
 constructor TParkUI.Create;
@@ -522,16 +545,18 @@ begin
   WindowList.fTerrainEdit := TGameTerrainEdit.Create('ui/terrain_edit.xml', self);
   WindowList.fParkSettings := TGameParkSettings.Create('ui/park_settings.xml', self);
   WindowList.fObjectSelector := TGameObjectSelector.Create('ui/object_selector.xml', self);
+  WindowList.fObjectBuilder := TGameObjectBuilder.Create('ui/object_builder.xml', self);
 end;
 
 destructor TParkUI.Free;
 begin
   writeln('Hint: Deleting ParkUI object');
+  WindowList.fObjectSelector.Free;
+  WindowList.fObjectBuilder.Free;
   WindowList.fLeaveWindow.Free;
   WindowList.fInfoWindow.Free;
   WindowList.fTerrainEdit.Free;
   WindowList.fParkSettings.Free;
-  WindowList.fObjectSelector.Free;
 end;
 
 end.

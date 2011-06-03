@@ -350,7 +350,7 @@ var
           Left := StrToIntWD(GetAttribute('left'), 16);
           Top := StrToIntWD(GetAttribute('top'), 16);
           Width := StrToIntWD(GetAttribute('width'), 64);
-          Height := StrToIntWD(GetAttribute('height'), 64);
+          Height := StrToIntWD(GetAttribute('height'), 32);
           if FirstChild <> nil then
             Text := FirstChild.NodeValue;
           Tag := AddCallbackArray(TDOMElement(DE));
@@ -358,6 +358,22 @@ var
           OnClick := @HandleOnclick;
           OnChange := @HandleOnedit;
           OnRelease := @HandleOnrelease;
+          OnHover := @HandleOnHover;
+          OnLeave := @HandleOnLeave;
+          end;
+        end
+      else if NodeName = 'checkbox' then
+        begin
+        A := TCheckbox.Create(P);
+        with TCheckbox(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), 32);
+          Height := StrToIntWD(GetAttribute('height'), 32);
+          Tag := AddCallbackArray(TDOMElement(DE));
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
+          OnChange := @HandleOnedit;
           OnHover := @HandleOnHover;
           OnLeave := @HandleOnLeave;
           end;

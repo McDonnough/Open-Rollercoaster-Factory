@@ -51,6 +51,7 @@ type
       procedure BringButtonToFront(Sender: TGUIComponent);
     public
       property Window: TWindow read fWindow;
+      property Button: TIconifiedButton read fButton;
       property Width: Single read fWidth write SetWidth;
       property Height: Single read fHeight write SetHeight;
       property Left: Single read fLeft write SetLeft;
@@ -538,6 +539,8 @@ begin
     begin
     Dragging.Left := fDragStartLeft + ModuleManager.ModInputHandler.MouseX - fMouseOfsX;
     Dragging.Top := fDragStartTop + ModuleManager.ModInputHandler.MouseY - fMouseOfsY;
+    Dragging.Window.ImmediatelyApplyGeometry;
+    Dragging.Button.ImmediatelyApplyGeometry;
     end;
 end;
 

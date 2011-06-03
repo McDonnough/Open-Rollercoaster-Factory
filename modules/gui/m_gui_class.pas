@@ -68,6 +68,7 @@ type
       property MaxY: GLFloat read GetMaxY;
       procedure BringToFront(Child: TGUIComponent);
       procedure Render;
+      procedure ImmediatelyApplyGeometry;
       function GetChildByName(S: String): TGUIComponent;
       constructor Create(mParent: TGUIComponent; TypeName: TComponentType);
       destructor Free;
@@ -241,6 +242,14 @@ begin
 
   if OnRender <> nil then
     OnRender(Self);
+end;
+
+procedure TGUIComponent.ImmediatelyApplyGeometry;
+begin
+  fPosX := fDestX;
+  fPosY := fDestY;
+  fHeight := fDestHeight;
+  fWidth := fDestWidth;
 end;
 
 function TGUIComponent.GetChildByName(S: String): TGUIComponent;

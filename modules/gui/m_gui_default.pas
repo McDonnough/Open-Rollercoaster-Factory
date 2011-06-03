@@ -150,6 +150,9 @@ begin
           fBasicComponent.BringToFront(Container);
         fHoverComponent.OnClick(fHoverComponent);
         end;
+      if (fFocusComponent <> fHoverComponent) and (fFocusComponent <> nil) and (fClicking) then
+        if fFocusComponent.OnRelease <> nil then
+          fFocusComponent.OnRelease(fHoverComponent);
       fFocusComponent := fHoverComponent;
       fClicking := true;
       end;

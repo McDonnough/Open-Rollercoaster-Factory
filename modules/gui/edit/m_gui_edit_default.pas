@@ -66,11 +66,11 @@ begin
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glBegin(GL_QUADS);
-    glColor4f(1, 1, 1, 1);
+    glColor4f(1, 1, 1, Edit.Alpha);
     RenderEdit(0, 0);
-    glColor4f(1, 1, 1, Edit.fHoverFactor);
+    glColor4f(1, 1, 1, Edit.fHoverFactor * Edit.Alpha);
     RenderEdit(0.5, 0);
-    glColor4f(1, 1, 1, Edit.fClickFactor);
+    glColor4f(1, 1, 1, Edit.fClickFactor * Edit.Alpha);
     RenderEdit(0, 0.5);
   glEnd;
   fTexture.Unbind;
@@ -83,11 +83,11 @@ begin
     end
   else
     i := Length(Edit.Text) - Edit.MovedChars;
-  ModuleManager.ModFont.Write(SubString(Edit.Text, Edit.MovedChars + 1, i), Edit.Height - 16, Edit.Left + 8, Edit.Top + 8, 0, 0, 0, 1, 0);
+  ModuleManager.ModFont.Write(SubString(Edit.Text, Edit.MovedChars + 1, i), Edit.Height - 16, Edit.Left + 8, Edit.Top + 8, 0, 0, 0, Edit.Alpha, 0);
   ModuleManager.ModTexMng.ActivateTexUnit(0);
   ModuleManager.ModTexMng.BindTexture(-1);
   glBegin(GL_LINES);
-    glColor4f(1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, Edit.fClickFactor);
+    glColor4f(1 - Edit.fClickFactor, 1 - Edit.fClickFactor, 1 - Edit.fClickFactor, Edit.fClickFactor * Edit.Alpha);
     glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) + 8, Edit.Top + 8);
     glVertex2f(Edit.Left + ModuleManager.ModFont.CalculateTextWidth(SubString(Edit.Text, Edit.MovedChars + 1, Edit.CursorPos - Edit.MovedChars), round(Edit.Height - 16)) + 8, Edit.Top + Edit.Height - 8);
   glEnd;

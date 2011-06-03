@@ -29,8 +29,8 @@
 
         <slider left="96" top="96" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.x" />
         <slider left="288" top="96" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.z" />
-        <slider left="96" top="128" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.x" />
-        <slider left="288" top="128" width="96" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.grid.offset.z" />
+        <slider left="96" top="128" width="96" height="32" min="-180" max="180" digits="0" value="0" name="object_builder.grid.rotation" />
+        <slider left="288" top="128" width="96" height="32" min="0.1" max="2" digits="1" value="1" name="object_builder.grid.size" />
       </label>
       <label width="384" left="384" top="0" height="160">
       </label>

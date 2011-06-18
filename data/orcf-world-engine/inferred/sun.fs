@@ -92,33 +92,35 @@ void main(void) {
 
   // Caustic
 
-  vec2 FakeVertex = Vertex.xz;
-  if (Vertex.x < 0.0) FakeVertex.x = Vertex.x * Vertex.x / 1638.4;
-  if (Vertex.z < 0.0) FakeVertex.y = Vertex.z * Vertex.z / 1638.4;
-  if (Vertex.x > TerrainSize.x) FakeVertex.x = TerrainSize.x - (Vertex.x - TerrainSize.x) * (Vertex.x - TerrainSize.x) / 1638.4;
-  if (Vertex.z > TerrainSize.y) FakeVertex.y = TerrainSize.y - (Vertex.z - TerrainSize.y) * (Vertex.z - TerrainSize.y) / 1638.4;
+  if (dotprod != 0.0) {
+    vec2 FakeVertex = Vertex.xz;
+    if (Vertex.x < 0.0) FakeVertex.x = Vertex.x * Vertex.x / 1638.4;
+    if (Vertex.z < 0.0) FakeVertex.y = Vertex.z * Vertex.z / 1638.4;
+    if (Vertex.x > TerrainSize.x) FakeVertex.x = TerrainSize.x - (Vertex.x - TerrainSize.x) * (Vertex.x - TerrainSize.x) / 1638.4;
+    if (Vertex.z > TerrainSize.y) FakeVertex.y = TerrainSize.y - (Vertex.z - TerrainSize.y) * (Vertex.z - TerrainSize.y) / 1638.4;
 
-  vec2 Height = 256.0 * texture2D(HeightMap, FakeVertex / TerrainSize).gb;
+    vec2 Height = 256.0 * texture2D(HeightMap, FakeVertex / TerrainSize).gb;
 
-  if (Height.r > Vertex.y) {
-    gl_FragData[0].rgb *= pow(0.9, (Height.r - Vertex.y));
-    vec3 ol = gl_FragData[0].rgb;
-    float lf = pow(0.95,  AllCoord.w);
-    vec2 XZPos = Vertex.xz + (Height.r - Vertex.y) * Sun.xz / -Sun.y;
-    XZPos += 0.2 * vec2(sin(XZPos.y + 4.0 * BumpOffset.x + 0.32 * XZPos.x), cos(3.1416 * XZPos.x + 3.67 * BumpOffset.y + 0.68 * XZPos.y));
-    XZPos = vec2(sin(3.0 * XZPos.x), sin(3.0 * XZPos.y));
-    XZPos *= XZPos;
-    XZPos *= XZPos;
-    XZPos *= XZPos;
-    XZPos *= pow(0.6, (Height.r - Vertex.y)) * lf;
-    gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.x);
-    gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.y);
-    gl_FragData[0].rgb = mix(ol, gl_FragData[0].rgb, min(3.0 * abs(Height.r - Vertex.y), 1.0));
+    if (Height.r > Vertex.y) {
+      gl_FragData[0].rgb *= pow(0.9, (Height.r - Vertex.y));
+      vec3 ol = gl_FragData[0].rgb;
+      float lf = pow(0.95,  AllCoord.w);
+      vec2 XZPos = Vertex.xz + (Height.r - Vertex.y) * Sun.xz / -Sun.y;
+      XZPos += 0.2 * vec2(sin(XZPos.y + 4.0 * BumpOffset.x + 0.32 * XZPos.x), cos(3.1416 * XZPos.x + 3.67 * BumpOffset.y + 0.68 * XZPos.y));
+      XZPos = vec2(sin(3.0 * XZPos.x), sin(3.0 * XZPos.y));
+      XZPos *= XZPos;
+      XZPos *= XZPos;
+      XZPos *= XZPos;
+      XZPos *= pow(0.6, (Height.r - Vertex.y)) * lf;
+      gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.x);
+      gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.y);
+      gl_FragData[0].rgb = mix(ol, gl_FragData[0].rgb, min(3.0 * abs(Height.r - Vertex.y) * length(factor) / sqrt(3.0) * dotprod, 1.0));
+    }
+
+    gl_FragData[1] = vec4(gl_FragData[0].a * gl_FragData[0].rgb, 1.0);
+
+    gl_FragData[0].rgb += Emission.rgb;
   }
-
-  gl_FragData[1] = vec4(gl_FragData[0].a * gl_FragData[0].rgb, 1.0);
-
-  gl_FragData[0].rgb += Emission.rgb;
 
   // No lighting
 

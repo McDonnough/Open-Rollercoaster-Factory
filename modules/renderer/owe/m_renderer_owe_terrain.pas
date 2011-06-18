@@ -941,6 +941,8 @@ begin
   EventManager.AddCallback('TTerrain.ApplyForcedHeightLine', @SetHeightLine);
   EventManager.AddCallback('GUIActions.terrain_edit.open', @ChangeTerrainEditorState);
   EventManager.AddCallback('GUIActions.terrain_edit.close', @ChangeTerrainEditorState);
+  EventManager.AddCallback('GUIActions.object_builder.open', @ChangeTerrainEditorState);
+  EventManager.AddCallback('GUIActions.object_builder.close', @ChangeTerrainEditorState);
   EventManager.AddCallback('TTerrain.Resize', @ApplyChanges);
   EventManager.AddCallback('TTerrain.Changed', @ApplyChanges);
   EventManager.AddCallback('TTerrain.ChangedTexmap', @ApplyChanges);

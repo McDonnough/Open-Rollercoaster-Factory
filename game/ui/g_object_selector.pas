@@ -667,7 +667,7 @@ begin
   Park.pTerrain.MarkMode := 0;
   Park.pTerrain.UpdateMarks;
 
-  ParkUI.GetWindowByName('object_builder').Hide;
+  ParkUI.GetWindowByName('object_builder').Hide(fWindow);
 end;
 
 procedure TGameObjectSelector.DoBuild(Event: String; Data, Result: Pointer);

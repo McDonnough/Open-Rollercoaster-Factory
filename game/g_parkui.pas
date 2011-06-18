@@ -59,8 +59,8 @@ type
       property BtnLeft: Single read fBtnLeft write SetBtnLeft;
       property BtnTop: Single read fBtnTop write SetBtnTop;
       property Expanded: Boolean read fExpanded;
-      procedure Show;
-      procedure Hide;
+      procedure Show(Sender: TGUIComponent);
+      procedure Hide(Sender: TGUIComponent);
       constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
     end;
@@ -168,17 +168,9 @@ end;
 procedure TXMLUIWindow.Toggle(Sender: TGUIComponent);
 begin
   if Expanded then
-    begin
-    hide;
-    if fWindow.Name <> '' then
-      EventManager.CallEvent('GUIActions.' + fWindow.Name + '.close', Sender, nil);
-    end
+    Hide(Sender)
   else
-    begin
-    show;
-    if fWindow.Name <> '' then
-      EventManager.CallEvent('GUIActions.' + fWindow.Name + '.open', Sender, nil);
-    end;
+    Show(Sender);
 end;
 
 procedure TXMLUIWindow.SetWidth(A: Single);
@@ -235,10 +227,9 @@ begin
     end;
 end;
 
-procedure TXMLUIWindow.Show;
+procedure TXMLUIWindow.Show(Sender: TGUIComponent);
 begin
   ModuleManager.ModGUI.BasicComponent.BringToFront(fWindow);
-  fExpanded := true;
   fWindow.Width := fWidth;
   fWindow.Height := fHeight;
   fWindow.Alpha := 1;
@@ -248,11 +239,15 @@ begin
   fButton.Top := fTop;
   fButton.Width := 64;
   fButton.Height := 64;
+  if (fWindow.Name <> '') and (not Expanded) then
+    begin
+    fExpanded := true;
+    EventManager.CallEvent('GUIActions.' + fWindow.Name + '.open', Sender, nil);
+    end;
 end;
 
-procedure TXMLUIWindow.Hide;
+procedure TXMLUIWindow.Hide(Sender: TGUIComponent);
 begin
-  fExpanded := false;
   fWindow.Width := 0;
   fWindow.Height := 0;
   fWindow.Alpha := 0;
@@ -262,6 +257,11 @@ begin
   fButton.Top := fBtnTop;
   fButton.Width := 48;
   fButton.Height := 48;
+  if (fWindow.Name <> '') and (Expanded) then
+    begin
+    fExpanded := false;
+    EventManager.CallEvent('GUIActions.' + fWindow.Name + '.close', Sender, nil);
+    end;
 end;
 
 procedure TXMLUIWindow.ReadFromXML(Resource: String);

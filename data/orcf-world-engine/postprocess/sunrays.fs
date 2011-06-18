@@ -1,6 +1,6 @@
 #version 120
 
-// Technique and shader from http://www.fabiensanglard.net/lightScattering/index.php
+// Technique originally from http://www.fabiensanglard.net/lightScattering/index.php
 
 uniform float exposure;
 uniform float decay;
@@ -28,7 +28,7 @@ void main() {
 
   for(int i = 0; i < NUM_SAMPLES; i++) {
     textCoo -= deltaTextCoord;
-    vec4 sample = vec4(gl_LightSource[0].diffuse.rgb * 0.2, 0.2); // vec4(texture2D(MaterialTexture, textCoo).rgb * 0.3, 0.2);
+    vec4 sample = vec4(gl_LightSource[0].diffuse.rgb * 0.2, 0.2);
     vec3 a = texture2D(NormalTexture, textCoo).rgb;
     if (abs(a.r) + abs(a.g) + abs(a.b) > 0.0)
       sample *= 0.0;

@@ -1,6 +1,6 @@
 #version 120
 
-#extension GL_EXT_gpu_shader4 : enable
+#extension GL_EXT_gpu_shader4 : require
 
 uniform sampler2D TerrainMap;
 uniform sampler2D TerrainTexture;

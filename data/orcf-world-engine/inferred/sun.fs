@@ -119,8 +119,8 @@ void main(void) {
 
     gl_FragData[1] = vec4(gl_FragData[0].a * gl_FragData[0].rgb, 1.0);
 
-    gl_FragData[0].rgb += Emission.rgb;
   }
+  gl_FragData[0].rgb += Emission.rgb;
 
   // No lighting
 

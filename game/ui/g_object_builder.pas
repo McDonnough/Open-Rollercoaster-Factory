@@ -5,7 +5,7 @@ interface
 uses
   SysUtils, Classes, u_events, g_park, g_parkui,
   m_gui_label_class, m_gui_edit_class, m_gui_tabbar_class, m_gui_button_class, m_gui_iconifiedbutton_class,
-  m_gui_scrollbox_class, m_gui_class, m_gui_image_class, m_gui_slider_class, g_sets, g_res_objects,
+  m_gui_scrollbox_class, m_gui_class, m_gui_image_class, m_gui_slider_class, m_gui_checkbox_class, g_sets, g_res_objects,
   u_scene, u_selection, u_vectors;
 
 type
@@ -32,14 +32,24 @@ type
 implementation
 
 uses
-  g_object_selector, g_terrain_edit, g_objects;
+  g_object_selector, g_terrain_edit, g_objects, u_math;
 
 procedure TGameObjectBuilder.UpdateBOPos(Event: String; Data, Result: Pointer);
 begin
   if fBuilding <> nil then
     begin
     fIP := TSelectableObject(Data^).IntersectionPoint;
-    fBuilding.Matrix := TranslationMatrix(TSelectableObject(Data^).IntersectionPoint);
+    if TCheckBox(fWindow.GetChildByName('object_builder.lock.x')).Checked then fIP.X := TSlider(fWindow.GetChildByName('object_builder.offset.x')).Value;
+    if TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked then fIP.Y := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value;
+    if TCheckBox(fWindow.GetChildByName('object_builder.lock.z')).Checked then fIP.Z := TSlider(fWindow.GetChildByName('object_builder.offset.z')).Value;
+    fIP := Vector(
+      Clamp(fIP.X, 0, 0.2 * Park.pTerrain.SizeX),
+      Clamp(fIP.Y, 0, 256),
+      Clamp(fIP.Z, 0, 0.2 * Park.pTerrain.SizeY));
+    fBuilding.Matrix := TranslationMatrix(fIP);
+    fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value, Vector(0, 1, 0));
+    fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.x')).Value, Vector(1, 0, 0));
+    fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.z')).Value, Vector(0, 0, 1));
     fBuilding.SetUnchanged;
     fBuilding.ExecuteScript;
     fBuilding.UpdateMatrix;

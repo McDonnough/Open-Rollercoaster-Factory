@@ -909,8 +909,10 @@ begin
 
   // Lighting pass
 
-  glDepthMask(true);
   LightBuffer.Bind;
+    glDepthMask(true);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
 

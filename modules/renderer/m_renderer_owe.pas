@@ -609,7 +609,7 @@ var
   i, ResX, ResY: Integer;
   Coord: TVector4D;
 begin
-//   glGetError();
+  glGetError();
 
   RParticles.UpdateVBOs;
 
@@ -909,6 +909,7 @@ begin
 
   // Lighting pass
 
+  glDepthMask(true);
   LightBuffer.Bind;
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);

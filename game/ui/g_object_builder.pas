@@ -38,7 +38,7 @@ procedure TGameObjectBuilder.UpdateBOPos(Event: String; Data, Result: Pointer);
 begin
   if fBuilding <> nil then
     begin
-    fIP := TSelectableObject(Data^).IntersectionPoint;
+    fIP := Park.SelectionEngine.SelectionCoord;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.x')).Checked then fIP.X := TSlider(fWindow.GetChildByName('object_builder.offset.x')).Value;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked then fIP.Y := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.z')).Checked then fIP.Z := TSlider(fWindow.GetChildByName('object_builder.offset.z')).Value;
@@ -101,7 +101,6 @@ begin
   ParkUI.GetWindowByName('object_selector').Show(fWindow);
   EventManager.RemoveCallback(@UpdateBOPos);
   EventManager.RemoveCallback(@AddObject);
-  EventManager.RemoveCallback('TPark.Render', @TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).UpdateTerrainSelectionMap);
 end;
 
 procedure TGameObjectBuilder.OnShow(Event: String; Data, Result: Pointer);
@@ -116,7 +115,6 @@ begin
   EventManager.AddCallback('BasicComponent.OnClick', @AddObject);
   Park.SelectionEngine := TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).TerrainSelectionEngine;
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @UpdateBOPos);
-  EventManager.AddCallback('TPark.Render', @TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).UpdateTerrainSelectionMap);
 
   fBuildingResource := Resource;
   fBuilding := fBuildingResource.GeoObject.Duplicate;
@@ -139,7 +137,6 @@ begin
   EventManager.RemoveCallback(@OnClose);
   EventManager.RemoveCallback(@UpdateBOPos);
   EventManager.RemoveCallback(@AddObject);
-  EventManager.RemoveCallback('TPark.Render', @TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).UpdateTerrainSelectionMap);
   inherited Free;
 end;
 

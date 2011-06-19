@@ -211,6 +211,7 @@ procedure TModuleRendererOWE.PostInit;
 var
   ResX, ResY: Integer;
 begin
+  fSelectedMaterialID := 0;
   CaptureNextFrame := False;
 
   fFrontFace := GL_CCW;
@@ -250,7 +251,7 @@ begin
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fSpareBuffer.Unbind;
 
-  fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
+  fLightBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);         // Depth buffer for selection hack
   fLightBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Colors
   fLightBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fLightBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);      // Specular
@@ -695,13 +696,51 @@ begin
 
   // Check some visibilities
   Frustum.Calculate;
-//   RTerrain.CheckVisibility;
-//   RObjects.CheckVisibility;
+  RTerrain.CheckVisibility;
+  RObjects.CheckVisibility;
   RenderParticles := True;
 
   // Run some threads
   if UseLightShadows then
     LightManager.Working := True;
+
+  glDisable(GL_BLEND);
+  glDisable(GL_ALPHA_TEST);
+  glEnable(GL_DEPTH_TEST);
+  glDisable(GL_CULL_FACE);
+
+  Coord := Vector(0, 0, 0, 0);
+
+  // Selection pass - abuse the light buffer for that because it consists of two buffers
+  if Park.SelectionEngine <> nil then
+    begin
+    LightBuffer.Bind;
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+    
+    if Park.SelectionEngine.RenderTerrain then
+      RTerrain.RenderSelectable($000001);
+    
+    LightBuffer.Unbind;
+
+    // Finally get intersection point and selected object ID
+    SpareBuffer.Bind;
+      fFullscreenShader.Bind;
+      LightBuffer.Textures[0].Bind(0);
+      DrawFullscreenQuad;
+      glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+
+      fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+      fSelectionRay := Vector3D(Coord) - fSelectionStart;
+
+      LightBuffer.Textures[1].Bind(0);
+      DrawFullscreenQuad;
+      glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+      fFullscreenShader.Unbind;
+      fSelectedMaterialID := (Round(Coord.X) shl 16) or (Round(Coord.Y) shl 8) or (Round(Coord.Z));
+
+      LightBuffer.Textures[1].Unbind;
+    SpareBuffer.Unbind;
+    end;
 
   // Geometry pass
 
@@ -1062,15 +1101,12 @@ begin
     fSceneBuffer.Bind;
     end;
 
-  // Set up selection rays
+  // Set up focal blur
   with ModuleManager.ModCamera do
     fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
                                    -Sin(DegToRad(ActiveCamera.Rotation.X)),
                                    -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
 
-  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-
-  fSelectionRay := Vector3D(Coord) - fSelectionStart;
   fFocusDistance := Coord.W;
 
   // Focal Blur pass

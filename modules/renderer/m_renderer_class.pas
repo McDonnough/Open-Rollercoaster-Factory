@@ -14,12 +14,14 @@ type
       RenderEffects: Array of TRenderCallback;
       fMouseDistance: Single;
       fSelectionRay, fSelectionStart: TVector3D;
+      fSelectedMaterialID: DWord;
     public
       CaptureNextFrame: Boolean;
       
       property SelectionRay: TVector3D read fSelectionRay;
       property SelectionStart: TVector3D read fSelectionStart;
       property MouseDistance: Single read fMouseDistance;
+      property SelectedMaterialID: DWord read fSelectedMaterialID;
 
       (**
         * Loads textures etc

@@ -660,7 +660,6 @@ end;
 procedure TGameObjectSelector.OnClose(Event: String; Data, Result: Pointer);
 begin
   Park.SelectionEngine := Park.NormalSelectionEngine;
-  EventManager.RemoveCallback('TPark.Render', @TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).UpdateTerrainSelectionMap);
   Park.pTerrain.CurrMark := Vector(-1, -1);
   TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).HeightLine('', nil, nil);
   EventManager.CallEvent('GUIActions.terrain_edit.removeheightline', nil, nil);
@@ -737,7 +736,6 @@ begin
   EventManager.RemoveCallback(@DoFilter);
   EventManager.RemoveCallback(@DoBuild);
   EventManager.RemoveCallback(@OnClose);
-  EventManager.RemoveCallback('TPark.Render', @TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).UpdateTerrainSelectionMap);
   inherited Free;
 end;
 

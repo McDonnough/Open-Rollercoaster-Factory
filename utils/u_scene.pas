@@ -164,6 +164,7 @@ type
     private
       Counts: Array[0..5] of PtrUInt;
       Offsets: Array[0..5] of PtrUInt;
+      ObjectID: Integer;
     public
       Meshes: Array of TGeoMesh;
       Armatures: Array of TArmature;
@@ -171,6 +172,7 @@ type
       Script: TScript;
       Matrix: TMatrix4D;
       FirstRun: Boolean;
+      property SelectionID: Integer read ObjectID;
       function AddArmature: TArmature;
       function AddMesh: TGeoMesh;
       function AddMaterial: TMaterial;
@@ -199,6 +201,9 @@ implementation
 
 uses
   u_events, u_particles, main, m_varlist;
+
+var
+  ObjectCount: Integer = 2;
 
 function TriangleIndexList(A, B, C: Integer): TTriangleIndexList;
 begin
@@ -1057,6 +1062,8 @@ begin
   Matrix := Identity4D;
   Script := nil;
   FirstRun := True;
+  ObjectID := ObjectCount;
+  inc(ObjectCount);
 end;
 
 destructor TGeoObject.Free;

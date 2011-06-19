@@ -218,22 +218,34 @@ end;
 
 procedure TPark.Render;
 begin
-  if not fCanRender then
-    ModuleManager.ModLoadScreen.Render
-  else
-    begin
-    fScreenCaptureTool.Advance;
-    ModuleManager.ModRenderer.RenderScene;
-    ParkUI.Drag;
-    pSky.Advance;
-    pObjects.Advance;
-    pParticles.Advance;
-    ModuleManager.ModCamera.AdvanceActiveCamera;
-    fSelectionEngine.Update;
+  try
+    if not fCanRender then
+      ModuleManager.ModLoadScreen.Render
+    else
+      begin
+      fScreenCaptureTool.Advance;
+      ModuleManager.ModRenderer.RenderScene;
+      ParkUI.Drag;
+      pSky.Advance;
+      pObjects.Advance;
+      pParticles.Advance;
+      ModuleManager.ModCamera.AdvanceActiveCamera;
+      fSelectionEngine.Update;
+      end;
+    if fPostLoading then
+      ContinueLoading;
+    EventManager.CallEvent('TPark.Render', nil, nil);
+  except
+    ModuleManager.ModLog.AddError('Game crashed! Trying to save park file..');
+    try
+      Park.SaveTo(ModuleManager.ModPathes.PersonalDataPath + 'saved/crash-recovery.ocf');
+      ModuleManager.ModLog.AddError('Success! Restart the game and see if everything is right.');
+    except
+      ModuleManager.ModLog.AddError('FAILED! Your most recent changes are most probably lost, sorry for that.');
     end;
-  if fPostLoading then
-    ContinueLoading;
-  EventManager.CallEvent('TPark.Render', nil, nil);
+    ModuleManager.ModLog.AddError('Quitting game.');
+    halt(101);
+  end;
 end;
 
 procedure TPark.SaveTo(F: String);

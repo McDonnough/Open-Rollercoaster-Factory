@@ -14,7 +14,7 @@ varying vec2 texCoord;
 
 void main(void) {
   gl_FragData[0] = texture2D(Texture, texCoord);
-  float dist = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
+  float dist = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
   float alpha = clamp(MaxDist - dist, 0.0, 5.0) * 0.2;
   if (gl_FragData[0].a * alpha <= texture2D(TransparencyMask, (gl_FragCoord.xy) / MaskSize + MaskOffset).a)
     discard;

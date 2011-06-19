@@ -56,7 +56,7 @@ void main(void) {
   float VY = mix(64.0, fetchHeightAtOffset(ivec2(0, 0)), YFactor);
 
   gl_FragData[2].rgb = Vertex;
-  gl_FragData[2].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
+  gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
 
   float TexIDs[4];
   TexIDs[0] = texture2D(TerrainMap, (iVertex + ivec2(0, 0)) / TerrainSize / 5.0).r * 65536.0;

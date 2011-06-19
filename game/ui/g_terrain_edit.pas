@@ -410,7 +410,6 @@ begin
   EventManager.AddCallback('TTerrain.Resize', @Resized);
 
   fTerrainSelectionEngine := TSelectionEngine.Create;
-  fTerrainSelectionEngine.RenderTerrain := True;
   fSelectionObject := fTerrainSelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
 
   fAutoTexMode := nil;

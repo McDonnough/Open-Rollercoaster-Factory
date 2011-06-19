@@ -45,7 +45,7 @@ vec3 GetReflectionColor(vec3 vector) {
 void main(void) {
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[2].rgb = Vertex;
-  gl_FragData[2].a = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
+  gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
   vec3 normal = Normal;
   if (HasNormalMap == 1) {
     vec3 q0 = dFdx(Vertex.xyz);

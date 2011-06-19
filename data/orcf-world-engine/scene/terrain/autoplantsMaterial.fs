@@ -27,7 +27,7 @@ void main(void) {
       }
   Coords += Offset;
 
-  float dist = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
+  float dist = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
   gl_FragDepth = dist / 10000.0;
   float alpha = clamp(MaxDist - dist, 0.0, 5.0) * 0.2;
   gl_FragColor = texture2D(Texture, texCoord);

@@ -17,13 +17,11 @@ type
   TSelectionEngine = class
     protected
       MinDist: Single;
-      fSelectableObjects: Array of TSelectableObject;
       fSelectionCoord: TVector3D;
     public
+      fSelectableObjects: Array of TSelectableObject;
       RenderTerrain: Boolean;
       RenderObjects: Boolean;
-      RenderPeople: Boolean;
-      ExcludedObject: TGeoObject;
       property SelectionCoord: TVector3D read fSelectionCoord;
       function ObjectCount: Integer;
       function Add(O: TGeoObject; Event: String): PSelectableObject;
@@ -45,6 +43,10 @@ end;
 
 function TSelectionEngine.Add(O: TGeoObject; Event: String = ''): PSelectableObject;
 begin
+  if O = nil then
+    RenderTerrain := True
+  else
+    RenderObjects := True;
   setLength(fSelectableObjects, length(fSelectableObjects) + 1);
   Result := @fSelectableObjects[high(fSelectableObjects)];
   Result^.O := O;
@@ -93,9 +95,7 @@ end;
 constructor TSelectionEngine.Create;
 begin
   RenderTerrain := False;
-  RenderPeople := False;
   RenderObjects := False;
-  ExcludedObject := nil;
   fSelectionCoord := Vector(0, 0, 0);
 end;
 

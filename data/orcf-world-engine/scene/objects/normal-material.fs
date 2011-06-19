@@ -30,7 +30,7 @@ float Fresnel(float x) {
 }
 
 void main(void) {
-  float dist = length(gl_ModelViewMatrix * vec4(Vertex, 1.0));
+  float dist = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
   gl_FragDepth = dist / 10000.0;
   
   gl_FragColor = gl_FrontMaterial.diffuse;

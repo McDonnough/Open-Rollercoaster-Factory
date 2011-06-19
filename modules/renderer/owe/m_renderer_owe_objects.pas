@@ -38,6 +38,7 @@ type
       fOpaqueLightShadowShader, fTransparentLightShadowShader: TShader;
       fOpaqueShader, fTransparentShader: TShader;
       fTransparentMaterialShader: TShader;
+      fSelectionShader: TShader;
       fLastGeoObject: TGeoObject;
       fLastManagedObject: Integer;
       fReflectionPass: TRenderPass;
@@ -73,6 +74,7 @@ type
       procedure BindMaterial(Material: TMaterial);
       procedure Render(Mesh: TManagedMesh);
       procedure RenderReflections;
+      procedure RenderSelectable;
       procedure RenderOpaque;
       procedure RenderTransparent;
       procedure QuickSortTransparentMeshes;
@@ -84,7 +86,7 @@ type
 implementation
 
 uses
-  u_events, m_varlist;
+  u_events, m_varlist, g_park;
 
 function TRObjects.getWorking: Boolean;
 begin
@@ -283,6 +285,60 @@ begin
   fCurrentShader.Unbind;
 end;
 
+procedure TRObjects.RenderSelectable;
+var
+  i, j, k: Integer;
+  Color: DWord;
+  CurrO: TGeoObject;
+  CurrMO: TManagedObject;
+  CurrMM: TManagedMesh;
+  Matrix: Array[0..15] of Single;
+begin
+  fSelectionShader.Bind;
+  fCurrentShader := fSelectionShader;
+  
+  for i := 0 to high(Park.SelectionEngine.fSelectableObjects) do
+    begin
+    CurrO := Park.SelectionEngine.fSelectableObjects[i].O;
+    if CurrO = nil then
+      continue;
+    CurrMO := nil;
+    for j := 0 to high(fManagedObjects) do
+      if fManagedObjects[j].GeoObject = CurrO then
+        CurrMO := fManagedObjects[j];
+    if CurrMO = nil then
+      continue;
+    Color := CurrO.SelectionID;
+    fCurrentShader.UniformI('SelectionMeshID', ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
+    for j := 0 to high(CurrO.Meshes) do
+      begin
+      fCurrentShader.UniformF('Alpha', CurrO.Meshes[j].Material.Color.W);
+      CurrMM := nil;
+      for k := 0 to high(CurrMO.Meshes) do
+        if CurrMO.Meshes[k].GeoMesh = CurrO.Meshes[j] then
+          CurrMM := CurrMO.Meshes[k];
+      if CurrMM = nil then
+        continue;
+      if CurrO.Meshes[j].Material.Texture <> nil then
+        CurrO.Meshes[j].Material.Texture.Bind(0)
+      else
+        begin
+        ModuleManager.ModTexMng.ActivateTexUnit(0);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        end;
+      MakeOGLCompatibleMatrix(CurrO.Meshes[j].CalculatedMatrix, @Matrix[0]);
+
+      fCurrentShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
+
+      CurrMM.VBO.Bind;
+      CurrMM.VBO.Render;
+      CurrMM.VBO.UnBind;
+      end;
+    end;
+
+  fSelectionShader.Unbind;
+end;
+
 procedure TRObjects.RenderTransparent;
 var
   i, j: Integer;
@@ -456,6 +512,9 @@ begin
   fTransparentMaterialShader.UniformI('LightTexture', 7);
   fTransparentMaterialShader.UniformI('SpecularTexture', 4);
 
+  fSelectionShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/inferred/selection.fs');
+  fSelectionShader.UniformI('Texture', 0);
+
   fReflectionPass := TRenderPass.Create(ModuleManager.ModRenderer.ReflectionSize, ModuleManager.ModRenderer.ReflectionSize);
   fReflectionPass.RenderTerrain := ModuleManager.ModRenderer.ReflectionRenderTerrain;
   fReflectionPass.RenderObjects := ModuleManager.ModRenderer.ReflectionRenderObjects;
@@ -555,6 +614,7 @@ procedure TRObjects.Free;
 begin
   Terminate;
   fReflectionPass.Free;
+  fSelectionShader.Free;
   fOpaqueLightShadowShader.Free;
   fOpaqueShader.Free;
   fOpaqueShadowShader.Free;

@@ -16,6 +16,7 @@ type
       fBuilding: TGeoObject;
       fBuildingResource: TObjectResource;
     public
+      SelectionEngine: TSelectionEngine;
       procedure UpdateBOPos(Event: String; Data, Result: Pointer);
       procedure AddObject(Event: String; Data, Result: Pointer);
       procedure SelectMaterial(Event: String; Data, Result: Pointer);
@@ -72,6 +73,7 @@ begin
     O := TRealObject.Create(fBuildingResource);
     O.GeoObject.Matrix := fBuilding.Matrix;
     Park.pObjects.Append(O);
+    SelectionEngine.Add(O.GeoObject, 'GUIActions.terrain_edit.marks.move');
     end;
 end;
 
@@ -105,7 +107,6 @@ end;
 
 procedure TGameObjectBuilder.OnShow(Event: String; Data, Result: Pointer);
 begin
-  writeln(Event);
   TSlider(fWindow.GetChildByName('object_builder.offset.x')).Max := 0.2 * Park.pTerrain.SizeX;
   TSlider(fWindow.GetChildByName('object_builder.offset.z')).Max := 0.2 * Park.pTerrain.SizeY;
 end;
@@ -113,7 +114,7 @@ end;
 procedure TGameObjectBuilder.BuildObject(Resource: TObjectResource);
 begin
   EventManager.AddCallback('BasicComponent.OnClick', @AddObject);
-  Park.SelectionEngine := TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).TerrainSelectionEngine;
+  Park.SelectionEngine := SelectionEngine;
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @UpdateBOPos);
 
   fBuildingResource := Resource;
@@ -128,11 +129,14 @@ begin
 
   EventManager.AddCallback('GUIActions.object_builder.open', @OnShow);
   EventManager.AddCallback('GUIActions.object_builder.close', @OnClose);
+  SelectionEngine := TSelectionEngine.Create;
+  SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
   fIP := Vector(0, 0, 0);
 end;
 
 destructor TGameObjectBuilder.Free;
 begin
+  SelectionEngine.Free;
   EventManager.RemoveCallback(@OnShow);
   EventManager.RemoveCallback(@OnClose);
   EventManager.RemoveCallback(@UpdateBOPos);

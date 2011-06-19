@@ -707,7 +707,9 @@ begin
   glDisable(GL_BLEND);
   glDisable(GL_ALPHA_TEST);
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
   glDisable(GL_CULL_FACE);
+  glDepthMask(true);
 
   Coord := Vector(0, 0, 0, 0);
 
@@ -719,10 +721,14 @@ begin
     
     if Park.SelectionEngine.RenderTerrain then
       RTerrain.RenderSelectable($000001);
-    
+
+    if Park.SelectionEngine.RenderObjects then
+      RObjects.RenderSelectable;
+
     LightBuffer.Unbind;
 
     // Finally get intersection point and selected object ID
+    glColor4f(1, 1, 1, 1);
     SpareBuffer.Bind;
       fFullscreenShader.Bind;
       LightBuffer.Textures[0].Bind(0);
@@ -1270,6 +1276,7 @@ begin
 
     MotionBlurBuffer.Textures[0].Bind(0);
     DrawFullscreenQuad;
+    MotionBlurBuffer.Textures[0].Unbind;
 
     fFullscreenShader.Unbind;
     end

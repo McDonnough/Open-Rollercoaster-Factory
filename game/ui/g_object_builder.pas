@@ -15,8 +15,17 @@ type
       fIP: TVector3D;
       fBuilding: TGeoObject;
       fBuildingResource: TObjectResource;
+      fSnapToGrid, fSnapToObjects: Boolean;
+      fGridSize, fGridRotation: Single;
+      fGridOffset: TVector2D;
+      fOpen: Boolean;
     public
       SelectionEngine: TSelectionEngine;
+      property Open: Boolean read fOpen;
+      property GridEnabled: Boolean read fSnapToGrid;
+      property GridSize: Single read fGridSize;
+      property GridRotation: Single read fGridRotation;
+      property GridOffset: TVector2D read fGridOffset;
       procedure UpdateBOPos(Event: String; Data, Result: Pointer);
       procedure AddObject(Event: String; Data, Result: Pointer);
       procedure SelectMaterial(Event: String; Data, Result: Pointer);
@@ -25,6 +34,7 @@ type
       procedure UpdateMaterial(Event: String; Data, Result: Pointer);
       procedure OnClose(Event: String; Data, Result: Pointer);
       procedure OnShow(Event: String; Data, Result: Pointer);
+      procedure SnapToGrid(Event: String; Data, Result: Pointer);
       procedure BuildObject(Resource: TObjectResource);
       constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
@@ -35,7 +45,14 @@ implementation
 uses
   g_object_selector, g_terrain_edit, g_objects, u_math;
 
+procedure TGameObjectBuilder.SnapToGrid(Event: String; Data, Result: Pointer);
+begin
+  fSnapToGrid := not fSnapToGrid;
+end;
+
 procedure TGameObjectBuilder.UpdateBOPos(Event: String; Data, Result: Pointer);
+var
+  Mat, InvMat: TMatrix3D;
 begin
   if fBuilding <> nil then
     begin
@@ -43,6 +60,14 @@ begin
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.x')).Checked then fIP.X := TSlider(fWindow.GetChildByName('object_builder.offset.x')).Value;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked then fIP.Y := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.z')).Checked then fIP.Z := TSlider(fWindow.GetChildByName('object_builder.offset.z')).Value;
+    if GridEnabled then
+      begin
+      Mat := Matrix3D(RotationMatrix(GridRotation, Vector(0, -1, 0)));
+      InvMat := Matrix3D(RotationMatrix(GridRotation, Vector(0, 1, 0)));
+      fIP := fIP * Mat;
+      fIP := Vector(Round(fIP.X / GridSize + GridOffset.X) * GridSize - GridOffset.X, fIP.Y, Round(fIP.Z / GridSize + GridOffset.Y) * GridSize - GridOffset.Y);
+      fIP := fIP * InvMat;
+      end;
     fIP := Vector(
       Clamp(fIP.X, 0, 0.2 * Park.pTerrain.SizeX),
       Clamp(fIP.Y, 0, 256),
@@ -83,6 +108,9 @@ end;
 
 procedure TGameObjectBuilder.UpdateGrid(Event: String; Data, Result: Pointer);
 begin
+  fGridOffset := Vector(TSlider(fWindow.GetChildByName('object_builder.grid.offset.x')).Value, TSlider(fWindow.GetChildByName('object_builder.grid.offset.z')).Value);
+  fGridRotation := TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value;
+  fGridSize := TSlider(fWindow.GetChildByName('object_builder.grid.size')).Value;
 end;
 
 procedure TGameObjectBuilder.UpdateMatrix(Event: String; Data, Result: Pointer);
@@ -103,12 +131,14 @@ begin
   ParkUI.GetWindowByName('object_selector').Show(fWindow);
   EventManager.RemoveCallback(@UpdateBOPos);
   EventManager.RemoveCallback(@AddObject);
+  fOpen := False;
 end;
 
 procedure TGameObjectBuilder.OnShow(Event: String; Data, Result: Pointer);
 begin
   TSlider(fWindow.GetChildByName('object_builder.offset.x')).Max := 0.2 * Park.pTerrain.SizeX;
   TSlider(fWindow.GetChildByName('object_builder.offset.z')).Max := 0.2 * Park.pTerrain.SizeY;
+  fOpen := True;
 end;
 
 procedure TGameObjectBuilder.BuildObject(Resource: TObjectResource);
@@ -129,14 +159,25 @@ begin
 
   EventManager.AddCallback('GUIActions.object_builder.open', @OnShow);
   EventManager.AddCallback('GUIActions.object_builder.close', @OnClose);
+  EventManager.AddCallback('GUIActions.object_builder.snap.grid', @SnapToGrid);
+  EventManager.AddCallback('GUIActions.object_builder.update.grid', @UpdateGrid);
   SelectionEngine := TSelectionEngine.Create;
   SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
   fIP := Vector(0, 0, 0);
+  fSnapToGrid := False;
+  fSnapToObjects := True;
+  fGridSize := 1;
+  fGridRotation := 0;
+  fGridOffset := Vector(0, 0);
+  fOpen := False;
+  UpdateGrid('', nil, nil);
 end;
 
 destructor TGameObjectBuilder.Free;
 begin
   SelectionEngine.Free;
+  EventManager.RemoveCallback(@UpdateGrid);
+  EventManager.RemoveCallback(@SnapToGrid);
   EventManager.RemoveCallback(@OnShow);
   EventManager.RemoveCallback(@OnClose);
   EventManager.RemoveCallback(@UpdateBOPos);

@@ -44,7 +44,7 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader, fGridShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
@@ -87,6 +87,7 @@ type
       property LightShaderWithShadow: TShader read fLightShaderWithShadow;
       property SunShader: TShader read fSunShader;
       property CompositionShader: TShader read fCompositionShader;
+      property GridShader: TShader read fGridShader;
       property MotionBlurBuffer: TFBO read fMotionBlurBuffer;
       property FocalBlurBuffer: TFBO read fFocalBlurBuffer;
       property HDRAverageShader: TShader read fHDRAverageShader;
@@ -187,7 +188,7 @@ type
 implementation
 
 uses
-  m_varlist, u_events, main;
+  m_varlist, u_events, main, g_parkui, g_object_builder;
 
 procedure TModuleRendererOWE.DynamicSettingsSetNormal;
 begin
@@ -412,6 +413,9 @@ begin
   fCompositionShader.UniformI('SpecularTexture', 6);
   fCompositionShader.UniformI('LightTexture', 7);
 
+  fGridShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/grid.fs');
+  fGridShader.UniformI('GeometryTex', 2);
+
   fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
   fLensFlareShader.UniformI('Texture', 0);
   fLensFlareShader.UniformI('GeometryTexture', 1);
@@ -462,6 +466,7 @@ begin
   fBloomBlurShader.Free;
   fBloomShader.Free;
   fLensFlareShader.Free;
+  fGridShader.Free;
   fCompositionShader.Free;
   fLightShaderWithShadow.Free;
   fLightShader.Free;
@@ -557,6 +562,7 @@ end;
 procedure TModuleRendererOWE.RenderScene;
 var
   LensFlareFactor: Single;
+  Matrix: Array[0..15] of Single;
 
   procedure DrawFullscreenQuad;
   begin
@@ -1064,6 +1070,29 @@ begin
 
     glDisable(GL_DEPTH_TEST);
     glDepthMask(false);
+
+    // Draw grid if required
+    if (TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).Open) and (TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridEnabled) then
+      begin
+      GBuffer.Textures[2].Bind(2);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE);
+
+      MakeOGLCompatibleMatrix(RotationMatrix(TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridRotation, Vector(0, -1, 0)), @Matrix[0]);
+
+      fGridShader.Bind;
+      fGridShader.UniformF('Offset', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridOffset);
+      fGridShader.UniformF('Size', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridSize);
+      fGridShader.UniformMatrix4D('RotMat', @Matrix[0]);
+
+      DrawFullscreenQuad;
+      
+      fGridShader.Unbind;
+
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glDisable(GL_BLEND);
+      GBuffer.Textures[2].Unbind;
+      end;
   fSceneBuffer.Unbind;
 
   SpareBuffer.Bind;

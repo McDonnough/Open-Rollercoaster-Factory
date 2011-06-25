@@ -357,7 +357,7 @@ var
           Tag := AddCallbackArray(TDOMElement(DE));
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @HandleOnclick;
-          OnChange := @HandleOnedit;
+          OnChange := @HandleOnEdit;
           OnRelease := @HandleOnrelease;
           OnHover := @HandleOnHover;
           OnLeave := @HandleOnLeave;
@@ -374,7 +374,7 @@ var
           Height := StrToIntWD(GetAttribute('height'), 32);
           Tag := AddCallbackArray(TDOMElement(DE));
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
-          OnChange := @HandleOnedit;
+          OnChange := @HandleOnEdit;
           OnHover := @HandleOnHover;
           OnLeave := @HandleOnLeave;
           end;
@@ -394,7 +394,7 @@ var
           Max := StrToFloatWD(GetAttribute('max'), 1);
           Value := StrToFloatWD(GetAttribute('value'), 0);
           Digits := StrToIntWD(GetAttribute('digits'), 0);
-          OnChange := @HandleOnedit;
+          OnChange := @HandleOnEdit;
           OnHover := @HandleOnHover;
           OnLeave := @HandleOnLeave;
           end;

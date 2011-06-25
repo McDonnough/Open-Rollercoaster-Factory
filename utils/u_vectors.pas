@@ -128,6 +128,7 @@ function Vec3toVec2(A: TVector3D): TVector2D;
 
 
 function Matrix3D(A, B, C: TVector3D): TMatrix3D;
+function Matrix3D(A: TMatrix4D): TMatrix3D;
 function Matrix4D(A, B, C, D: TVector4D): TMatrix4D;
 function Matrix4D(A: TMatrix3D): TMatrix4D;
 
@@ -590,6 +591,11 @@ begin
   Result[0] := A;
   Result[1] := B;
   Result[2] := C;
+end;
+
+function Matrix3D(A: TMatrix4D): TMatrix3D;
+begin
+  Result := Matrix3D(Vector3D(A[0]), Vector3D(A[1]), Vector3D(A[2]));
 end;
 
 function Matrix4D(A, B, C, D: TVector4D): TMatrix4D;

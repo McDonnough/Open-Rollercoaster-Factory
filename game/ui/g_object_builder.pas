@@ -65,7 +65,7 @@ begin
       Mat := Matrix3D(RotationMatrix(GridRotation, Vector(0, -1, 0)));
       InvMat := Matrix3D(RotationMatrix(GridRotation, Vector(0, 1, 0)));
       fIP := fIP * Mat;
-      fIP := Vector(Round(fIP.X / GridSize + GridOffset.X) * GridSize - GridOffset.X, fIP.Y, Round(fIP.Z / GridSize + GridOffset.Y) * GridSize - GridOffset.Y);
+      fIP := Vector(Round((fIP.X + GridOffset.X) / GridSize) * GridSize - GridOffset.X, fIP.Y, Round((fIP.Z + GridOffset.Y) / GridSize) * GridSize - GridOffset.Y);
       fIP := fIP * InvMat;
       end;
     fIP := Vector(
@@ -131,6 +131,7 @@ begin
   ParkUI.GetWindowByName('object_selector').Show(fWindow);
   EventManager.RemoveCallback(@UpdateBOPos);
   EventManager.RemoveCallback(@AddObject);
+  EventManager.RemoveCallback(@UpdateGrid);
   fOpen := False;
 end;
 
@@ -138,6 +139,7 @@ procedure TGameObjectBuilder.OnShow(Event: String; Data, Result: Pointer);
 begin
   TSlider(fWindow.GetChildByName('object_builder.offset.x')).Max := 0.2 * Park.pTerrain.SizeX;
   TSlider(fWindow.GetChildByName('object_builder.offset.z')).Max := 0.2 * Park.pTerrain.SizeY;
+  EventManager.AddCallback('TPark.Render', @UpdateGrid);
   fOpen := True;
 end;
 
@@ -160,7 +162,6 @@ begin
   EventManager.AddCallback('GUIActions.object_builder.open', @OnShow);
   EventManager.AddCallback('GUIActions.object_builder.close', @OnClose);
   EventManager.AddCallback('GUIActions.object_builder.snap.grid', @SnapToGrid);
-  EventManager.AddCallback('GUIActions.object_builder.update.grid', @UpdateGrid);
   SelectionEngine := TSelectionEngine.Create;
   SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
   fIP := Vector(0, 0, 0);

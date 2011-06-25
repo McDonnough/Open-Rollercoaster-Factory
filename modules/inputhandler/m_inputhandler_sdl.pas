@@ -13,6 +13,7 @@ type
       constructor Create;
       procedure CheckModConf;
       procedure UpdateData;
+      procedure UnlockMouse;
     end;
 
 implementation
@@ -24,10 +25,21 @@ constructor TModuleInputHandlerSDL.Create;
 begin
   fModName := 'InputHandlerSDL';
   fModType := 'InputHandler';
+  fLocked := False;
+  fLockX := 0;
+  fLockY := 0;
 end;
 
 procedure TModuleInputHandlerSDL.CheckModConf;
 begin
+end;
+
+procedure TModuleInputHandlerSDL.UnlockMouse;
+begin
+  fMouseX := fLockX;
+  fMouseY := fLockY;
+  fLocked := False;
+  SDL_WarpMouse(fMouseX, fMouseY);
 end;
 
 procedure TModuleInputHandlerSDL.UpdateData;

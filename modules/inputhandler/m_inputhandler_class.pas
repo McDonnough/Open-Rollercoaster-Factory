@@ -13,6 +13,8 @@ type
       fKeys: array[0..321] of Boolean;
       fMouseButtons: array[1..5] of Boolean;
       fMouseX, fMouseY: Integer;
+      fLockX, fLockY: Integer;
+      fLocked: Boolean;
 
       (**
         * Return key state
@@ -29,8 +31,13 @@ type
       function GetMouseButtonState(i: Integer): Boolean;
     public
       QuitRequest: Boolean;
+      procedure LockMouse;
+      procedure UnlockMouse; virtual abstract;
+      property Locked: Boolean read fLocked;
       property MouseX: Integer read fMouseX;
       property MouseY: Integer read fMouseY;
+      property LockX: Integer read fLockX;
+      property LockY: Integer read fLockY;
       property MouseButtons[i: Integer]: Boolean read GetMouseButtonState;
       property Key[i: Integer]: Boolean read GetKeyState;
 
@@ -189,6 +196,16 @@ const
   K_EURO = 321;
 
 implementation
+
+procedure TModuleInputHandlerClass.LockMouse;
+begin
+  if not Locked then
+    begin
+    fLockX := fMouseX;
+    fLockY := fMouseY;
+    fLocked := True;
+    end;
+end;
 
 function TModuleInputHandlerClass.GetKeyState(i: Integer): Boolean;
 begin

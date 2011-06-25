@@ -103,6 +103,10 @@ begin
     pMouseButtons[i] := false;
   for i := 0 to high(pKeys) do
     pKeys[i] := false;
+
+  fLocked := False;
+  fLockX := 0;
+  fLockY := 0;
 end;
 
 procedure TModuleInputHandlerGLUT.CheckModConf;

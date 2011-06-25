@@ -26,6 +26,10 @@ constructor TModuleInputHandlerGLFW.Create;
 begin
   fModName := 'InputHandlerGLFW';
   fModType := 'InputHandler';
+
+  fLocked := False;
+  fLockX := 0;
+  fLockY := 0;
 end;
 
 procedure TModuleInputHandlerGLFW.CheckModConf;

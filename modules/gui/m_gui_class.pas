@@ -51,6 +51,7 @@ type
       OnKeyDown: TKeyCallbackProcedure;
       OnKeyUp: TKeyCallbackProcedure;
       OnRender: TCallbackProcedure;
+      OnScroll: TCallbackProcedure;
       property Alpha: GLFloat read fAlpha write fDestAlpha;
       property Left: GLFloat read fPosX write fDestX;
       property Top: GLFloat read fPosY write fDestY;
@@ -82,6 +83,7 @@ type
       fClicking: Boolean;
       procedure BasicComponentOnClick(Sender: TGUIComponent);
       procedure BasicComponentOnRelease(Sender: TGUIComponent);
+      procedure BasicComponentOnScroll(Sender: TGUIComponent);
       procedure BasicComponentOnKeyDown(Sender: TGUIComponent; Key: Integer);
       procedure BasicComponentOnKeyUp(Sender: TGUIComponent; Key: Integer);
     public
@@ -114,6 +116,11 @@ end;
 procedure TModuleGUIClass.BasicComponentOnRelease(Sender: TGUIComponent);
 begin
   EventManager.CallEvent('BasicComponent.OnRelease', Sender, nil);
+end;
+
+procedure TModuleGUIClass.BasicComponentOnScroll(Sender: TGUIComponent);
+begin
+  EventManager.CallEvent('BasicComponent.OnScroll', Sender, nil);
 end;
 
 procedure TModuleGUIClass.BasicComponentOnKeyDown(Sender: TGUIComponent; Key: Integer);
@@ -328,6 +335,7 @@ begin
   OnKeyDown := nil;
   OnKeyUp := nil;
   OnRender := nil;
+  OnScroll := nil;
 end;
 
 destructor TGUIComponent.Free;

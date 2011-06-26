@@ -3,26 +3,25 @@ unit m_camera_default;
 interface
 
 uses
-  SysUtils, Classes, m_camera_class;
+  SysUtils, Classes, u_vectors, m_camera_class;
 
 type
   TModuleCameraDefault = class(TModuleCameraClass)
     protected
-      // OLD
-      fSpeed: Single;
-      fHSpeed: Single;
-
-      // NEW
       fMaxSpeedTime: Single;
       fSpeedFactors: Array[0..8] of Single;
       fSpeedTimes: Array[0..8] of Single;
       fSpeedIncreasing: Array[0..8] of Single;
       fTimeFactors: Array[0..8] of Single;
+      fRotating, fMoving: Boolean;
+      fInitialXRotation, fInitialYRotation: Single;
+      fCamSource, fSourcePosition, fVecToFront, fVecX, fVecZ: TVector3D;
 
       function SpeedAtTime(T: Single): Single;
       function GetDirection(Key: Integer): Integer;
       procedure HandleMouseDown(Event: String; Data, Result: Pointer);
       procedure HandleMouseUp(Event: String; Data, Result: Pointer);
+      procedure HandleScroll(Event: String; Data, Result: Pointer);
       procedure HandleKeyDown(Event: String; Data, Result: Pointer);
       procedure HandleKeyUp(Event: String; Data, Result: Pointer);
     public
@@ -34,7 +33,7 @@ type
 implementation
 
 uses
-  u_vectors, u_math, math, main, m_varlist, m_inputhandler_class, g_camera, g_park, u_events;
+  u_math, math, main, m_varlist, m_inputhandler_class, g_camera, g_park, u_events;
 
 const
   DIR_FORWARD = 0;
@@ -69,11 +68,44 @@ end;
 
 procedure TModuleCameraDefault.HandleMouseDown(Event: String; Data, Result: Pointer);
 begin
-  
+  if not ((ModuleManager.ModInputHandler.Key[K_LCTRL]) or (fRotating) or (fMoving)) then
+    begin
+    if ModuleManager.ModInputHandler.MouseButtons[MOUSE_MIDDLE] then
+      fRotating := True
+    else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
+      fMoving := True
+    else
+      Exit;
+    fSourcePosition := ModuleManager.ModRenderer.SelectionStart + ModuleManager.ModRenderer.SelectionRay;
+    fInitialYRotation := ActiveCamera.Rotation.Y;
+    fInitialXRotation := ActiveCamera.Rotation.X;
+    fCamSource := ActiveCamera.Position;
+    ModuleManager.ModInputHandler.LockMouse;
+    fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                   -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+    fVecX := Normalize(Cross(fVecToFront, Vector(0, 1, 0))) * 0.01 * VecLength(ModuleManager.ModRenderer.SelectionRay);
+    fVecZ := Normalize(Cross(fVecX, Vector(0, 1, 0))) * 0.01 * VecLength(ModuleManager.ModRenderer.SelectionRay);
+    end;
 end;
 
 procedure TModuleCameraDefault.HandleMouseUp(Event: String; Data, Result: Pointer);
 begin
+  if not (ModuleManager.ModInputHandler.Key[K_LCTRL]) then
+    begin
+    if (fRotating) or (fMoving) then
+      ModuleManager.ModInputHandler.UnlockMouse;
+    fRotating := False;
+    fMoving := False;
+    end;
+end;
+
+procedure TModuleCameraDefault.HandleScroll(Event: String; Data, Result: Pointer);
+begin
+  if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP] then
+    ActiveCamera.Position := ActiveCamera.Position + ModuleManager.ModRenderer.SelectionRay * 0.15
+  else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN] then
+    ActiveCamera.Position := ActiveCamera.Position - ModuleManager.ModRenderer.SelectionRay * 0.15;
 end;
 
 procedure TModuleCameraDefault.HandleKeyDown(Event: String; Data, Result: Pointer);
@@ -92,6 +124,21 @@ var
 begin
   if ActiveCamera = nil then exit;
 
+  if fRotating then
+    begin
+    ActiveCamera.Rotation.Y := fInitialYRotation - (ModuleManager.ModInputHandler.LockX - ModuleManager.ModInputHandler.MouseX);
+    ActiveCamera.Rotation.X := fInitialXRotation - (ModuleManager.ModInputHandler.LockY - ModuleManager.ModInputHandler.MouseY);
+    ActiveCamera.Position := fCamSource - fSourcePosition;
+    ActiveCamera.Position := ActiveCamera.Position * Matrix3D(RotationMatrix((ModuleManager.ModInputHandler.LockY - ModuleManager.ModInputHandler.MouseY), Normalize(Cross(fVecToFront, Vector(0, 1, 0)))));
+    ActiveCamera.Position := ActiveCamera.Position * Matrix3D(RotationMatrix((ModuleManager.ModInputHandler.LockX - ModuleManager.ModInputHandler.MouseX), Vector(0, 1, 0)));
+    ActiveCamera.Position := ActiveCamera.Position + fSourcePosition;
+    end
+  else if fMoving then
+    begin
+    ActiveCamera.Position := fCamSource - fVecX * (ModuleManager.ModInputHandler.LockX - ModuleManager.ModInputHandler.MouseX);
+    ActiveCamera.Position := ActiveCamera.Position - fVecZ * (ModuleManager.ModInputHandler.LockY - ModuleManager.ModInputHandler.MouseY);
+    end;
+
   // Advance speeds etc
   for i := 0 to 7 do
     begin
@@ -101,39 +148,6 @@ begin
   
   ActiveCamera.Position := ActiveCamera.Position + Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)), -Sin(DegToRad(ActiveCamera.Rotation.X)), -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)))) * (fSpeedFactors[DIR_FORWARD] - fSpeedFactors[DIR_BACKWARD]) * FPSDisplay.MS * 0.02;
   ActiveCamera.Position.Y := clamp(ActiveCamera.Position.Y, max(0, Park.pTerrain.HeightMap[ActiveCamera.Position.X, ActiveCamera.Position.Z] + 0.6), 300);
-{  if ModuleManager.ModInputHandler.Key[K_UP] then
-    begin
-    if fSpeed < 0.020 then
-      fSpeed := fSpeed + 0.000040 * FPSDisplay.MS * ShiftFactor
-    end
-  else if ModuleManager.ModInputHandler.Key[K_DOWN] then
-    begin
-    if fSpeed > -0.020 then
-      fSpeed := fSpeed - 0.000040 * FPSDisplay.MS * ShiftFactor
-    end
-  else
-    fSpeed := fSpeed / 1.2;
-  if ModuleManager.ModInputHandler.Key[K_A] then
-    begin
-    if fHSpeed < 0.020 then
-      fHSpeed := fHSpeed + 0.000040 * FPSDisplay.MS * ShiftFactor
-    end
-  else if ModuleManager.ModInputHandler.Key[K_D] then
-    begin
-    if fHSpeed > -0.020 then
-      fHSpeed := fHSpeed - 0.000040 * FPSDisplay.MS * ShiftFactor
-    end
-  else
-    fHSpeed := fHSpeed / 1.2;
-  if ModuleManager.ModInputHandler.Key[K_RIGHT] then
-    ActiveCamera.Rotation.Y := ActiveCamera.Rotation.Y + FPSDisplay.MS * 0.05
-  else if ModuleManager.ModInputHandler.Key[K_LEFT] then
-    ActiveCamera.Rotation.Y := ActiveCamera.Rotation.Y - FPSDisplay.MS * 0.05;
-  if ModuleManager.ModInputHandler.Key[K_W] then
-    ActiveCamera.Rotation.X := ActiveCamera.Rotation.X - FPSDisplay.MS * 0.05
-  else if ModuleManager.ModInputHandler.Key[K_S] then
-    ActiveCamera.Rotation.X := ActiveCamera.Rotation.X + FPSDisplay.MS * 0.05;
-  }
 
   ActiveCamera.Position.X := ActiveCamera.Position.X + Sin(DegToRad(ActiveCamera.Rotation.Y - 90)) * (fSpeedFactors[DIR_LEFT] - fSpeedFactors[DIR_RIGHT]) * FPSDisplay.MS * 0.02;
   ActiveCamera.Position.Z := ActiveCamera.Position.Z - Cos(DegToRad(ActiveCamera.Rotation.Y - 90)) * (fSpeedFactors[DIR_LEFT] - fSpeedFactors[DIR_RIGHT]) * FPSDisplay.MS * 0.02;
@@ -153,9 +167,6 @@ begin
   fModName := 'CameraDefault';
   fModType := 'Camera';
 
-  fSpeed := 0;
-  fHSpeed := 0;
-
   fMaxSpeedTime := 1;
 
   for i := 0 to high(fSpeedIncreasing) do
@@ -168,8 +179,12 @@ begin
       fTimeFactors[i] := 4;
     end;
 
+  fRotating := False;
+  fMoving := False;
+
   EventManager.AddCallback('BasicComponent.OnKeyDown', @HandleKeyDown);
   EventManager.AddCallback('BasicComponent.OnKeyUp', @HandleKeyUp);
+  EventManager.AddCallback('BasicComponent.OnScroll', @HandleScroll);
   EventManager.AddCallback('BasicComponent.OnClick', @HandleMouseDown);
   EventManager.AddCallback('BasicComponent.OnRelease', @HandleMouseUp);
 end;

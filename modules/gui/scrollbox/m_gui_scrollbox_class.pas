@@ -21,7 +21,6 @@ type
     public
       HScrollPosition, VScrollPosition: Integer;
       HScrollBar, VScrollBar: TScrollBarMode;
-      OnScroll: TCallbackProcedure;
       property Surface: TLabel read fSurface;
       property ContentHeight: Single read fCHeight;
       property ContentWidth: Single read fCwidth;

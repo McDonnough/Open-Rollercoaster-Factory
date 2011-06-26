@@ -1101,7 +1101,10 @@ begin
     GBuffer.Textures[2].Bind(0);
     DrawFullscreenQuad;
     glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+    if VecLengthNoRoot(fSelectionRay + fSelectionStart) < 0.01 then
+      fSelectionRay := Vector3D(Coord) - fSelectionStart;
     fFullscreenShader.Unbind;
+    
   SpareBuffer.Unbind;
 
   // Under-water view

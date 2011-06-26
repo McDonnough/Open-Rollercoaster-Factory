@@ -102,10 +102,9 @@ procedure TModuleGUIDefault.CallSignals;
     and (Component.Alpha > 0.01) then
       begin
       fHoverComponent := Component;
-      if fHoverComponent.ComponentType = CScrollBox then
-        if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN]) then
-          if TScrollBox(fHoverComponent).OnScroll <> nil then
-            TScrollBox(fHoverComponent).OnScroll(fHoverComponent);
+      if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN]) then
+        if fHoverComponent.OnScroll <> nil then
+          fHoverComponent.OnScroll(fHoverComponent);
       end;
     for i := 0 to high(Component.Children) do
       try
@@ -139,7 +138,7 @@ begin
       if fHoverComponent.OnHover <> nil then
         fHoverComponent.OnHover(fHoverComponent);
       end;
-    if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT]) then
+    if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_MIDDLE]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT]) then
       begin
       if (not fClicking) and (fHoverComponent.OnClick <> nil) then
         begin
@@ -167,7 +166,7 @@ begin
       if (fFocusComponent.OnKeyUp <> nil) and not (ModuleManager.ModInputHandler.Key[i]) and (fKeys[i] <> ModuleManager.ModInputHandler.Key[i]) then
         fFocusComponent.OnKeyUp(fFocusComponent, i);
       end;
-    if (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (fClicking) and (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT])then
+    if (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_MIDDLE]) and (fClicking) and (not ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT])then
       begin
       if (fFocusComponent.OnRelease <> nil) then
         fFocusComponent.OnRelease(fFocusComponent);
@@ -193,6 +192,7 @@ begin
   fBasicComponent := TGUIComponent.Create(nil, CNothing);
   fBasicComponent.OnClick := @BasicComponentOnClick;
   fBasicComponent.OnRelease := @BasicComponentOnRelease;
+  fBasicComponent.OnScroll := @BasicComponentOnScroll;
   fBasicComponent.OnKeyDown := @BasicComponentOnKeyDown;
   fBasicComponent.OnKeyUp := @BasicComponentOnKeyUp;
 

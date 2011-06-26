@@ -15,6 +15,7 @@ type
       constructor Create;
       procedure CheckModConf;
       procedure UpdateData;
+      procedure UnlockMouse;
     end;
 
 implementation
@@ -32,6 +33,13 @@ begin
   fLockY := 0;
 end;
 
+procedure TModuleInputHandlerGLFW.UnlockMouse;
+begin
+  fMouseX := fLockX;
+  fMouseY := fLockY;
+  fLocked := False;
+  glfwSetMousePos(fMouseX, fMouseY);
+end;
 procedure TModuleInputHandlerGLFW.CheckModConf;
 begin
 end;

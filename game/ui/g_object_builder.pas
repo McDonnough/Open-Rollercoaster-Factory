@@ -57,38 +57,43 @@ var
 begin
   if fBuilding <> nil then
     begin
-    if ModuleManager.ModInputHandler.MouseButtons[MOUSE_MIDDLE] then
+    if ModuleManager.ModInputHandler.Key[K_LCTRL] then
       begin
-      if not ModuleManager.ModInputHandler.Locked then
+      if ModuleManager.ModInputHandler.MouseButtons[MOUSE_MIDDLE] then
         begin
-        ModuleManager.ModInputHandler.LockMouse;
-        fStartRotation := TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value;
-        end;
-      TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value := fStartRotation + 5.0 * Round(0.2 * (ModuleManager.ModInputHandler.MouseX - ModuleManager.ModInputHandler.LockX));
-      while TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value < -180 do
-        TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value += 360.0;
-      while TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value > 180 do
-        TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value -= 360.0;
-      end
-    else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
-      begin
-      if not ModuleManager.ModInputHandler.Locked then
+        if not ModuleManager.ModInputHandler.Locked then
+          begin
+          ModuleManager.ModInputHandler.LockMouse;
+          fStartRotation := TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value;
+          end;
+        TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value := fStartRotation + 5.0 * Round(0.2 * (ModuleManager.ModInputHandler.MouseX - ModuleManager.ModInputHandler.LockX));
+        while TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value < -180 do
+          TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value += 360.0;
+        while TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value > 180 do
+          TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value -= 360.0;
+        end
+      else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_RIGHT] then
         begin
-        ModuleManager.ModInputHandler.LockMouse;
-        fStartRotation := TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value;
+        if not ModuleManager.ModInputHandler.Locked then
+          begin
+          ModuleManager.ModInputHandler.LockMouse;
+          fStartRotation := TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value;
+          end;
+        TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value := fStartRotation + 5.0 * Round(0.2 * (ModuleManager.ModInputHandler.MouseX - ModuleManager.ModInputHandler.LockX));
+        while TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value < -90 do
+          TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value += 180.0;
+        while TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value > 90 do
+          TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value -= 180.0;
+        end
+      else
+        begin
+        if ModuleManager.ModInputHandler.Locked then
+          ModuleManager.ModInputHandler.UnlockMouse;
+        fIP := Park.SelectionEngine.SelectionCoord;
         end;
-      TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value := fStartRotation + 5.0 * Round(0.2 * (ModuleManager.ModInputHandler.MouseX - ModuleManager.ModInputHandler.LockX));
-      while TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value < -90 do
-        TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value += 180.0;
-      while TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value > 90 do
-        TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value -= 180.0;
       end
     else
-      begin
-      if ModuleManager.ModInputHandler.Locked then
-        ModuleManager.ModInputHandler.UnlockMouse;
       fIP := Park.SelectionEngine.SelectionCoord;
-      end;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.x')).Checked then fIP.X := TSlider(fWindow.GetChildByName('object_builder.offset.x')).Value;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked then fIP.Y := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value;
     if TCheckBox(fWindow.GetChildByName('object_builder.lock.z')).Checked then fIP.Z := TSlider(fWindow.GetChildByName('object_builder.offset.z')).Value;

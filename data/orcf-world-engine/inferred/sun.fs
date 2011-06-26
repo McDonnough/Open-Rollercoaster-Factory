@@ -116,10 +116,8 @@ void main(void) {
       gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.y);
       gl_FragData[0].rgb = mix(ol, gl_FragData[0].rgb, min(3.0 * abs(Height.r - Vertex.y) * length(factor) / sqrt(3.0) * dotprod, 1.0));
     }
-
-    gl_FragData[1] = vec4(gl_FragData[0].a * gl_FragData[0].rgb, 1.0);
-
   }
+  gl_FragData[1] = vec4(gl_FragData[0].a * gl_FragData[0].rgb, 1.0);
   gl_FragData[0].rgb += Emission.rgb;
 
   // No lighting

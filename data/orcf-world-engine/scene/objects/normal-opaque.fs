@@ -46,6 +46,9 @@ void main(void) {
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
   gl_FragData[2].rgb = Vertex;
   gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
+  gl_FragData[0] = vec4(gl_FrontMaterial.diffuse.rgb, gl_FrontMaterial.specular.r);
+  if (HasTexture == 1)
+    gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;
   vec3 normal = Normal;
   if (HasNormalMap == 1) {
     vec3 q0 = dFdx(Vertex.xyz);
@@ -61,10 +64,6 @@ void main(void) {
   }
   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Vertex, 1.0)).xyz);
   gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal))))));
-  gl_FragData[0].rgb = gl_FrontMaterial.diffuse.rgb;
-  if (HasTexture == 1)
-    gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;
   gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);
-  gl_FragData[0].a = gl_FrontMaterial.specular.r;
   gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
 }

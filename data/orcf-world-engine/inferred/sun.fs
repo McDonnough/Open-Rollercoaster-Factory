@@ -125,7 +125,5 @@ void main(void) {
   // No lighting
 
   if (abs(Normal.x) + abs(Normal.y) + abs(Normal.z) == 0.0)
-    gl_FragData[0].a = -1.0;
-
-  
+    gl_FragData[0].a = -1.0;  
 }

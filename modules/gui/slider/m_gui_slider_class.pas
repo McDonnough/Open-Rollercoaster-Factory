@@ -132,6 +132,8 @@ begin
     fRealValue := fRealValue + ValuePerPixel * PixelOffset;
     Value := Clamp(Round(fRealValue * Power(10, Digits)) / Power(10, Digits), Min, Max);
     CX := ModuleManager.ModInputHandler.MouseX;
+    if OnChange <> nil then
+      OnChange(Self);
     end;
   ModuleManager.ModGUISlider.Render(Self);
 end;

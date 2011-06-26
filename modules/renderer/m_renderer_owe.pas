@@ -905,6 +905,7 @@ begin
     glClearDepth(1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.3);
     glAlphaFunc(GL_NOTEQUAL, 0.0);
     glDisable(GL_BLEND);
     glDepthFunc(GL_LEQUAL);

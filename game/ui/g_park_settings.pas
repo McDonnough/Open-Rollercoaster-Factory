@@ -11,6 +11,8 @@ type
     public
       procedure ChangeTab(Event: String; Data, Result: Pointer);
       procedure ChangeParkData(Event: String; Data, Result: Pointer);
+      procedure UpdateTimeSlider(Event: String; Data, Result: Pointer);
+      procedure ChangeTime(Event: String; Data, Result: Pointer);
       constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
     end;
@@ -18,7 +20,17 @@ type
 implementation
 
 uses
-  m_gui_label_class, m_gui_edit_class, m_gui_tabbar_class, m_gui_button_class, m_gui_iconifiedbutton_class;
+  m_gui_label_class, m_gui_edit_class, m_gui_tabbar_class, m_gui_button_class, m_gui_iconifiedbutton_class, m_gui_slider_class;
+
+procedure TGameParkSettings.UpdateTimeSlider(Event: String; Data, Result: Pointer);
+begin
+  TSlider(fWindow.GetChildByName('park_settings.time')).Value := Park.pSky.Time;
+end;
+
+procedure TGameParkSettings.ChangeTime(Event: String; Data, Result: Pointer);
+begin
+  Park.pSky.Time := TSlider(fWindow.GetChildByName('park_settings.time')).Value;
+end;
 
 procedure TGameParkSettings.ChangeTab(Event: String; Data, Result: Pointer);
 begin
@@ -42,12 +54,16 @@ begin
   EventManager.AddCallback('GUIActions.park_settings.change_name', @ChangeParkData);
   EventManager.AddCallback('GUIActions.park_settings.change_description', @ChangeParkData);
   EventManager.AddCallback('GUIActions.park_settings.change_author', @ChangeParkData);
+  EventManager.AddCallback('TPark.Render', @UpdateTimeSlider);
+  EventManager.AddCallback('GUIActions.park_settings.time.changed', @ChangeTime);
 end;
 
 destructor TGameParkSettings.Free;
 begin
   EventManager.RemoveCallback(@ChangeParkData);
   EventManager.RemoveCallback(@ChangeTab);
+  EventManager.RemoveCallback(@UpdateTimeSlider);
+  EventManager.RemoveCallback(@ChangeTime);
   inherited Free;
 end;
 

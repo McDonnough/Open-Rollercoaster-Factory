@@ -100,12 +100,7 @@ procedure TModuleGUIDefault.CallSignals;
     if (ModuleManager.ModInputHandler.MouseX >= Component.MinX) and (ModuleManager.ModInputHandler.MouseX <= Component.MaxX)
     and (ModuleManager.ModInputHandler.MouseY >= Component.MinY) and (ModuleManager.ModInputHandler.MouseY <= Component.MaxY)
     and (Component.Alpha > 0.01) then
-      begin
       fHoverComponent := Component;
-      if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN]) then
-        if fHoverComponent.OnScroll <> nil then
-          fHoverComponent.OnScroll(fHoverComponent);
-      end;
     for i := 0 to high(Component.Children) do
       try
         SendSignals(Component.ChildrenRightOrder[i]);
@@ -117,7 +112,7 @@ var
   i: integer;
   ResX, ResY: Integer;
   Container: TGUIComponent;
-  fOldHoverComponent: TGUIComponent;
+  fOldHoverComponent, fScrollComponent: TGUIComponent;
 begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBasicComponent.Width := ResX;
@@ -155,6 +150,20 @@ begin
       fFocusComponent := fHoverComponent;
       fClicking := true;
       end;
+    end;
+
+  if ((ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP]) or (ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN])) and (fHoverComponent <> nil) then
+    begin
+    fScrollComponent := fHoverComponent;
+    repeat
+      if fScrollComponent.OnScroll <> nil then
+        break;
+      fScrollComponent := fScrollComponent.Parent;
+    until
+      fScrollComponent = nil;
+    if fScrollComponent <> nil then
+      if fScrollComponent.OnScroll <> nil then
+        fScrollComponent.OnScroll(fScrollComponent);
     end;
 
   if fFocusComponent <> nil then

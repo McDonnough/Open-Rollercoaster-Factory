@@ -40,6 +40,7 @@ begin
   fLocked := False;
   glfwSetMousePos(fMouseX, fMouseY);
 end;
+
 procedure TModuleInputHandlerGLFW.CheckModConf;
 begin
 end;

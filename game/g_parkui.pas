@@ -239,10 +239,11 @@ begin
   fButton.Top := fTop;
   fButton.Width := 64;
   fButton.Height := 64;
-  if (fWindow.Name <> '') and (not Expanded) then
+  if (not Expanded) then
     begin
     fExpanded := true;
-    EventManager.CallEvent('GUIActions.' + fWindow.Name + '.open', Sender, nil);
+    if (fWindow.Name <> '') then
+      EventManager.CallEvent('GUIActions.' + fWindow.Name + '.open', Sender, nil);
     end;
 end;
 
@@ -257,10 +258,11 @@ begin
   fButton.Top := fBtnTop;
   fButton.Width := 48;
   fButton.Height := 48;
-  if (fWindow.Name <> '') and (Expanded) then
+  if (Expanded) then
     begin
     fExpanded := false;
-    EventManager.CallEvent('GUIActions.' + fWindow.Name + '.close', Sender, nil);
+    if (fWindow.Name <> '') then
+      EventManager.CallEvent('GUIActions.' + fWindow.Name + '.close', Sender, nil);
     end;
 end;
 

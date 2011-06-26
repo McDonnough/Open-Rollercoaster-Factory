@@ -1351,7 +1351,7 @@ begin
   inc(fFrameID);
 //   writeln(glGetError());
 
-  if CaptureNextFrame then
+  if (CaptureNextFrame) and not (Park.ScreenCaptureTool.WithUI) then
     begin
     CaptureNextFrame := False;
     EventManager.CallEvent('TRenderer.CaptureNow', self, nil);

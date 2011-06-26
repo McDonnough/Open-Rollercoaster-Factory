@@ -32,6 +32,7 @@ type
       procedure SelectMaterial(Event: String; Data, Result: Pointer);
       procedure UpdateGrid(Event: String; Data, Result: Pointer);
       procedure UpdateMatrix(Event: String; Data, Result: Pointer);
+      procedure UpdateMirror(Event: String; Data, Result: Pointer);
       procedure UpdateMaterial(Event: String; Data, Result: Pointer);
       procedure OnClose(Event: String; Data, Result: Pointer);
       procedure OnShow(Event: String; Data, Result: Pointer);
@@ -134,6 +135,7 @@ begin
     begin
     O := TRealObject.Create(fBuildingResource);
     O.GeoObject.Matrix := fBuilding.Matrix;
+    O.GeoObject.Mirror := fBuilding.Mirror;
     Park.pObjects.Append(O);
     SelectionEngine.Add(O.GeoObject, 'GUIActions.terrain_edit.marks.move');
     end;
@@ -152,6 +154,18 @@ end;
 
 procedure TGameObjectBuilder.UpdateMatrix(Event: String; Data, Result: Pointer);
 begin
+end;
+
+procedure TGameObjectBuilder.UpdateMirror(Event: String; Data, Result: Pointer);
+var
+  Value: Array[Boolean] of Single = (1.0, -1.0);
+begin
+  if fBuilding <> nil then
+    begin
+    fBuilding.Mirror.X := Value[TCheckBox(fWindow.GetChildByName('object_builder.mirror.x')).Checked];
+    fBuilding.Mirror.Y := Value[TCheckBox(fWindow.GetChildByName('object_builder.mirror.y')).Checked];
+    fBuilding.Mirror.Z := Value[TCheckBox(fWindow.GetChildByName('object_builder.mirror.z')).Checked];
+    end;
 end;
 
 procedure TGameObjectBuilder.UpdateMaterial(Event: String; Data, Result: Pointer);
@@ -199,6 +213,7 @@ begin
   EventManager.AddCallback('GUIActions.object_builder.open', @OnShow);
   EventManager.AddCallback('GUIActions.object_builder.close', @OnClose);
   EventManager.AddCallback('GUIActions.object_builder.snap.grid', @SnapToGrid);
+  EventManager.AddCallback('GUIActions.object_builder.mirror', @UpdateMirror);
   SelectionEngine := TSelectionEngine.Create;
   SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
   fIP := Vector(0, 0, 0);
@@ -214,6 +229,7 @@ end;
 destructor TGameObjectBuilder.Free;
 begin
   SelectionEngine.Free;
+  EventManager.RemoveCallback(@UpdateMirror);
   EventManager.RemoveCallback(@UpdateGrid);
   EventManager.RemoveCallback(@SnapToGrid);
   EventManager.RemoveCallback(@OnShow);

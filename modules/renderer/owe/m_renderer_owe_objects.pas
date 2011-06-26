@@ -27,6 +27,7 @@ type
 
   TMeshDistanceAssoc = record
     Mesh: TManagedMesh;
+    ManagedObject: TManagedObject;
     ParticleGroup: TParticleGroup;
     Distance: Single;
     end;
@@ -144,6 +145,7 @@ begin
   Sync;
   SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
   fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := fManagedObjects[fLastManagedObject];
   fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
   fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
 end;
@@ -153,6 +155,7 @@ begin
   Sync;
   SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
   fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := nil;
+  fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := nil;
   fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := TParticleGroup(Data);
   fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
 end;
@@ -310,6 +313,10 @@ begin
       continue;
     Color := CurrO.SelectionID;
     fCurrentShader.UniformI('SelectionMeshID', ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
+    fCurrentShader.UniformF('Mirror', CurrO.Mirror);
+    with CurrO.Mirror do
+      if X * Y * Z < 0 then
+        ModuleManager.ModRenderer.InvertFrontFace;
     for j := 0 to high(CurrO.Meshes) do
       begin
       fCurrentShader.UniformF('Alpha', CurrO.Meshes[j].Material.Color.W);
@@ -334,6 +341,9 @@ begin
       CurrMM.VBO.Render;
       CurrMM.VBO.UnBind;
       end;
+    with CurrO.Mirror do
+      if X * Y * Z < 0 then
+        ModuleManager.ModRenderer.InvertFrontFace;
     end;
 
   fSelectionShader.Unbind;
@@ -352,24 +362,27 @@ begin
     CurrentGBuffer.Textures[3].Bind(6);
     end;
   fCurrentMaterialCount := 1;
+  if LightShadowMode then
+    fCurrentShader := fTransparentLightShadowShader
+  else if ShadowMode then
+    fCurrentShader := fTransparentShadowShader
+  else if MaterialMode then
+    fCurrentShader := fTransparentMaterialShader
+  else
+    fCurrentShader := fTransparentShader;
   for i := 0 to high(fTransparentMeshOrder) do
     begin
+    fCurrentShader.UniformF('Mirror', fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror);
+    with fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror do
+      if X * Y * Z < 0 then
+        ModuleManager.ModRenderer.InvertFrontFace;
     if fTransparentMeshOrder[i].Mesh <> nil then
       begin
       if ((fTransparentMeshOrder[i].Mesh.Visible) or (ShadowMode)) and ((fTransparentMeshOrder[i].Mesh.ParentObject <> fExcludedMeshObject) or (fTransparentMeshOrder[i].Mesh <> fExcludedMesh)) then
         if fTransparentMeshOrder[i].Mesh.Transparent then
           begin
-          if LightShadowMode then
-            fCurrentShader := fTransparentLightShadowShader
-          else if ShadowMode then
-            fCurrentShader := fTransparentShadowShader
-          else if MaterialMode then
-            fCurrentShader := fTransparentMaterialShader
-          else
-            begin
-            fCurrentShader := fTransparentShader;
+          if fCurrentShader = fTransparentShader then
             fCurrentShader.UniformF('MaskOffset', fCurrentMaterialCount / 16, 0);
-            end;
           fCurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
           if not (ShadowMode or LightShadowMode) then
             begin
@@ -385,6 +398,9 @@ begin
     else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
       ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
     inc(fCurrentMaterialCount);
+    with fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror do
+      if X * Y * Z < 0 then
+        ModuleManager.ModRenderer.InvertFrontFace;
     end;
 end;
 
@@ -393,19 +409,28 @@ var
   i, j: Integer;
 begin
   MaterialMode := False;
+  if ShadowMode then
+    fCurrentShader := fOpaqueShadowShader
+  else if LightShadowMode then
+    fCurrentShader := fOpaqueLightShadowShader
+  else
+    fCurrentShader := fOpaqueShader;
   for i := 0 to high(fManagedObjects) do
+    begin
+    fCurrentShader.UniformF('Mirror', fManagedObjects[i].GeoObject.Mirror);
+    with fManagedObjects[i].GeoObject.Mirror do
+      if X * Y * Z < 0 then
+        ModuleManager.ModRenderer.InvertFrontFace;
     for j := 0 to high(fManagedObjects[i].Meshes) do
       if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((fManagedObjects[i] <> fExcludedMeshObject) or (fManagedObjects[i].Meshes[j] <> fExcludedMesh)) then
         if not fManagedObjects[i].Meshes[j].Transparent then
           begin
-          if ShadowMode then
-            fCurrentShader := fOpaqueShadowShader
-          else if LightShadowMode then
-            fCurrentShader := fOpaqueLightShadowShader
-          else
-            fCurrentShader := fOpaqueShader;
           Render(fManagedObjects[i].Meshes[j]);
           end;
+    with fManagedObjects[i].GeoObject.Mirror do
+      if X * Y * Z < 0 then
+        ModuleManager.ModRenderer.InvertFrontFace;
+    end;
 end;
 
 procedure TRObjects.CheckVisibility;

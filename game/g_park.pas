@@ -29,6 +29,7 @@ type
 
       fName, fAuthor, fDescription: String;
 
+      property ScreenCaptureTool: TScreenCaptureTool read fScreenCaptureTool;
       property GameObjectManager: TGameObjectManager read fGameObjectManager;
       property CanRender: Boolean read fCanRender;
       property OCFFile: TOCFFile read fFile;

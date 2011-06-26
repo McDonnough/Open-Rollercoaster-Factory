@@ -19,6 +19,7 @@ type
 
       // General
       fCurrentMode: TScreenCaptureMode;
+      fWithUI: Boolean;
 
       procedure InitVideo;
       procedure FinishVideo;
@@ -27,6 +28,7 @@ type
       procedure CaptureScreenshot(Event: String; Data, Result: Pointer);
       procedure HandleKeypress(Event: String; Data, Result: Pointer);
     public
+      property WithUI: Boolean read fWithUI;
       property CurrentMode: TScreenCaptureMode read fCurrentMode;
       procedure Advance;
       constructor Create;
@@ -194,6 +196,7 @@ end;
 
 procedure TScreenCaptureTool.HandleKeypress(Event: String; Data, Result: Pointer);
 begin
+  fWithUI := ModuleManager.ModInputHandler.Key[K_LCTRL];
   case Integer(Result^) of
     K_F10:
       begin
@@ -221,6 +224,7 @@ end;
 constructor TScreenCaptureTool.Create;
 begin
   fCurrentMode := cmNone;
+  fWithUI := False;
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 

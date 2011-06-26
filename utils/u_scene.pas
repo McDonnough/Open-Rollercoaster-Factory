@@ -166,6 +166,7 @@ type
       Offsets: Array[0..5] of PtrUInt;
       ObjectID: Integer;
     public
+      Mirror: TVector3D;
       Meshes: Array of TGeoMesh;
       Armatures: Array of TArmature;
       Materials: Array of TMaterial;
@@ -830,6 +831,8 @@ var
 begin
   Result := TGeoObject.Create;
 
+  Result.Mirror := Mirror;
+
   if Script <> nil then
     Result.Script := Script.Code.CreateInstance
   else
@@ -1059,6 +1062,7 @@ end;
 
 constructor TGeoObject.Create;
 begin
+  Mirror := Vector(1, 1, 1);
   Matrix := Identity4D;
   Script := nil;
   FirstRun := True;

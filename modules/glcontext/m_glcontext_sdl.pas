@@ -47,7 +47,7 @@ type
 implementation
 
 uses
-  m_varlist, main, u_functions, u_events;
+  m_varlist, main, u_functions, u_events, g_park;
 
 procedure TModuleGLContextSDL.ChangeCursor(Cursor: TMouseCursor);
 begin
@@ -260,6 +260,13 @@ begin
   glDisable(GL_BLEND);
 
   fCursorTextures[MouseCursor].Unbind;
+
+  if (ModuleManager.ModRenderer.CaptureNextFrame) and (Park.ScreenCaptureTool.WithUI) then
+    begin
+    ModuleManager.ModRenderer.CaptureNextFrame := False;
+    EventManager.CallEvent('TRenderer.CaptureNow', self, nil);
+    end;
+
   SDL_GL_SwapBuffers;
 end;
 

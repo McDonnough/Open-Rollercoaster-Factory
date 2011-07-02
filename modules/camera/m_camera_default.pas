@@ -83,7 +83,7 @@ begin
       end
     else
       Exit;
-    fSourcePosition := ModuleManager.ModRenderer.SelectionStart + ModuleManager.ModRenderer.SelectionRay;
+    fSourcePosition := ModuleManager.ModRenderer.SelectionStart + Normalize(ModuleManager.ModRenderer.SelectionRay) * Min(100, VecLength(ModuleManager.ModRenderer.SelectionRay));
     fInitialYRotation := ActiveCamera.Rotation.Y;
     fInitialXRotation := ActiveCamera.Rotation.X;
     fCamSource := ActiveCamera.Position;

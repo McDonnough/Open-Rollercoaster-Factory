@@ -109,10 +109,11 @@ end;
 
 procedure TModuleCameraDefault.HandleScroll(Event: String; Data, Result: Pointer);
 begin
-  if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP] then
-    fZoomSpeed := fZoomSpeed + 0.03
-  else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN] then
-    fZoomSpeed := fZoomSpeed - 0.03;
+  if not (ModuleManager.ModInputHandler.Key[K_LCTRL]) then
+    if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP] then
+      fZoomSpeed := fZoomSpeed + 0.03
+    else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN] then
+      fZoomSpeed := fZoomSpeed - 0.03;
 end;
 
 procedure TModuleCameraDefault.HandleKeyDown(Event: String; Data, Result: Pointer);

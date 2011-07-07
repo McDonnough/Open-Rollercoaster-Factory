@@ -36,6 +36,7 @@ type
       procedure UpdateMaterial(Event: String; Data, Result: Pointer);
       procedure OnClose(Event: String; Data, Result: Pointer);
       procedure OnShow(Event: String; Data, Result: Pointer);
+      procedure OnScroll(Event: String; Data, Result: Pointer);
       procedure SnapToGrid(Event: String; Data, Result: Pointer);
       procedure BuildObject(Resource: TObjectResource);
       constructor Create(Resource: String; ParkUI: TXMLUIManager);
@@ -95,9 +96,6 @@ begin
       end
     else
       fIP := Park.SelectionEngine.SelectionCoord;
-    if TCheckBox(fWindow.GetChildByName('object_builder.lock.x')).Checked then fIP.X := TSlider(fWindow.GetChildByName('object_builder.offset.x')).Value;
-    if TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked then fIP.Y := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value;
-    if TCheckBox(fWindow.GetChildByName('object_builder.lock.z')).Checked then fIP.Z := TSlider(fWindow.GetChildByName('object_builder.offset.z')).Value;
     if GridEnabled then
       begin
       Mat := Matrix3D(RotationMatrix(GridRotation, Vector(0, -1, 0)));
@@ -106,6 +104,9 @@ begin
       fIP := Vector(Round((fIP.X + GridOffset.X) / GridSize) * GridSize - GridOffset.X, fIP.Y, Round((fIP.Z + GridOffset.Y) / GridSize) * GridSize - GridOffset.Y);
       fIP := fIP * InvMat;
       end;
+    if TCheckBox(fWindow.GetChildByName('object_builder.lock.x')).Checked then fIP.X := TSlider(fWindow.GetChildByName('object_builder.offset.x')).Value;
+    if TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked then fIP.Y := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value;
+    if TCheckBox(fWindow.GetChildByName('object_builder.lock.z')).Checked then fIP.Z := TSlider(fWindow.GetChildByName('object_builder.offset.z')).Value;
     fIP := Vector(
       Clamp(fIP.X, 0, 0.2 * Park.pTerrain.SizeX),
       Clamp(fIP.Y, 0, 256),
@@ -194,6 +195,23 @@ begin
   fOpen := True;
 end;
 
+procedure TGameObjectBuilder.OnScroll(Event: String; Data, Result: Pointer);
+begin
+  if ModuleManager.ModInputHandler.Key[K_LCTRL] then
+    begin
+    if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_UP] then
+      begin
+      TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked := True;
+      TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value + 0.2;
+      end
+    else if ModuleManager.ModInputHandler.MouseButtons[MOUSE_WHEEL_DOWN] then
+      begin
+      TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value := TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value - 0.2;
+      TCheckBox(fWindow.GetChildByName('object_builder.lock.y')).Checked := True;
+      end
+    end;
+end;
+
 procedure TGameObjectBuilder.BuildObject(Resource: TObjectResource);
 begin
   EventManager.AddCallback('BasicComponent.OnClick', @AddObject);
@@ -214,6 +232,7 @@ begin
   EventManager.AddCallback('GUIActions.object_builder.close', @OnClose);
   EventManager.AddCallback('GUIActions.object_builder.snap.grid', @SnapToGrid);
   EventManager.AddCallback('GUIActions.object_builder.mirror', @UpdateMirror);
+  EventManager.AddCallback('BasicComponent.OnScroll', @OnScroll);
   SelectionEngine := TSelectionEngine.Create;
   SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
   fIP := Vector(0, 0, 0);
@@ -232,6 +251,7 @@ begin
   EventManager.RemoveCallback(@UpdateMirror);
   EventManager.RemoveCallback(@UpdateGrid);
   EventManager.RemoveCallback(@SnapToGrid);
+  EventManager.RemoveCallback(@OnScroll);
   EventManager.RemoveCallback(@OnShow);
   EventManager.RemoveCallback(@OnClose);
   EventManager.RemoveCallback(@UpdateBOPos);

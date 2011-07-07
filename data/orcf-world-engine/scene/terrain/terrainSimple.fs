@@ -15,5 +15,5 @@ void main(void) {
   
   gl_FragData[1] = vec4(0.0, 1.0, 0.0, 2.0);
   gl_FragData[0].rgb = texture2D(TerrainTexture, clamp((Vertex.xz / 32.0 - floor(Vertex.xz / 32.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0).rgb;
-  gl_FragData[0].a = 0.02;
+  gl_FragData[0].a = 0.0;
 }

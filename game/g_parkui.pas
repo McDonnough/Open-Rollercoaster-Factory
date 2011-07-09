@@ -4,10 +4,54 @@ interface
 
 uses
   SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml,
-  m_gui_label_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, m_gui_tabbar_class, u_functions,
-  m_gui_slider_class, m_gui_checkbox_class;
+  m_gui_label_class, m_gui_image_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, m_gui_tabbar_class, u_functions,
+  m_gui_slider_class, m_gui_checkbox_class, u_vectors, math, m_texmng_class, u_math;
 
 type
+  TColorPicker = class;
+
+  TColorPickerWindow = class(TLabel)
+    protected
+      ResX, ResY: Integer;
+      fR, fG, fB: TSlider;
+      fCircle, fLuminosity: TImage;
+      fCircleMark, fLuminosityMark: TImage;
+      fContainerWindow: TWindow;
+      fPicker: TColorPicker;
+      fWheelTexture, fLuminosityTexture: TTexture;
+      procedure fStartChangeHueSaturation(Sender: TGUIComponent);
+      procedure fStartChangeLuminosity(Sender: TGUIComponent);
+      procedure fEndChanges(Sender: TGUIComponent);
+      procedure fChangeHueSaturation(Event: String; Data, Result: Pointer);
+      procedure fChangeLuminosity(Event: String; Data, Result: Pointer);
+      procedure fChangeHSL(Sender: TGUIComponent);
+      procedure fChangeRGB(Sender: TGUIComponent);
+      procedure fClose(Sender: TGUIComponent);
+    public
+      procedure Show(Picker: TColorPicker);
+      constructor Create(Picker: TColorPicker);
+    end;
+
+  TColorPicker = class(TLabel)
+    protected
+      fReset: TIconifiedButton;
+      fChooser: TButton;
+      fDisplay: TLabel;
+      fCurrentValue: TVector3D;
+      fDefaultValue: TVector3D;
+      procedure fDoReset(Sender: TGUIComponent);
+      procedure fPick(Sender: TGUIComponent);
+      procedure fSetCurrentValue(C: TVector3D);
+    public
+      ChangeEvent: String;
+      property CurrentColor: TVector3D read fCurrentValue write fSetCurrentValue;
+      property DefaultColor: TVector3D read fDefaultValue write fDefaultValue;
+      procedure CallUpdateEvent;
+      procedure UpdateDimensions;
+      constructor Create(mParent: TGUIComponent);
+    end;
+    
+
   TCallbackArray = record
     OnClick, OnRelease: String;
     OnKeyDown, OnKeyUp: String;
@@ -87,7 +131,8 @@ var
 implementation
 
 uses
-  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings, g_object_selector, g_object_builder;
+  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings, g_object_selector, g_object_builder, u_graphics,
+  m_inputhandler_class;
 
 type
   TParkUIWindowList = record
@@ -101,6 +146,273 @@ type
 
 var
   WindowList: TParkUIWindowList;
+  ColorPickerWindow: TColorPickerWindow = nil;
+
+procedure TColorPickerWindow.fStartChangeHueSaturation(Sender: TGUIComponent);
+begin
+  EventManager.AddCallback('TPark.Render', @fChangeHueSaturation);
+end;
+
+procedure TColorPickerWindow.fStartChangeLuminosity(Sender: TGUIComponent);
+begin
+  EventManager.AddCallback('TPark.Render', @fChangeLuminosity);
+end;
+
+procedure TColorPickerWindow.fEndChanges(Sender: TGUIComponent);
+begin
+  EventManager.RemoveCallback(@fChangeHueSaturation);
+  EventManager.RemoveCallback(@fChangeLuminosity);
+end;
+
+procedure TColorPickerWindow.fChangeHueSaturation(Event: String; Data, Result: Pointer);
+var
+  A: TVector2D;
+begin
+  A := Vector(ModuleManager.ModInputHandler.MouseX - fCircle.AbsX, ModuleManager.ModInputHandler.MouseY - fCircle.AbsY) - 120.0;
+  A := Normalize(A) * Min(120, VecLength(A));
+  fCircleMark.Left := A.X + 118;
+  fCircleMark.Top := A.Y + 118;
+  fChangeHSL(fCircle);
+  if not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT] then
+    fEndChanges(Self);
+end;
+
+procedure TColorPickerWindow.fChangeLuminosity(Event: String; Data, Result: Pointer);
+begin
+  fLuminosityMark.Top := Clamp(ModuleManager.ModInputHandler.MouseY - fLuminosity.AbsY - 2, 0, 239);
+  fChangeHSL(fLuminosity);
+  if not ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT] then
+    fEndChanges(Self);
+end;
+
+procedure TColorPickerWindow.fChangeHSL(Sender: TGUIComponent);
+var
+  tmp: DWord;
+  RGB: TVector3D;
+  Luminosity, Saturation, Degrees: Single;
+  A: TVector2D;
+begin
+  if Sender = fCircle then
+    A := Vector(ModuleManager.ModInputHandler.MouseX - fCircle.AbsX, ModuleManager.ModInputHandler.MouseY - fCircle.AbsY) - 120.0
+  else
+    A := Vector(fCircleMark.Left, fCircleMark.Top) - 118.0;
+  if Sender = fLuminosity then
+    Luminosity := 255 - (Clamp(ModuleManager.ModInputHandler.MouseY - fLuminosity.AbsY - 2, 0, 239) * 255 / 239)
+  else
+    Luminosity := 255 - (fLuminosityMark.Top * 255 / 239);
+  Degrees := ArcCos(DotProduct(Normalize(A), Vector(0, -1)));
+  if DotProduct(A, Vector(1, 0)) < 0 then
+    Degrees := 6.283185 - Degrees;
+  Degrees := 255 * FPart(Degrees / 6.283185);
+  Saturation := 255 * Min(VecLength(A) / 120, 1);
+  tmp := Round(Degrees) or (Round(Saturation) shl 8) or (Round(Luminosity) shl 16) or $FF000000;
+  tmp := HSVAtoRGBA(tmp);
+  RGB := Vector(tmp and $FF, (tmp shr 8) and $FF, (tmp shr 16) and $FF);
+  fR.Value := RGB.X;
+  fG.Value := RGB.Y;
+  fB.Value := RGB.Z;
+  fPicker.CurrentColor := RGB / 255.0;
+  fCircle.Color := Vector(Luminosity, Luminosity, Luminosity) / 255;
+  fLuminosity.Color := RGB / Max(1, Max(Max(RGB.X, RGB.Y), RGB.Z));
+end;
+
+procedure TColorPickerWindow.fChangeRGB(Sender: TGUIComponent);
+var
+  tmp: DWord;
+  RGB, HSL: TVector3D;
+  VectorLength: Single;
+  A: TVector2D;
+begin
+  fPicker.CurrentColor := Vector(fR.Value, fG.Value, fB.Value) / 255.0;
+  tmp := Round(fR.Value) or (Round(fG.Value) shl 8) or (Round(fB.Value) shl 16) or $FF000000;
+  tmp := RGBAtoHSVA(tmp);
+  HSL := Vector(tmp and $FF, (tmp shr 8) and $FF, (tmp shr 16) and $FF);
+  fLuminosityMark.Top := (255 - HSL.Z) * 239 / 255;
+  VectorLength := HSL.Y * 120 / 255;
+  A := Vector(Sin(HSL.X * 6.283185 / 255), -Cos(HSL.X * 6.283185 / 255));
+  fCircleMark.Left := 118 + A.X * VectorLength;
+  fCircleMark.Top := 118 + A.Y * VectorLength;
+  fCircle.Color := Vector(HSL.Z, HSL.Z, HSL.Z) / 255;
+  RGB := Vector(fR.Value, fG.Value, fB.Value);
+  fLuminosity.Color := RGB / Max(1, Max(Max(RGB.X, RGB.Y), RGB.Z));
+end;
+
+procedure TColorPickerWindow.fClose(Sender: TGUIComponent);
+begin
+  Top := -ResY - 10;
+end;
+
+procedure TColorPickerWindow.Show(Picker: TColorPicker);
+begin
+  Top := 0;
+  fPicker := Picker;
+
+  fContainerWindow.Left := Picker.AbsX - 16;
+  fContainerWindow.Top := Max(0, Picker.AbsY - 368);
+  ModuleManager.ModGUI.BasicComponent.BringToFront(Self);
+
+  fR.Value := 255 * fPicker.CurrentColor.X;
+  fG.Value := 255 * fPicker.CurrentColor.Y;
+  fB.Value := 255 * fPicker.CurrentColor.Z;
+  fChangeRGB(Self);
+end;
+
+constructor TColorPickerWindow.Create(Picker: TColorPicker);
+begin
+  inherited Create(nil);
+  ModuleManager.ModGLContext.GetResolution(ResX, ResY);
+  Width := ResX;
+  Height := ResY;
+  Top := -ResY - 10;
+  Left := 0;
+  OnClick := @fClose;
+
+  fContainerWindow := TWindow.Create(Self);
+  fContainerWindow.Height := 360;
+  fContainerWindow.Width := 280;
+  fContainerWindow.OfsX1 := 0;
+  fContainerWindow.OfsX2 := ResX;
+  fContainerWindow.OfsY1 := 0;
+  fContainerWindow.OfsY2 := ResY;
+
+  fR := TSlider.Create(fContainerWindow);
+  fR.Top := 256;
+  fR.Left := 12;
+  fR.Width := 256;
+  fR.Height := 32;
+  fR.Min := 0;
+  fR.Max := 255;
+  fR.Digits := 0;
+  fR.OnChange := @fChangeRGB;
+
+  fG := TSlider.Create(fContainerWindow);
+  fG.Top := 288;
+  fG.Left := 12;
+  fG.Width := 256;
+  fG.Height := 32;
+  fG.Min := 0;
+  fG.Max := 255;
+  fG.Digits := 0;
+  fG.OnChange := @fChangeRGB;
+
+  fB := TSlider.Create(fContainerWindow);
+  fB.Top := 320;
+  fB.Left := 12;
+  fB.Width := 256;
+  fB.Height := 32;
+  fB.Min := 0;
+  fB.Max := 255;
+  fB.Digits := 0;
+  fB.OnChange := @fChangeRGB;
+
+  fCircle := TImage.Create(fContainerWindow);
+  fCircle.Left := 6;
+  fCircle.Top := 6;
+  fCircle.Height := 244;
+  fCircle.Width := 244;
+  fCircle.FreeTextureOnDestroy := True;
+  fCircle.Tex := TTexture.Create;
+  fCircle.Tex.FromFile('data/guicolorpicker/wheel.tga', False, False);
+  fCircle.OnClick := @fStartChangeHueSaturation;
+
+  fLuminosity := TImage.Create(fContainerWindow);
+  fLuminosity.Left := 256;
+  fLuminosity.Top := 6;
+  fLuminosity.Width := 20;
+  fLuminosity.Height := 244;
+  fLuminosity.FreeTextureOnDestroy := True;
+  fLuminosity.Tex := TTexture.Create;
+  fLuminosity.Tex.FromFile('data/guicolorpicker/luminosity.tga', False, False);
+  fLuminosity.OnClick := @fStartChangeLuminosity;
+
+  fCircleMark := TImage.Create(fCircle);
+  fCircleMark.Left := 118;
+  fCircleMark.Top := 118;
+  fCircleMark.Width := 8;
+  fCircleMark.Height := 8;
+  fCircleMark.FreeTextureOnDestroy := True;
+  fCircleMark.Tex := TTexture.Create;
+  fCircleMark.Tex.FromFile('data/guicolorpicker/wheelmark.tga', False, False);
+  fCircleMark.OnClick := @fStartChangeHueSaturation;
+
+  fLuminosityMark := TImage.Create(fLuminosity);
+  fLuminosityMark.Left := 0;
+  fLuminosityMark.Top := 0;
+  fLuminosityMark.Width := 20;
+  fLuminosityMark.Height := 6;
+  fLuminosityMark.FreeTextureOnDestroy := True;
+  fLuminosityMark.Tex := TTexture.Create;
+  fLuminosityMark.Tex.FromFile('data/guicolorpicker/luminositymark.tga', False, False);
+  fLuminosityMark.OnClick := @fStartChangeLuminosity;
+
+  Show(Picker);
+end;
+
+procedure TColorPicker.fDoReset(Sender: TGUIComponent);
+begin
+  CurrentColor := DefaultColor;
+end;
+
+procedure TColorPicker.fPick(Sender: TGUIComponent);
+begin
+  if ColorPickerWindow = nil then
+    ColorPickerWindow := TColorPickerWindow.Create(Self)
+  else
+    ColorPickerWindow.Show(Self);
+end;
+
+procedure TColorPicker.fSetCurrentValue(C: TVector3D);
+begin
+  fCurrentValue := C;
+  CallUpdateEvent;
+end;
+
+procedure TColorPicker.CallUpdateEvent;
+begin
+  fDisplay.Color := Vector(CurrentColor, 1.0);
+  EventManager.CallEvent(ChangeEvent, Self, nil);
+end;
+
+procedure TColorPicker.UpdateDimensions;
+begin
+  fReset.Left := fDestWidth - 32;
+  fChooser.Width := fDestWidth - 32;
+  fDisplay.Width := fDestWidth - 56;
+end;
+
+constructor TColorPicker.Create(mParent: TGUIComponent);
+begin
+  inherited Create(mParent);
+  Size := 16;
+  Height := 32;
+  Width := 96;
+
+  fReset := TIconifiedButton.Create(Self);
+  fReset.Left := 64;
+  fReset.Top := 0;
+  fReset.Height := 32;
+  fReset.Width := 32;
+  fReset.OnClick := @fDoReset;
+  fReset.Icon := 'edit-undo.tga';
+
+  fChooser := TButton.Create(Self);
+  fChooser.Left := 0;
+  fChooser.Width := 64;
+  fChooser.Height := 32;
+  fChooser.Top := 0;
+  fChooser.OnClick := @fPick;
+  
+  fDisplay := TLabel.Create(fChooser);
+  fDisplay.Left := 12;
+  fDisplay.Top := 8;
+  fDisplay.Height := 16;
+  fDisplay.Width := 40;
+  fDisplay.OnClick := @fPick;
+
+  DefaultColor := Vector(1, 1, 1);
+  CurrentColor := Vector(1, 1, 1);
+end;
+
 
 function TXMLUIWindow.AddCallbackArray(A: TDOMElement): Integer;
 begin
@@ -302,6 +614,21 @@ var
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           OnClick := @StartDragging;
           OnRelease := @EndDragging;
+          end;
+        end
+      else if NodeName = 'color' then
+        begin
+        A := TColorPicker.Create(P);
+        with TColorPicker(A) do
+          begin
+          Left := StrToIntWD(GetAttribute('left'), 16);
+          Top := StrToIntWD(GetAttribute('top'), 16);
+          Width := StrToIntWD(GetAttribute('width'), Round(P.Width - Left - 16));
+          Height := StrToIntWD(GetAttribute('height'), Round(Height));
+          Tag := AddCallbackArray(TDOMElement(DE));
+          ChangeEvent := GetAttribute('onchange');
+          Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
+          UpdateDimensions;
           end;
         end
       else if NodeName = 'iconbutton' then
@@ -578,6 +905,11 @@ begin
   WindowList.fInfoWindow.Free;
   WindowList.fTerrainEdit.Free;
   WindowList.fParkSettings.Free;
+  if ColorPickerWindow <> nil then
+    begin
+    ColorPickerWindow.Free;
+    ColorPickerWindow := nil;
+    end;
 end;
 
 end.

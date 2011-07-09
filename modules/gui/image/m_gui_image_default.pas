@@ -21,7 +21,7 @@ begin
     begin
     glEnable(GL_BLEND);
     Img.Tex.Bind(0);
-    glColor4f(1, 1, 1, Img.Alpha);
+    glColor4f(Img.Color.X, Img.Color.Y, Img.Color.Z, Img.Alpha);
     glBegin(GL_QUADS);
       glTexCoord2f(0, 0); glVertex2f(Img.Left, Img.Top);
       glTexCoord2f(1, 0); glVertex2f(Img.Left + Img.Width, Img.Top);

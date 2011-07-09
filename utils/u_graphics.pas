@@ -16,6 +16,8 @@ type
 
 function RGBAToHSLA(Input: DWord): DWord;
 function HSLAToRGBA(Input: DWord): DWord;
+function RGBAToHSVA(Input: DWord): DWord;
+function HSVAToRGBA(Input: DWord): DWord;
 
 function TexFromStream(Stream: TByteStream; Format: String): TTexImage;
 function StreamFromTex(TexImg: TTexImage; Format: String): TByteStream;
@@ -60,9 +62,9 @@ var
   Color, Color2: TVector3D;
   mMin, mMax: Single;
 begin
-  Color.x := (Input and $000000FF) / 255;
-  Color.y := ((Input and $0000FF00) shr 8) / 255;
-  Color.z := ((Input and $00FF0000) shr 16) / 255;
+  Color.X := (Input and $000000FF) / 255;
+  Color.Y := ((Input and $0000FF00) shr 8) / 255;
+  Color.Z := ((Input and $00FF0000) shr 16) / 255;
 
   mMin := Min(Color.X, Min(Color.Y, Color.Z));
   mMax := Max(Color.X, Max(Color.Y, Color.Z));
@@ -95,9 +97,9 @@ var
   temp1, temp2, temp3, temp4: Single;
   i: Integer;
 begin
-  Color.x := (Input and $000000FF) / 255;
-  Color.y := ((Input and $0000FF00) shr 8) / 255;
-  Color.z := ((Input and $00FF0000) shr 16) / 255;
+  Color.X := (Input and $000000FF) / 255;
+  Color.Y := ((Input and $0000FF00) shr 8) / 255;
+  Color.Z := ((Input and $00FF0000) shr 16) / 255;
 
   if Color.Y = 0 then
     Color2 := Vector(Color.Z, Color.Z, Color.Z)
@@ -134,6 +136,71 @@ begin
         end;
       end;
     end;
+  Result := (Input and $FF000000) or (Round(Color2.Z * 255) shl 16) or (Round(Color2.Y * 255) shl 8) or (Round(Color2.X * 255));
+end;
+
+function RGBAToHSVA(Input: DWord): DWord;
+var
+  Color, Color2: TVector3D;
+  mMin, mMax: Single;
+begin
+  Color.X := (Input and $000000FF) / 255;
+  Color.Y := ((Input and $0000FF00) shr 8) / 255;
+  Color.Z := ((Input and $00FF0000) shr 16) / 255;
+  
+  mMax := Max(Max(Color.X, Color.Y), Color.Z);
+  mMin := Min(Min(Color.X, Color.Y), Color.Z);
+
+  if mMax = mMin then
+    Color2.X := 0
+  else if mMax = Color.X then
+    Color2.X := 60 * (0 + (Color.Y - Color.Z) / (mMax - mMin))
+  else if mMax = Color.Y then
+    Color2.X := 60 * (2 + (Color.Z - Color.X) / (mMax - mMin))
+  else if mMax = Color.Z then
+    Color2.X := 60 * (4 + (Color.X - Color.Y) / (mMax - mMin));
+
+  if Color2.X < 0 then
+    Color2.X := Color2.X + 360;
+
+  Color2.X := Color2.X / 360;
+
+  if mMax = 0 then
+    Color2.Y := 0
+  else
+    Color2.Y := (mMax - mMin) / mMax;
+
+  Color2.Z := mMax;   
+
+  Result := (Input and $FF000000) or (Round(Color2.Z * 255) shl 16) or (Round(Color2.Y * 255) shl 8) or (Round(Color2.X * 255));
+end;
+
+function HSVAToRGBA(Input: DWord): DWord;
+var
+  Color, Color2: TVector3D;
+  f, p, q, t: Single;
+  Hi: Integer;
+begin
+  Color.X := (Input and $000000FF) / 255 * 360;
+  Color.Y := ((Input and $0000FF00) shr 8) / 255;
+  Color.Z := ((Input and $00FF0000) shr 16) / 255;
+
+  Hi := Round(Int(Color.X / 60));
+  f := (Color.X / 60) - Hi;
+
+  P := Color.Z * (1 - Color.Y);
+  Q := Color.Z * (1 - Color.Y * f);
+  T := Color.Z * (1 - Color.Y * (1 - f));
+
+  case Hi of
+    0, 6: Color2 := Vector(Color.Z, t, p);
+    1: Color2 := Vector(q, Color.Z, p);
+    2: Color2 := Vector(p, Color.Z, t);
+    3: Color2 := Vector(p, q, Color.Z);
+    4: Color2 := Vector(t, p, Color.Z);
+    5: Color2 := Vector(Color.Z, p, q);
+    end;
+
   Result := (Input and $FF000000) or (Round(Color2.Z * 255) shl 16) or (Round(Color2.Y * 255) shl 8) or (Round(Color2.X * 255));
 end;
 

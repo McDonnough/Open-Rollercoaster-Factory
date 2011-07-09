@@ -38,6 +38,7 @@ type
       procedure OnShow(Event: String; Data, Result: Pointer);
       procedure OnScroll(Event: String; Data, Result: Pointer);
       procedure SnapToGrid(Event: String; Data, Result: Pointer);
+      procedure ChangeTab(Event: String; Data, Result: Pointer);
       procedure BuildObject(Resource: TObjectResource);
       constructor Create(Resource: String; ParkUI: TXMLUIManager);
       destructor Free;
@@ -212,6 +213,11 @@ begin
     end;
 end;
 
+procedure TGameObjectBuilder.ChangeTab(Event: String; Data, Result: Pointer);
+begin
+  TLabel(fWindow.GetChildByName('object_builder.tab.container')).Left := -TTabBar(fWindow.GetChildByName('object_builder.tabbar')).SelectedTab * 584;
+end;
+
 procedure TGameObjectBuilder.BuildObject(Resource: TObjectResource);
 begin
   EventManager.AddCallback('BasicComponent.OnClick', @AddObject);
@@ -232,6 +238,7 @@ begin
   EventManager.AddCallback('GUIActions.object_builder.close', @OnClose);
   EventManager.AddCallback('GUIActions.object_builder.snap.grid', @SnapToGrid);
   EventManager.AddCallback('GUIActions.object_builder.mirror', @UpdateMirror);
+  EventManager.AddCallback('GUIActions.object_builder.changeTab', @ChangeTab);
   EventManager.AddCallback('BasicComponent.OnScroll', @OnScroll);
   SelectionEngine := TSelectionEngine.Create;
   SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
@@ -248,6 +255,7 @@ end;
 destructor TGameObjectBuilder.Free;
 begin
   SelectionEngine.Free;
+  EventManager.RemoveCallback(@ChangeTab);
   EventManager.RemoveCallback(@UpdateMirror);
   EventManager.RemoveCallback(@UpdateGrid);
   EventManager.RemoveCallback(@SnapToGrid);

@@ -3,12 +3,13 @@ unit m_gui_image_class;
 interface
 
 uses
-  SysUtils, Classes, m_module, m_texmng_class, m_gui_class;
+  SysUtils, Classes, m_module, m_texmng_class, m_gui_class, u_vectors;
 
 type
   TImage = class(TGUIComponent)
     public
       Tex: TTexture;
+      Color: TVector3D;
       FreeTextureOnDestroy: Boolean;
       constructor Create(mParent: TGUIComponent);
       procedure Render;
@@ -32,6 +33,7 @@ constructor TImage.Create(mParent: TGUIComponent);
 begin
   inherited Create(mParent, CImage);
   Tex := nil;
+  Color := Vector(1, 1, 1);
   FreeTextureOnDestroy := false;
 end;
 

@@ -70,10 +70,10 @@ void main(void) {
     vec4((TexIDs[2] / 4.0 - floor(TexIDs[2] / 4.0)), floor(TexIDs[2] / 4.0) / 4.0, 0.0, 1.0),
     vec4((TexIDs[3] / 4.0 - floor(TexIDs[3] / 4.0)), floor(TexIDs[3] / 4.0) / 4.0, 0.0, 1.0));
   texColors = mat4(
-    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 64.0 - floor(Vertex.xz / 64.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy)),
-    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 64.0 - floor(Vertex.xz / 64.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy)),
-    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 64.0 - floor(Vertex.xz / 64.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[2].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[2].xy)),
-    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 64.0 - floor(Vertex.xz / 64.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[3].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[3].xy)));
+    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 48.0 - floor(Vertex.xz / 48.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy)),
+    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 48.0 - floor(Vertex.xz / 48.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy)),
+    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 48.0 - floor(Vertex.xz / 48.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[2].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[2].xy)),
+    0.5 * (texture2D(TerrainTexture, clamp((Vertex.xz / 48.0 - floor(Vertex.xz / 48.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[3].xy) + texture2D(TerrainTexture, clamp((Vertex.xz / 7.3 - floor(Vertex.xz / 7.3)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[3].xy)));
   vec3 normal = normalize(
     normalize(cross(vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, -1)) - VY, YFactor), -0.2), vec3(-0.2, mix(0.0, fetchHeightAtOffset(ivec2(-1, +0)) - VY, YFactor), +0.0)))
   + normalize(cross(vec3(+0.2, mix(0.0, fetchHeightAtOffset(ivec2(+1, +0)) - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, -1)) - VY, YFactor), -0.2)))
@@ -84,10 +84,10 @@ void main(void) {
   // IF [ EQ owe.terrain.bumpmap 1 ]
   if (gl_FragData[2].a < TerrainBumpmapDistance) {
     bumpColors = mat4(
-      texture2D(TerrainTexture, clamp((Vertex.xz / 2.0 - floor(Vertex.xz / 2.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy + vec2(0.0, 0.5)),
-      texture2D(TerrainTexture, clamp((Vertex.xz / 2.0 - floor(Vertex.xz / 2.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy + vec2(0.0, 0.5)),
-      texture2D(TerrainTexture, clamp((Vertex.xz / 2.0 - floor(Vertex.xz / 2.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[2].xy + vec2(0.0, 0.5)),
-      texture2D(TerrainTexture, clamp((Vertex.xz / 2.0 - floor(Vertex.xz / 2.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[3].xy + vec2(0.0, 0.5)));
+      texture2D(TerrainTexture, clamp((Vertex.xz / 3.0 - floor(Vertex.xz / 3.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[0].xy + vec2(0.0, 0.5)),
+      texture2D(TerrainTexture, clamp((Vertex.xz / 3.0 - floor(Vertex.xz / 3.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[1].xy + vec2(0.0, 0.5)),
+      texture2D(TerrainTexture, clamp((Vertex.xz / 3.0 - floor(Vertex.xz / 3.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[2].xy + vec2(0.0, 0.5)),
+      texture2D(TerrainTexture, clamp((Vertex.xz / 3.0 - floor(Vertex.xz / 3.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0 + TexCoord[3].xy + vec2(0.0, 0.5)));
     vec3 bumpNormal = -1.0 + 2.0 * (mix(mix(bumpColors[0], bumpColors[1], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), mix(bumpColors[2], bumpColors[3], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), (FakeVertex.y * 5.0 - floor(FakeVertex.y * 5.0)))).rbg;
     float angle = acos(normal.x);
     vec3 tangent = normalize(vec3(sin(angle), -cos(angle), 0.0));

@@ -3,7 +3,7 @@ unit g_parkui;
 interface
 
 uses
-  SysUtils, Classes, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml,
+  SysUtils, Classes, dglOpenGL, m_gui_class, m_gui_window_class, m_gui_iconifiedbutton_class, m_gui_button_class, u_files, u_dom, u_xml,
   m_gui_label_class, m_gui_image_class, m_gui_edit_class, m_gui_progressbar_class, m_gui_timer_class, m_gui_tabbar_class, u_functions,
   m_gui_slider_class, m_gui_checkbox_class, u_vectors, math, m_texmng_class, u_math;
 
@@ -313,6 +313,7 @@ begin
   fCircle.FreeTextureOnDestroy := True;
   fCircle.Tex := TTexture.Create;
   fCircle.Tex.FromFile('data/guicolorpicker/wheel.tga', False, False);
+  fCircle.Tex.SetFilter(GL_NEAREST, GL_NEAREST);
   fCircle.OnClick := @fStartChangeHueSaturation;
 
   fLuminosity := TImage.Create(fContainerWindow);
@@ -323,6 +324,7 @@ begin
   fLuminosity.FreeTextureOnDestroy := True;
   fLuminosity.Tex := TTexture.Create;
   fLuminosity.Tex.FromFile('data/guicolorpicker/luminosity.tga', False, False);
+  fLuminosity.Tex.SetFilter(GL_NEAREST, GL_NEAREST);
   fLuminosity.OnClick := @fStartChangeLuminosity;
 
   fCircleMark := TImage.Create(fCircle);
@@ -333,6 +335,7 @@ begin
   fCircleMark.FreeTextureOnDestroy := True;
   fCircleMark.Tex := TTexture.Create;
   fCircleMark.Tex.FromFile('data/guicolorpicker/wheelmark.tga', False, False);
+  fCircleMark.Tex.SetFilter(GL_NEAREST, GL_NEAREST);
   fCircleMark.OnClick := @fStartChangeHueSaturation;
 
   fLuminosityMark := TImage.Create(fLuminosity);
@@ -343,6 +346,7 @@ begin
   fLuminosityMark.FreeTextureOnDestroy := True;
   fLuminosityMark.Tex := TTexture.Create;
   fLuminosityMark.Tex.FromFile('data/guicolorpicker/luminositymark.tga', False, False);
+  fLuminosityMark.Tex.SetFilter(GL_NEAREST, GL_NEAREST);
   fLuminosityMark.OnClick := @fStartChangeLuminosity;
 
   Show(Picker);
@@ -626,7 +630,7 @@ var
           Width := StrToIntWD(GetAttribute('width'), Round(P.Width - Left - 16));
           Height := StrToIntWD(GetAttribute('height'), Round(Height));
           Tag := AddCallbackArray(TDOMElement(DE));
-          ChangeEvent := GetAttribute('onchange');
+          ChangeEvent := 'GUIActions.' + GetAttribute('onchange');
           Alpha := StrToFloatWD(GetAttribute('alpha'), 1);
           UpdateDimensions;
           end;

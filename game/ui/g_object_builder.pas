@@ -11,8 +11,8 @@ uses
 type
   TGameObjectBuilder = class(TXMLUIWindow)
     protected
-//       fColorDialog: TColorDialog;
       fIP: TVector3D;
+      fDefaultReflectivity: Single;
       fBuilding: TGeoObject;
       fBuildingResource: TObjectResource;
       fSnapToGrid, fSnapToObjects: Boolean;
@@ -20,6 +20,9 @@ type
       fGridOffset: TVector2D;
       fOpen: Boolean;
       fStartRotation: Single;
+      fMaterialBox: TScrollBox;
+      fMaterialButtons: Array of TButton;
+      fSelectedMaterial: Integer;
     public
       SelectionEngine: TSelectionEngine;
       property Open: Boolean read fOpen;
@@ -29,11 +32,11 @@ type
       property GridOffset: TVector2D read fGridOffset;
       procedure UpdateBOPos(Event: String; Data, Result: Pointer);
       procedure AddObject(Event: String; Data, Result: Pointer);
-      procedure SelectMaterial(Event: String; Data, Result: Pointer);
       procedure UpdateGrid(Event: String; Data, Result: Pointer);
-      procedure UpdateMatrix(Event: String; Data, Result: Pointer);
       procedure UpdateMirror(Event: String; Data, Result: Pointer);
       procedure UpdateMaterial(Event: String; Data, Result: Pointer);
+      procedure ResetReflectivity(Event: String; Data, Result: Pointer);
+      procedure SelectMaterial(Sender: TGUIComponent);
       procedure OnClose(Event: String; Data, Result: Pointer);
       procedure OnShow(Event: String; Data, Result: Pointer);
       procedure OnScroll(Event: String; Data, Result: Pointer);
@@ -132,10 +135,17 @@ end;
 procedure TGameObjectBuilder.AddObject(Event: String; Data, Result: Pointer);
 var
   O: TRealObject;
+  I: Integer;
 begin
   if (fBuilding <> nil) and (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) then
     begin
     O := TRealObject.Create(fBuildingResource);
+    for I := 0 to high(O.GeoObject.Materials) do
+      begin
+      O.GeoObject.Materials[I].Color := fBuilding.Materials[I].Color;
+      O.GeoObject.Materials[I].Emission := fBuilding.Materials[I].Emission;
+      O.GeoObject.Materials[I].Reflectivity := fBuilding.Materials[I].Reflectivity;
+      end;
     O.GeoObject.Matrix := fBuilding.Matrix;
     O.GeoObject.Mirror := fBuilding.Mirror;
     Park.pObjects.Append(O);
@@ -143,19 +153,11 @@ begin
     end;
 end;
 
-procedure TGameObjectBuilder.SelectMaterial(Event: String; Data, Result: Pointer);
-begin
-end;
-
 procedure TGameObjectBuilder.UpdateGrid(Event: String; Data, Result: Pointer);
 begin
   fGridOffset := Vector(TSlider(fWindow.GetChildByName('object_builder.grid.offset.x')).Value, TSlider(fWindow.GetChildByName('object_builder.grid.offset.z')).Value);
   fGridRotation := TSlider(fWindow.GetChildByName('object_builder.grid.rotation')).Value;
   fGridSize := TSlider(fWindow.GetChildByName('object_builder.grid.size')).Value;
-end;
-
-procedure TGameObjectBuilder.UpdateMatrix(Event: String; Data, Result: Pointer);
-begin
 end;
 
 procedure TGameObjectBuilder.UpdateMirror(Event: String; Data, Result: Pointer);
@@ -172,9 +174,45 @@ end;
 
 procedure TGameObjectBuilder.UpdateMaterial(Event: String; Data, Result: Pointer);
 begin
+  if (fSelectedMaterial > -1) and (fBuilding <> nil) then
+    begin
+    fBuilding.Materials[fSelectedMaterial].Color := Vector(TColorPicker(fWindow.GetChildByName('object_builder.material.color')).CurrentColor, fBuilding.Materials[fSelectedMaterial].Color.W);
+    fBuilding.Materials[fSelectedMaterial].Emission := Vector(TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).CurrentColor, fBuilding.Materials[fSelectedMaterial].Emission.W);
+    fBuilding.Materials[fSelectedMaterial].Reflectivity := TSlider(fWindow.GetChildByName('object_builder.material.reflectivity')).Value;
+    end;
+end;
+
+procedure TGameObjectBuilder.ResetReflectivity(Event: String; Data, Result: Pointer);
+begin
+  TSlider(fWindow.GetChildByName('object_builder.material.reflectivity')).Value := fDefaultReflectivity;
+  UpdateMaterial('', nil, nil);
+end;
+
+procedure TGameObjectBuilder.SelectMaterial(Sender: TGUIComponent);
+var
+  I: Integer;
+begin
+  if Sender <> nil then
+    begin
+    fSelectedMaterial := -1;
+    for I := 0 to high(fMaterialButtons) do
+      if fMaterialButtons[I] = Sender then
+        fMaterialButtons[I].Alpha := 1.0
+      else
+        fMaterialButtons[I].Alpha := 0.5;
+    TColorPicker(fWindow.GetChildByName('object_builder.material.color')).DefaultColor := Vector3D(fBuildingResource.GeoObject.Materials[Sender.Tag].Color);
+    TColorPicker(fWindow.GetChildByName('object_builder.material.color')).CurrentColor := Vector3D(fBuilding.Materials[Sender.Tag].Color);
+    TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).DefaultColor := Vector3D(fBuildingResource.GeoObject.Materials[Sender.Tag].Emission);
+    TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).CurrentColor := Vector3D(fBuilding.Materials[Sender.Tag].Emission);
+    fDefaultReflectivity := fBuildingResource.GeoObject.Materials[Sender.Tag].Reflectivity;
+    TSlider(fWindow.GetChildByName('object_builder.material.reflectivity')).Value := fBuilding.Materials[Sender.Tag].Reflectivity;
+    fSelectedMaterial := Sender.Tag;
+    end;
 end;
 
 procedure TGameObjectBuilder.OnClose(Event: String; Data, Result: Pointer);
+var
+  I: Integer;
 begin
   if fBuilding <> nil then
     begin
@@ -186,6 +224,10 @@ begin
   EventManager.RemoveCallback(@AddObject);
   EventManager.RemoveCallback(@UpdateGrid);
   fOpen := False;
+  for I := 0 to high(fMaterialButtons) do
+    fMaterialButtons[i].Free;
+  setLength(fMaterialButtons, 0);
+  fSelectedMaterial := -1;
 end;
 
 procedure TGameObjectBuilder.OnShow(Event: String; Data, Result: Pointer);
@@ -219,6 +261,8 @@ begin
 end;
 
 procedure TGameObjectBuilder.BuildObject(Resource: TObjectResource);
+var
+  I: Integer;
 begin
   EventManager.AddCallback('BasicComponent.OnClick', @AddObject);
   Park.SelectionEngine := SelectionEngine;
@@ -227,6 +271,30 @@ begin
   fBuildingResource := Resource;
   fBuilding := fBuildingResource.GeoObject.Duplicate;
   fBuilding.Register;
+
+  fSelectedMaterial := -1;
+
+  SetLength(fMaterialButtons, Length(fBuilding.Materials));
+  for I := 0 to high(fBuilding.Materials) do
+    begin
+    fMaterialButtons[I] := TButton.Create(fMaterialBox);
+    fMaterialButtons[I].Left := 0;
+    fMaterialButtons[I].Top := 32 * I;
+    fMaterialButtons[I].Width := 176;
+    fMaterialButtons[I].Height := 32;
+    fMaterialButtons[I].Caption := fBuilding.Materials[I].Name;
+    fMaterialButtons[I].Tag := I;
+    fMaterialButtons[I].Alpha := 0.5;
+    fMaterialButtons[I].OnClick := @SelectMaterial;
+    end;
+
+  if Length(fBuilding.Materials) > 0 then
+    SelectMaterial(fMaterialButtons[0]);
+
+  TColorPicker(fWindow.GetChildByName('object_builder.material.color')).CurrentColor := TColorPicker(fWindow.GetChildByName('object_builder.material.color')).DefaultColor;
+  TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).CurrentColor := TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).DefaultColor;
+  ResetReflectivity('', nil, nil);
+
   Show(fWindow);
 end;
 
@@ -234,11 +302,23 @@ constructor TGameObjectBuilder.Create(Resource: String; ParkUI: TXMLUIManager);
 begin
   inherited Create(Resource, ParkUI);
 
+  fSelectedMaterial := -1;
+  fDefaultReflectivity := 0;
+  
+  fMaterialBox := TScrollBox.Create(fWindow.GetChildByName('object_builder.tab.material'));
+  fMaterialBox.Left := 0;
+  fMaterialBox.Width := 192;
+  fMaterialBox.Height := 192;
+  fMaterialBox.Top := 0;
+  fMaterialBox.HScrollBar := sbmInvisible;
+
   EventManager.AddCallback('GUIActions.object_builder.open', @OnShow);
   EventManager.AddCallback('GUIActions.object_builder.close', @OnClose);
   EventManager.AddCallback('GUIActions.object_builder.snap.grid', @SnapToGrid);
   EventManager.AddCallback('GUIActions.object_builder.mirror', @UpdateMirror);
   EventManager.AddCallback('GUIActions.object_builder.changeTab', @ChangeTab);
+  EventManager.AddCallback('GUIActions.object_builder.material.update', @UpdateMaterial);
+  EventManager.AddCallback('GUIActions.object_builder.material.reflectivity.reset', @ResetReflectivity);
   EventManager.AddCallback('BasicComponent.OnScroll', @OnScroll);
   SelectionEngine := TSelectionEngine.Create;
   SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
@@ -255,7 +335,9 @@ end;
 destructor TGameObjectBuilder.Free;
 begin
   SelectionEngine.Free;
+  EventManager.RemoveCallback(@ResetReflectivity);
   EventManager.RemoveCallback(@ChangeTab);
+  EventManager.RemoveCallback(@UpdateMaterial);
   EventManager.RemoveCallback(@UpdateMirror);
   EventManager.RemoveCallback(@UpdateGrid);
   EventManager.RemoveCallback(@SnapToGrid);

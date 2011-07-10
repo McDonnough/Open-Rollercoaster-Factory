@@ -18,6 +18,7 @@ type
       fScreenCaptureTool: TScreenCaptureTool;
       fGameObjectManager: TGameObjectManager;
       procedure SetSelectionEngine(E: TSelectionEngine);
+      procedure SelectedObject(Event: String; Data, Result: Pointer);
     public
       // Parts of the park
       pTerrain: TTerrain;
@@ -80,7 +81,7 @@ var
 implementation
 
 uses
-  Main, m_varlist, u_events, math, u_files;
+  Main, m_varlist, u_events, math, u_files, u_scene;
 
 procedure TPark.SetSelectionEngine(E: TSelectionEngine);
 begin
@@ -89,6 +90,10 @@ begin
   else
     writeln('Enabled selection engine (' + IntToStr(E.ObjectCount) + ' meshes)');
   fSelectionEngine := E;
+end;
+
+procedure TPark.SelectedObject(Event: String; Data, Result: Pointer);
+begin
 end;
 
 constructor TPark.Create(FileName: String);
@@ -215,6 +220,7 @@ begin
   ModuleManager.ModCamera.ActiveCamera.LoadDefaults;
   ModuleManager.ModRenderer.PostInit;
   fScreenCaptureTool := TScreenCaptureTool.Create;
+  EventManager.AddCallback('TPark.Objects.Selected', @SelectedObject);
 end;
 
 procedure TPark.Render;
@@ -310,6 +316,7 @@ destructor TPark.Free;
 begin
   writeln('Hint: Deleting Park object');
   fScreenCaptureTool.Free;
+  EventManager.RemoveCallback(@SelectedObject);
   EventManager.RemoveCallback(@StartLoading);
   fSelectionEngine := nil;
   fNormalSelectionEngine.Free;

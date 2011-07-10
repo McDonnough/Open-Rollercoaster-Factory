@@ -111,8 +111,10 @@ for i in `find . -name "*.pas"` `find . -name "*.inc"`; do
   DEPS="${DEPS}${i} "
 done
 
+FPCFLAGS="-MObjFPC -g -Sghi $options -vewnhi $incdirs $LinkerOpt"
+
 echo "DEPS = ${DEPS}" > Makefile
-echo "FPCFLAGS = -MObjFPC -g -Sghi $options -vewnhi $incdirs $LinkerOpt" >> Makefile
+echo "FPCFLAGS = ${FPCFLAGS}" >> Makefile
 echo '' >> Makefile
 echo 'all: ${DEPS} orcf.lpr' >> Makefile
 echo '	fpc ${FPCFLAGS} orcf.lpr' >> Makefile
@@ -125,5 +127,10 @@ echo '' >> Makefile
 echo 'tools: ${DEPS} ./tools/ocfgen.lpr ./tools/texconv.lpr' >> Makefile
 echo '	fpc ${FPCFLAGS} ./tools/ocfgen.lpr' >> Makefile
 echo '	fpc ${FPCFLAGS} ./tools/texconv.lpr' >> Makefile
+
+echo "fpc.exe ${FPCFLAGS} orcf.lpr" > compile.bat
+echo "fpc.exe ${FPCFLAGS} .\tools\ocfgen.lpr" >> compile.bat
+echo "fpc.exe ${FPCFLAGS} .\tools\texconv.lpr" >> compile.bat
+sed -i "s/\\//\\\\/g" compile.bat
 
 echo "Configure done"

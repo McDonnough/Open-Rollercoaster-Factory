@@ -19,6 +19,9 @@ function HSLAToRGBA(Input: DWord): DWord;
 function RGBAToHSVA(Input: DWord): DWord;
 function HSVAToRGBA(Input: DWord): DWord;
 
+function RGBAtoYCgCoA(Input: DWord): DWord; inline;
+function YCgCoAtoRGBA(Input: DWord): DWord; inline;
+
 function TexFromStream(Stream: TByteStream; Format: String): TTexImage;
 function StreamFromTex(TexImg: TTexImage; Format: String): TByteStream;
 
@@ -31,11 +34,28 @@ function DBCGFromTex(TexImg: TTexImage): TByteStream;
 implementation
 
 uses
-  m_varlist, u_vectors, u_math, math, u_huffman;
+  m_varlist, u_vectors, u_math, math, u_huffman, u_binutils;
 
 type
   EUnsupportedStream = class(Exception);
   EConversionError = class(Exception);
+
+  TPixel = record
+    case Integer of
+      0: (R, G, B, A: Byte);
+      1: (Y, Cg, Co, O: Byte);
+      2: (Value: DWord);
+    end;
+  PPixel = ^TPixel;
+
+  TDBCGBlock = record
+    HasReference, HasBias, HasGradient: Boolean;
+    ChanSize: TPixel;
+    Reference: Byte;
+    Bias: TPixel;
+    Gradient: Array[0..1, 0..1] of TPixel;
+    Pixels: Array[0..63] of TPixel;
+    end;
 
 function TexFromStream(Stream: TByteStream; Format: String): TTexImage;
 begin
@@ -147,7 +167,7 @@ begin
   Color.X := (Input and $000000FF) / 255;
   Color.Y := ((Input and $0000FF00) shr 8) / 255;
   Color.Z := ((Input and $00FF0000) shr 16) / 255;
-  
+
   mMax := Max(Max(Color.X, Color.Y), Color.Z);
   mMin := Min(Min(Color.X, Color.Y), Color.Z);
 
@@ -170,7 +190,7 @@ begin
   else
     Color2.Y := (mMax - mMin) / mMax;
 
-  Color2.Z := mMax;   
+  Color2.Z := mMax;
 
   Result := (Input and $FF000000) or (Round(Color2.Z * 255) shl 16) or (Round(Color2.Y * 255) shl 8) or (Round(Color2.X * 255));
 end;
@@ -202,6 +222,37 @@ begin
     end;
 
   Result := (Input and $FF000000) or (Round(Color2.Z * 255) shl 16) or (Round(Color2.Y * 255) shl 8) or (Round(Color2.X * 255));
+end;
+
+function RGBAtoYCgCoA(Input: DWord): DWord; inline;
+var
+  R, G, B: Byte;
+  Y, Cg, Co: Integer;
+begin
+  R := Input;
+  G := Input shr 8;
+  B := Input shr 16;
+  Y := R + (G shl 1) + B;
+  Y := (((Y and $FFC) + ((Y and $02) shl 1)) shr 2) and $FF;
+  Cg := -R + (G shl 1) - B + 512;
+  Cg := (((Cg and $FFC) + ((Cg and $02) shl 1)) shr 2) and $FF;
+  Co := R - B + 255;
+  Co := (((Co and $FFE) + ((Co and $01) shl 1)) shr 1) and $FF;
+  Result := Y or (Cg shl 8) or (Co shl 16) or (Input and $FF000000);
+end;
+
+function YCgCoAtoRGBA(Input: DWord): DWord; inline;
+var
+  tmp, Y, Cg, Co, R, G, B: Integer;
+begin
+  Y := Input and $FF;
+  Cg := ((Input shr 8) and $FF) - 128;
+  Co := ((Input shr 16) and $FF) - 128;
+  tmp := Y - Cg;
+  R := (tmp + Co) and $FF;
+  G := (Y + Cg) and $FF;
+  B := (tmp - Co) and $FF;
+  Result := R or (G shl 8) or (B shl 16) or (Input and $FF000000);
 end;
 
 function TexFromTGA(Stream: TByteStream): TTexImage;
@@ -400,29 +451,96 @@ end;
 
 function TexFromDBCG(Stream: TByteStream): TTexImage;
 var
-  i, j: Integer;
-  Last: Array[0..3] of Byte;
+  I, J, K, L: Integer;
+  Blocks: Array of Array of TDBCGBlock;
+  S, P: PByte;
+  Q: PPixel;
+  O: Byte;
+  BytePP: Integer;
 begin
   Result.BPP := Stream.Data[0];
+  BytePP := Result.BPP shr 3;
   Result.Width := Word((@Stream.Data[1])^);
   Result.Height := Word((@Stream.Data[3])^);
   SetLength(Result.Data, Result.Width * Result.Height * Result.BPP div 8);
-  for i := 0 to 3 do
-    Last[i] := 0;
-  for j := 0 to Result.Height - 1 do
-    for i := 0 to Result.Width - 1 do
-      begin
-      Last[0] := Byte(Last[0] + Stream.Data[5 + ((Result.Width * j + i) * Result.BPP div 8)]);
-      Last[1] := Byte(Last[1] + Stream.Data[6 + ((Result.Width * j + i) * Result.BPP div 8)]);
-      Last[2] := Byte(Last[2] + Stream.Data[7 + ((Result.Width * j + i) * Result.BPP div 8)]);
-      if Result.BPP = 32 then
-        Last[3] := Byte(Last[3] + Stream.Data[8 + ((Result.Width * j + i) * Result.BPP div 8)]);
-      Result.Data[0 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[0];
-      Result.Data[1 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[1];
-      Result.Data[2 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[2];
-      if Result.BPP = 32 then
-        Result.Data[3 + ((Result.Width * j + i) * Result.BPP div 8)] := Last[3];
-      end;
+  SetLength(Blocks, Result.Width shr 3, Result.Height shr 3);
+
+  P := @Stream.Data[5];
+  O := 0;
+
+  for I := 0 to high(Blocks) do
+    for J := 0 to high(Blocks[I]) do
+      with Blocks[I, J] do
+        begin
+        HasReference := ExtractBits(P, O, 1) = 1;
+        HasBias := ExtractBits(P, O, 1) = 1;
+        HasGradient := ExtractBits(P, O, 1) = 1;
+        ChanSize.Y := ExtractBits(P, O, 4);
+        ChanSize.Cg := ExtractBits(P, O, 4);
+        ChanSize.Co := ExtractBits(P, O, 4);
+        if BytePP = 4 then
+          ChanSize.A := ExtractBits(P, O, 4)
+        else
+          ChanSize.A := 0;
+        if HasReference then
+          Reference := ExtractBits(P, O, 4) + 1
+        else
+          Reference := 0;
+        if HasBias then
+          begin
+          Bias.Y := ExtractBits(P, O, 8);
+          Bias.Cg := ExtractBits(P, O, 8);
+          Bias.Co := ExtractBits(P, O, 8);
+          if BytePP = 4 then
+            Bias.A := ExtractBits(P, O, 8)
+          else
+            Bias.A := 0;
+          end
+        else
+          begin
+          Bias.Y := 0;
+          Bias.Cg := 0;
+          Bias.Co := 0;
+          Bias.A := 0;
+          end;
+        if HasGradient then
+          for K := 0 to 1 do
+            for L := 0 to 1 do
+              begin
+              Gradient[K, L].Y := ExtractBits(P, O, 8);
+              Gradient[K, L].Cg := ExtractBits(P, O, 8);
+              Gradient[K, L].Co := ExtractBits(P, O, 8);
+              if BytePP = 4 then
+                Gradient[K, L].A := ExtractBits(P, O, 8);
+              end;
+        Q := @Pixels[0];
+        for K := 0 to 63 do
+          begin
+          Q^.Y := ExtractBits(P, O, ChanSize.Y) + Bias.Y;
+          Q^.Cg := ExtractBits(P, O, ChanSize.Cg) + Bias.Cg;
+          Q^.Co := ExtractBits(P, O, ChanSize.Co) + Bias.Co;
+          Q^.A := ExtractBits(P, O, ChanSize.A) + Bias.A;
+          Q^.Value := YCgCoAtoRGBA(Q^.Value);
+          inc(Q);
+          end;
+        Q := @Pixels[0];
+        for K := 0 to 7 do
+          begin
+          S := @Result.Data[BytePP * Result.Width * (8 * J + K) + BytePP * 8 * I];
+          for L := 0 to 7 do
+            begin
+            S^ := Q^.R; inc(S);
+            S^ := Q^.G; inc(S);
+            S^ := Q^.B; inc(S);
+            if BytePP = 4 then
+              begin
+              S^ := Q^.A;
+              inc(S);
+              end;
+            inc(Q);
+            end;
+          end;
+        end;
 end;
 
 function TGAFromTex(TexImg: TTexImage; Flags: Integer = 32): TByteStream;
@@ -476,30 +594,151 @@ end;
 
 function DBCGFromTex(TexImg: TTexImage): TByteStream;
 var
-  i, j: Integer;
+  BytePP, I, J, K, L: Integer;
+  P: PByte;
+  Q: PPixel;
+  Blocks: Array of Array of TDBCGBlock;
+  O: Byte;
+  BytesWritten: Integer;
+const
+  BoolToInt: Array[Boolean] of Byte = (0, 1);
 begin
-  SetLength(Result.Data, 5 + TexImg.BPP div 8 * TexImg.Height * TexImg.Width);
+  SetLength(Result.Data, 5 + (TexImg.BPP div 8 + 1) * TexImg.Height * TexImg.Width);
+
+  P := @Result.Data[0];
+  for I := 0 to high(Result.Data) do
+    begin
+    P^ := 0;
+    inc(P);
+    end;
+
   Result.Data[0] := TexImg.BPP;
   Word((@Result.Data[1])^) := TexImg.Width;
   Word((@Result.Data[3])^) := TexImg.Height;
-  for j := 0 to TexImg.Height - 1 do
-    for i := 0 to TexImg.Width - 1 do
-      if i + j = 0 then
+
+  BytePP := TexImg.BPP shr 3;
+  SetLength(Blocks, TexImg.Width shr 3, TexImg.Height shr 3);
+  for I := 0 to high(Blocks) do
+    for J := 0 to high(Blocks[i]) do
+      begin
+      with Blocks[I, J] do
         begin
-        Result.Data[5 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[0 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
-        Result.Data[6 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[1 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
-        Result.Data[7 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[2 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
-        if TexImg.BPP = 32 then
-          Result.Data[8 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := TexImg.Data[3 + ((TexImg.Width * j + i) * TexImg.BPP div 8)];
-        end
-      else
-        begin
-        Result.Data[5 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[0 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[0 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
-        Result.Data[6 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[1 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[1 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
-        Result.Data[7 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[2 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[2 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
-        if TexImg.BPP = 32 then
-          Result.Data[8 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] := Byte(TexImg.Data[3 + ((TexImg.Width * j + i) * TexImg.BPP div 8)] - TexImg.Data[3 + ((TexImg.Width * j + (i - 1)) * TexImg.BPP div 8)]);
+        HasReference := False;
+        HasBias := False;
+        HasGradient := False;
+        ChanSize.Y := 0;
+        ChanSize.Cg := 0;
+        ChanSize.Co := 0;
+        ChanSize.A := 0;
+        Bias.Y := 255;
+        Bias.Cg := 255;
+        Bias.Co := 255;
+        Bias.A := 255;
+        Gradient[0, 0] := ChanSize;
+        Gradient[0, 1] := ChanSize;
+        Gradient[1, 0] := ChanSize;
+        Gradient[0, 1] := ChanSize;
+
+        Q := @Pixels[0];
+        for K := 0 to 7 do
+          begin
+          P := @TexImg.Data[BytePP * TexImg.Width * (8 * J + K) + BytePP * 8 * I];
+          for L := 0 to 7 do
+            begin
+            Q^.R := P^; inc(P);
+            Q^.G := P^; inc(P);
+            Q^.B := P^; inc(P);
+            if BytePP = 4 then
+              begin
+              Q^.A := P^;
+              if P^ = 0 then
+                Q^.Value := 0;
+              inc(P);
+              end
+            else
+              Q^.A := $FF;
+            Inc(Q);
+            end;
+          end;
+        Q := @Pixels[0];
+        for K := 0 to 63 do
+          begin
+          Q^.Value := RGBAtoYCgCoA(Q^.Value);
+          Bias.Y := Min(Bias.Y, Q^.Y);
+          Bias.Cg := Min(Bias.Cg, Q^.Cg);
+          Bias.Co := Min(Bias.Co, Q^.Co);
+          Bias.A := Min(Bias.A, Q^.A);
+          inc(Q);
+          end;
+        HasBias := Max(Max(Bias.Y, Bias.Cg), Max(Bias.Co, Bias.A)) > 0;
+        Q := @Pixels[0];
+        for K := 0 to 63 do
+          begin
+          Q^.Y := Q^.Y - Bias.Y;
+          Q^.Cg := Q^.Cg - Bias.Cg;
+          Q^.Co := Q^.Co - Bias.Co;
+          Q^.A := Q^.A - Bias.A;
+          if Q^.Y <> 0 then
+            ChanSize.Y := Max(ChanSize.Y, Round(Int(Log2(Q^.Y))) + 1);
+          if Q^.Cg <> 0 then
+            ChanSize.Cg := Max(ChanSize.Cg, Round(Int(Log2(Q^.Cg))) + 1);
+          if Q^.Co <> 0 then
+            ChanSize.Co := Max(ChanSize.Co, Round(Int(Log2(Q^.Co))) + 1);
+          if Q^.A <> 0 then
+            ChanSize.A := Max(ChanSize.A, Round(Int(Log2(Q^.A))) + 1);
+          inc(Q);
+          end;
         end;
+      end;
+
+  O := 0;
+  P := @Result.Data[5];
+  BytesWritten := 5;
+
+  for I := 0 to high(Blocks) do
+    for J := 0 to high(Blocks[I]) do
+      with Blocks[I, J] do
+        begin
+        AppendBits(P, O, BytesWritten, BoolToInt[HasReference], 1);
+        AppendBits(P, O, BytesWritten, BoolToInt[HasBias], 1);
+        AppendBits(P, O, BytesWritten, BoolToInt[HasGradient], 1);
+        AppendBits(P, O, BytesWritten, ChanSize.Y, 4);
+        AppendBits(P, O, BytesWritten, ChanSize.Cg, 4);
+        AppendBits(P, O, BytesWritten, ChanSize.Co, 4);
+        if BytePP = 4 then
+          AppendBits(P, O, BytesWritten, ChanSize.A, 4);
+        if HasReference then
+          AppendBits(P, O, BytesWritten, Reference - 1, 4);
+        if HasBias then
+          begin
+          AppendBits(P, O, BytesWritten, Bias.Y, 8);
+          AppendBits(P, O, BytesWritten, Bias.Cg, 8);
+          AppendBits(P, O, BytesWritten, Bias.Co, 8);
+          if BytePP = 4 then
+            AppendBits(P, O, BytesWritten, Bias.A, 8);
+          end;
+        if HasGradient then
+          for K := 0 to 1 do
+            for L := 0 to 1 do
+              begin
+              AppendBits(P, O, BytesWritten, Gradient[K, L].Y, 8);
+              AppendBits(P, O, BytesWritten, Gradient[K, L].Cg, 8);
+              AppendBits(P, O, BytesWritten, Gradient[K, L].Co, 8);
+              if BytePP = 4 then
+                AppendBits(P, O, BytesWritten, Gradient[K, L].A, 8);
+              end;
+        Q := @Pixels[0];
+        for K := 0 to 63 do
+          begin
+          AppendBits(P, O, BytesWritten, Q^.Y, ChanSize.Y);
+          AppendBits(P, O, BytesWritten, Q^.Cg, ChanSize.Cg);
+          AppendBits(P, O, BytesWritten, Q^.Co, ChanSize.Co);
+          if BytePP = 4 then
+            AppendBits(P, O, BytesWritten, Q^.A, ChanSize.A);
+          inc(Q);
+          end;
+        end;
+  SetLength(Result.Data, BytesWritten);
 end;
 
 end.

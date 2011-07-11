@@ -65,7 +65,7 @@ var
   Rotation: TVector3D;
   CosBeta: Single;
 begin
-  if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and not (fJustClosed) then
+  if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and not (fJustClosed) and (ModuleManager.ModGUI.ClickingBasicComponent) then
     begin
     fBuildingNew := False;
     fBuilding := TSelectableObject(Data^).O;

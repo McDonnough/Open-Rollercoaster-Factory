@@ -114,6 +114,8 @@ var
   Container: TGUIComponent;
   fOldHoverComponent, fScrollComponent: TGUIComponent;
 begin
+  fClickingBasicComponent := False;
+
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   fBasicComponent.Width := ResX;
   fBasicComponent.Height := ResY;
@@ -207,10 +209,12 @@ begin
 
   fFocusComponent := nil;
   fHoverComponent := nil;
-  fClicking := false;
 
   for i := 0 to 321 do
     fKeys[i] := false;
+
+  fClicking := False;
+  fClickingBasicComponent := False;
 end;
 
 destructor TModuleGUIDefault.Free;

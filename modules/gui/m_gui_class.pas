@@ -77,16 +77,18 @@ type
 
   TModuleGUIClass = class(TBasicModule)
     protected
+      fClicking: Boolean;
       fBasicComponent: TGUIComponent;
       fFocusComponent: TGUIComponent;
       fHoverComponent: TGUIComponent;
-      fClicking: Boolean;
       procedure BasicComponentOnClick(Sender: TGUIComponent);
       procedure BasicComponentOnRelease(Sender: TGUIComponent);
       procedure BasicComponentOnScroll(Sender: TGUIComponent);
       procedure BasicComponentOnKeyDown(Sender: TGUIComponent; Key: Integer);
       procedure BasicComponentOnKeyUp(Sender: TGUIComponent; Key: Integer);
     public
+      fClickingBasicComponent: Boolean;
+      property ClickingBasicComponent: Boolean read fClickingBasicComponent;
       property Clicking: Boolean read fClicking;
       property BasicComponent: TGUIComponent read fBasicComponent;
       property HoverComponent: TGUIComponent read fHoverComponent;
@@ -111,6 +113,7 @@ uses
 procedure TModuleGUIClass.BasicComponentOnClick(Sender: TGUIComponent);
 begin
   EventManager.CallEvent('BasicComponent.OnClick', Sender, nil);
+  ModuleManager.ModGUI.fClickingBasicComponent :=  True;
 end;
 
 procedure TModuleGUIClass.BasicComponentOnRelease(Sender: TGUIComponent);

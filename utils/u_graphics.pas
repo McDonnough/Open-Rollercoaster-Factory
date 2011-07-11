@@ -48,10 +48,6 @@ type
     end;
   PPixel = ^TPixel;
 
-  TIntPixel = record
-    Y, Cg, Co, A: Integer;
-    end;
-
   TDBCGBlock = record
     HasReference, HasBias, HasGradient: Boolean;
     ChanSize: TPixel;
@@ -60,7 +56,6 @@ type
     Gradient: Array[0..1, 0..1] of TPixel;
     Pixels: Array[0..63] of TPixel;
     end;
-  PDBCGBlock = ^TDBCGBlock;
 
 function TexFromStream(Stream: TByteStream; Format: String): TTexImage;
 begin
@@ -459,11 +454,9 @@ var
   I, J, K, L: Integer;
   Blocks: Array of Array of TDBCGBlock;
   S, P: PByte;
-  Q, R: PPixel;
-  Tmp: TPixel;
+  Q: PPixel;
   O: Byte;
   BytePP: Integer;
-  PrevBlocks: Array[0..16] of PDBCGBlock;
 begin
   Result.BPP := Stream.Data[0];
   BytePP := Result.BPP shr 3;
@@ -475,14 +468,10 @@ begin
   P := @Stream.Data[5];
   O := 0;
 
-  for I := 0 to 16 do
-    PrevBlocks[I] := nil;
-
   for I := 0 to high(Blocks) do
     for J := 0 to high(Blocks[I]) do
       with Blocks[I, J] do
         begin
-        PrevBlocks[0] := @Blocks[I, J];
         HasReference := ExtractBits(P, O, 1) = 1;
         HasBias := ExtractBits(P, O, 1) = 1;
         HasGradient := ExtractBits(P, O, 1) = 1;
@@ -525,19 +514,19 @@ begin
                 Gradient[K, L].A := ExtractBits(P, O, 8);
               end;
         Q := @Pixels[0];
-        R := @PrevBlocks[Reference]^.Pixels[0];
         for K := 0 to 63 do
           begin
-          Q^.Value := 0;
-          Q^.A := ExtractBits(P, O, ChanSize.A) + Bias.A + R^.A;
-//           if Q^.A <> 0 then
-//             begin
-            Q^.Y := ExtractBits(P, O, ChanSize.Y) + Bias.Y + R^.Y;
-            Q^.Cg := ExtractBits(P, O, ChanSize.Cg) + Bias.Cg + R^.Cg;
-            Q^.Co := ExtractBits(P, O, ChanSize.Co) + Bias.Co + R^.Co;
-//             end;
+          Q^.A := ExtractBits(P, O, ChanSize.A) + Bias.A;
+          if Q^.A <> 0 then
+            begin
+            Q^.Y := ExtractBits(P, O, ChanSize.Y) + Bias.Y;
+            Q^.Cg := ExtractBits(P, O, ChanSize.Cg) + Bias.Cg;
+            Q^.Co := ExtractBits(P, O, ChanSize.Co) + Bias.Co;
+            end
+          else
+            Q^.Value := 0;
+          Q^.Value := YCgCoAtoRGBA(Q^.Value);
           inc(Q);
-          inc(R);
           end;
         Q := @Pixels[0];
         for K := 0 to 7 do
@@ -545,21 +534,17 @@ begin
           S := @Result.Data[BytePP * Result.Width * (8 * J + K) + BytePP * 8 * I];
           for L := 0 to 7 do
             begin
-//             Tmp.Value := YCgCoAtoRGBA(Q^.Value);
-            Tmp.Value := Q^.Value;
-            S^ := Tmp.R; inc(S);
-            S^ := Tmp.G; inc(S);
-            S^ := Tmp.B; inc(S);
+            S^ := Q^.R; inc(S);
+            S^ := Q^.G; inc(S);
+            S^ := Q^.B; inc(S);
             if BytePP = 4 then
               begin
-              S^ := Tmp.A;
+              S^ := Q^.A;
               inc(S);
               end;
             inc(Q);
             end;
           end;
-        for K := 16 downto 1 do
-          PrevBlocks[K] := PrevBlocks[K - 1];
         end;
 end;
 
@@ -616,15 +601,10 @@ function DBCGFromTex(TexImg: TTexImage): TByteStream;
 var
   BytePP, I, J, K, L: Integer;
   P: PByte;
-  Q, R, S: PPixel;
-  MinDiff: TIntPixel;
+  Q: PPixel;
   Blocks: Array of Array of TDBCGBlock;
-  OrigBlocks: Array of Array of TDBCGBlock;
   O: Byte;
   BytesWritten: Integer;
-  PrevBlocks: Array[0..16] of PDBCGBlock;
-  TmpBlock: TDBCGBlock;
-  TmpBias, TmpChansize: TPixel;
 const
   BoolToInt: Array[Boolean] of Byte = (0, 1);
 begin
@@ -637,21 +617,17 @@ begin
     inc(P);
     end;
 
-  for I := 0 to 16 do
-    PrevBlocks[I] := nil;
-
   Result.Data[0] := TexImg.BPP;
   Word((@Result.Data[1])^) := TexImg.Width;
   Word((@Result.Data[3])^) := TexImg.Height;
 
   BytePP := TexImg.BPP shr 3;
   SetLength(Blocks, TexImg.Width shr 3, TexImg.Height shr 3);
-  SetLength(OrigBlocks, TexImg.Width shr 3, TexImg.Height shr 3);
   for I := 0 to high(Blocks) do
     for J := 0 to high(Blocks[i]) do
+      begin
       with Blocks[I, J] do
         begin
-        PrevBlocks[0] := @OrigBlocks[I, J];
         HasReference := False;
         HasBias := False;
         HasGradient := False;
@@ -659,24 +635,16 @@ begin
         ChanSize.Cg := 0;
         ChanSize.Co := 0;
         ChanSize.A := 0;
-        TmpChansize := ChanSize;
         Bias.Y := 255;
         Bias.Cg := 255;
         Bias.Co := 255;
         Bias.A := 255;
-        TmpBias := Bias;
-        Reference := 1;
         Gradient[0, 0] := ChanSize;
         Gradient[0, 1] := ChanSize;
         Gradient[1, 0] := ChanSize;
         Gradient[0, 1] := ChanSize;
-        MinDiff.Y := 0;
-        MinDiff.Cg := 0;
-        MinDiff.Co := 0;
-        MinDiff.A := 0;
 
         Q := @Pixels[0];
-        R := @OrigBlocks[I, J].Pixels[0];
         for K := 0 to 7 do
           begin
           P := @TexImg.Data[BytePP * TexImg.Width * (8 * J + K) + BytePP * 8 * I];
@@ -694,74 +662,20 @@ begin
               end
             else
               Q^.A := $FF;
-            R^ := Q^;
             Inc(Q);
-            Inc(R);
             end;
           end;
-
-        if (I + J > 0) then
-          begin
-          Q := @Pixels[0];
-          R := @TmpBlock.Pixels[0];
-          S := @PrevBlocks[1]^.Pixels[0];
-          for K := 0 to 63 do
-            begin
-            R^.Y  := Q^.Y  - S^.Y ; MinDiff.Y  := Min(MinDiff.Y , Q^.Y  - S^.Y );
-            R^.Cg := Q^.Cg - S^.Cg; MinDiff.Cg := Min(MinDiff.Cg, Q^.Cg - S^.Cg);
-            R^.Co := Q^.Co - S^.Co; MinDiff.Co := Min(MinDiff.Co, Q^.Co - S^.Co);
-            R^.A  := Q^.A  - S^.A ; MinDiff.A  := Min(MinDiff.A , Q^.A  - S^.A );
-            inc(Q);
-            inc(R);
-            inc(S);
-            end;
-          R := @TmpBlock.Pixels[0];
-          for K := 0 to 63 do
-            begin
-            R^.Y  := R^.Y  - MinDiff.Y ;
-            R^.Cg := R^.Cg - MinDiff.Cg;
-            R^.Co := R^.Co - MinDiff.Co;
-            R^.A  := R^.A  - MinDiff.A ;
-            TmpBias.Y  := Min(TmpBias.Y,  R^.Y);
-            TmpBias.Cg := Min(TmpBias.Cg, R^.Cg);
-            TmpBias.Co := Min(TmpBias.Co, R^.Co);
-            TmpBias.A  := Min(TmpBias.A,  R^.A);
-            inc(R);
-            end;
-          R := @TmpBlock.Pixels[0];
-          for K := 0 to 63 do
-            begin
-            R^.Y  := R^.Y  - TmpBias.Y ;
-            R^.Cg := R^.Cg - TmpBias.Cg;
-            R^.Co := R^.Co - TmpBias.Co;
-            R^.A  := R^.A  - TmpBias.A ;
-            if R^.Y <> 0 then
-              TmpChanSize.Y  := Max(TmpChanSize.Y , Round(Int(Log2(R^.Y ))) + 1);
-            if R^.Cg <> 0 then
-              TmpChanSize.Cg := Max(TmpChanSize.Cg, Round(Int(Log2(R^.Cg))) + 1);
-            if R^.Co <> 0 then
-              TmpChanSize.Co := Max(TmpChanSize.Co, Round(Int(Log2(R^.Co))) + 1);
-            if R^.A <> 0 then
-              TmpChanSize.A  := Max(TmpChanSize.A , Round(Int(Log2(R^.A ))) + 1);
-            inc(R);
-            end;
-          TmpBias.Y  := TmpBias.Y  + MinDiff.Y ;
-          TmpBias.Cg := TmpBias.Cg + MinDiff.Cg;
-          TmpBias.Co := TmpBias.Co + MinDiff.Co;
-          TmpBias.A  := TmpBias.A  + MinDiff.A ;
-          end;
-
         Q := @Pixels[0];
         for K := 0 to 63 do
           begin
           Q^.Value := RGBAtoYCgCoA(Q^.Value);
-          Bias.Y  := Min(Bias.Y,  Q^.Y);
+          Bias.Y := Min(Bias.Y, Q^.Y);
           Bias.Cg := Min(Bias.Cg, Q^.Cg);
           Bias.Co := Min(Bias.Co, Q^.Co);
-          Bias.A  := Min(Bias.A,  Q^.A);
+          Bias.A := Min(Bias.A, Q^.A);
           inc(Q);
           end;
-
+        HasBias := Max(Max(Bias.Y, Bias.Cg), Max(Bias.Co, Bias.A)) > 0;
         Q := @Pixels[0];
         for K := 0 to 63 do
           begin
@@ -779,29 +693,8 @@ begin
             ChanSize.A := Max(ChanSize.A, Round(Int(Log2(Q^.A))) + 1);
           inc(Q);
           end;
-
-        if (ChanSize.Y + ChanSize.Cg + ChanSize.Co + ChanSize.A > TmpChanSize.Y + TmpChanSize.Cg + TmpChanSize.Co + TmpChanSize.A) and (I + J > 0) then
-          begin
-          HasReference := True;
-          Reference := 1;
-          Bias := TmpBias;
-          Bias.Value := 0;
-          ChanSize := TmpChanSize;
-          Q := @Pixels[0];
-          R := @TmpBlock.Pixels[0];
-          for K := 0 to 63 do
-            begin
-            Q^ := R^;
-            Q^.Value := 0;
-            inc(Q);
-            inc(R);
-            end;
-          end;
-        HasBias := Max(Max(Bias.Y, Bias.Cg), Max(Bias.Co, Bias.A)) > 0;
-          
-        for K := 16 downto 1 do
-          PrevBlocks[K] := PrevBlocks[K - 1];
         end;
+      end;
 
   O := 0;
   P := @Result.Data[5];
@@ -844,12 +737,12 @@ begin
           begin
           if BytePP = 4 then
             AppendBits(P, O, BytesWritten, Q^.A, ChanSize.A);
-//           if Q^.A + Bias.A <> 0 then
-//             begin
+          if Q^.A + Bias.A <> 0 then
+            begin
             AppendBits(P, O, BytesWritten, Q^.Y, ChanSize.Y);
             AppendBits(P, O, BytesWritten, Q^.Cg, ChanSize.Cg);
             AppendBits(P, O, BytesWritten, Q^.Co, ChanSize.Co);
-//             end;
+            end;
           inc(Q);
           end;
         end;

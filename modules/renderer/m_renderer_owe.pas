@@ -393,13 +393,13 @@ begin
   fSSAOShader.UniformI('EmissionTexture', 2);
   fSSAOShader.UniformI('ScreenSize', ResX, ResY);
 
-  fLightShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/light.fs');
+  fLightShader := TShader.Create('orcf-world-engine/inferred/lightcube.vs', 'orcf-world-engine/inferred/light.fs');
   fLightShader.UniformI('GeometryTexture', 0);
   fLightShader.UniformI('NormalTexture', 1);
   fLightShader.UniformI('ShadowTexture', 2);
   fLightShader.UniformI('MaterialTexture', 3);
 
-  fLightShaderWithShadow := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/lightws.fs');
+  fLightShaderWithShadow := TShader.Create('orcf-world-engine/inferred/lightcube.vs', 'orcf-world-engine/inferred/lightws.fs');
   fLightShaderWithShadow.UniformI('GeometryTexture', 0);
   fLightShaderWithShadow.UniformI('NormalTexture', 1);
   fLightShaderWithShadow.UniformI('ShadowTexture', 2);
@@ -960,6 +960,7 @@ begin
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
+    glEnable(GL_CULL_FACE);
 
     for i := 0 to high(fLightManager.fRegisteredLights) do
       if fLightManager.fRegisteredLights[i].IsVisible(fFrustum) then
@@ -972,7 +973,8 @@ begin
           end
         else
           fLightShader.Bind;
-        DrawFullscreenQuad;
+//         DrawFullscreenQuad;
+        fLightManager.fRegisteredLights[i].RenderBoundingCube;
         ModuleManager.ModTexMng.ActivateTexUnit(2);
         ModuleManager.ModTexMng.BindTexture(-1);
         ModuleManager.ModTexMng.ActivateTexUnit(0);
@@ -985,6 +987,7 @@ begin
     GBuffer.Textures[1].UnBind;
     GBuffer.Textures[2].UnBind;
 
+    glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 
   LightBuffer.Unbind;

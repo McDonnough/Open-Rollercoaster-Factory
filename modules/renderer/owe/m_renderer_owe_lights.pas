@@ -26,6 +26,7 @@ type
       procedure Unbind(I: Integer);
       procedure RenderShadowPass;
       procedure CreateShadows;
+      procedure RenderBoundingCube;
       constructor Create(LS: TLightSource);
       destructor Free;
     end;
@@ -130,6 +131,44 @@ begin
     ModuleManager.ModRenderer.ViewPoint := tmpViewPoint;
     ModuleManager.ModRenderer.MaxRenderDistance := tmpMaxRenderDistance;
     end;
+end;
+
+procedure TLight.RenderBoundingCube;
+var
+  D: Single;
+begin
+  D := MaxLightingEffect;
+  glBegin(GL_QUADS);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y + D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y + D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y + D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y + D, LightSource.Position.Z + D);
+
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y - D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y - D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y - D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y - D, LightSource.Position.Z - D);
+
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y - D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y + D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y + D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y - D, LightSource.Position.Z + D);
+
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y - D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y + D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y + D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y - D, LightSource.Position.Z - D);
+
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y - D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y + D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y + D, LightSource.Position.Z + D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y - D, LightSource.Position.Z + D);
+
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y - D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X + D, LightSource.Position.Y + D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y + D, LightSource.Position.Z - D);
+    glVertex3f(LightSource.Position.X - D, LightSource.Position.Y - D, LightSource.Position.Z - D);
+  glEnd;
 end;
 
 function TLight.Strength(Distance: Single): Single;

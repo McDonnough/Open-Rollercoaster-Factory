@@ -196,19 +196,22 @@ end;
 
 procedure TScreenCaptureTool.HandleKeypress(Event: String; Data, Result: Pointer);
 begin
-  fWithUI := ModuleManager.ModInputHandler.Key[K_LCTRL];
   case Integer(Result^) of
     K_F10:
       begin
+      fWithUI := ModuleManager.ModInputHandler.Key[K_LCTRL];
       fCurrentMode := cmScreenshot;
       EventManager.AddCallback('TRenderer.CaptureNow', @CaptureScreenshot);
       ModuleManager.ModRenderer.CaptureNextFrame := True;
       end;
     K_F11:
+      begin
+      fWithUI := ModuleManager.ModInputHandler.Key[K_LCTRL];
       if fCurrentMode <> cmVideo then
         InitVideo
       else
         FinishVideo;
+      end;
     end;
 end;
 

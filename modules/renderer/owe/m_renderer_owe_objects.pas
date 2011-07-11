@@ -326,6 +326,8 @@ begin
           CurrMM := CurrMO.Meshes[k];
       if CurrMM = nil then
         continue;
+      if not CurrMM.Visible then
+        continue;
       if CurrO.Meshes[j].Material.Texture <> nil then
         CurrO.Meshes[j].Material.Texture.Bind(0)
       else
@@ -424,9 +426,7 @@ begin
     for j := 0 to high(fManagedObjects[i].Meshes) do
       if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((fManagedObjects[i] <> fExcludedMeshObject) or (fManagedObjects[i].Meshes[j] <> fExcludedMesh)) then
         if not fManagedObjects[i].Meshes[j].Transparent then
-          begin
           Render(fManagedObjects[i].Meshes[j]);
-          end;
     with fManagedObjects[i].GeoObject.Mirror do
       if X * Y * Z < 0 then
         ModuleManager.ModRenderer.InvertFrontFace;

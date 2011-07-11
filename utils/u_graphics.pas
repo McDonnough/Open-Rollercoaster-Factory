@@ -656,8 +656,6 @@ begin
             if BytePP = 4 then
               begin
               Q^.A := P^;
-              if P^ = 0 then
-                Q^.Value := 0;
               inc(P);
               end
             else

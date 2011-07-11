@@ -24,6 +24,7 @@ type
       fMaterialBox: TScrollBox;
       fMaterialButtons: Array of TButton;
       fSelectedMaterial: Integer;
+      fAffectMaterials: Boolean;
     public
       SelectionEngine: TSelectionEngine;
       property Open: Boolean read fOpen;
@@ -219,7 +220,7 @@ end;
 
 procedure TGameObjectBuilder.UpdateMaterial(Event: String; Data, Result: Pointer);
 begin
-  if (fSelectedMaterial > -1) and (fBuilding <> nil) then
+  if (fSelectedMaterial > -1) and (fBuilding <> nil) and (fAffectMaterials) then
     begin
     fBuilding.Materials[fSelectedMaterial].Color := Vector(TColorPicker(fWindow.GetChildByName('object_builder.material.color')).CurrentColor, fBuilding.Materials[fSelectedMaterial].Color.W);
     fBuilding.Materials[fSelectedMaterial].Emission := Vector(TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).CurrentColor, fBuilding.Materials[fSelectedMaterial].Emission.W);
@@ -249,16 +250,17 @@ begin
       begin
       TColorPicker(fWindow.GetChildByName('object_builder.material.color')).DefaultColor := Vector3D(fBuildingResource.GeoObject.Materials[Sender.Tag].Color);
       TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).DefaultColor := Vector3D(fBuildingResource.GeoObject.Materials[Sender.Tag].Emission);
+      fDefaultReflectivity := fBuildingResource.GeoObject.Materials[Sender.Tag].Reflectivity;
       end
     else
       begin
       TColorPicker(fWindow.GetChildByName('object_builder.material.color')).DefaultColor := Vector3D(fBuilding.Materials[Sender.Tag].Color);
       TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).DefaultColor := Vector3D(fBuilding.Materials[Sender.Tag].Emission);
+      fDefaultReflectivity := fBuilding.Materials[Sender.Tag].Reflectivity;
       end;
+    TSlider(fWindow.GetChildByName('object_builder.material.reflectivity')).Value := fBuilding.Materials[Sender.Tag].Reflectivity;
     TColorPicker(fWindow.GetChildByName('object_builder.material.color')).CurrentColor := Vector3D(fBuilding.Materials[Sender.Tag].Color);
     TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).CurrentColor := Vector3D(fBuilding.Materials[Sender.Tag].Emission);
-    fDefaultReflectivity := fBuildingResource.GeoObject.Materials[Sender.Tag].Reflectivity;
-    TSlider(fWindow.GetChildByName('object_builder.material.reflectivity')).Value := fBuilding.Materials[Sender.Tag].Reflectivity;
     fSelectedMaterial := Sender.Tag;
     end;
 end;
@@ -309,6 +311,8 @@ begin
   fOpen := True;
   fSelectedMaterial := -1;
 
+  fAffectMaterials := False;
+  
   SetLength(fMaterialButtons, Length(fBuilding.Materials));
   for I := 0 to high(fBuilding.Materials) do
     begin
@@ -326,9 +330,11 @@ begin
   if Length(fBuilding.Materials) > 0 then
     SelectMaterial(fMaterialButtons[0]);
 
+  ResetReflectivity('', nil, nil);
   TColorPicker(fWindow.GetChildByName('object_builder.material.color')).CurrentColor := TColorPicker(fWindow.GetChildByName('object_builder.material.color')).DefaultColor;
   TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).CurrentColor := TColorPicker(fWindow.GetChildByName('object_builder.material.emission')).DefaultColor;
-  ResetReflectivity('', nil, nil);
+
+  fAffectMaterials := True;
 
   Park.SelectionEngine := SelectionEngine;
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @UpdateBOPos);
@@ -372,6 +378,7 @@ constructor TGameObjectBuilder.Create(Resource: String; ParkUI: TXMLUIManager);
 begin
   inherited Create(Resource, ParkUI);
 
+  fAffectMaterials := True;
   fSelectedMaterial := -1;
   fDefaultReflectivity := 0;
   fBuildingNew := False;

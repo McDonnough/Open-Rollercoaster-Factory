@@ -197,7 +197,8 @@ begin
           end
         else
           ModuleManager.ModRenderer.LightShader.Bind;
-        DrawFullscreenQuad;
+//         DrawFullscreenQuad;
+        ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].RenderBoundingCube;
         ModuleManager.ModTexMng.ActivateTexUnit(2);
         ModuleManager.ModTexMng.BindTexture(-1);
         ModuleManager.ModTexMng.ActivateTexUnit(0);

@@ -494,14 +494,14 @@ begin
           if BytePP = 4 then
             Bias.A := ExtractBits(P, O, 8)
           else
-            Bias.A := 0;
+            Bias.A := 255;
           end
         else
           begin
           Bias.Y := 0;
           Bias.Cg := 0;
           Bias.Co := 0;
-          Bias.A := 0;
+          Bias.A := 255;
           end;
         if HasGradient then
           for K := 0 to 1 do
@@ -516,10 +516,15 @@ begin
         Q := @Pixels[0];
         for K := 0 to 63 do
           begin
-          Q^.Y := ExtractBits(P, O, ChanSize.Y) + Bias.Y;
-          Q^.Cg := ExtractBits(P, O, ChanSize.Cg) + Bias.Cg;
-          Q^.Co := ExtractBits(P, O, ChanSize.Co) + Bias.Co;
           Q^.A := ExtractBits(P, O, ChanSize.A) + Bias.A;
+          if Q^.A <> 0 then
+            begin
+            Q^.Y := ExtractBits(P, O, ChanSize.Y) + Bias.Y;
+            Q^.Cg := ExtractBits(P, O, ChanSize.Cg) + Bias.Cg;
+            Q^.Co := ExtractBits(P, O, ChanSize.Co) + Bias.Co;
+            end
+          else
+            Q^.Value := 0;
           Q^.Value := YCgCoAtoRGBA(Q^.Value);
           inc(Q);
           end;
@@ -730,11 +735,14 @@ begin
         Q := @Pixels[0];
         for K := 0 to 63 do
           begin
-          AppendBits(P, O, BytesWritten, Q^.Y, ChanSize.Y);
-          AppendBits(P, O, BytesWritten, Q^.Cg, ChanSize.Cg);
-          AppendBits(P, O, BytesWritten, Q^.Co, ChanSize.Co);
           if BytePP = 4 then
             AppendBits(P, O, BytesWritten, Q^.A, ChanSize.A);
+          if Q^.A + Bias.A <> 0 then
+            begin
+            AppendBits(P, O, BytesWritten, Q^.Y, ChanSize.Y);
+            AppendBits(P, O, BytesWritten, Q^.Cg, ChanSize.Cg);
+            AppendBits(P, O, BytesWritten, Q^.Co, ChanSize.Co);
+            end;
           inc(Q);
           end;
         end;

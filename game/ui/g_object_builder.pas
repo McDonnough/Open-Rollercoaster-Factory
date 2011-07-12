@@ -168,13 +168,16 @@ begin
     fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value, Vector(0, 1, 0));
     fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.x')).Value, Vector(1, 0, 0));
     fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.z')).Value, Vector(0, 0, 1));
-    fBuilding.SetUnchanged;
-    fBuilding.ExecuteScript;
-    fBuilding.UpdateMatrix;
-    fBuilding.UpdateArmatures;
-    fBuilding.UpdateVertexPositions;
-    fBuilding.RecalcFaceNormals;
-    fBuilding.RecalcVertexNormals;
+    if fBuildingNew then
+      begin
+      fBuilding.SetUnchanged;
+      fBuilding.ExecuteScript;
+      fBuilding.UpdateMatrix;
+      fBuilding.UpdateArmatures;
+      fBuilding.UpdateVertexPositions;
+      fBuilding.RecalcFaceNormals;
+      fBuilding.RecalcVertexNormals;
+      end;
     TSlider(fWindow.GetChildByName('object_builder.offset.x')).Value := fIP.X;
     TSlider(fWindow.GetChildByName('object_builder.offset.y')).Value := fIP.Y;
     TSlider(fWindow.GetChildByName('object_builder.offset.z')).Value := fIP.Z;

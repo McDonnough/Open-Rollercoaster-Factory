@@ -131,8 +131,8 @@ var
 implementation
 
 uses
-  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings, g_object_selector, g_object_builder, u_graphics,
-  m_inputhandler_class;
+  u_events, m_varlist, g_park, g_leave, g_info, g_terrain_edit, g_park_settings, g_object_selector, g_object_builder,
+  g_selection_mode, u_graphics, m_inputhandler_class;
 
 type
   TParkUIWindowList = record
@@ -142,6 +142,7 @@ type
     fTerrainEdit: TGameTerrainEdit;
     fObjectSelector: TGameObjectSelector;
     fObjectBuilder: TGameObjectBuilder;
+    fSelectionModeWindow: TGameSelectionModeWindow;
     end;
 
 var
@@ -551,8 +552,16 @@ begin
   fWindow.Alpha := 1;
   fWindow.Left := fLeft + 16;
   fWindow.Top := fTop + 16;
-  fButton.Left := fLeft;
-  fButton.Top := fTop;
+  if fWindow.HasBackground then
+    begin
+    fButton.Left := fLeft;
+    fButton.Top := fTop;
+    end
+  else
+    begin
+    fButton.Left := fBtnLeft - 8;
+    fButton.Top := fBtnTop - 8;
+    end;
   fButton.Width := 64;
   fButton.Height := 64;
   if (not Expanded) then
@@ -912,11 +921,13 @@ begin
   WindowList.fParkSettings := TGameParkSettings.Create('ui/park_settings.xml', self);
   WindowList.fObjectSelector := TGameObjectSelector.Create('ui/object_selector.xml', self);
   WindowList.fObjectBuilder := TGameObjectBuilder.Create('ui/object_builder.xml', self);
+  WindowList.fSelectionModeWindow := TGameSelectionModeWindow.Create('ui/selection_mode.xml', self);
 end;
 
 destructor TParkUI.Free;
 begin
   writeln('Hint: Deleting ParkUI object');
+  WindowList.fSelectionModeWindow.Free;
   WindowList.fObjectSelector.Free;
   WindowList.fObjectBuilder.Free;
   WindowList.fLeaveWindow.Free;

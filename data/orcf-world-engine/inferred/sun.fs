@@ -46,7 +46,8 @@ void main(void) {
   vec4 Normal = texelFetch2D(NormalTexture, Coords, 0);
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
   vec3 Sun = gl_LightSource[0].position.xyz - Vertex;
-  float dotprod = max(0.0, dot(normalize(Normal.xyz), normalize(Sun)));
+  float totalDot = dot(normalize(Normal.xyz), normalize(Sun));
+  float dotprod = max(0.0, totalDot);
   gl_FragData[0].rgb = dotprod * gl_LightSource[0].diffuse.rgb;
 
   vec3 factor = vec3(2.0, 2.0, 2.0);
@@ -78,12 +79,12 @@ void main(void) {
 
   // IF [ EQ owe.ssao 1 ]
   if (UseSSAO == 1)
-    gl_FragData[0].rgb += ssaoColor.a * gl_LightSource[0].ambient.rgb * (0.8 + 0.2 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)));
+    gl_FragData[0].rgb += ssaoColor.a * gl_LightSource[0].ambient.rgb * (0.8 + 0.2 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0))) * mix(totalDot, 1.0, 0.9);
   else
-    gl_FragData[0].rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
+    gl_FragData[0].rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb * mix(totalDot, 1.0, 0.9);
   // END
   // IF [ NEQ owe.ssao 1 ]
-    gl_FragData[0].rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb;
+    gl_FragData[0].rgb += (0.3 + 0.7 * (0.5 + 0.5 * dot(normalize(Normal.xyz), vec3(0.0, 1.0, 0.0)))) * gl_LightSource[0].ambient.rgb * mix(totalDot, 1.0, 0.9);
   // END
   vec4 v = (gl_ModelViewMatrix * vec4(Vertex, 1.0));
   vec3 Eye = normalize(-v.xyz);

@@ -162,6 +162,8 @@ const
 begin
   FPSDisplay.Calculate;
   FPSDisplay.SetTime;
+  EventManager.ExecuteQuery;
+  EventManager.CallEvent('MainLoop', nil, nil);
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   ModuleManager.ModInputHandler.UpdateData;
   ModuleManager.ModGLMng.SetUpScreen;

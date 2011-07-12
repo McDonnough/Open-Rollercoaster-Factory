@@ -29,7 +29,7 @@
         <checkbox left="356" top="0" width="16" height="16" checked="false" name="object_builder.lock.z" />
         <checkbox left="128" top="32" width="16" height="16" checked="false" name="object_builder.lock.y" />
 
-        <slider left="128" top="64" width="152" height="32" min="-180" max="180" digits="0" value="0" name="object_builder.rotation.x" />
+        <slider left="128" top="64" width="152" height="32" min="-90" max="90" digits="0" value="0" name="object_builder.rotation.x" />
         <slider left="280" top="64" width="152" height="32" min="-180" max="180" digits="0" value="0" name="object_builder.rotation.y" />
         <slider left="432" top="64" width="152" height="32" min="-180" max="180" digits="0" value="0" name="object_builder.rotation.z" />
 

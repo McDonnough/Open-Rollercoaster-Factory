@@ -13,10 +13,18 @@ type
     Callbacks: Array of TEventCallback;
     end;
 
+  TEventCall = record
+    Event: String;
+    Data, Result: Pointer;
+    end;
+
   TEventManager = class
     protected
       fEvents: Array of TEvent;
+      fEventQuery: Array of TEventCall;
     public
+      procedure ExecuteQuery;
+      procedure QueryEvent(Event: String; Data, Result: Pointer);
       procedure CallEvent(Event: String; Data, Result: Pointer);
       procedure AddCallback(Event: String; Callback: TEventCallback);
       procedure RemoveCallback(Event: String);
@@ -31,6 +39,26 @@ implementation
 
 uses
   m_varlist;
+
+procedure TEventManager.ExecuteQuery;
+var
+  I, TotalEvents: Integer;
+begin
+  TotalEvents := Length(fEventQuery);
+  for I := 0 to TotalEvents - 1 do
+    CallEvent(fEventQuery[I].Event, fEventQuery[I].Data, fEventQuery[I].Result);
+  for I := TotalEvents to high(fEventQuery) do
+    fEventQuery[I - TotalEvents] := fEventQuery[I];
+  SetLength(fEventQuery, Length(fEventQuery) - TotalEvents);
+end;
+
+procedure TEventManager.QueryEvent(Event: String; Data, Result: Pointer);
+begin
+  SetLength(fEventQuery, length(fEventQuery) + 1);
+  fEventQuery[high(fEventQuery)].Event := Event;
+  fEventQuery[high(fEventQuery)].Data := Data;
+  fEventQuery[high(fEventQuery)].Result := Result;
+end;
 
 procedure TEventManager.CallEvent(Event: String; Data, Result: Pointer);
 var

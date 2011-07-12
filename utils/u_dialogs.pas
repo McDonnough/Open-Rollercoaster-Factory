@@ -23,8 +23,10 @@ type
       fWindow: TWindow;
       fBtnOK: TButton;
       fIcon: TImage;
+      fCanBeFreed: Boolean;
       procedure CallSignals(Sender: TGUIComponent);
     public
+      property CanBeFreed: Boolean read fCanBeFreed;
       constructor Create(Message, Icon: String);
       destructor Free;
     end;
@@ -35,8 +37,10 @@ type
       fWindow: TWindow;
       fBtnYes, fBtnNo: TButton;
       fIcon: TImage;
+      fCanBeFreed: Boolean;
       procedure CallSignals(Sender: TGUIComponent);
     public
+      property CanBeFreed: Boolean read fCanBeFreed;
       constructor Create(Message, Icon: String);
       destructor Free;
     end;
@@ -62,6 +66,7 @@ type
       procedure SelectFile(Sender: TGUIComponent);
       procedure OCFFileLoaded(Event: String; Data, Result: Pointer);
       procedure FreeDialogs(Event: String; Data, Result: Pointer);
+      procedure SelectedOnYes(Event: String; Data, Result: Pointer);
     public
       property Directory: String read fDirectory;
       property FileName: String read fFileName;
@@ -76,13 +81,15 @@ uses
 
 procedure TOKDialog.CallSignals(Sender: TGUIComponent);
 begin
-  EventManager.CallEvent('TOKDialog.OK', self, nil);
+  EventManager.QueryEvent('TOKDialog.OK', self, nil);
+  fCanBeFreed := True;
 end;
 
 constructor TOKDialog.Create(Message, Icon: String);
 var
   ResX, ResY: Integer;
 begin
+  fCanBeFreed := False;
   ModuleManager.ModGlContext.GetResolution(ResX, ResY);
 
   fBGLabel := TLabel.Create(nil);
@@ -144,15 +151,17 @@ end;
 procedure TYesNoDialog.CallSignals(Sender: TGUIComponent);
 begin
   if Sender = fBtnNo then
-    EventManager.CallEvent('TYesNoDialog.No', self, nil)
+    EventManager.QueryEvent('TYesNoDialog.No', self, nil)
   else if Sender = fBtnYes then
-    EventManager.CallEvent('TYesNoDialog.Yes', self, nil);
+    EventManager.QueryEvent('TYesNoDialog.Yes', self, nil);
+  fCanBeFreed := True;
 end;
 
 constructor TYesNoDialog.Create(Message, Icon: String);
 var
   ResX, ResY: Integer;
 begin
+  fCanBeFreed := False;
   ModuleManager.ModGlContext.GetResolution(ResX, ResY);
 
   fBGLabel := TLabel.Create(nil);
@@ -253,10 +262,13 @@ end;
 
 procedure TFileDialog.FreeDialogs(Event: String; Data, Result: Pointer);
 begin
-  if fOKD <> nil then begin fOKD.Free; fOKD := nil; end;
-  if fYND <> nil then begin fYND.Free; fYND := nil; end;
-  if Event = 'TYesNoDialog.Yes' then
-    EventManager.CallEvent('TFileDialog.Selected', @fFileName, nil);
+  if fOKD <> nil then if fOKD.CanBeFreed then begin fOKD.Free; fOKD := nil; end;
+  if fYND <> nil then if fYND.CanBeFreed then begin fYND.Free; fYND := nil; end;
+end;
+
+procedure TFileDialog.SelectedOnYes(Event: String; Data, Result: Pointer);
+begin
+  EventManager.QueryEvent('TFileDialog.Selected', @fFileName, nil);
 end;
 
 procedure TFileDialog.CallEvent(Sender: TGUIComponent);
@@ -275,18 +287,18 @@ begin
       else if FileExists(fFileName) then
         fYND := TYesNoDialog.Create('File does already exist. Overwrite?', 'dialog-warning.tga')
       else
-        EventManager.CallEvent('TFileDialog.Selected', @fFileName, nil);
+        EventManager.QueryEvent('TFileDialog.Selected', @fFileName, nil);
       end
     else
       begin
       if (not(FileExists(fFileName))) or (DirectoryExists(fFileName)) then
         fOKD := TOKDialog.Create('File does not exist', 'dialog-error.tga')
       else
-        EventManager.CallEvent('TFileDialog.Selected', @fFileName, nil);
+        EventManager.QueryEvent('TFileDialog.Selected', @fFileName, nil);
       end;
     end
   else if Sender = Abort then
-    EventManager.CallEvent('TFileDialog.Aborted', @fFileName, nil);
+    EventManager.QueryEvent('TFileDialog.Aborted', @fFileName, nil);
 end;
 
 procedure TFileDialog.SelectFile(Sender: TGUIComponent);
@@ -524,9 +536,8 @@ begin
   Abort.Icon := 'dialog-cancel.tga';
 
   EventManager.AddCallback('TFileOpenDialog.LoadedOCFFile', @OCFFileLoaded);
-  EventManager.AddCallback('TOKDialog.OK', @FreeDialogs);
-  EventManager.AddCallback('TYesNoDialog.Yes', @FreeDialogs);
-  EventManager.AddCallback('TYesNoDialog.No', @FreeDialogs);
+  EventManager.AddCallback('TYesNoDialog.Yes', @SelectedOnYes);
+  EventManager.AddCallback('MainLoop', @FreeDialogs);
 
   fDirectory := InitialDirectory;
   fFileName := '';
@@ -540,6 +551,8 @@ destructor TFileDialog.Free;
 begin
   EventManager.RemoveCallback(@OCFFileLoaded);
   EventManager.RemoveCallback(@FreeDialogs);
+  EventManager.RemoveCallback(@SelectedOnYes);
+  FreeDialogs('', nil, nil);
   fDirList.Free;
   fFileList.Free;
   bgLabel.Free;

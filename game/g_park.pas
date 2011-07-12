@@ -246,10 +246,12 @@ begin
     ModuleManager.ModLog.AddError('Game crashed! Trying to save park file..');
     try
       Park.SaveTo(ModuleManager.ModPathes.PersonalDataPath + 'saved/crash-recovery.ocf');
-      ModuleManager.ModLog.AddError('Success! Restart the game and see if everything is right.');
+      ModuleManager.ModLog.AddError('Success! Park file has been saved to ' + ModuleManager.ModPathes.PersonalDataPath + 'saved/crash-recovery.ocf. Restart the game and see if everything is right.');
     except
       ModuleManager.ModLog.AddError('FAILED! Your most recent changes are most probably lost, sorry for that.');
     end;
+    ModuleManager.ModLog.AddError('To get this solved, please report a bug and tell exactly what you did before the' + #10
+                                + 'crash. Try to reproduce it again. Attaching the park file might be helpful as well.');
     ModuleManager.ModLog.AddError('Quitting game.');
     halt(101);
   end;
@@ -283,6 +285,11 @@ begin
     TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:section', '0');
     TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:format', 'terrain.rawdata');
     TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:version', '1.0');
+    TDOMElement(FirstChild.LastChild).AppendChild(CreateElement('resource'));
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:id', '1');
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:section', '1');
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:format', 'park.objectdata');
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:version', '1.0');
     TDOMElement(FirstChild).AppendChild(CreateElement('park'));
     TDOMElement(FirstChild.LastChild).SetAttribute('resource:version', '1.0');
     TDOMElement(FirstChild.LastChild).SetAttribute('name', fName);
@@ -291,9 +298,12 @@ begin
     TDOMElement(FirstChild.LastChild).AppendChild(CreateElement('terrain'));
     TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:id', '0');
     TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('collection', SystemIndependentFileName(pTerrain.Collection.Name));
+    TDOMElement(FirstChild.LastChild).AppendChild(CreateElement('objects'));
+    TDOMElement(FirstChild.LastChild.LastChild).SetAttribute('resource:id', '1');
     end;
 
   fTmpFile.AddBinarySection(pTerrain.CreateOCFSection);
+  fTmpFile.AddBinarySection(pObjects.CreateOCFSection);
 
   fTmpFile.SaveTo(F);
   fTmpFile.Free;

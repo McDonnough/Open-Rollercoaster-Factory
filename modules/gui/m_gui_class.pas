@@ -100,6 +100,11 @@ type
       procedure CallSignals; virtual abstract;
 
       (**
+        * Remove references to a component
+        *)
+      procedure DeletionNotification(Component: TGUIComponent);
+
+      (**
         * Render all attached objects
         *)
       procedure Render; virtual abstract;
@@ -343,6 +348,7 @@ end;
 
 destructor TGUIComponent.Free;
 begin
+  ModuleManager.ModGUI.DeletionNotification(Self);
   while high(fChildren) >= 0 do
     case fChildren[0].ComponentType of
       CImage: TImage(fChildren[0]).Free;
@@ -351,6 +357,15 @@ begin
     end;
   if fParent <> nil then
     fParent.RemoveChild(Self);
+end;
+
+
+procedure TModuleGUIClass.DeletionNotification(Component: TGUIComponent);
+begin
+  if fHoverComponent = Component then
+    fHoverComponent := nil;
+  if fFocusComponent = Component then
+    fFocusComponent := nil;
 end;
 
 end.

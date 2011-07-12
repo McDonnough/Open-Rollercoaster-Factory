@@ -39,9 +39,6 @@ void main(void) {
   vec3 Light = gl_LightSource[1].position.xyz - Vertex;
   float attenuation = gl_LightSource[1].diffuse.a * (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a / (gl_LightSource[1].ambient.a * gl_LightSource[1].ambient.a + dot(Light, Light)));
 
-  if (attenuation <= 0.01)
-    discard;
-
   vec4 Normal = texelFetch2D(NormalTexture, Coords, 0);
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
 

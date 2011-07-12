@@ -63,6 +63,7 @@ end;
 procedure TGameObjectBuilder.SelectObject(Event: String; Data, Result: Pointer);
 var
   tmp: TMatrix4D;
+  UpVector: TVector4D;
   Rotation: TVector3D;
   CosBeta: Single;
 begin
@@ -80,10 +81,22 @@ begin
     TCheckBox(fWindow.GetChildByName('object_builder.mirror.y')).Checked := fBuilding.Mirror.Y <> 1;
     TCheckBox(fWindow.GetChildByName('object_builder.mirror.z')).Checked := fBuilding.Mirror.Z <> 1;
     tmp := fBuilding.Matrix;
+    UpVector := Vector(0, 1, 0, 0) * tmp;
+    Rotation := Vector(0, 0, 0);
     Rotation.X := ArcSin(-Tmp[1].Z);
     CosBeta := Cos(Rotation.X);
-    Rotation.Y := ArcCos(Tmp[2].Z / CosBeta);
-    Rotation.Z := ArcSin(Tmp[1].X / CosBeta);
+    if CosBeta > 0.01 then
+      begin
+      Rotation.Y := ArcCos(Tmp[2].Z / CosBeta) * Sign(Tmp[0].Z / CosBeta);
+      Rotation.Z := ArcSin(Tmp[1].X / CosBeta);
+      if Sign(Tmp[1].Y) < 0 then
+        Rotation.Z := Sign(Rotation.Z) * 3.141593 - Rotation.Z;
+      end
+    else
+      begin
+      Rotation.Z := 0;
+      Rotation.Y := (ArcCos(DotProduct(Normalize(Vector3D(UpVector)), Vector(0, 0, -1))) * -Sign(DotProduct(Normalize(Vector3D(UpVector)), Vector(1, 0, 0))));
+      end;
     TSlider(fWindow.GetChildByName('object_builder.rotation.x')).Value := RadToDeg(Rotation.X);
     TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value := RadToDeg(Rotation.Y);
     TSlider(fWindow.GetChildByName('object_builder.rotation.z')).Value := RadToDeg(Rotation.Z);

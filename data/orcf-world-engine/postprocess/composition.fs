@@ -31,12 +31,13 @@ void main(void) {
   vec4 Material = texelFetch2D(MaterialTexture, Coords, 0);
   vec4 Light = texelFetch2D(LightTexture, Coords, 0);
   vec4 Reflection = texelFetch2D(ReflectionTexture, Coords, 0);
-  gl_FragColor = vec4(Material.rgb, 1.0);
+  gl_FragData[0] = vec4(Material.rgb, 1.0);
+  gl_FragData[1] = gl_FragData[0];
   if (Light.a >= 0.0) {
-    gl_FragColor.rgb *= Light.rgb;
-    gl_FragColor.rgb = mix(gl_FragColor.rgb, Reflection.rgb, Reflection.a);
-    gl_FragColor.rgb += texelFetch2D(SpecularTexture, Coords, 0).rgb * abs(Material.a);
-    gl_FragColor.rgb = mix(gl_FragColor.rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
+    gl_FragData[0].rgb *= Light.rgb;
+//     gl_FragData[0].rgb = mix(gl_FragData[0].rgb, Reflection.rgb, Reflection.a);
+    gl_FragData[0].rgb += texelFetch2D(SpecularTexture, Coords, 0).rgb * abs(Material.a);
+    gl_FragData[0].rgb = mix(gl_FragData[0].rgb, 0.5 * gl_LightSource[0].diffuse.rgb, clamp(2.0 * gl_FragDepth, 0.0, 1.0));
   }
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, FogColor, 1.0 - pow(0.5, mix(Vertex.a * FogStrength, max(0.0, WaterHeight - Vertex.y), WaterRefractionMode)));
+  gl_FragData[0].rgb = mix(gl_FragData[0].rgb, FogColor, 1.0 - pow(0.5, mix(Vertex.a * FogStrength, max(0.0, WaterHeight - Vertex.y), WaterRefractionMode)));
 }

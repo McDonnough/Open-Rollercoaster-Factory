@@ -44,7 +44,7 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader, fGridShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader, fGridShader, fSSRShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
@@ -262,6 +262,8 @@ begin
   fSceneBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
   fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);      // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
+  fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);      // Material part
+  fSceneBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
   fSceneBuffer.Unbind;
 
   fHDRBuffer := TFBO.Create(BufferSizeX, 1, false);
@@ -444,6 +446,17 @@ begin
   fUnderWaterShader.UniformI('RenderedScene', 1);
   fUnderWaterShader.Unbind;
 
+  fSSRShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/ssr.fs');
+  fSSRShader.UniformI('MaterialTexture', 0);
+  fSSRShader.UniformI('NormalTexture', 1);
+  fSSRShader.UniformI('GTexture', 2);
+  fSSRShader.UniformI('ReflectionTexture', 3);
+  fSSRShader.UniformI('MaterialMap', 4);
+  fSSRShader.UniformI('RenderedScene', 5);
+  fSSRShader.UniformI('SpecularTexture', 6);
+  fSSRShader.UniformI('LightTexture', 7);
+  fSSRShader.Unbind;
+
   fSimpleShader := TShader.Create('orcf-world-engine/inferred/simple.vs', 'orcf-world-engine/inferred/simple.fs');
   fSimpleShader.Unbind;
 
@@ -459,6 +472,7 @@ begin
   fFrustum.Free;
 
   fSimpleShader.Free;
+  fSSRShader.Free;
   fUnderWaterShader.Free;
   fBlackShader.Free;
   fShadowDepthShader.Free;
@@ -1098,6 +1112,46 @@ begin
       GBuffer.Textures[2].Unbind;
       end;
   fSceneBuffer.Unbind;
+
+  // Apply screen space reflections
+  SpareBuffer.Bind;
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    fSSRShader.Bind;
+    fSSRShader.UniformF('ViewerPosition', TVector3D(ModuleManager.ModCamera.ActiveCamera.Position));
+    fSSRShader.UniformF('FogColor', FogColor);
+    fSSRShader.UniformF('FogStrength', FogStrength);
+    fSSRShader.UniformF('WaterHeight', 0);
+    fSSRShader.UniformF('WaterRefractionMode', 0);
+
+    GBuffer.Textures[4].Bind(3);
+    GBuffer.Textures[3].Bind(4);
+    GBuffer.Textures[2].Bind(2);
+    GBuffer.Textures[1].Bind(1);
+    SceneBuffer.Textures[0].Bind(5);
+    SceneBuffer.Textures[1].Bind(0);
+    LightBuffer.Textures[0].Bind(7);
+    LightBuffer.Textures[1].Bind(6);
+
+    DrawFullscreenQuad;
+
+    fSSRShader.Unbind;
+  SpareBuffer.Unbind;
+
+  // Write back the new composited image
+  SceneBuffer.Bind;
+    glDisable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.0);
+
+    FullscreenShader.Bind;
+    SpareBuffer.Textures[0].Bind(0);
+    DrawFullscreenQuad;
+    FullscreenShader.UnBind;
+    
+    glDisable(GL_ALPHA_TEST);
+  SceneBuffer.Unbind;
 
   SpareBuffer.Bind;
     // Get depth under mouse

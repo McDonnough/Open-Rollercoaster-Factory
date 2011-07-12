@@ -178,9 +178,10 @@ begin
       end;
     106:
       begin
+      pObjects.ContinueLoading;
       ModuleManager.ModLoadScreen.Progress := Round(10 + 88 * (ModuleManager.ModOCFManager.LoadedFiles / Max(1, ModuleManager.ModOCFManager.FileCount)));
       ModuleManager.ModLoadScreen.Text := 'Loading resource $' + IntToStr(ModuleManager.ModOCFManager.LoadedFiles + 1) + '/' + IntToStr(ModuleManager.ModOCFManager.FileCount) + '$';
-      if (ModuleManager.ModOCFManager.LoadedFiles < ModuleManager.ModOCFManager.FileCount) or (not fGameObjectManager.Loaded) then
+      if (ModuleManager.ModOCFManager.LoadedFiles < ModuleManager.ModOCFManager.FileCount) or (not fGameObjectManager.Loaded) or (not pObjects.FinishedLoading) then
         dec(fLoadState);
       end;
     107:
@@ -250,7 +251,7 @@ begin
     except
       ModuleManager.ModLog.AddError('FAILED! Your most recent changes are most probably lost, sorry for that.');
     end;
-    ModuleManager.ModLog.AddError('To get this solved, please report a bug and tell exactly what you did before the' + #10
+    ModuleManager.ModLog.AddError('To get this solved, please report a bug and try to tell exactly what you did before the' + #10
                                 + 'crash. Try to reproduce it again. Attaching the park file might be helpful as well.');
     ModuleManager.ModLog.AddError('Quitting game.');
     halt(101);
@@ -318,6 +319,8 @@ begin
   fDescription := TDOMElement(fFile.XML.Document.GetElementsByTagName('description')[0]).FirstChild.NodeValue;
   fName := TDOMElement(fFile.XML.Document.GetElementsByTagName('park')[0]).GetAttribute('name');
   fAuthor := TDOMElement(fFile.XML.Document.FirstChild).GetAttribute('author');
+
+  pObjects.InitLoader(fFile.Bin[1]);
 
   fPostLoading := true;
 end;

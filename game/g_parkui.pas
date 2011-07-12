@@ -774,10 +774,24 @@ begin
     with TDOMElement(a[0]) do
       begin
       fWindow.Name := GetAttribute('name');
+      fWindow.HasBackground := GetAttribute('background') <> 'false';
       Width := StrToInt(GetAttribute('width'));
       Height := StrToInt(GetAttribute('height'));
-      Left := StrToInt(GetAttribute('left')) - 400 + ResX / 2;
-      Top := StrToInt(GetAttribute('top')) - 300 + ResY / 2;
+
+      if GetAttribute('halign') = 'left' then
+        Left := StrToInt(GetAttribute('left'))
+      else if GetAttribute('halign') = 'right' then
+        Left := StrToInt(GetAttribute('left')) - 800 + ResX
+      else
+        Left := StrToInt(GetAttribute('left')) - 400 + ResX / 2;
+
+      if GetAttribute('valign') = 'top' then
+        Top := StrToInt(GetAttribute('top'))
+      else if GetAttribute('valign') = 'bottom' then
+        Top := StrToInt(GetAttribute('top')) - 600 + ResY
+      else
+        Top := StrToInt(GetAttribute('top')) - 300 + ResY / 2;
+      
       BtnLeft := StrToInt(GetAttribute('btnleft')) - 800 + ResX;
       BtnTop := StrToInt(GetAttribute('btntop')) - 300 + ResY / 2;
       fButton.Icon := GetAttribute('icon');

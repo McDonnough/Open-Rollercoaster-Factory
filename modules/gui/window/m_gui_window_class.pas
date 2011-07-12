@@ -10,6 +10,7 @@ uses
 type
   TWindow = class(TGUIComponent)
     public
+      HasBackground: Boolean;
       OfsX1, OfsX2, OfsY1, OfsY2, ResX, ResY: Integer;
       procedure Render;
       constructor Create(mParent: TGUIComponent);
@@ -46,6 +47,7 @@ begin
   OfsX2 := 0;
   OfsY1 := 0;
   OfsY2 := 0;
+  HasBackground := True;
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
 end;
 

@@ -388,6 +388,8 @@ begin
 end;
 
 constructor TGameObjectBuilder.Create(Resource: String; ParkUI: TXMLUIManager);
+var
+  A: TRealObject;
 begin
   inherited Create(Resource, ParkUI);
 
@@ -415,6 +417,14 @@ begin
   EventManager.AddCallback('BasicComponent.OnScroll', @OnScroll);
   SelectionEngine := TSelectionEngine.Create;
   SelectionEngine.Add(nil, 'GUIActions.terrain_edit.marks.move');
+
+  A := TRealObject(Park.pObjects.First);
+  while A <> nil do
+    begin
+    SelectionEngine.Add(A.GeoObject, 'GUIActions.terrain_edit.marks.move');
+    A := TRealObject(A.Next);
+    end;
+  
   fIP := Vector(0, 0, 0);
   fSnapToGrid := False;
   fSnapToObjects := True;

@@ -20,9 +20,15 @@ type
 
   TObjectManager = class(TLinkedList)
     protected
+      fLoadedDoc: TDOMDocument;
+      fCurrentObjectNode: TDOMElement;
+      fFinishedLoading: Boolean;
     public
+      property FinishedLoading: Boolean read fFinishedLoading;
       constructor Create;
       function CreateOCFSection: TOCFBinarySection;
+      procedure InitLoader(S: TOCFBinarySection);
+      procedure ContinueLoading;
       procedure Advance;
       procedure Free;
     end;
@@ -30,7 +36,7 @@ type
 implementation
 
 uses
-  u_events, main;
+  u_events, main, g_park;
 
 constructor TRealObject.Create(TheResource: TObjectResource);
 begin
@@ -70,6 +76,93 @@ end;
 constructor TObjectManager.Create;
 begin
   inherited Create;
+  fFinishedLoading := True;
+  fLoadedDoc := nil;
+  fCurrentObjectNode := nil;
+end;
+
+procedure TObjectManager.InitLoader(S: TOCFBinarySection);
+var
+  XML: String;
+  I: Integer;
+begin
+  fFinishedLoading := False;
+  SetLength(XML, Length(S.Stream.Data));
+  for I := 0 to high(S.Stream.Data) do
+    XML[I + 1] := Char(S.Stream.Data[I]);
+  fLoadedDoc := DOMFromXML(XML);
+  fCurrentObjectNode := TDOMElement(fLoadedDoc.FirstChild.FirstChild);
+end;
+
+procedure TObjectManager.ContinueLoading;
+var
+  O: TRealObject;
+  E, F: TDOMElement;
+  M: TMaterial;
+  I: Integer;
+begin
+  if fFinishedLoading then
+    exit;
+
+  if not TObjectResource.Get(fCurrentObjectNode.GetAttribute('resource:name')).FinishedLoading then
+    exit;
+
+  O := TRealObject.Create(TObjectResource.Get(fCurrentObjectNode.GetAttribute('resource:name')));
+
+  E := TDOMElement(fCurrentObjectNode.FirstChild);
+  while E <> nil do
+    begin
+    if E.TagName = 'matrix' then
+      begin
+      F := TDOMElement(E.FirstChild);
+      I := 0;
+      while F <> nil do
+        begin
+        if (F.TagName = 'row') and (I <= 3) then
+          begin
+          O.GeoObject.Matrix[I].X := StrToFloat(F.GetAttribute('x'));
+          O.GeoObject.Matrix[I].Y := StrToFloat(F.GetAttribute('y'));
+          O.GeoObject.Matrix[I].Z := StrToFloat(F.GetAttribute('z'));
+          O.GeoObject.Matrix[I].W := StrToFloat(F.GetAttribute('w'));
+          inc(I);
+          end;
+        F := TDOMElement(F.NextSibling);
+        end;
+      end
+    else if E.TagName = 'mirror' then
+      begin
+      O.GeoObject.Mirror.X := StrToInt(E.GetAttribute('x'));
+      O.GeoObject.Mirror.Y := StrToInt(E.GetAttribute('y'));
+      O.GeoObject.Mirror.Z := StrToInt(E.GetAttribute('z'));
+      end
+    else if E.TagName = 'material' then
+      begin
+      M := O.GeoObject.GetMaterialByName(E.GetAttribute('name'));
+      if M <> nil then
+        begin
+        F := TDOMElement(E.FirstChild);
+        while F <> nil do
+          begin
+          if F.TagName = 'color' then
+            M.Color := Vector(StrToFloat(F.GetAttribute('r')), StrToFloat(F.GetAttribute('g')), StrToFloat(F.GetAttribute('b')), M.Color.W)
+          else if F.TagName = 'emission' then
+            M.Emission := Vector(StrToFloat(F.GetAttribute('r')), StrToFloat(F.GetAttribute('g')), StrToFloat(F.GetAttribute('b')), M.Emission.W)
+          else if F.TagName = 'reflectivity' then
+            M.Reflectivity := StrToFloat(F.GetAttribute('v'));
+          F := TDOMElement(F.NextSibling);
+          end;
+        end;
+      end;
+    E := TDOMElement(E.NextSibling);
+    end;
+  Park.NormalSelectionEngine.Add(O.GeoObject, 'TPark.Objects.Selected');
+  Append(O);
+
+  fCurrentObjectNode := TDOMElement(fCurrentObjectNode.NextSibling);
+  fFinishedLoading := fCurrentObjectNode = nil;
+  
+  if fFinishedLoading then
+    fLoadedDoc.Free;
 end;
 
 function TObjectManager.CreateOCFSection: TOCFBinarySection;

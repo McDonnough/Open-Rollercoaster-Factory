@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window width="616" height="240" left="8" top="332" btnleft="848" btntop="284" icon="object-builder.tga" name="object_builder">
+<window width="616" height="240" left="8" top="332" btnleft="848" btntop="284" icon="object-builder.tga" name="object_builder" halign="left" valign="bottom">
   <panel leftspace="0" rightspace="0" bottomspace="0" topspace="32" />
   <tabbar left="40" top="8" width="352" height="32" onchangetab="object_builder.changeTab" name="object_builder.tabbar">
     <tab>Placement</tab>

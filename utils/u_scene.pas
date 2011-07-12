@@ -189,6 +189,7 @@ type
       procedure SetUnchanged;
       function GetBoneByName(Armature, Bone: String): TBone;
       function GetMeshByName(Mesh: String): TGeoMesh;
+      function GetMaterialByName(Mat: String): TMaterial;
       procedure ExecuteScript;
       procedure SetIO;
       class procedure RegisterStruct;
@@ -1039,6 +1040,16 @@ begin
         inc(k);
         end;
     end;
+end;
+
+function TGeoObject.GetMaterialByName(Mat: String): TMaterial;
+var
+  I: Integer;
+begin
+  Result := nil;
+  for I := 0 to high(Materials) do
+    if Materials[I].Name = Mat then
+      exit(Materials[I]);
 end;
 
 class procedure TGeoObject.RegisterStruct;

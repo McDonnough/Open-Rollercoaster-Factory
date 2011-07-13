@@ -29,6 +29,7 @@ type
       pObjects: TObjectManager;
 
       fName, fAuthor, fDescription: String;
+      SelectionMode: Byte;
 
       property ScreenCaptureTool: TScreenCaptureTool read fScreenCaptureTool;
       property GameObjectManager: TGameObjectManager read fGameObjectManager;
@@ -78,10 +79,15 @@ type
 var
   Park: TPark = nil;
 
+const
+  S_NO_SELECTION = 0;
+  S_DEFAULT_SELECTION = 1;
+  S_REMOVE_SELECTION = 2;
+
 implementation
 
 uses
-  Main, m_varlist, u_events, math, u_files, u_scene;
+  Main, m_varlist, u_events, math, u_files, u_scene, m_inputhandler_class;
 
 procedure TPark.SetSelectionEngine(E: TSelectionEngine);
 begin
@@ -94,6 +100,8 @@ end;
 
 procedure TPark.SelectedObject(Event: String; Data, Result: Pointer);
 begin
+  if (ModuleManager.ModInputHandler.MouseButtons[MOUSE_LEFT]) and (SelectionMode = S_REMOVE_SELECTION) and (ModuleManager.ModGUI.ClickingBasicComponent) then
+    pObjects.Remove(TSelectableObject(Data^).O);
 end;
 
 constructor TPark.Create(FileName: String);
@@ -124,6 +132,8 @@ begin
 
 
   fLoadState := 0;
+
+  SelectionMode := S_DEFAULT_SELECTION;
 end;
 
 procedure TPark.ContinueLoading;
@@ -238,7 +248,8 @@ begin
       pObjects.Advance;
       pParticles.Advance;
       ModuleManager.ModCamera.AdvanceActiveCamera;
-      fSelectionEngine.Update;
+      if fSelectionEngine <> nil then
+        fSelectionEngine.Update;
       end;
     if fPostLoading then
       ContinueLoading;

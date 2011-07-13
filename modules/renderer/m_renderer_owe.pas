@@ -720,6 +720,8 @@ begin
   Coord := Vector(0, 0, 0, 0);
 
   // Selection pass - abuse the light buffer for that because it consists of two buffers
+  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+  fSelectionRay := Vector(0, 0, 0);
   if Park.SelectionEngine <> nil then
     begin
     LightBuffer.Bind;

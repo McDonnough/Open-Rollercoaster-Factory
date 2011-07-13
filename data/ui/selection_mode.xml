@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window width="100" height="300" left="624" top="50" btnleft="724" btntop="235" icon="selection-default.tga" background="false" name="selection_mode" halign="right">
-  
+<window width="56" height="152" left="636" top="167" btnleft="724" btntop="235" icon="selection-default.tga" background="false" name="selection_mode" halign="right">
+  <iconbutton alpha="0" left="8" top="52" width="48" height="48" icon="selection-default.tga" name="selection_mode.normalselection" onclick="selection_mode.changed" />
+  <iconbutton alpha="0" left="8" top="52" width="48" height="48" icon="selection-none.tga" name="selection_mode.noselection" onclick="selection_mode.changed" />
+  <iconbutton alpha="0" left="8" top="52" width="48" height="48" icon="selection-remove.tga" name="selection_mode.deleteselection" onclick="selection_mode.changed" />
 </window>

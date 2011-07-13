@@ -88,7 +88,7 @@ begin
     else
       fSelectableObjects[i].Selected := ModuleManager.ModRenderer.SelectedMaterialID = fSelectableObjects[i].O.SelectionID;
     if fSelectableObjects[i].Selected then
-      EventManager.CallEvent(fSelectableObjects[i].Event, @fSelectableObjects[i], nil);
+      EventManager.QueryEvent(fSelectableObjects[i].Event, @fSelectableObjects[i], nil);
     end;
 end;
 

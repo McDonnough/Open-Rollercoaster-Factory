@@ -864,7 +864,8 @@ end;
 
 procedure TXMLUIWindow.StartDragging(Sender: TGUIComponent);
 begin
-  fParkUI.Dragging := self;
+  if fWindow.HasBackground then
+    fParkUI.Dragging := self;
 end;
 
 procedure TXMLUIWindow.EndDragging(Sender: TGUIComponent);
@@ -908,6 +909,7 @@ begin
   if WindowList.fParkSettings.Window.Name = N then exit(WindowList.fParkSettings);
   if WindowList.fObjectSelector.Window.Name = N then exit(WindowList.fObjectSelector);
   if WindowList.fObjectBuilder.Window.Name = N then exit(WindowList.fObjectBuilder);
+  if WindowList.fSelectionModeWindow.Window.Name = N then exit(WindowList.fSelectionModeWindow);
 end;
 
 constructor TParkUI.Create;

@@ -29,6 +29,7 @@ type
       function CreateOCFSection: TOCFBinarySection;
       procedure InitLoader(S: TOCFBinarySection);
       procedure ContinueLoading;
+      procedure Remove(O: TGeoObject);
       procedure Advance;
       procedure Free;
     end;
@@ -36,7 +37,7 @@ type
 implementation
 
 uses
-  u_events, main, g_park;
+  u_events, main, g_park, g_parkui, g_object_builder;
 
 constructor TRealObject.Create(TheResource: TObjectResource);
 begin
@@ -217,6 +218,25 @@ begin
   Result := TOCFBinarySection.Create;
   Result.Append(@XMLString[1], Length(XMLString));
   X.Free;
+end;
+
+procedure TObjectManager.Remove(O: TGeoObject);
+var
+  C: TRealObject;
+begin
+  Park.NormalSelectionEngine.Delete(O);
+  TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).SelectionEngine.Delete(O);
+  C := TRealObject(First);
+  while C <> nil do
+    begin
+    if C.GeoObject = O then
+      begin
+      C.Free;
+      exit;
+      end
+    else
+      C := TRealObject(C.Next);
+    end;
 end;
 
 procedure TObjectManager.Free;

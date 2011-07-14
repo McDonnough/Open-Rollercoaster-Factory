@@ -382,7 +382,7 @@ begin
   fQuit.OnClick := @SetMenuState;
 
   fVersion := TImageButton.Create('version', nil);
-  fVersion.Caption := 'Version $-.-$';
+  fVersion.Caption := 'Version $2011.07p$';
   fVersion.TextLabelLeft := 24;
   fVersion.TextLabelTop := 5;
   fVersion.Top := ResY - 32;

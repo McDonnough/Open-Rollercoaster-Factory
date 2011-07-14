@@ -1,0 +1,37 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[usenames,dvipsnames]{color}
+% \usepackage{ngerman}
+\usepackage{textcomp}
+\usepackage{helvet}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage[super,square]{natbib}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue]{hyperref}
+\usepackage[rflt]{floatflt}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\geometry{a4paper,left=30mm,right=40mm,top=25mm,bottom=25mm}
+% \renewcommand{\rmdefault}{\sfdefault}
+\renewcommand{\headrulewidth}{0.0pt}
+\onehalfspacing
+
+\lstset{
+    basicstyle=\footnotesize\ttfamily, numbers=left, numberstyle=\footnotesize\ttfamily,
+    keywordstyle=\color{blue}\bfseries, commentstyle=\color{Gray}\textit, stringstyle=\color{Maroon},
+    stepnumber=1, numbersep=10pt, backgroundcolor=\color{white},
+    frame=l, tabsize=2, captionpos=b, breaklines=true, breakatwhitespace=true,
+    showspaces=false, showtabs=false, showstringspaces=false,
+    title=\lstname, escapeinside={\%*}{*)},
+    morekeywords={__file__}
+}
+
+\begin{document}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[R]{\huge{\thepage}}
+
+\tableofcontents
+
+\end{document}

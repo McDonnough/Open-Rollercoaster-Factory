@@ -3,6 +3,8 @@
 \usepackage[usenames,dvipsnames]{color}
 % \usepackage{ngerman}
 \usepackage{textcomp}
+\usepackage{longtable}
+\usepackage{amssymb}
 \usepackage{helvet}
 \usepackage{graphicx}
 \usepackage{setspace}
@@ -12,9 +14,18 @@
 \usepackage{geometry}
 \usepackage{listings}
 \usepackage{fancyhdr}
-\geometry{a4paper,left=30mm,right=40mm,top=25mm,bottom=25mm}
+\geometry{a4paper,left=30mm,right=30mm,top=25mm,bottom=25mm}
 % \renewcommand{\rmdefault}{\sfdefault}
 \renewcommand{\headrulewidth}{0.0pt}
+
+\newcommand{\cfile}[1]{\texttt{#1}}
+\newcommand{\ccaption}[1]{\textsc{#1}}
+\newcommand{\cvalue}[1]{\texttt{#1}}
+\newcommand{\ckeyword}[1]{\texttt{#1}}
+
+\newcommand{\note}[1]{\textbf{Note} #1 \par}
+\newcommand{\warning}[1]{\textbf{Warning:} #1 \par}
+
 \onehalfspacing
 
 \lstset{
@@ -28,10 +39,24 @@
 }
 
 \begin{document}
+
 \pagestyle{fancy}
 \fancyhf{}
 \fancyfoot[R]{\huge{\thepage}}
 
+\vspace*{\fill}
+\begin{center}
+  \Huge{\textbf{ORCF Custom Content}} \\
+  \vspace{2cm}
+  \large{Written for ORCF \textbf{2011.07p}} \\
+  \vspace{1cm}
+  \large{\today}
+  \vspace{3cm}
+\end{center}
+\vfill
+
+\newpage
+
 \tableofcontents
 
-\end{document}
+\newpage

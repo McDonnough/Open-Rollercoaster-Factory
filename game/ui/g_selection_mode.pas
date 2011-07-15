@@ -32,7 +32,6 @@ end;
 
 procedure TGameSelectionModeWindow.OnChange(Event: String; Data, Result: Pointer);
 begin
-  Button.Icon := TIconifiedButton(Data).Icon;
   Button.fClickFactor := 1;
   if TGUIComponent(Data) = fWindow.GetChildByName('selection_mode.normalselection') then Park.SelectionMode := S_DEFAULT_SELECTION;
   if TGUIComponent(Data) = fWindow.GetChildByName('selection_mode.noselection') then Park.SelectionMode := S_NO_SELECTION;
@@ -41,6 +40,11 @@ begin
     Park.SelectionEngine := nil
   else
     Park.SelectionEngine := Park.NormalSelectionEngine;
+  case Park.SelectionMode of
+    S_NO_SELECTION:      Button.Icon := TIconifiedButton(fWindow.GetChildByName('selection_mode.noselection')).Icon;
+    S_DEFAULT_SELECTION: Button.Icon := TIconifiedButton(fWindow.GetChildByName('selection_mode.normalselection')).Icon;
+    S_REMOVE_SELECTION:  Button.Icon := TIconifiedButton(fWindow.GetChildByName('selection_mode.deleteselection')).Icon;
+    end;
   Hide(TGUIComponent(Data));
 end;
 

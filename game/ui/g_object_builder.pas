@@ -352,9 +352,9 @@ begin
 
   fAffectMaterials := True;
 
-  Park.SelectionEngine := SelectionEngine;
   EventManager.AddCallback('GUIActions.terrain_edit.marks.move', @UpdateBOPos);
   EventManager.AddCallback('BasicComponent.OnClick', @AddObject);
+  Park.SelectionEngine := SelectionEngine;
 end;
 
 procedure TGameObjectBuilder.OnScroll(Event: String; Data, Result: Pointer);

@@ -659,7 +659,8 @@ end;
 
 procedure TGameObjectSelector.OnClose(Event: String; Data, Result: Pointer);
 begin
-  Park.SelectionEngine := Park.NormalSelectionEngine;
+  Park.SelectionMode := S_DEFAULT_SELECTION;
+  EventManager.CallEvent('GUIActions.selection_mode.changed', nil, nil);
   Park.pTerrain.CurrMark := Vector(-1, -1);
   TGameTerrainEdit(ParkUI.GetWindowByName('terrain_edit')).HeightLine('', nil, nil);
   EventManager.CallEvent('GUIActions.terrain_edit.removeheightline', nil, nil);

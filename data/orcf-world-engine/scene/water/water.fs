@@ -49,7 +49,8 @@ void main(void) {
   normal = normalize(UnderWaterFactor * mix(vec3(0.0, 1.0, 0.0), normal, OffsetFactor));
 
   vec4 RefractedPosition = gl_ModelViewProjectionMatrix * vec4(Position + normal * vec3(1.0, 0.0, 1.0), 1.0);
-  vec4 ReflectedPosition = gl_ModelViewProjectionMatrix * vec4(Position + normal * vec3(1.0, 0.0, 1.0), 1.0);
+  vec4 ReflectedPosition = RefractedPosition;
+//   vec4 ReflectedPosition = gl_ModelViewProjectionMatrix * vec4(Position + normal * vec3(1.0, 0.0, 1.0), 1.0);
 
   float WaterColorFactor = 0.9 + 0.1 * dot(normal, normalize(gl_LightSource[0].position.xyz));
 

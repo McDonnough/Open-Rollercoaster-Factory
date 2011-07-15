@@ -58,8 +58,8 @@ void main(void) {
   // END
   // IF [ NEQ owe.shadows.light.blur 0 ]
     int SampleCount = (Samples * 2 + 1) * (Samples * 2 + 1);
-    vec3 bvrl = 0.025 * normalize(cross(-Light, vec3(0.0, 1.0, 0.0)));
-    vec3 bvud = 0.025 * normalize(cross(-Light, bvrl));
+    vec3 bvrl = 0.050 * normalize(cross(-Light, vec3(0.0, 1.0, 0.0))) / max(1.0, float(Samples));
+    vec3 bvud = 0.050 * normalize(cross(-Light, bvrl)) / max(1.0, float(Samples));
     for (int i = -Samples; i <= Samples; i++)
       for (int j = -Samples; j <= Samples; j++) {
         vec4 ShadowColor = texture2D(ShadowTexture, ProjectShadowVertex(normalize(-Light) + i * bvrl + j * bvud));

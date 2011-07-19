@@ -12,6 +12,7 @@ uniform int HasNormalMap;
 uniform vec2 Mediums;
 
 varying vec3 Vertex;
+varying vec3 OrigVertex;
 varying vec3 Normal;
 
 float Fresnel(float x) {
@@ -22,7 +23,7 @@ float Fresnel(float x) {
 }
 
 vec3 GetReflectionColor(vec3 vector) {
-  vector = reflect(normalize(Vertex - ViewPoint), -vector);
+  vector = normalize(OrigVertex + reflect(normalize(Vertex - ViewPoint), -vector));
   float mx = max(abs(vector.x), max(abs(vector.y), abs(vector.z)));
   vector = vector / mx;
   vec2 texCoord = vec2(0, 0);

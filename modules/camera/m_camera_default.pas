@@ -129,14 +129,17 @@ end;
 procedure TModuleCameraDefault.AdvanceActiveCamera;
 var
   i: Integer;
+  tmp: TVector3D;
 begin
   if ActiveCamera = nil then exit;
 
   if fRotating then
     begin
 //     fPrevRotation := ActiveCamera.Rotation;
-    ActiveCamera.Rotation.Y := fInitialYRotation - (ModuleManager.ModInputHandler.LockX - ModuleManager.ModInputHandler.MouseX);
-    ActiveCamera.Rotation.X := fInitialXRotation - (ModuleManager.ModInputHandler.LockY - ModuleManager.ModInputHandler.MouseY);
+    tmp.Z := ActiveCamera.Rotation.Z;
+    tmp.Y := fInitialYRotation - (ModuleManager.ModInputHandler.LockX - ModuleManager.ModInputHandler.MouseX);
+    tmp.X := fInitialXRotation - (ModuleManager.ModInputHandler.LockY - ModuleManager.ModInputHandler.MouseY);
+    ActiveCamera.Rotation := tmp;
     ActiveCamera.Position := fCamSource - fSourcePosition;
     ActiveCamera.Position := ActiveCamera.Position * Matrix3D(RotationMatrix((ModuleManager.ModInputHandler.LockY - ModuleManager.ModInputHandler.MouseY), Normalize(Cross(fVecToFront, Vector(0, 1, 0)))));
     ActiveCamera.Position := ActiveCamera.Position * Matrix3D(RotationMatrix((ModuleManager.ModInputHandler.LockX - ModuleManager.ModInputHandler.MouseX), Vector(0, 1, 0)));
@@ -163,13 +166,17 @@ begin
     end;
   
   ActiveCamera.Position := ActiveCamera.Position + Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)), -Sin(DegToRad(ActiveCamera.Rotation.X)), -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)))) * (fSpeedFactors[DIR_FORWARD] - fSpeedFactors[DIR_BACKWARD]) * FPSDisplay.MS * 0.02;
-  ActiveCamera.Position.Y := clamp(ActiveCamera.Position.Y, max(0, Park.pTerrain.HeightMap[ActiveCamera.Position.X, ActiveCamera.Position.Z] + 0.6), 300);
+  tmp := ActiveCamera.Position;
+  tmp.Y := clamp(ActiveCamera.Position.Y, max(0, Park.pTerrain.HeightMap[ActiveCamera.Position.X, ActiveCamera.Position.Z] + 0.6), 300);
 
-  ActiveCamera.Position.X := ActiveCamera.Position.X + Sin(DegToRad(ActiveCamera.Rotation.Y - 90)) * (fSpeedFactors[DIR_LEFT] - fSpeedFactors[DIR_RIGHT]) * FPSDisplay.MS * 0.02;
-  ActiveCamera.Position.Z := ActiveCamera.Position.Z - Cos(DegToRad(ActiveCamera.Rotation.Y - 90)) * (fSpeedFactors[DIR_LEFT] - fSpeedFactors[DIR_RIGHT]) * FPSDisplay.MS * 0.02;
+  tmp.X := ActiveCamera.Position.X + Sin(DegToRad(ActiveCamera.Rotation.Y - 90)) * (fSpeedFactors[DIR_LEFT] - fSpeedFactors[DIR_RIGHT]) * FPSDisplay.MS * 0.02;
+  tmp.Z := ActiveCamera.Position.Z - Cos(DegToRad(ActiveCamera.Rotation.Y - 90)) * (fSpeedFactors[DIR_LEFT] - fSpeedFactors[DIR_RIGHT]) * FPSDisplay.MS * 0.02;
+  ActiveCamera.Position := tmp;
 
-  ActiveCamera.Rotation.X := ActiveCamera.Rotation.X + FPSDisplay.MS * 0.05 * (fSpeedFactors[DIR_ROT_DOWN] - fSpeedFactors[DIR_ROT_UP]);
-  ActiveCamera.Rotation.Y := ActiveCamera.Rotation.Y + FPSDisplay.MS * 0.05 * (fSpeedFactors[DIR_ROT_RIGHT] - fSpeedFactors[DIR_ROT_LEFT]);
+  tmp := ActiveCamera.Rotation;
+  tmp.X := ActiveCamera.Rotation.X + FPSDisplay.MS * 0.05 * (fSpeedFactors[DIR_ROT_DOWN] - fSpeedFactors[DIR_ROT_UP]);
+  tmp.Y := ActiveCamera.Rotation.Y + FPSDisplay.MS * 0.05 * (fSpeedFactors[DIR_ROT_RIGHT] - fSpeedFactors[DIR_ROT_LEFT]);
+  ActiveCamera.Rotation := tmp;
 end;
 
 procedure TModuleCameraDefault.CheckModConf;

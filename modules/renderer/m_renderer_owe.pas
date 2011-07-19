@@ -66,6 +66,9 @@ type
       fUnderWaterShader: TShader;
       fSimpleShader: TShader;
       fMaxFogDistance: Single;
+      fEnableS3D: Boolean;
+      fS3DMode: Integer;
+      fS3DStrength: Single;
     public
       CurrentTerrainBumpmapDistance, CurrentTerrainDetailDistance, CurrentTerrainTesselationDistance: Single;
       CurrentLODDistanceFactor, CurrentLODDistanceOffset: Single;
@@ -168,6 +171,9 @@ type
       property Gamma: Single read fGamma;
       property EnvironmentMap: TCubeMap read fEnvironmentMap;
       property MaxFogDistance: Single read fMaxFogDistance;
+      property EnableS3D: Boolean read fEnableS3D;
+      property S3DMode : Integer read fS3DMode;
+      property S3DStrength: Single read fS3DStrength;
       procedure DynamicSettingsSetNormal;
       procedure DynamicSettingsSetReflection;
       procedure PostInit;
@@ -567,10 +573,20 @@ var
   procedure DrawFullscreenQuad;
   begin
     glBegin(GL_QUADS);
-      glVertex2f(-1, -1);
-      glVertex2f( 1, -1);
-      glVertex2f( 1,  1);
-      glVertex2f(-1,  1);
+      glTexCoord2d(0, 0); glVertex2f(-1, -1);
+      glTexCoord2d(1, 0); glVertex2f( 1, -1);
+      glTexCoord2d(1, 1); glVertex2f( 1,  1);
+      glTexCoord2d(0, 1); glVertex2f(-1,  1);
+    glEnd;
+  end;
+
+  procedure DrawFullscreenQuad(Offset: TVector2D; Scale: TVector2D);
+  begin
+    glBegin(GL_QUADS);
+      glTexCoord2d(0, 0); glVertex2f(-1 + Offset.X, -1 + Offset.Y);
+      glTexCoord2d(1, 0); glVertex2f(-1 + Offset.X + 2.0 * Scale.X, -1 + Offset.Y);
+      glTexCoord2d(1, 1); glVertex2f(-1 + Offset.X + 2.0 * Scale.X, -1 + Offset.Y + 2.0 * Scale.Y);
+      glTexCoord2d(0, 1); glVertex2f(-1 + Offset.X, -1 + Offset.Y + 2.0 * Scale.Y);
     glEnd;
   end;
 
@@ -614,6 +630,9 @@ var
   MX, MY, hdiff: Single;
   i, ResX, ResY: Integer;
   Coord: TVector4D;
+  AMatrix: TMatrix4D;
+  OrigCamPos, VecX: TVector3D;
+  Passes, Pass: Integer;
 begin
   glGetError();
 
@@ -627,6 +646,9 @@ begin
   MaxRenderDistance := MaxFogDistance;
 
   ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
+  AMatrix := RotationMatrix(ModuleManager.ModCamera.ActiveCamera.Rotation.Z, Vector(0, 0, -1));
+  AMatrix := RotationMatrix(ModuleManager.ModCamera.ActiveCamera.Rotation.Y, Vector(0, -1, 0));
+  VecX := Normalize(Vector3D(Vector(1, 0, 0, 0) * AMatrix)) * fS3DStrength * 0.1;
 
   fIsUnderWater := False;
 
@@ -672,6 +694,7 @@ begin
 
   // Create object reflections
   DynamicSettingsSetReflection;
+  
     RTerrain.BorderEnabled := True;
     RObjects.RenderReflections;
 
@@ -695,663 +718,701 @@ begin
   else
     MaxRenderDistance := MaxFogDistance;
 
-  // Do water renderpasses
-  RWater.RenderBuffers;
+  if EnableS3D then
+    Passes := 1
+  else
+    Passes := 0;
 
-  // Render final scene
-
-  // Check some visibilities
-  Frustum.Calculate;
-  RTerrain.CheckVisibility;
-  RObjects.CheckVisibility;
-  RenderParticles := True;
-
-  // Run some threads
-  if UseLightShadows then
-    LightManager.Working := True;
-
-  glDisable(GL_BLEND);
-  glDisable(GL_ALPHA_TEST);
-  glEnable(GL_DEPTH_TEST);
-  glDepthFunc(GL_LESS);
-  glDisable(GL_CULL_FACE);
-  glDepthMask(true);
-
-  Coord := Vector(0, 0, 0, 0);
-
-  // Selection pass - abuse the light buffer for that because it consists of two buffers
-  fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-  fSelectionRay := Vector(0, 0, 0);
-  if Park.SelectionEngine <> nil then
+  for Pass := 0 to Passes do
     begin
-    LightBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-    
-    if Park.SelectionEngine.RenderTerrain then
-      RTerrain.RenderSelectable($000001);
+    OrigCamPos := ModuleManager.ModCamera.ActiveCamera.Position;
+    if EnableS3D then
+      begin
+      case Pass of
+        0: ModuleManager.ModCamera.ActiveCamera.Position := ModuleManager.ModCamera.ActiveCamera.Position - VecX;
+        1: ModuleManager.ModCamera.ActiveCamera.Position := ModuleManager.ModCamera.ActiveCamera.Position + VecX;
+        end;
+      glLoadIdentity;
+      RCamera.ApplyRotation(Vector(1, 1, 1));
+      RCamera.ApplyTransformation(Vector(1, 1, 1));
 
-    if Park.SelectionEngine.RenderObjects then
-      RObjects.RenderSelectable;
+      ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
+      end;
+
+    // Do water renderpasses
+    RWater.RenderBuffers;
+
+    // Render final scene
+
+    // Check some visibilities
+    Frustum.Calculate;
+    RTerrain.CheckVisibility;
+    RObjects.CheckVisibility;
+    RenderParticles := True;
+
+    // Run some threads
+    if UseLightShadows then
+      LightManager.Working := True;
+
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDisable(GL_CULL_FACE);
+    glDepthMask(true);
+
+    Coord := Vector(0, 0, 0, 0);
+
+    // Selection pass - abuse the light buffer for that because it consists of two buffers
+    fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+    fSelectionRay := Vector(0, 0, 0);
+    if Park.SelectionEngine <> nil then
+      begin
+      LightBuffer.Bind;
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+      if Park.SelectionEngine.RenderTerrain then
+        RTerrain.RenderSelectable($000001);
+
+      if Park.SelectionEngine.RenderObjects then
+        RObjects.RenderSelectable;
+
+      LightBuffer.Unbind;
+
+      // Finally get intersection point and selected object ID
+      glColor4f(1, 1, 1, 1);
+      SpareBuffer.Bind;
+        fFullscreenShader.Bind;
+        LightBuffer.Textures[0].Bind(0);
+        DrawFullscreenQuad;
+        glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+
+        fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+        fSelectionRay := Vector3D(Coord) - fSelectionStart;
+
+        LightBuffer.Textures[1].Bind(0);
+        DrawFullscreenQuad;
+        glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+        fFullscreenShader.Unbind;
+        fSelectedMaterialID := (Round(Coord.X) shl 16) or (Round(Coord.Y) shl 8) or (Round(Coord.Z));
+
+        LightBuffer.Textures[1].Unbind;
+      SpareBuffer.Unbind;
+      end;
+
+    // Geometry pass
+
+    // Opaque parts only
+    GBuffer.Bind;
+      glDisable(GL_BLEND);
+      glDepthMask(true);
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+      glEnable(GL_DEPTH_TEST);
+      glDepthFunc(GL_LESS);
+
+      glDepthMask(false);
+      RenderMaxVisibilityQuad;
+      glDepthMask(true);
+
+      glEnable(GL_CULL_FACE);
+
+      // Sky
+      RSky.Render;
+
+      // Objects
+      RObjects.RenderOpaque;
+
+      // Terrain
+      RTerrain.CurrentShader := RTerrain.GeometryPassShader;
+      RTerrain.BorderEnabled := true;
+      RTerrain.Render;
+
+      // Water
+      glDisable(GL_CULL_FACE);
+
+      glColorMask(false, false, false, false);
+      glDepthMask(false);
+      RWater.Check;
+      glDepthMask(true);
+      glColorMask(true, true, true, true);
+
+      RWater.Render;
+
+    GBuffer.Unbind;
+
+    // Save material buffer
+    SpareBuffer.Bind;
+      GBuffer.Textures[0].Bind(0);
+      fFullscreenShader.Bind;
+      DrawFullscreenQuad;
+      fFullscreenShader.Unbind;
+      GBuffer.Textures[0].UnBind;
+    SpareBuffer.Unbind;
+
+    // SSAO pass
+
+    if UseScreenSpaceAmbientOcclusion then
+      begin
+      glDisable(GL_CULL_FACE);
+
+      SSAOBuffer.Bind;
+
+      glDisable(GL_BLEND);
+      glDisable(GL_ALPHA_TEST);
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+      fSSAOShader.Bind;
+      fSSAOShader.UniformF('RandomOffset', 100 * Random);
+      GBuffer.Textures[5].Bind(2);
+      GBuffer.Textures[1].Bind(1);
+      GBuffer.Textures[2].Bind(0);
+
+      DrawFullscreenQuad;
+
+      GBuffer.Textures[5].Unbind;
+      GBuffer.Textures[1].Unbind;
+      GBuffer.Textures[2].Unbind;
+      fSSAOShader.Unbind;
+
+      SSAOBuffer.Unbind;
+
+      glEnable(GL_CULL_FACE);
+      end;
+
+    // Transparent parts, fuck up the material buffer
+    GBuffer.Bind;
+      fTransparencyMask.Bind(7);
+
+      glDisable(GL_ALPHA_TEST);
+  //     glColorMask(true, true, true, false);
+
+      // Autoplants
+      glDisable(GL_CULL_FACE);
+      RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
+      RAutoplants.Render;
+
+      // Objects and particles
+      glEnable(GL_CULL_FACE);
+      RParticles.CurrentShader := RParticles.GeometryShader;
+      RObjects.MaterialMode := False;
+      RObjects.RenderTransparent;
+
+      // End
+
+  //     glColorMask(true, true, true, true);
+      glDisable(GL_DEPTH_TEST);
+      glDepthMask(false);
+      glDisable(GL_ALPHA_TEST);
+
+    GBuffer.Unbind;
+
+    // Shadow pass
+    
+    if (UseSunShadows) and (Pass = 0) then
+      begin
+      glDisable(GL_CULL_FACE);
+      fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
+      hdiff := fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight;
+      fShadowSize := 50 * Power(0.9, hdiff) + (3 - abs(dotProduct(Vector(0, 1, 0), Normalize(Vector3D(RSky.Sun.Position))))) * hdiff;
+      fShadowOffset := fShadowOffset + Normalize(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(RSky.Sun.Position)) * 20 * DotProduct(Normalize(fVecToFront), Normalize(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(RSky.Sun.Position)));
+      fShadowOffset.Y := 0.5 * (fShadowOffset.Y + RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
+
+      fSunShadowBuffer.Bind;
+      glDepthMask(true);
+      glClearColor(0.0, 0.0, 0.0, 0.0);
+      glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
+      glClearColor(1.0, 1.0, 1.0, 1.0);
+
+      glEnable(GL_DEPTH_TEST);
+      glEnable(GL_ALPHA_TEST);
+      glAlphaFunc(GL_NOTEQUAL, 0.0);
+      glDepthFunc(GL_LESS);
+      glDisable(GL_BLEND);
+
+      RTerrain.CurrentShader := RTerrain.ShadowPassShader;
+      RTerrain.CurrentShader.UniformF('ShadowSize', ShadowSize);
+      RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset);
+      RTerrain.BorderEnabled := false;
+      RTerrain.Render;
+
+      RObjects.ShadowMode := True;
+      RObjects.RenderOpaque;
+      RObjects.RenderTransparent;
+      RObjects.ShadowMode := False;
+
+      fSunShadowBuffer.Unbind;
+      glEnable(GL_CULL_FACE);
+      end;
+
+    if (UseLightShadows) and (Pass = 0) then
+      begin
+      glDisable(GL_CULL_FACE);
+      glClearColor(0.0, 0.0, 0.0, 500.0);
+      glClearDepth(1.0);
+      glEnable(GL_DEPTH_TEST);
+      glEnable(GL_ALPHA_TEST);
+      glAlphaFunc(GL_GREATER, 0.3);
+      glAlphaFunc(GL_NOTEQUAL, 0.0);
+      glDisable(GL_BLEND);
+      glDepthFunc(GL_LEQUAL);
+      LightManager.Sync;
+      LightManager.CreateShadows;
+      glEnable(GL_CULL_FACE);
+      end;
+
+    // Lighting pass
+
+    LightBuffer.Bind;
+      glDepthMask(true);
+      glDisable(GL_DEPTH_TEST);
+      glDisable(GL_CULL_FACE);
+      glDisable(GL_ALPHA_TEST);
+      glDisable(GL_BLEND);
+
+      glClearColor(0.0, 0.0, 0.0, 0.0);
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+      GBuffer.Textures[5].Bind(6);
+
+      if UseScreenSpaceAmbientOcclusion then
+        fSSAOBuffer.Textures[0].Bind(5);
+
+      RTerrain.TerrainMap.Bind(4);
+      RTerrain.TerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
+
+      if UseSunShadows then
+        fSunShadowBuffer.Textures[0].Bind(2);
+
+      GBuffer.Textures[0].Bind(3);
+      GBuffer.Textures[1].Bind(1);
+      GBuffer.Textures[2].Bind(0);
+
+      SunShader.Bind;
+      if UseScreenSpaceAmbientOcclusion then
+        SunShader.UniformI('UseSSAO', 1)
+      else
+        SunShader.UniformI('UseSSAO', 0);
+      SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+      SunShader.UniformF('ShadowSize', ShadowSize);
+      SunShader.UniformF('ShadowOffset', ShadowOffset);
+      SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
+      DrawFullscreenQuad;
+      SunShader.Unbind;
+
+      ModuleManager.ModTexMng.ActivateTexUnit(5);
+      ModuleManager.ModTexMng.BindTexture(-1);
+      ModuleManager.ModTexMng.ActivateTexUnit(0);
+
+
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE);
+      glEnable(GL_CULL_FACE);
+
+      for i := 0 to high(fLightManager.fRegisteredLights) do
+        if fLightManager.fRegisteredLights[i].IsVisible(fFrustum) then
+          begin
+          fLightManager.fRegisteredLights[i].Bind(1);
+          if fLightManager.fRegisteredLights[i].ShadowMap <> nil then
+            begin
+            fLightManager.fRegisteredLights[i].ShadowMap.Map.Textures[0].Bind(2);
+            fLightShaderWithShadow.Bind;
+            end
+          else
+            fLightShader.Bind;
+  //         DrawFullscreenQuad;
+          fLightManager.fRegisteredLights[i].RenderBoundingCube;
+          ModuleManager.ModTexMng.ActivateTexUnit(2);
+          ModuleManager.ModTexMng.BindTexture(-1);
+          ModuleManager.ModTexMng.ActivateTexUnit(0);
+          fLightManager.fRegisteredLights[i].UnBind(1);
+          end;
+      fLightShader.UnBind;
+
+      RTerrain.TerrainMap.UnBind;
+      GBuffer.Textures[0].UnBind;
+      GBuffer.Textures[1].UnBind;
+      GBuffer.Textures[2].UnBind;
+
+      glDisable(GL_CULL_FACE);
+      glDisable(GL_BLEND);
 
     LightBuffer.Unbind;
 
-    // Finally get intersection point and selected object ID
-    glColor4f(1, 1, 1, 1);
-    SpareBuffer.Bind;
-      fFullscreenShader.Bind;
-      LightBuffer.Textures[0].Bind(0);
+    // Sun ray pass
+
+    if UseSunRays then
+      begin
+      glDisable(GL_BLEND);
+      SunRayBuffer.Bind;
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+      GBuffer.Textures[1].Bind(1);
+      SpareBuffer.Textures[0].Bind(0);
+
+      fSunRayShader.Bind;
+      fSunRayShader.UniformF('VecToFront', fVecToFront.X, fVecToFront.Y, fVecToFront.Z);;
       DrawFullscreenQuad;
-      glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+      fSunRayShader.Unbind;
 
-      fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-      fSelectionRay := Vector3D(Coord) - fSelectionStart;
+      SunRayBuffer.Unbind;
+      end;
 
-      LightBuffer.Textures[1].Bind(0);
-      DrawFullscreenQuad;
-      glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
-      fFullscreenShader.Unbind;
-      fSelectedMaterialID := (Round(Coord.X) shl 16) or (Round(Coord.Y) shl 8) or (Round(Coord.Z));
+    // Composition
 
-      LightBuffer.Textures[1].Unbind;
-    SpareBuffer.Unbind;
-    end;
+    fSceneBuffer.Bind;
+      glDepthMask(true);
+      glEnable(GL_DEPTH_TEST);
+      glDepthFunc(GL_LEQUAL);
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
-  // Geometry pass
-
-  // Opaque parts only
-  GBuffer.Bind;
-    glDisable(GL_BLEND);
-    glDepthMask(true);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glDepthMask(false);
-    RenderMaxVisibilityQuad;
-    glDepthMask(true);
-    
-    glEnable(GL_CULL_FACE);
-
-    // Sky
-    RSky.Render;
-
-    // Objects
-    RObjects.RenderOpaque;
-
-    // Terrain
-    RTerrain.CurrentShader := RTerrain.GeometryPassShader;
-    RTerrain.BorderEnabled := true;
-    RTerrain.Render;
-
-    // Water
-    glDisable(GL_CULL_FACE);
-
-    glColorMask(false, false, false, false);
-    glDepthMask(false);
-    RWater.Check;
-    glDepthMask(true);
-    glColorMask(true, true, true, true);
-
-    RWater.Render;
-
-  GBuffer.Unbind;
-
-  // Save material buffer
-  SpareBuffer.Bind;
-    GBuffer.Textures[0].Bind(0);
-    fFullscreenShader.Bind;
-    DrawFullscreenQuad;
-    fFullscreenShader.Unbind;
-    GBuffer.Textures[0].UnBind;
-  SpareBuffer.Unbind;
-
-  // SSAO pass
-
-  if UseScreenSpaceAmbientOcclusion then
-    begin
-    glDisable(GL_CULL_FACE);
-    
-    SSAOBuffer.Bind;
-    
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-    fSSAOShader.Bind;
-    fSSAOShader.UniformF('RandomOffset', 100 * Random);
-    GBuffer.Textures[5].Bind(2);
-    GBuffer.Textures[1].Bind(1);
-    GBuffer.Textures[2].Bind(0);
-
-    DrawFullscreenQuad;
-
-    GBuffer.Textures[5].Unbind;
-    GBuffer.Textures[1].Unbind;
-    GBuffer.Textures[2].Unbind;
-    fSSAOShader.Unbind;
-    
-    SSAOBuffer.Unbind;
-
-    glEnable(GL_CULL_FACE);
-    end;
-
-  // Transparent parts, fuck up the material buffer
-  GBuffer.Bind;
-    fTransparencyMask.Bind(7);
-
-    glDisable(GL_ALPHA_TEST);
-//     glColorMask(true, true, true, false);
-
-    // Autoplants
-    glDisable(GL_CULL_FACE);
-    RAutoplants.CurrentShader := RAutoplants.GeometryPassShader;
-    RAutoplants.Render;
-
-    // Objects and particles
-    glEnable(GL_CULL_FACE);
-    RParticles.CurrentShader := RParticles.GeometryShader;
-    RObjects.MaterialMode := False;
-    RObjects.RenderTransparent;
-
-    // End
-
-//     glColorMask(true, true, true, true);
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(false);
-    glDisable(GL_ALPHA_TEST);
-
-  GBuffer.Unbind;
-
-  // Shadow pass
-  
-  if UseSunShadows then
-    begin
-    glDisable(GL_CULL_FACE);
-    fShadowOffset := ModuleManager.ModCamera.ActiveCamera.Position;
-    hdiff := fShadowOffset.Y - RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight;
-    fShadowSize := 50 * Power(0.9, hdiff) + (3 - abs(dotProduct(Vector(0, 1, 0), Normalize(Vector3D(RSky.Sun.Position))))) * hdiff;
-    fShadowOffset := fShadowOffset + Normalize(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(RSky.Sun.Position)) * 20 * DotProduct(Normalize(fVecToFront), Normalize(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(RSky.Sun.Position)));
-    fShadowOffset.Y := 0.5 * (fShadowOffset.Y + RTerrain.GetBlock(fShadowOffset.X, fShadowOffset.Z).MinHeight);
-
-    fSunShadowBuffer.Bind;
-    glDepthMask(true);
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT);
-    glClearColor(1.0, 1.0, 1.0, 1.0);
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_NOTEQUAL, 0.0);
-    glDepthFunc(GL_LESS);
-    glDisable(GL_BLEND);
-
-    RTerrain.CurrentShader := RTerrain.ShadowPassShader;
-    RTerrain.CurrentShader.UniformF('ShadowSize', ShadowSize);
-    RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset);
-    RTerrain.BorderEnabled := false;
-    RTerrain.Render;
-
-    RObjects.ShadowMode := True;
-    RObjects.RenderOpaque;
-    RObjects.RenderTransparent;
-    RObjects.ShadowMode := False;
-
-    fSunShadowBuffer.Unbind;
-    glEnable(GL_CULL_FACE);
-    end;
-
-  if UseLightShadows then
-    begin
-    glDisable(GL_CULL_FACE);
-    glClearColor(0.0, 0.0, 0.0, 500.0);
-    glClearDepth(1.0);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.3);
-    glAlphaFunc(GL_NOTEQUAL, 0.0);
-    glDisable(GL_BLEND);
-    glDepthFunc(GL_LEQUAL);
-    LightManager.Sync;
-    LightManager.CreateShadows;
-    glEnable(GL_CULL_FACE);
-    end;
-
-  // Lighting pass
-
-  LightBuffer.Bind;
-    glDepthMask(true);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_BLEND);
-
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-    GBuffer.Textures[5].Bind(6);
-
-    if UseScreenSpaceAmbientOcclusion then
-      fSSAOBuffer.Textures[0].Bind(5);
-
-    RTerrain.TerrainMap.Bind(4);
-    RTerrain.TerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
-
-    if UseSunShadows then
-      fSunShadowBuffer.Textures[0].Bind(2);
-
-    GBuffer.Textures[0].Bind(3);
-    GBuffer.Textures[1].Bind(1);
-    GBuffer.Textures[2].Bind(0);
-
-    SunShader.Bind;
-    if UseScreenSpaceAmbientOcclusion then
-      SunShader.UniformI('UseSSAO', 1)
-    else
-      SunShader.UniformI('UseSSAO', 0);
-    SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-    SunShader.UniformF('ShadowSize', ShadowSize);
-    SunShader.UniformF('ShadowOffset', ShadowOffset);
-    SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
-    DrawFullscreenQuad;
-    SunShader.Unbind;
-
-    ModuleManager.ModTexMng.ActivateTexUnit(5);
-    ModuleManager.ModTexMng.BindTexture(-1);
-    ModuleManager.ModTexMng.ActivateTexUnit(0);
-
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-    glEnable(GL_CULL_FACE);
-
-    for i := 0 to high(fLightManager.fRegisteredLights) do
-      if fLightManager.fRegisteredLights[i].IsVisible(fFrustum) then
+      CompositionShader.Bind;
+      if fIsUnderWater then
         begin
-        fLightManager.fRegisteredLights[i].Bind(1);
-        if fLightManager.fRegisteredLights[i].ShadowMap <> nil then
-          begin
-          fLightManager.fRegisteredLights[i].ShadowMap.Map.Textures[0].Bind(2);
-          fLightShaderWithShadow.Bind;
-          end
-        else
-          fLightShader.Bind;
-//         DrawFullscreenQuad;
-        fLightManager.fRegisteredLights[i].RenderBoundingCube;
-        ModuleManager.ModTexMng.ActivateTexUnit(2);
-        ModuleManager.ModTexMng.BindTexture(-1);
-        ModuleManager.ModTexMng.ActivateTexUnit(0);
-        fLightManager.fRegisteredLights[i].UnBind(1);
+        FogColor := Vector(0.20, 0.30, 0.27) * Vector3D(RSky.Sun.AmbientColor) * 3.0;
+        FogStrength := 0.152; // log(0.9) / log(0.5);
+        end
+      else
+        begin
+        FogColor := Vector3D(Pow(RSky.Sun.AmbientColor + RSky.Sun.Color, 0.33)) * 0.5;
+        FogStrength := RSky.FogStrength;
         end;
-    fLightShader.UnBind;
+      CompositionShader.UniformF('FogColor', FogColor);
+      CompositionShader.UniformF('FogStrength', FogStrength);
+      CompositionShader.UniformF('WaterHeight', 0);
+      CompositionShader.UniformF('WaterRefractionMode', 0);
 
-    RTerrain.TerrainMap.UnBind;
-    GBuffer.Textures[0].UnBind;
-    GBuffer.Textures[1].UnBind;
-    GBuffer.Textures[2].UnBind;
+      GBuffer.Textures[4].Bind(3);
+      GBuffer.Textures[3].Bind(4);
+      GBuffer.Textures[2].Bind(2);
+      SpareBuffer.Textures[0].Bind(0);
+      LightBuffer.Textures[0].Bind(7);
+      LightBuffer.Textures[1].Bind(6);
 
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_BLEND);
+      DrawFullscreenQuad;
 
-  LightBuffer.Unbind;
+      CompositionShader.Unbind;
 
-  // Sun ray pass
+      // Transparent parts only
 
-  if UseSunRays then
-    begin
-    glDisable(GL_BLEND);
-    SunRayBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+      LightBuffer.Textures[1].Bind(4);
 
-    GBuffer.Textures[1].Bind(1);
-    SpareBuffer.Textures[0].Bind(0);
 
-    fSunRayShader.Bind;
-    fSunRayShader.UniformF('VecToFront', fVecToFront.X, fVecToFront.Y, fVecToFront.Z);;
-    DrawFullscreenQuad;
-    fSunRayShader.Unbind;
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    SunRayBuffer.Unbind;
-    end;
+      // Autoplants
+      glDisable(GL_CULL_FACE);
+      glEnable(GL_ALPHA_TEST);
+      glAlphaFunc(GL_GREATER, 0.1);
+      RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
+      RAutoplants.Render;
 
-  // Composition
+      // Objects and particles
+      glEnable(GL_CULL_FACE);
+      glAlphaFunc(GL_GREATER, 0.0);
+      RParticles.CurrentShader := RParticles.MaterialShader;
+      RObjects.MaterialMode := True;
+      glEnable(GL_CULL_FACE);
+      RObjects.RenderTransparent;
+      glDisable(GL_CULL_FACE);
 
-  fSceneBuffer.Bind;
-    glDepthMask(true);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+      glDisable(GL_BLEND);
 
-    CompositionShader.Bind;
+      glDisable(GL_DEPTH_TEST);
+      glDepthMask(false);
+
+      // Draw grid if required
+      if (TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).Open) and (TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridEnabled) then
+        begin
+        GBuffer.Textures[2].Bind(2);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+
+        MakeOGLCompatibleMatrix(RotationMatrix(TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridRotation, Vector(0, -1, 0)), @Matrix[0]);
+
+        fGridShader.Bind;
+        fGridShader.UniformF('Offset', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridOffset);
+        fGridShader.UniformF('Size', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridSize);
+        fGridShader.UniformMatrix4D('RotMat', @Matrix[0]);
+
+        DrawFullscreenQuad;
+
+        fGridShader.Unbind;
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_BLEND);
+        GBuffer.Textures[2].Unbind;
+        end;
+    fSceneBuffer.Unbind;
+
+    SpareBuffer.Bind;
+      // Get depth under mouse
+      fFullscreenShader.Bind;
+      GBuffer.Textures[2].Bind(0);
+      DrawFullscreenQuad;
+      glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+      if VecLengthNoRoot(fSelectionRay + fSelectionStart) < 0.01 then
+        fSelectionRay := Vector3D(Coord) - fSelectionStart;
+      fFullscreenShader.Unbind;
+
+    SpareBuffer.Unbind;
+
+    // Under-water view
     if fIsUnderWater then
       begin
-      FogColor := Vector(0.20, 0.30, 0.27) * Vector3D(RSky.Sun.AmbientColor) * 3.0;
-      FogStrength := 0.152; // log(0.9) / log(0.5);
+      fSpareBuffer.Bind;
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+      fUnderWaterShader.Bind;
+      fUnderWaterShader.UniformF('Height', fWaterHeight);
+      fUnderWaterShader.UniformF('ViewPoint', ViewPoint.X, ViewPoint.Y, ViewPoint.Z);
+      fUnderWaterShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
+
+      fSceneBuffer.Textures[0].Bind(1);
+      GBuffer.Textures[2].Bind(0);
+
+      DrawFullscreenQuad;
+
+      fUnderWaterShader.Unbind;
+      fSpareBuffer.Unbind;
+
+      glDisable(GL_BLEND);
+      glEnable(GL_ALPHA_TEST);
+
+
+      fSceneBuffer.Bind;
+      fFullscreenShader.Bind;
+
+      fSpareBuffer.Textures[0].Bind(0);
+
+      DrawFullscreenQuad;
+
+      fSpareBuffer.Textures[0].UnBind;
+
+      fFullscreenShader.UnBind;
+      fSceneBuffer.Bind;
+      end;
+
+    // Set up focal blur
+    with ModuleManager.ModCamera do
+      fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
+                                    -Sin(DegToRad(ActiveCamera.Rotation.X)),
+                                    -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
+
+    fFocusDistance := Coord.W;
+
+    // Focal Blur pass
+    if UseFocalBlur then
+      begin
+      glDisable(GL_BLEND);
+
+      FocalBlurBuffer.Bind;
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+      // Copy image to focal blur buffer
+
+      glColor4f(1, 1, 1, 1);
+      SceneBuffer.Textures[0].Bind(0);
+
+      fFullscreenShader.Bind;
+      DrawFullscreenQuad;
+      fFullscreenShader.Unbind;
+
+      FocalBlurBuffer.Unbind;
+
+      // Apply effect
+
+      SceneBuffer.Bind;
+
+      GBuffer.Textures[2].Bind(1);
+      FocalBlurBuffer.Textures[0].Bind(0);
+
+      fFocalBlurShader.Bind;
+      fFocalBlurShader.UniformF('FocusDistance', FocusDistance);
+      fFocalBlurShader.UniformF('Screen', ResX, ResY);
+      fFocalBlurShader.UniformF('Strength', 1.0);
+      DrawFullscreenQuad;
+      fFocalBlurShader.Unbind;
+
+      SceneBuffer.Unbind;
+      end;
+
+    // Apply sun ray effect to the image
+    if UseSunRays then
+      begin
+      SceneBuffer.Bind;
+
+      fFullscreenShader.Bind;
+
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE);
+      glColor4f(Power(0.5, 100.0 * FogStrength), Power(0.5, 100.0 * FogStrength), Power(0.5, 100.0 * FogStrength), 1);
+      SunRayBuffer.Textures[0].Bind(0);
+      DrawFullscreenQuad;
+      glDisable(GL_BLEND);
+
+      fFullscreenShader.Unbind;
+
+      SceneBuffer.Unbind;
+      end;
+
+    // Get average scene color
+    fHDRAverageShader.Bind;
+
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
+
+    fHDRBuffer.Bind;
+      fSceneBuffer.Textures[0].Bind(0);
+      fHDRAverageShader.UniformI('Size', BufferSizeY);
+      fHDRAverageShader.UniformI('Dir', 0, 1);
+      DrawFullscreenQuad;
+    fHDRBuffer.Unbind;
+
+    fHDRBuffer2.Bind;
+      fHDRBuffer.Textures[0].Bind(0);
+      fHDRAverageShader.UniformI('Size', BufferSizeX);
+      fHDRAverageShader.UniformI('Dir', 1, 0);
+      DrawFullscreenQuad;
+    fHDRBuffer2.Unbind;
+
+    fHDRAverageShader.Unbind;
+
+    // Bloom pass
+
+    if BloomFactor > 0 then
+      begin
+      glDisable(GL_BLEND);
+
+      BloomBuffer.Bind;
+
+      glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
+
+      fBloomShader.Bind;
+      fHDRBuffer2.Textures[0].Bind(1);
+      fSceneBuffer.Textures[0].Bind(0);
+      DrawFullscreenQuad;
+      fBloomShader.Unbind;
+
+      BloomBuffer.Unbind;
+
+      fBloomBlurShader.Bind;
+
+      fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width * SSAOSize, 0.0);
+      BloomBuffer.Textures[0].Bind(0);
+
+      fTmpBloomBuffer.Bind;
+      DrawFullscreenQuad;
+      fTmpBloomBuffer.Unbind;
+
+      fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height * SSAOSize);
+      fTmpBloomBuffer.Textures[0].Bind(0);
+
+      BloomBuffer.Bind;
+      DrawFullscreenQuad;
+      BloomBuffer.Unbind;
+
+      fBloomBlurShader.Unbind;
+
+      // Apply bloom to scene image
+      fSceneBuffer.Bind;
+
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE);
+      glColor4f(BloomFactor, BloomFactor, BloomFactor, 1.0);
+
+      fBloomBuffer.Textures[0].Bind(0);
+
+      fFullscreenShader.Bind;
+      DrawFullscreenQuad;
+      fFullscreenShader.Unbind;
+
+      fSceneBuffer.Unbind;
+
+      glDisable(GL_BLEND);
+      end;
+
+
+    // Output
+
+    if (EnableS3D) and (fS3DMode = 1) then
+      case Pass of
+        0: glColorMask(true, false, false, true);
+        1: glColorMask(false, true, true, true);
+        end;
+    if (UseMotionBlur) and (not CaptureNextFrame) then
+      begin
+      // Render output to MB buffer
+      MotionBlurBuffer.Bind;
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+      fAAShader.Bind;
+
+      glColor4f(1, 1, 1, 1 - power(2.7183, -(FPSDisplay.MS * fMotionBlurStrength)));
+      fHDRBuffer2.Textures[0].Bind(1);
+      fSceneBuffer.Textures[0].Bind(0);
+      DrawFullscreenQuad;
+
+      fAAShader.Unbind;
+
+      glDisable(GL_BLEND);
+      glDisable(GL_ALPHA_TEST);
+      MotionBlurBuffer.Unbind;
+
+      // Render new buffer contents
+      glColor4f(1, 1, 1, 1);
+      fFullscreenShader.Bind;
+
+      MotionBlurBuffer.Textures[0].Bind(0);
+      if (EnableS3D) and (fS3DMode = 0) then
+        DrawFullscreenQuad(Vector(1 - Pass, 0.5), Vector(0.5, 0.5))
+      else
+        DrawFullscreenQuad;
+      MotionBlurBuffer.Textures[0].Unbind;
+
+      fFullscreenShader.Unbind;
       end
     else
       begin
-      FogColor := Vector3D(Pow(RSky.Sun.AmbientColor + RSky.Sun.Color, 0.33)) * 0.5;
-      FogStrength := RSky.FogStrength;
+      fAAShader.Bind;
+
+      glColor4f(1, 1, 1, 1);
+
+      fHDRBuffer2.Textures[0].Bind(1);
+      fSceneBuffer.Textures[0].Bind(0);
+      if (EnableS3D) and (fS3DMode = 0) then
+        DrawFullscreenQuad(Vector(1 - Pass, 0.5), Vector(0.5, 0.5))
+      else
+        DrawFullscreenQuad;
+
+      fAAShader.Unbind;
       end;
-    CompositionShader.UniformF('FogColor', FogColor);
-    CompositionShader.UniformF('FogStrength', FogStrength);
-    CompositionShader.UniformF('WaterHeight', 0);
-    CompositionShader.UniformF('WaterRefractionMode', 0);
 
-    GBuffer.Textures[4].Bind(3);
-    GBuffer.Textures[3].Bind(4);
-    GBuffer.Textures[2].Bind(2);
-    SpareBuffer.Textures[0].Bind(0);
-    LightBuffer.Textures[0].Bind(7);
-    LightBuffer.Textures[1].Bind(6);
-
-    DrawFullscreenQuad;
-
-    CompositionShader.Unbind;
-
-    // Transparent parts only
-
-    LightBuffer.Textures[1].Bind(4);
-
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Autoplants
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.1);
-    RAutoplants.CurrentShader := RAutoplants.MaterialPassShader;
-    RAutoplants.Render;
-
-    // Objects and particles
-    glEnable(GL_CULL_FACE);
-    glAlphaFunc(GL_GREATER, 0.0);
-    RParticles.CurrentShader := RParticles.MaterialShader;
-    RObjects.MaterialMode := True;
-    glEnable(GL_CULL_FACE);
-    RObjects.RenderTransparent;
-    glDisable(GL_CULL_FACE);
-
-    glDisable(GL_BLEND);
-
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(false);
-
-    // Draw grid if required
-    if (TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).Open) and (TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridEnabled) then
+    if (UseLensFlare) and (not fEnableS3D) then
       begin
-      GBuffer.Textures[2].Bind(2);
+      // And finally add some lens flare
+
+      LensFlareFactor := Clamp(5 * DotProduct(Normalize(fVecToFront), Normalize(Vector3D(RSky.Sun.Position) - ModuleManager.ModCamera.ActiveCamera.Position)), 0, 1);
+
+      glDisable(GL_ALPHA_TEST);
       glEnable(GL_BLEND);
-      glBlendFunc(GL_ONE, GL_ONE);
-
-      MakeOGLCompatibleMatrix(RotationMatrix(TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridRotation, Vector(0, -1, 0)), @Matrix[0]);
-
-      fGridShader.Bind;
-      fGridShader.UniformF('Offset', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridOffset);
-      fGridShader.UniformF('Size', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridSize);
-      fGridShader.UniformMatrix4D('RotMat', @Matrix[0]);
-
-      DrawFullscreenQuad;
-      
-      fGridShader.Unbind;
-
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glDisable(GL_BLEND);
-      GBuffer.Textures[2].Unbind;
+
+      fLensFlareShader.Bind;
+      fLensFlareMask.Bind(0);
+      GBuffer.Textures[2].Bind(1);
+      RenderLensFlare;
+      fLensFlareShader.Unbind;
       end;
-  fSceneBuffer.Unbind;
 
-  SpareBuffer.Bind;
-    // Get depth under mouse
-    fFullscreenShader.Bind;
-    GBuffer.Textures[2].Bind(0);
-    DrawFullscreenQuad;
-    glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
-    if VecLengthNoRoot(fSelectionRay + fSelectionStart) < 0.01 then
-      fSelectionRay := Vector3D(Coord) - fSelectionStart;
-    fFullscreenShader.Unbind;
-    
-  SpareBuffer.Unbind;
-
-  // Under-water view
-  if fIsUnderWater then
-    begin
-    fSpareBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-    fUnderWaterShader.Bind;
-    fUnderWaterShader.UniformF('Height', fWaterHeight);
-    fUnderWaterShader.UniformF('ViewPoint', ViewPoint.X, ViewPoint.Y, ViewPoint.Z);
-    fUnderWaterShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
-
-    fSceneBuffer.Textures[0].Bind(1);
-    GBuffer.Textures[2].Bind(0);
-
-    DrawFullscreenQuad;
-
-    fUnderWaterShader.Unbind;
-    fSpareBuffer.Unbind;
+    glColorMask(true, true, true, true);
 
     glDisable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
 
-
-    fSceneBuffer.Bind;
-    fFullscreenShader.Bind;
-
-    fSpareBuffer.Textures[0].Bind(0);
-
-    DrawFullscreenQuad;
-
-    fSpareBuffer.Textures[0].UnBind;
-
-    fFullscreenShader.UnBind;
-    fSceneBuffer.Bind;
+    ModuleManager.ModCamera.ActiveCamera.Position := OrigCamPos;
     end;
 
-  // Set up focal blur
-  with ModuleManager.ModCamera do
-    fVecToFront := Normalize(Vector(Sin(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X)),
-                                   -Sin(DegToRad(ActiveCamera.Rotation.X)),
-                                   -Cos(DegToRad(ActiveCamera.Rotation.Y)) * Cos(DegToRad(ActiveCamera.Rotation.X))));
-
-  fFocusDistance := Coord.W;
-
-  // Focal Blur pass
-  if UseFocalBlur then
-    begin
-    glDisable(GL_BLEND);
-
-    FocalBlurBuffer.Bind;
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-    // Copy image to focal blur buffer
-
-    glColor4f(1, 1, 1, 1);
-    SceneBuffer.Textures[0].Bind(0);
-
-    fFullscreenShader.Bind;
-    DrawFullscreenQuad;
-    fFullscreenShader.Unbind;
-
-    FocalBlurBuffer.Unbind;
-
-    // Apply effect
-
-    SceneBuffer.Bind;
-
-    GBuffer.Textures[2].Bind(1);
-    FocalBlurBuffer.Textures[0].Bind(0);
-
-    fFocalBlurShader.Bind;
-    fFocalBlurShader.UniformF('FocusDistance', FocusDistance);
-    fFocalBlurShader.UniformF('Screen', ResX, ResY);
-    fFocalBlurShader.UniformF('Strength', 1.0);
-    DrawFullscreenQuad;
-    fFocalBlurShader.Unbind;
-
-    SceneBuffer.Unbind;
-    end;
-
-  // Apply sun ray effect to the image
-  if UseSunRays then
-    begin
-    SceneBuffer.Bind;
-
-    fFullscreenShader.Bind;
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-    glColor4f(Power(0.5, 100.0 * FogStrength), Power(0.5, 100.0 * FogStrength), Power(0.5, 100.0 * FogStrength), 1);
-    SunRayBuffer.Textures[0].Bind(0);
-    DrawFullscreenQuad;
-    glDisable(GL_BLEND);
-
-    fFullscreenShader.Unbind;
-
-    SceneBuffer.Unbind;
-    end;
-
-  // Get average scene color
-  fHDRAverageShader.Bind;
-
-  glDisable(GL_ALPHA_TEST);
-  glDisable(GL_CULL_FACE);
-  glDisable(GL_BLEND);
-
-  fHDRBuffer.Bind;
-    fSceneBuffer.Textures[0].Bind(0);
-    fHDRAverageShader.UniformI('Size', BufferSizeY);
-    fHDRAverageShader.UniformI('Dir', 0, 1);
-    DrawFullscreenQuad;
-  fHDRBuffer.Unbind;
-
-  fHDRBuffer2.Bind;
-    fHDRBuffer.Textures[0].Bind(0);
-    fHDRAverageShader.UniformI('Size', BufferSizeX);
-    fHDRAverageShader.UniformI('Dir', 1, 0);
-    DrawFullscreenQuad;
-  fHDRBuffer2.Unbind;
-
-  fHDRAverageShader.Unbind;
-
-  // Bloom pass
-
-  if BloomFactor > 0 then
-    begin
-    glDisable(GL_BLEND);
-
-    BloomBuffer.Bind;
-
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
-
-    fBloomShader.Bind;
-    fHDRBuffer2.Textures[0].Bind(1);
-    fSceneBuffer.Textures[0].Bind(0);
-    DrawFullscreenQuad;
-    fBloomShader.Unbind;
-
-    BloomBuffer.Unbind;
-
-    fBloomBlurShader.Bind;
-
-    fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width * SSAOSize, 0.0);
-    BloomBuffer.Textures[0].Bind(0);
-
-    fTmpBloomBuffer.Bind;
-    DrawFullscreenQuad;
-    fTmpBloomBuffer.Unbind;
-
-    fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height * SSAOSize);
-    fTmpBloomBuffer.Textures[0].Bind(0);
-
-    BloomBuffer.Bind;
-    DrawFullscreenQuad;
-    BloomBuffer.Unbind;
-
-    fBloomBlurShader.Unbind;
-
-    // Apply bloom to scene image
-    fSceneBuffer.Bind;
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-    glColor4f(BloomFactor, BloomFactor, BloomFactor, 1.0);
-
-    fBloomBuffer.Textures[0].Bind(0);
-
-    fFullscreenShader.Bind;
-    DrawFullscreenQuad;
-    fFullscreenShader.Unbind;
-
-    fSceneBuffer.Unbind;
-
-    glDisable(GL_BLEND);
-    end;
-
-
-  // Output
-
-  if (UseMotionBlur) and (not CaptureNextFrame) then
-    begin
-    // Render output to MB buffer
-    MotionBlurBuffer.Bind;
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    fAAShader.Bind;
-
-    glColor4f(1, 1, 1, 1 - power(2.7183, -(FPSDisplay.MS * fMotionBlurStrength)));
-    fHDRBuffer2.Textures[0].Bind(1);
-    fSceneBuffer.Textures[0].Bind(0);
-    DrawFullscreenQuad;
-
-    fAAShader.Unbind;
-
-    glDisable(GL_BLEND);
-    glDisable(GL_ALPHA_TEST);
-    MotionBlurBuffer.Unbind;
-
-    // Render new buffer contents
-    glColor4f(1, 1, 1, 1);
-    fFullscreenShader.Bind;
-
-    MotionBlurBuffer.Textures[0].Bind(0);
-    DrawFullscreenQuad;
-    MotionBlurBuffer.Textures[0].Unbind;
-
-    fFullscreenShader.Unbind;
-    end
-  else
-    begin
-    fAAShader.Bind;
-
-    glColor4f(1, 1, 1, 1);
-
-    fHDRBuffer2.Textures[0].Bind(1);
-    fSceneBuffer.Textures[0].Bind(0);
-    DrawFullscreenQuad;
-
-    fAAShader.Unbind;
-    end;
-
-  if UseLensFlare then
-    begin
-    // And finally add some lens flare
-
-    LensFlareFactor := Clamp(5 * DotProduct(Normalize(fVecToFront), Normalize(Vector3D(RSky.Sun.Position) - ModuleManager.ModCamera.ActiveCamera.Position)), 0, 1);
-
-    glDisable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    fLensFlareShader.Bind;
-    fLensFlareMask.Bind(0);
-    GBuffer.Textures[2].Bind(1);
-    RenderLensFlare;
-    fLensFlareShader.Unbind;
-    end;
-
-  glDisable(GL_BLEND);
 
   inc(fFrameID);
 //   writeln(glGetError());
@@ -1422,6 +1483,9 @@ begin
     SetConfVal('water.refract.objects', '0');
     SetConfVal('water.refract.particles', '0');
     SetConfVal('water.refract.autoplants', '0');
+    SetConfVal('s3d', '0');
+    SetConfVal('s3d.mode', '0');
+    SetConfVal('s3d.strength', '1');
     end;
   fFSAASamples := StrToIntWD(GetConfVal('samples'), 1);
   fReflectionSize := StrToIntWD(GetConfVal('reflections.realtime.size'), 128);
@@ -1478,6 +1542,11 @@ begin
   fWaterRefractObjects := GetConfVal('water.refract.objects') = '1';
   fWaterRefractParticles := GetConfVal('water.refract.particles') = '1';
   fWaterRefractAutoplants := GetConfVal('water.refract.autoplants') = '1';
+  fEnableS3D := GetConfVal('s3d') = '1';
+  fS3DMode := -1;
+  if fEnableS3D then
+    fS3DMode := StrToIntWD(GetConfVal('s3d.mode'), 0);
+  fS3DStrength := StrToFloatWD(GetConfVal('s3d.strength'), 1.0);
 
   ModuleManager.ModShdMng.SetVar('owe.samples', fFSAASamples);
   ModuleManager.ModShdMng.SetVar('owe.shadows.blur', fShadowBlurSamples);
@@ -1491,6 +1560,8 @@ begin
   ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 0);
   ModuleManager.ModShdMng.SetVar('owe.gamma', 0);
+  ModuleManager.ModShdMng.SetVar('owe.s3d', 0);
+  ModuleManager.ModShdMng.SetVar('owe.s3d.mode', fS3DMode);
   if fUseSunShadows then
     ModuleManager.ModShdMng.SetVar('owe.shadows.sun', 1);
   if fUseLightShadows then
@@ -1507,6 +1578,8 @@ begin
     ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 1);
   if fGamma <> 1 then
     ModuleManager.ModShdMng.SetVar('owe.gamma', 1);
+  if fEnableS3D then
+    ModuleManager.ModShdMng.SetVar('owe.s3d', 1);
 end;
 
 procedure TModuleRendererOWE.InvertFrontFace;

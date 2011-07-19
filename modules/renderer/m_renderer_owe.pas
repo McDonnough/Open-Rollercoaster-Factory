@@ -770,9 +770,12 @@ begin
     Coord := Vector(0, 0, 0, 0);
 
     // Selection pass - abuse the light buffer for that because it consists of two buffers
-    fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
-    fSelectionRay := Vector(0, 0, 0);
-    if Park.SelectionEngine <> nil then
+    if (Pass = 0) then
+      begin
+      fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
+      fSelectionRay := Vector(0, 0, 0);
+      end;
+    if (Park.SelectionEngine <> nil) and (Pass = 0) then
       begin
       LightBuffer.Bind;
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
@@ -791,14 +794,21 @@ begin
         fFullscreenShader.Bind;
         LightBuffer.Textures[0].Bind(0);
         DrawFullscreenQuad;
-        glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+        if fS3DMode = 0 then
+          glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples mod (ResX div 2), (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples - (ResY div 4), 1, 1, GL_RGBA, GL_FLOAT, @Coord.X)
+        else
+          glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
 
         fSelectionStart := ModuleManager.ModCamera.ActiveCamera.Position;
         fSelectionRay := Vector3D(Coord) - fSelectionStart;
 
         LightBuffer.Textures[1].Bind(0);
         DrawFullscreenQuad;
-        glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+
+        if fS3DMode = 0 then
+          glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples mod (ResX div 2), (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples - (ResY div 4), 1, 1, GL_RGBA, GL_FLOAT, @Coord.X)
+        else
+          glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
         fFullscreenShader.Unbind;
         fSelectedMaterialID := (Round(Coord.X) shl 16) or (Round(Coord.Y) shl 8) or (Round(Coord.Z));
 
@@ -1151,17 +1161,23 @@ begin
         end;
     fSceneBuffer.Unbind;
 
-    SpareBuffer.Bind;
-      // Get depth under mouse
-      fFullscreenShader.Bind;
-      GBuffer.Textures[2].Bind(0);
-      DrawFullscreenQuad;
-      glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
-      if VecLengthNoRoot(fSelectionRay + fSelectionStart) < 0.01 then
-        fSelectionRay := Vector3D(Coord) - fSelectionStart;
-      fFullscreenShader.Unbind;
+    if Pass = 0 then
+      begin
+      SpareBuffer.Bind;
+        // Get depth under mouse
+        fFullscreenShader.Bind;
+        GBuffer.Textures[2].Bind(0);
+        DrawFullscreenQuad;
+        if fS3DMode = 0 then
+          glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples mod (ResX div 2), (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples - (ResY div 4), 1, 1, GL_RGBA, GL_FLOAT, @Coord.X)
+        else
+          glReadPixels(ModuleManager.ModInputHandler.MouseX * FSAASamples, (ResY - ModuleManager.ModInputHandler.MouseY) * FSAASamples, 1, 1, GL_RGBA, GL_FLOAT, @Coord.X);
+        if VecLengthNoRoot(fSelectionRay + fSelectionStart) < 0.01 then
+          fSelectionRay := Vector3D(Coord) - fSelectionStart;
+        fFullscreenShader.Unbind;
 
-    SpareBuffer.Unbind;
+      SpareBuffer.Unbind;
+      end;
 
     // Under-water view
     if fIsUnderWater then

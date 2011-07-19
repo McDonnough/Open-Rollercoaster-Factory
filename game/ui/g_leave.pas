@@ -41,8 +41,6 @@ begin
   EventManager.RemoveCallback(@FinalSaveGame);
   fFD.Free;
   fFD := nil;
-  if Event = 'TFileDialog.Selected' then
-    doQuit(Event, nil, nil);
 end;
 
 constructor TGameLeave.Create(Resource: String; ParkUI: TXMLUIManager);

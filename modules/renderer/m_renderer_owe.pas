@@ -238,6 +238,12 @@ begin
   fBufferSizeX := ResX * FSAASamples;
   fBufferSizeY := ResY * FSAASamples;
 
+  if fS3DMode = 0 then
+    begin
+    fBufferSizeX := fBufferSizeX div 2;
+    fBufferSizeY := fBufferSizeY div 2;
+    end;
+
   fGBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
   fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Materials (opaque only) and specularity
   fGBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);

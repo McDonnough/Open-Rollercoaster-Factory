@@ -23,7 +23,7 @@ void main(void) {
   gl_FragColor.rgb /= (Samples * Samples);
   // END
   // IF [ EQ owe.samples 1 ]
-    // IF [ NEQ owe.s3d.mode 0 ]
+    // IF [ EQN owe.sas3d.mode 0
     gl_FragColor.rgb = texelFetch2D(Texture, ivec2(floor(gl_FragCoord.xy)), 0).rgb;
     // END
     // IF [ EQ owe.s3d.mode 0 ]

@@ -8,7 +8,7 @@ varying vec3 OrigVertex;
 varying vec3 Normal;
 
 void main(void) {
-  OrigVertex = gl_Vertex.xyz;
+  OrigVertex = (TransformMatrix * vec4(gl_Vertex.xyz, 0.0)).xyz;
   Vertex = vec3(TransformMatrix * vec4(gl_Vertex.xyz * Mirror, 1.0));
   Normal = vec3(TransformMatrix * vec4(gl_Normal * Mirror, 0.0));
   gl_TexCoord[0] = gl_MultiTexCoord0;

@@ -365,10 +365,11 @@ const
   AL_UNDETERMINED                           = $1030;
 
   //Sound samples: format specifier.
-  AL_FORMAT_MONO8                           =$1100;
-  AL_FORMAT_MONO16                          =$1101;
-  AL_FORMAT_STEREO8                         =$1102;
-  AL_FORMAT_STEREO16                        =$1103;
+  AL_FORMAT_MONO8                           = $1100;
+  AL_FORMAT_MONO16                          = $1101;
+  AL_FORMAT_STEREO8                         = $1102;
+  AL_FORMAT_STEREO16                        = $1103;
+  AL_FORMAT_VORBIS_EXT                      = $10003;
 
   //source specific reference distance
   //Type: ALfloat

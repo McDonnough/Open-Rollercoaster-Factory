@@ -34,9 +34,10 @@ uses
 
 procedure TCamera.UpdateMatrix;
 begin
-  fMatrix :=           RotationMatrix(Rotation.Z, Vector(0, 0, 1));
-  fMatrix := fMatrix * RotationMatrix(Rotation.X, Vector(1, 0, 0));
-  fMatrix := fMatrix * RotationMatrix(Rotation.Y, Vector(0, 1, 0));
+  fMatrix := Identity4D;
+//   fMatrix :=           RotationMatrix(Rotation.Z, Vector(0, 0, 1));
+//   fMatrix := fMatrix * RotationMatrix(Rotation.X, Vector(1, 0, 0));
+  fMatrix := fMatrix * RotationMatrix(Rotation.Y, Vector(0, -1, 0));
 end;
 
 procedure TCamera.SetPosition(A: TVector3D);

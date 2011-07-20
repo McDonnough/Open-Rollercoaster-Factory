@@ -3,7 +3,7 @@ unit u_scene;
 interface
 
 uses
-  SysUtils, Classes, u_math, u_vectors, m_texmng_class, u_pathes, u_scripts;
+  SysUtils, Classes, u_math, u_vectors, m_texmng_class, u_pathes, u_scripts, m_sound_class;
 
 type
   TLightSource = class
@@ -140,6 +140,7 @@ type
       ParentObject: TGeoObject;
       Material: TMaterial;
       LightSources: Array of TLightSource;
+      SoundSources: Array of TSoundSource;
       ParticleGroups: Array of Pointer; // Sorry, circular unit reference. Bad class management, I know
       procedure AddBoneToAll(B: TBone);
       procedure AddBone(B: TBone);
@@ -590,6 +591,10 @@ begin
   SetLength(Result.ParticleGroups, length(ParticleGroups));
   for i := 0 to high(ParticleGroups) do
     Result.ParticleGroups[i] := TParticleGroup(ParticleGroups[i]).Duplicate;
+
+  setLength(Result.SoundSources, length(SoundSources));
+  for i := 0 to high(SoundSources) do
+    Result.SoundSources[i] := SoundSources[i].Duplicate;
 end;
 
 function TGeoMesh.AddVertex: PVertex;
@@ -701,6 +706,8 @@ begin
     TParticleGroup(ParticleGroups[i]).InitialVelocity := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalVelocity, 0.0) * CalculatedMatrix);
     TParticleGroup(ParticleGroups[i]).VelocityVariance := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalVelocityVariance, 0.0) * CalculatedMatrix);
     end;
+  for I := 0 to high(SoundSources) do
+    SoundSources[I].ApplyMatrix(CalculatedMatrix);
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
 end;
@@ -738,6 +745,8 @@ begin
     LightSources[i].Register;
   for i := 0 to high(ParticleGroups) do
     TParticleGroup(ParticleGroups[i]).Register;
+  for i := 0 to high(SoundSources) do
+    SoundSources[i].Play;
 end;
 
 procedure TGeoMesh.SetIO(Script: TScript);
@@ -786,6 +795,8 @@ begin
     LightSources[i].Free;
   for i := 0 to high(ParticleGroups) do
     TParticleGroup(ParticleGroups[i]).Free;
+  for i := 0 to high(SoundSources) do
+    SoundSources[i].Free;
   EventManager.CallEvent('TGeoObject.DeletedMesh', ParentObject, Self);
 end;
 

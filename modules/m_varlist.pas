@@ -41,6 +41,7 @@ interface
       fModCamera: TModuleCamera;
       fModSettings: TModuleSettings;
       fModScriptManager: TModuleScriptManager;
+      fModSound: TModuleSound;
     public
       property ModModuleConfig: TModuleConfig read fModModuleConfig;
       property ModPathes: TModulePathes read fModPathes;
@@ -72,6 +73,7 @@ interface
       property ModCamera: TModuleCamera read fModCamera;
       property ModSettings: TModuleSettings read fModSettings;
       property ModScriptManager: TModuleScriptManager read fModScriptManager;
+      property ModSound: TModuleSound read fModSound;
 
       /// Create all module instances
       procedure LoadModules;
@@ -179,10 +181,14 @@ begin
 
   fModScriptManager := TModuleScriptManager.Create;
   fModScriptManager.CheckModConf;
+
+  fModSound := TModuleSound.Create;
+  fModSound.CheckModConf;
 end;
 
 procedure TModuleManager.UnloadModules;
 begin
+  fModSound.Free;
   fModScriptManager.Free;
   fModSettings.Free;
   fModCamera.Free;

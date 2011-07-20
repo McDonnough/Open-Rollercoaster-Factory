@@ -53,7 +53,7 @@ type
 implementation
 
 uses
-  g_object_selector, g_terrain_edit, g_objects, u_math, m_varlist, m_inputhandler_class, math;
+  g_object_selector, g_terrain_edit, g_objects, u_math, m_varlist, m_inputhandler_class, math, m_sound_class;
 
 procedure TGameObjectBuilder.SnapToGrid(Event: String; Data, Result: Pointer);
 begin
@@ -202,6 +202,9 @@ begin
         end;
       O.GeoObject.Matrix := fBuilding.Matrix;
       O.GeoObject.Mirror := fBuilding.Mirror;
+      SetLength(O.GeoObject.Meshes[0].SoundSources, 1);
+      O.GeoObject.Meshes[0].SoundSources[0] := TSoundSource.Create('/home/philip/orcf-data/test.ogg');
+      O.GeoObject.Meshes[0].SoundSources[0].Play;
       Park.pObjects.Append(O);
       SelectionEngine.Add(O.GeoObject, 'GUIActions.terrain_edit.marks.move');
       Park.NormalSelectionEngine.Add(O.GeoObject, 'TPark.Objects.Selected');

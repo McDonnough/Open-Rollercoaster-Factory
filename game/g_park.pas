@@ -242,6 +242,7 @@ begin
     else
       begin
       fScreenCaptureTool.Advance;
+      ModuleManager.ModSound.ApplyListenerChanges;
       ModuleManager.ModRenderer.RenderScene;
       ParkUI.Drag;
       pSky.Advance;

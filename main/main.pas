@@ -136,6 +136,7 @@ begin
       Park.Free;
       Park := nil;
       end;
+    ModuleManager.ModSound.SetMenuMode;
     ModuleManager.ModMainMenu.Setup;
     end
   else
@@ -150,6 +151,7 @@ begin
         Text := 'Initializing';
         SetVisibility(True);
         end;
+      ModuleManager.ModSound.SetGameMode;
       end;
     end;
 end;

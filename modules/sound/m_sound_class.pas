@@ -8,30 +8,30 @@ uses
 type
   TModuleSoundClass = class(TBasicModule)
     public
+      function AddSoundbuffer(Data: Pointer; Size: Integer; Channels: Integer; Rate: Integer): DWord; virtual abstract;
       procedure SetMenuMode; virtual abstract;
       procedure SetGameMode; virtual abstract;
       procedure ApplyListenerChanges(VelocityFactor: Single = 1.0); virtual abstract;
       procedure ApplySoundSourceChange(Handle: DWord; Position, Direction: TVector3D); virtual abstract;
       procedure ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping: Boolean); virtual abstract;
       procedure PlaySound(Handle: DWord); virtual abstract;
-      function NewSoundSource(Soundfile: String): DWord; virtual abstract;
+      function NewSoundSource(BufferHandle: DWord): DWord; virtual abstract;
       procedure DeleteSoundSource(Handle: DWord); virtual abstract;
     end;
 
   TSoundSource = class
-    protected
-      fHandle: DWord;
-      fSoundFile: String;
+    private
+      fHandle, fBufferHandle: DWord;
     public
       Position, Direction: TVector3D;
       Looping: Boolean;
       Volume: Single;
       property Handle: DWord read fHandle;
-      property SoundFileName: String read fSoundFile;
+      property BufferHandle: DWord read fBufferHandle;
       procedure ApplyMatrix(M: TMatrix4D);
       procedure Play;
       function Duplicate: TSoundSource;
-      constructor Create(Soundfile: String);
+      constructor Create(Buffer: DWord);
       destructor Free;
     end;
 
@@ -53,19 +53,20 @@ end;
 
 function TSoundSource.Duplicate: TSoundSource;
 begin
-  Result := TSoundSource.Create(fSoundFile);
+  Result := TSoundSource.Create(BufferHandle);
   Result.Position := Position;
   Result.Direction := Direction;
   Result.Looping := Looping;
   Result.Volume := Volume;
+  Result.fBufferHandle := BufferHandle;
   ModuleManager.ModSound.ApplySoundSourceChange(Result.Handle, Result.Position, Result.Direction);
   ModuleManager.ModSound.ApplySoundPropertyChange(Result.fHandle, Result.Volume, Result.Looping);
 end;
 
-constructor TSoundSource.Create(Soundfile: String);
+constructor TSoundSource.Create(Buffer: DWord);
 begin
-  fSoundFile := Soundfile;
-  fHandle := ModuleManager.ModSound.NewSoundSource(Soundfile);
+  fHandle := ModuleManager.ModSound.NewSoundSource(Buffer);
+  fBufferHandle := Buffer;
   Position := Vector(0, 0, 0);
   Direction := Vector(0, 0, 0);
   Volume := 1.0;

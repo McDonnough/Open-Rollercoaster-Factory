@@ -3,11 +3,10 @@ unit m_sound_openal;
 interface
 
 uses
-  SysUtils, Classes, openal, u_vectors, u_math, m_sound_class, vorbis;
+  SysUtils, Classes, openal, u_vectors, u_math, m_sound_class;
 
 type
   TSoundBuffer = class
-    FileName: String;
     Buffer: TALUInt;
     destructor Free;
     end;
@@ -26,13 +25,14 @@ type
       fPrevListenerPos: TVector3D;
       fMenuMode: Boolean;
     public
+      function AddSoundbuffer(Data: Pointer; Size: Integer; Channels: Integer; Rate: Integer): DWord;
       procedure SetMenuMode;
       procedure SetGameMode;
       procedure ApplyListenerChanges(VelocityFactor: Single = 1.0);
       procedure ApplySoundSourceChange(Handle: DWord; Position, Direction: TVector3D);
       procedure ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping: Boolean);
       procedure PlaySound(Handle: DWord);
-      function NewSoundSource(Soundfile: String): DWord;
+      function NewSoundSource(BufferHandle: DWord): DWord;
       procedure DeleteSoundSource(Handle: DWord);
       procedure CheckModConf;
       constructor Create;
@@ -55,6 +55,15 @@ begin
   alDeleteSources(1, @Source);
 end;
 
+function TModuleSoundOpenAL.AddSoundbuffer(Data: Pointer; Size: Integer; Channels: Integer; Rate: Integer): DWord;
+const
+  Formats: Array[1..2] of TALEnum = (AL_FORMAT_MONO16, AL_FORMAT_STEREO16);
+begin
+  setLength(fSoundBuffers, length(fSoundBuffers) + 1);
+  fSoundBuffers[high(fSoundBuffers)] := TSoundBuffer.Create;
+  alGenBuffers(1, @fSoundBuffers[high(fSoundBuffers)].Buffer);
+  alBufferData(fSoundBuffers[high(fSoundBuffers)].Buffer, Formats[Channels], Data, Size, Rate);
+end;
 
 procedure TModuleSoundOpenAL.SetMenuMode;
 begin
@@ -112,63 +121,15 @@ begin
   alSourcePlay(fSoundHandles[Handle].Source);
 end;
 
-function TModuleSoundOpenAL.NewSoundSource(Soundfile: String): DWord;
-var
-  FoundBuffer: TSoundBuffer;
-  I: Integer;
-  format: TALEnum;
-  size: TALSizei;
-  freq: TALSizei;
-  loop: TALInt;
-  data: TALVoid;
-  VorbisFile: OggVorbis_File;
-  BytesRead: long;
-  Audio: Array of Byte;
-  S: Integer;
+function TModuleSoundOpenAL.NewSoundSource(BufferHandle: DWord): DWord;
 begin
   setLength(fSoundHandles, length(fSoundHandles) + 1 );
   Result := high(fSoundHandles);
 
-  FoundBuffer := nil;
-  for I := 0 to high(fSoundBuffers) do
-    if fSoundBuffers[I].FileName = Soundfile then
-      FoundBuffer := fSoundBuffers[I];
-
-  if FoundBuffer = nil then
-    begin
-    FoundBuffer := TSoundBuffer.Create;
-    FoundBuffer.FileName := Soundfile;
-    SetLength(fSoundBuffers, length(fSoundBuffers) + 1);
-    fSoundBuffers[high(fSoundBuffers)] := FoundBuffer;
-
-    AlGenBuffers(1, @FoundBuffer.Buffer);
-    if ExtractFileExt(Soundfile) = '.wav' then
-      begin
-      AlutLoadWavFile(Soundfile, format, data, size, freq, loop);
-      AlBufferData(FoundBuffer.Buffer, format, data, size, freq);
-      AlutUnloadWav(format, data, size, freq);
-      end
-    else
-      begin
-      S := 0;
-      SetLength(Audio, 0);
-      if ov_fopen(PChar(Soundfile), @VorbisFile) <> 0 then
-        writeln(ov_fopen(PChar(Soundfile), @VorbisFile));
-      repeat
-        SetLength(Audio, Length(Audio) + 4096);
-        BytesRead := ov_read(@VorbisFile, @Audio[Length(Audio) - 4096], 4096, 0, 2, 1, @S);
-        SetLength(Audio, Length(Audio) - 4096 + BytesRead);
-      until
-        BytesRead = 0;
-      ov_clear(@VorbisFile);
-      AlBufferData(FoundBuffer.Buffer, AL_FORMAT_MONO16, @Audio[0], Length(Audio), 44100);
-      end;
-    end;
-
   fSoundHandles[Result] := TSoundHandle.Create;
   fSoundHandles[Result].Initialized := False;
   alGenSources(1, @fSoundHandles[Result].Source);
-  alSourcei(fSoundHandles[Result].Source, AL_BUFFER, FoundBuffer.Buffer);
+  alSourcei(fSoundHandles[Result].Source, AL_BUFFER, fSoundBuffers[BufferHandle].Buffer);
   alSourcef(fSoundHandles[Result].Source, AL_PITCH, 1.0);
 end;
 

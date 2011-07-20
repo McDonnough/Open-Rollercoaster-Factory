@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, u_linkedlists, g_resources, u_scene, g_loader_ocf, g_res_textures, g_res_materials, u_xml, u_dom, u_vectors,
-  g_res_lights, g_res_particles, g_res_pathes, g_res_scripts;
+  g_res_lights, g_res_particles, g_res_pathes, g_res_scripts, g_res_sounds;
 
 type
   TBonePathResourceAssoc = record
@@ -20,6 +20,9 @@ type
       fMaterialResources: Array of TMaterialResource;
       fMaterialResourceNames: Array of String;
       fLightSourceResourceNames: Array of Array of String;
+      fSoundSourceResourceNames: Array of Array of String;
+      fSoundSourcePositions: Array of Array of Array[0..1] of TVector3D;
+      fSoundResources: Array of Array of TSoundResource;
       fLightSourceResourcePositions: Array of Array of TVector3D;
       fLightSourceResources: Array of Array of TLightResource;
       fParticleGroupResourceNames: Array of Array of String;
@@ -94,6 +97,14 @@ begin
       TParticleGroup(fGeoObject.Meshes[i].ParticleGroups[j]) := fParticleGroupResources[i, j].Group;
       TParticleGroup(fGeoObject.Meshes[i].ParticleGroups[j]).InitialPosition := fParticleGroupResourcePositions[i, j];
       TParticleGroup(fGeoObject.Meshes[i].ParticleGroups[j]).OriginalPosition := fParticleGroupResourcePositions[i, j];
+      end;
+
+    setLength(fGeoObject.Meshes[i].SoundSources, length(fSoundResources[i]));
+    for j := 0 to high(fSoundResources[i]) do
+      begin
+      fGeoObject.Meshes[i].SoundSources[j] := fSoundResources[i, j].SoundSource;
+      fGeoObject.Meshes[i].SoundSources[j].Position := fSoundSourcePositions[i, j, 0];
+      fGeoObject.Meshes[i].SoundSources[j].Direction := fSoundSourcePositions[i, j, 1];
       end;
     end;
 
@@ -251,6 +262,8 @@ begin
   setLength(fMaterialResourceNames, length(fMaterialResourceNames) + 1);
   setLength(fMaterialDefined, length(fMaterialDefined) + 1);
   setLength(fLightSourceResourceNames, length(fLightSourceResourceNames) + 1);
+  setLength(fSoundSourceResourceNames, length(fSoundSourceResourceNames) + 1);
+  setLength(fSoundSourcePositions, length(fSoundSourcePositions) + 1);
   setLength(fLightSourceResourcePositions, length(fLightSourceResourcePositions) + 1);
   setLength(fParticleGroupResourceNames, length(fParticleGroupResourceNames) + 1);
   setLength(fParticleGroupResourcePositions, length(fParticleGroupResourcePositions) + 1);
@@ -281,6 +294,15 @@ begin
 
       setLength(fParticleGroupResourcePositions[high(fParticleGroupResourcePositions)], length(fParticleGroupResourcePositions[high(fParticleGroupResourcePositions)]) + 1);
       fParticleGroupResourcePositions[high(fParticleGroupResourcePositions), high(fParticleGroupResourcePositions[high(fParticleGroupResourcePositions)])] := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0.0), StrToFloatWD(CurrElement.GetAttribute('y'), 0.0), StrToFloatWD(CurrElement.GetAttribute('z'), 0.0));
+      end
+    else if CurrElement.TagName = 'sound' then
+      begin
+      setLength(fSoundSourceResourceNames[high(fSoundSourceResourceNames)], length(fSoundSourceResourceNames[high(fSoundSourceResourceNames)]) + 1);
+      fSoundSourceResourceNames[high(fSoundSourceResourceNames), high(fSoundSourceResourceNames[high(fSoundSourceResourceNames)])] := CurrElement.GetAttribute('resource:name');
+
+      setLength(fSoundSourcePositions[high(fSoundSourcePositions)], length(fSoundSourcePositions[high(fSoundSourcePositions)]) + 1);
+      fSoundSourcePositions[high(fSoundSourcePositions), high(fSoundSourcePositions[high(fSoundSourcePositions)]), 0] := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0.0), StrToFloatWD(CurrElement.GetAttribute('y'), 0.0), StrToFloatWD(CurrElement.GetAttribute('z'), 0.0));
+      fSoundSourcePositions[high(fSoundSourcePositions), high(fSoundSourcePositions[high(fSoundSourcePositions)]), 1] := Vector(StrToFloatWD(CurrElement.GetAttribute('dx'), 0.0), StrToFloatWD(CurrElement.GetAttribute('dy'), 0.0), StrToFloatWD(CurrElement.GetAttribute('dz'), 0.0));
       end
     else if CurrElement.TagName = 'geometry' then
       CreateGeometry(CurrElement)
@@ -419,7 +441,14 @@ begin
     setLength(fParticleGroupResources[i], length(fParticleGroupResourceNames[i]));
     inc(fDepCount, length(fParticleGroupResourceNames[i]));
     end;
-    
+
+  setLength(fSoundResources, length(fSoundSourceResourceNames));
+  for i := 0 to high(fSoundSourceResourceNames) do
+    begin
+    setLength(fSoundResources[i], length(fSoundSourceResourceNames[i]));
+    inc(fDepCount, length(fSoundSourceResourceNames[i]));
+    end;
+
   for i := 0 to high(fBonePathResourceAssocs) do
     if fBonePathResourceAssocs[i].PathResourceName <> '' then
       inc(fDepCount);
@@ -449,6 +478,13 @@ begin
         begin
         EventManager.AddCallback('TResource.FinishedLoading:' + fParticleGroupResourceNames[i, j], @DepLoaded);
         fParticleGroupResources[i, j] := TParticleResource.Get(fParticleGroupResourceNames[i, j]);
+        end;
+
+    for i := 0 to high(fSoundSourceResourceNames) do
+      for j := 0 to high(fSoundSourceResourceNames[i]) do
+        begin
+        EventManager.AddCallback('TResource.FinishedLoading:' + fSoundSourceResourceNames[i, j], @DepLoaded);
+        fSoundResources[i, j] := TSoundResource.Get(fSoundSourceResourceNames[i, j]);
         end;
 
     for i := 0 to high(fBonePathResourceAssocs) do

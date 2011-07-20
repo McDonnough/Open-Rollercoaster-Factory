@@ -82,12 +82,16 @@ procedure TModuleSoundOpenAL.ApplyListenerChanges(VelocityFactor: Single = 1.0);
 var
   ListenerPos, ListenerVel: TVector3D;
   ListenerDir: Array[0..1] of TVector3D;
+  AMatrix: TMatrix4D;
 begin
   ListenerPos := ModuleManager.ModCamera.ActiveCamera.Position;
   ListenerVel := (ListenerPos - fPrevListenerPos) / FPSDisplay.MS * 1000;
   fPrevListenerPos := ListenerPos;
-  ListenerDir[0] := Vector3D(Vector(0, 0, -1, 0) * ModuleManager.ModCamera.ActiveCamera.Matrix);
-  ListenerDir[1] := Vector(0, 1, 0);
+  AMatrix := RotationMatrix(ModuleManager.ModCamera.ActiveCamera.Rotation.X, Vector(-1, 0, 0));
+  AMatrix := RotationMatrix(ModuleManager.ModCamera.ActiveCamera.Rotation.Y, Vector(0, -1, 0));
+  ListenerDir[0] := Vector3D(Vector(0, 0, -1, 0) * AMatrix);
+  AMatrix := RotationMatrix(ModuleManager.ModCamera.ActiveCamera.Rotation.Z, Vector(0, 0, -1));
+  ListenerDir[1] := Vector3D(Vector(0, 1, 0, 0) * AMatrix);
   alListenerfv(AL_POSITION, @ListenerPos);
   alListenerfv(AL_VELOCITY, @ListenerVel);
   alListenerfv(AL_ORIENTATION, @ListenerDir[0]);

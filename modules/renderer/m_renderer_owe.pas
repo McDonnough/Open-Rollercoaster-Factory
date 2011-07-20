@@ -68,6 +68,7 @@ type
       fMaxFogDistance: Single;
       fEnableS3D: Boolean;
       fS3DMode: Integer;
+      fS3DInvert: Boolean;
       fS3DStrength: Single;
     public
       CurrentTerrainBumpmapDistance, CurrentTerrainDetailDistance, CurrentTerrainTesselationDistance: Single;
@@ -174,6 +175,7 @@ type
       property EnableS3D: Boolean read fEnableS3D;
       property S3DMode : Integer read fS3DMode;
       property S3DStrength: Single read fS3DStrength;
+      property S3DInvert: Boolean read fS3DInvert;
       procedure DynamicSettingsSetNormal;
       procedure DynamicSettingsSetReflection;
       procedure PostInit;
@@ -1388,7 +1390,12 @@ begin
 
       MotionBlurBuffer.Textures[0].Bind(0);
       if (EnableS3D) and (fS3DMode = 0) then
-        DrawFullscreenQuad(Vector(1 - Pass, 0.5), Vector(0.5, 0.5))
+        begin
+        if fS3DInvert then
+          DrawFullscreenQuad(Vector(1 - Pass, 0.5), Vector(0.5, 0.5))
+        else
+          DrawFullscreenQuad(Vector(Pass, 0.5), Vector(0.5, 0.5));
+        end
       else
         DrawFullscreenQuad;
       MotionBlurBuffer.Textures[0].Unbind;
@@ -1506,6 +1513,7 @@ begin
     SetConfVal('water.refract.particles', '0');
     SetConfVal('water.refract.autoplants', '0');
     SetConfVal('s3d', '0');
+    SetConfVal('s3d.invert', '0');
     SetConfVal('s3d.mode', '0');
     SetConfVal('s3d.strength', '1');
     end;
@@ -1568,6 +1576,7 @@ begin
   fS3DMode := -1;
   if fEnableS3D then
     fS3DMode := StrToIntWD(GetConfVal('s3d.mode'), 0);
+  fS3DInvert := GetConfVal('s3d.invert') = '1';
   fS3DStrength := StrToFloatWD(GetConfVal('s3d.strength'), 1.0);
 
   ModuleManager.ModShdMng.SetVar('owe.samples', fFSAASamples);

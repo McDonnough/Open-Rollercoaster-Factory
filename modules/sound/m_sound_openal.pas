@@ -7,14 +7,14 @@ uses
 
 type
   TSoundBuffer = class
-    Buffer: TALUInt;
+    Buffer: ALUInt;
     destructor Free;
     end;
 
   TSoundHandle = class
     Initialized: Boolean;
     PrevPosition: TVector3D;
-    Source: TALUInt;
+    Source: ALUInt;
     destructor Free;
     end;
 
@@ -24,6 +24,10 @@ type
       fSoundBuffers: Array of TSoundBuffer;
       fPrevListenerPos: TVector3D;
       fMenuMode: Boolean;
+      alDevice: PALCdevice;
+      alContext: PALCcontext;
+      procedure InitOpenAL;
+      procedure CloseOpenAL;
     public
       function AddSoundbuffer(Data: Pointer; Size: Integer; Channels: Integer; Rate: Integer): DWord;
       procedure SetMenuMode;
@@ -55,9 +59,22 @@ begin
   alDeleteSources(1, @Source);
 end;
 
+procedure TModuleSoundOpenAL.InitOpenAL;
+begin
+  alDevice := alcOpenDevice(nil);
+  alContext := alcCreateContext(alDevice, nil);
+  alcMakeContextCurrent(alContext);
+end;
+
+procedure TModuleSoundOpenAL.CloseOpenAL;
+begin
+  alcDestroyContext(alContext);
+  alcCloseDevice(alDevice);
+end;
+
 function TModuleSoundOpenAL.AddSoundbuffer(Data: Pointer; Size: Integer; Channels: Integer; Rate: Integer): DWord;
 const
-  Formats: Array[1..2] of TALEnum = (AL_FORMAT_MONO16, AL_FORMAT_STEREO16);
+  Formats: Array[1..2] of ALEnum = (AL_FORMAT_MONO16, AL_FORMAT_STEREO16);
 begin
   setLength(fSoundBuffers, length(fSoundBuffers) + 1);
   fSoundBuffers[high(fSoundBuffers)] := TSoundBuffer.Create;
@@ -155,7 +172,6 @@ begin
   fModType := 'Sound';
 
   InitOpenAL;
-  alutInit(nil, argv);
 
   fPrevListenerPos := Vector(0, 0, 0);
   SetMenuMode;
@@ -170,7 +186,7 @@ begin
       fSoundHandles[I].Free;
   for I := 0 to high(fSoundBuffers) do
     fSoundBuffers[I].Free;
-  alutExit();
+  CloseOpenAL;
 end;
 
 end.

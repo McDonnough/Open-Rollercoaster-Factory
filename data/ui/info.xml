@@ -17,14 +17,16 @@ It is very easy to create and use custom scenery and rides because it's simply w
 Philip Rebohle ("ThunderGod") - Initiator, Programming
 Moritz Dittgen ("BlackMambaFan") - Programming, Mac OS X-Support
 R. Hubschmid ("Ynor9") - Logo design, Main menu layout
+Kevin MacLeod (incompetech.com) - Music
     </label>
     <label left="616" top="320" size="24" width="568">THANK YOU!</label>
     <label left="1216" top="8" size="16" width="568">
-The contents of this file are used with permission, subject to the Mozilla Public License Version 1.1 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/MPL-1.1.html
-
+The software itself - which only includes the source code and the executable binary files - is licensed under Mozilla Public License 1.1 http://www.mozilla.org/MPL/MPL-1.1.html
 Software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License for the specific language governing rights and limitations under the License.
 
 Most icons (still) come from the Oxygen project and can be downloaded at http://www.kde-look.org
+
+Music and objects, images and rides shipped with the default data package are licensed under Creative Commons "Attribution 3.0" http://creativecommons.org/licenses/by/3.0/"
     </label>
   </label>
 </window>

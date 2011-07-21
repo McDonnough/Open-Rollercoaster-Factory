@@ -10,11 +10,15 @@ uses
 { General stuff }
 
 const
-  LIBNAME = 'vorbisfile';
-
-{$IFDEF DARWIN}
-  {$LINKLIB libvorbisfile.dylib}
-{$ENDIF}
+  {$IFDEF LINUX}
+    LIBNAME = 'libvorbisfile.so';
+  {$ENDIF}
+  {$IFDEF DARWIN}
+    LIBNAME = 'libvorbisfile.dylib';
+  {$ENDIF}
+  {$IFDEF WINDOWS}
+    LIBNAME = 'vorbisfile.dll';
+  {$ENDIF}
 
 type
   size_t = PtrUInt;

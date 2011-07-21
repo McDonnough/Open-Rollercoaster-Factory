@@ -113,6 +113,7 @@ done
 
 FPCFLAGS="-MObjFPC -g -Sghi $options -vewnhi $incdirs $LinkerOpt"
 
+echo "Creating Makefile"
 echo "DEPS = ${DEPS}" > Makefile
 echo "FPCFLAGS = ${FPCFLAGS}" >> Makefile
 echo '' >> Makefile
@@ -128,9 +129,12 @@ echo 'tools: ${DEPS} ./tools/ocfgen.lpr ./tools/texconv.lpr' >> Makefile
 echo '	fpc ${FPCFLAGS} ./tools/ocfgen.lpr' >> Makefile
 echo '	fpc ${FPCFLAGS} ./tools/texconv.lpr' >> Makefile
 
-echo "fpc.exe ${FPCFLAGS} orcf.lpr" > compile.bat
-echo "fpc.exe ${FPCFLAGS} .\tools\ocfgen.lpr" >> compile.bat
-echo "fpc.exe ${FPCFLAGS} .\tools\texconv.lpr" >> compile.bat
-sed -i "s/\\//\\\\/g" compile.bat
+if [ `uname` == "Linux" ]; then
+  echo "Creating compile.bat"
+  echo "fpc.exe ${FPCFLAGS} orcf.lpr" > compile.bat
+  echo "fpc.exe ${FPCFLAGS} .\tools\ocfgen.lpr" >> compile.bat
+  echo "fpc.exe ${FPCFLAGS} .\tools\texconv.lpr" >> compile.bat
+  sed -i "s/\\//\\\\/g" compile.bat
+fi
 
 echo "Configure done"

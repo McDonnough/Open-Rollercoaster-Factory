@@ -12,6 +12,10 @@ uses
 const
   LIBNAME = 'vorbisfile';
 
+{$IFDEF DARWIN}
+  {$LINKLIB libvorbisfile.dylib}
+{$ENDIF}
+
 type
   size_t = PtrUInt;
 

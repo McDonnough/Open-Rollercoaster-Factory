@@ -214,7 +214,6 @@ begin
     CurrentObject := TRealObject(CurrentObject.Next);
     end;
   XMLString := XMLFromDOM(X);
-  writeln(XMLString);
   Result := TOCFBinarySection.Create;
   Result.Append(@XMLString[1], Length(XMLString));
   X.Free;

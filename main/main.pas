@@ -38,7 +38,7 @@ implementation
 
 uses
   m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events, g_parkui,
-  g_resources, u_scripts, u_vectors, s_setcreator;
+  g_resources, u_scripts, u_vectors, s_setcreator, o_objectcreator;
 
 type
   TParkLoadDialog = class
@@ -223,6 +223,12 @@ begin
           begin
           if SetCreator = nil then
             SetCreator := TSetCreator.Create;
+          ModuleManager.ModMainMenu.Reset;
+          end;
+        MMVAL_OBJECTCREATOR:
+          begin
+          if ObjectCreator = nil then
+            ObjectCreator := TObjectCreator.Create;
           ModuleManager.ModMainMenu.Reset;
           end;
         MMVAL_QUIT: ModuleManager.ModInputHandler.QuitRequest := True;

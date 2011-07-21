@@ -24,7 +24,7 @@ type
       fHandle, fBufferHandle: DWord;
     public
       Position, Direction: TVector3D;
-      Looping: SInt;
+      Looping, Playing: SInt;
       Volume: Single;
       property Handle: DWord read fHandle;
       property BufferHandle: DWord read fBufferHandle;
@@ -71,6 +71,9 @@ end;
 procedure TSoundSource.SetIO(Script: TScript);
 begin
   Script.SetIO(@Position, ioSize, True);
+  if Playing <> 0 then
+    Play;
+  Playing := 0;
 end;
 
 class procedure TSoundSource.RegisterStruct;
@@ -79,6 +82,7 @@ begin
    'vec3 position' + #10 +
    'vec3 direction' + #10 +
    'int looping' + #10 +
+   'int play' + #10 +
    'float volume');
   ioSize := ModuleManager.ModScriptManager.DataStructureSize('SoundSource');
 end;

@@ -53,7 +53,7 @@ begin
       for k := 0 to CellWidth - 1 do
         begin
         for l := 0 to CellHeight - 1 do
-          if fTextures[Tex].Texture.Pixels[CellWidth * i + k, CellHeight * j + l] and $FF000000 > 0 then
+          if fTextures[Tex].Texture.Pixels[CellWidth * i + k, CellHeight * j + l] and $FF000000 > $7F000000 then
             begin
             fTextures[Tex].LetterPositions[16 * j + i].FirstPixel := k;
             doBreak := true;
@@ -67,7 +67,7 @@ begin
       for k := CellWidth - 1 downto 0 do
         begin
         for l := 0 to CellHeight - 1 do
-          if fTextures[Tex].Texture.Pixels[CellWidth * i + k, CellHeight * j + l] and $FF000000 > 0 then
+          if fTextures[Tex].Texture.Pixels[CellWidth * i + k, CellHeight * j + l] and $FF000000 > $7F000000 then
             begin
             fTextures[Tex].LetterPositions[16 * j + i].Width := k - fTextures[Tex].LetterPositions[16 * j + i].FirstPixel + 1;
             doBreak := true;

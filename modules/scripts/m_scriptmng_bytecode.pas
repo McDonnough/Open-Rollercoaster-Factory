@@ -41,7 +41,7 @@ type
 implementation
 
 uses
-  u_scene, m_varlist;
+  u_scene, m_varlist, u_particles, m_sound_class;
 
 procedure TModuleScriptManagerBytecode.SetScriptHandles(Script: TScript);
 var
@@ -180,6 +180,8 @@ begin
   fASM := TScriptAssembler.Create;
   fCompiler := TScriptCompiler.Create;
 
+  TParticleGroup.RegisterStruct;
+  TSoundSource.RegisterStruct;
   TLightSource.RegisterStruct;
   TMaterial.RegisterStruct;
   TBone.RegisterStruct;

@@ -163,8 +163,8 @@ type
 
   TGeoObject = class
     private
-      Counts: Array[0..5] of PtrUInt;
-      Offsets: Array[0..5] of PtrUInt;
+      Counts: Array[0..6] of PtrUInt;
+      Offsets: Array[0..6] of PtrUInt;
       ObjectID: Integer;
     public
       Mirror: TVector3D;
@@ -472,8 +472,7 @@ begin
    'vec4 emission' + #10 +
    'float reflectivity' + #10 +
    'float hardness' + #10 +
-   'float specularity' + #10 +
-   'float refractiveIndex');
+   'float specularity');
 end;
 
 constructor TMaterial.Create;
@@ -970,6 +969,7 @@ begin
     Counts[3] := 0;
     Counts[4] := 0;
     Counts[5] := 0;
+    Counts[6] := 0;
 
     for i := 0 to high(Armatures) do
       inc(Counts[3], length(Armatures[i].Bones));
@@ -978,6 +978,7 @@ begin
       begin
       inc(Counts[4], length(Meshes[i].LightSources));
       inc(Counts[5], length(Meshes[i].ParticleGroups));
+      inc(Counts[6], length(Meshes[i].SoundSources));
       end;
 
     Offsets[0] := ModuleManager.ModScriptManager.DataStructureSize('Object');
@@ -986,12 +987,13 @@ begin
     Offsets[3] := Offsets[2] + Counts[2] * ModuleManager.ModScriptManager.DataStructureSize('Material');
     Offsets[4] := Offsets[3] + Counts[3] * ModuleManager.ModScriptManager.DataStructureSize('Bone');
     Offsets[5] := Offsets[4] + Counts[4] * ModuleManager.ModScriptManager.DataStructureSize('Lamp');
+    Offsets[6] := Offsets[5] + Counts[5] * ModuleManager.ModScriptManager.DataStructureSize('ParticleEmitter');
     end;
 
   Script.SetIO(@FPSDisplay.ms, SizeOf(Single), False);
   Script.SetIO(@Matrix, SizeOf(TMatrix4D), True);
-  Script.SetIO(@Counts[0], 6 * SizeOf(PtrUInt), False);
-  Script.SetIO(@Offsets[0], 6 * SizeOf(PtrUInt), False);
+  Script.SetIO(@Counts[0], Length(Counts) * SizeOf(PtrUInt), False);
+  Script.SetIO(@Offsets[0], Length(Offsets) * SizeOf(PtrUInt), False);
 
   for i := 0 to high(Meshes) do
     Meshes[i].SetIO(Script);
@@ -1010,11 +1012,13 @@ begin
     for j := 0 to high(Meshes[i].LightSources) do
       Meshes[i].LightSources[j].SetIO(Script);
 
-//   for i := 0 to high(Meshes) do
-//     for j := 0 to high(Meshes[i].ParticleGroups) do
-//       Meshes[i].ParticleGroups[j].SetIO(Script);
+  for i := 0 to high(Meshes) do
+    for j := 0 to high(Meshes[i].ParticleGroups) do
+      TParticleGroup(Meshes[i].ParticleGroups[j]).SetIO(Script);
 
-  
+  for i := 0 to high(Meshes) do
+    for j := 0 to high(Meshes[i].SoundSources) do
+      Meshes[i].SoundSources[j].SetIO(Script);
 
   if FirstRun then
     begin
@@ -1039,6 +1043,14 @@ begin
         Script.SetGlobal(TParticleGroup(Meshes[i].ParticleGroups[j]).Name, @k, SizeOf(Sint));
         inc(k);
         end;
+
+//     k := 0;
+//     for i := 0 to high(Meshes) do
+//       for j := 0 to high(Meshes[i].SoundSources) do
+//         begin
+//         Script.SetGlobal(Meshes[i].SoundSources[j].Name, @k, SizeOf(Sint));
+//         inc(k);
+//         end;
 
     for i := 0 to high(Armatures) do
       Script.SetGlobal(Armatures[i].Name, @i, SizeOf(Sint));
@@ -1073,13 +1085,15 @@ begin
    'int materialCount' + #10 +
    'int boneCount' + #10 +
    'int lampCount' + #10 +
-   'int particleCount' + #10 +
-   'int firstMeshOffset' + #10 + 
+   'int particleEmitterCount' + #10 +
+   'int soundSourceCount' + #10 +
+   'int firstMeshOffset' + #10 +
    'int firstArmatureOffset' + #10 + 
    'int firstMaterialOffset' + #10 + 
    'int firstBoneOffset' + #10 + 
    'int firstLampOffset' + #10 + 
-   'int firstParticleOffset');
+   'int firstParticleEmitterOffset' + #10 +
+   'int firstSoundOffset');
 end;
 
 constructor TGeoObject.Create;

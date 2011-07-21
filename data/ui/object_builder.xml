@@ -14,8 +14,8 @@
         <label left="152" top="96" size="16" width="128" height="32">Mirror X</label>
         <label left="304" top="96" size="16" width="128" height="32">Mirror Y</label>
         <label left="456" top="96" size="16" width="128" height="32">Mirror Z</label>
-        <label left="24" top="112" size="16" width="152" height="32">Snap to grid</label>
-        <label left="304" top="112" size="16" width="152" height="32">Snap to objects</label>
+        <label left="24" top="112" size="16" width="220" height="32">Snap to grid</label>
+        <label left="304" top="112" size="16" width="220" height="32">Snap to objects</label>
         <label left="0" top="128" size="16" width="96" height="16">Grid offset X:</label>
         <label left="280" top="128" size="16" width="96" height="16">Grid offset Z:</label>
         <label left="0" top="160" size="16" width="96" height="16">Grid rotation:</label>

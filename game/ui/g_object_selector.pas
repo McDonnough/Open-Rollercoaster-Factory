@@ -353,15 +353,17 @@ begin
   fName.Top := 8;
   fName.Height := 24;
   fName.Size := 24;
+  fName.TranslateContent := False;
   fName.Caption := fObject.GameObject.Name;
   fName.OnClick := @fSelect;
-  
+
   fDescription := TLabel.Create(Self);
   fDescription.Left := 128;
   fDescription.Width := 220;
   fDescription.Top := 32;
   fDescription.Height := 16;
   fDescription.Size := 16;
+  fDescription.TranslateContent := False;
   fDescription.Caption := fObject.GameObject.Description;
   fDescription.OnClick := @fSelect;
   

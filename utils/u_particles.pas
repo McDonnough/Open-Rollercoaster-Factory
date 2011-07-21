@@ -3,7 +3,7 @@ unit u_particles;
 interface
 
 uses
-  SysUtils, Classes, u_linkedlists, u_vectors, u_scene, u_math, math;
+  SysUtils, Classes, u_linkedlists, u_vectors, u_scene, u_math, math, u_scripts;
 
 type
   TParticle = class(TLinkedListItem)
@@ -30,16 +30,18 @@ type
       InitialSize, SizeExponent, SizeVariance: TVector2D;
       InitialColor, ColorExponent, ColorVariance: TVector4D;
       InitialVelocity, VelocityVariance: TVector3D;
-      OriginalVelocity, OriginalVelocityVariance: TVector3D;
       InitialAcceleration, AccelerationVariance: TVector3D;
       InitialPosition, PositionVariance: TVector3D;
-      OriginalPosition, OriginalVariance: TVector3D;
       InitialRotation, RotationVariance: Single;
       InitialSpin, SpinExponent, SpinVariance: Single;
+      OriginalVelocity, OriginalVelocityVariance: TVector3D;
+      OriginalPosition, OriginalVariance: TVector3D;
       procedure AdvanceGroup(TimeFactor: Single);
       function AddParticle: TParticle;
       function Duplicate: TParticleGroup;
       procedure Register;
+      procedure SetIO(Script: TScript);
+      class procedure RegisterStruct;
       constructor Create;
       procedure Free;
     end;
@@ -47,7 +49,10 @@ type
 implementation
 
 uses
-  u_events;
+  u_events, m_varlist;
+
+var
+  ioSize: Integer;
 
 procedure TParticle.AdvanceNormal(TimeFactor: Single);
 begin
@@ -164,6 +169,39 @@ end;
 procedure TParticleGroup.Register;
 begin
   EventManager.CallEvent('TParticleGroup.Added', self, nil);
+end;
+
+procedure TParticleGroup.SetIO(Script: TScript);
+begin
+  Script.SetIO(@lifetime, ioSize, True);
+end;
+
+class procedure TParticleGroup.RegisterStruct;
+begin
+  ModuleManager.ModScriptManager.SetDataStructure('ParticleEmitter',
+   'float lifetime' + #10 +
+   'float lifetimeVariance' + #10 +
+   'float generationTime' + #10 +
+   'float generationTimeVariance' + #10 +
+   'float nextGenerationTime' + #10 +
+   'vec2 initialSize' + #10 +
+   'vec2 sizeExponent' + #10 +
+   'vec2 sizeVariance' + #10 +
+   'vec4 initialColor' + #10 +
+   'vec4 colorExponent' + #10 +
+   'vec4 colorVariance' + #10 +
+   'vec3 initialVelocity' + #10 +
+   'vec3 velocityVariance' + #10 +
+   'vec3 initialAcceleration' + #10 +
+   'vec3 accelerationVariance' + #10 +
+   'vec3 initialPosition' + #10 +
+   'vec3 positionVariance' + #10 +
+   'float initialRotation' + #10 +
+   'float rotationVariance' + #10 +
+   'float initialSpin' + #10 +
+   'float spinExponent' + #10 +
+   'float spinVariance');
+  ioSize := ModuleManager.ModScriptManager.DataStructureSize('ParticleEmitter');
 end;
 
 constructor TParticleGroup.Create;

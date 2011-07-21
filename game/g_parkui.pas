@@ -765,6 +765,7 @@ var
       end;
     if A <> nil then
       begin
+      A.TranslateContent := TDOMElement(DE).GetAttribute('translate') <> '0';
       A.Name := TDOMElement(DE).GetAttribute('name');
       CurrChild := DE.FirstChild;
       while CurrChild <> nil do

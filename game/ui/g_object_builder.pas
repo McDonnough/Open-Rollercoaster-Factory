@@ -333,6 +333,7 @@ begin
   for I := 0 to high(fBuilding.Materials) do
     begin
     fMaterialButtons[I] := TButton.Create(fMaterialBox);
+    fMaterialButtons[I].TranslateContent := False;
     fMaterialButtons[I].Left := 0;
     fMaterialButtons[I].Top := 32 * I;
     fMaterialButtons[I].Width := 176;

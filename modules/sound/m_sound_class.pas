@@ -3,7 +3,7 @@ unit m_sound_class;
 interface
 
 uses
-  SysUtils, Classes, u_vectors, m_module;
+  SysUtils, Classes, u_vectors, m_module, u_scripts, m_scriptmng_class;
 
 type
   TModuleSoundClass = class(TBasicModule)
@@ -24,13 +24,15 @@ type
       fHandle, fBufferHandle: DWord;
     public
       Position, Direction: TVector3D;
-      Looping: Boolean;
+      Looping: SInt;
       Volume: Single;
       property Handle: DWord read fHandle;
       property BufferHandle: DWord read fBufferHandle;
       procedure ApplyMatrix(M: TMatrix4D);
       procedure Play;
       function Duplicate: TSoundSource;
+      procedure SetIO(Script: TScript);
+      class procedure RegisterStruct;
       constructor Create(Buffer: DWord);
       destructor Free;
     end;
@@ -40,10 +42,13 @@ implementation
 uses
   m_varlist;
 
+var
+  ioSize: Integer;
+
 procedure TSoundSource.ApplyMatrix(M: TMatrix4D);
 begin
   ModuleManager.ModSound.ApplySoundSourceChange(fHandle, Vector3D(Vector(Position, 1.0) * M), Vector3D(Vector(Direction, 0.0) * M));
-  ModuleManager.ModSound.ApplySoundPropertyChange(fHandle, Volume, Looping);
+  ModuleManager.ModSound.ApplySoundPropertyChange(fHandle, Volume, Looping <> 0);
 end;
 
 procedure TSoundSource.Play;
@@ -60,7 +65,22 @@ begin
   Result.Volume := Volume;
   Result.fBufferHandle := BufferHandle;
   ModuleManager.ModSound.ApplySoundSourceChange(Result.Handle, Result.Position, Result.Direction);
-  ModuleManager.ModSound.ApplySoundPropertyChange(Result.fHandle, Result.Volume, Result.Looping);
+  ModuleManager.ModSound.ApplySoundPropertyChange(Result.fHandle, Result.Volume, Result.Looping <> 0);
+end;
+
+procedure TSoundSource.SetIO(Script: TScript);
+begin
+  Script.SetIO(@Position, ioSize, True);
+end;
+
+class procedure TSoundSource.RegisterStruct;
+begin
+  ModuleManager.ModScriptManager.SetDataStructure('SoundSource',
+   'vec3 position' + #10 +
+   'vec3 direction' + #10 +
+   'int looping' + #10 +
+   'float volume');
+  ioSize := ModuleManager.ModScriptManager.DataStructureSize('SoundSource');
 end;
 
 constructor TSoundSource.Create(Buffer: DWord);
@@ -70,9 +90,9 @@ begin
   Position := Vector(0, 0, 0);
   Direction := Vector(0, 0, 0);
   Volume := 1.0;
-  Looping := True;
+  Looping := 1;
   ModuleManager.ModSound.ApplySoundSourceChange(fHandle, Position, Direction);
-  ModuleManager.ModSound.ApplySoundPropertyChange(fHandle, Volume, Looping);
+  ModuleManager.ModSound.ApplySoundPropertyChange(fHandle, Volume, Looping <> 0);
 end;
 
 destructor TSoundSource.Free;

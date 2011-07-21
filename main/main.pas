@@ -179,6 +179,12 @@ begin
       SetCreator.Free;
       SetCreator := nil;
       end;
+  if ObjectCreator <> nil then
+    if ObjectCreator.CanClose then
+      begin
+      ObjectCreator.Free;
+      ObjectCreator := nil;
+      end;
 
   if ModuleManager.ModSettings.CanBeDestroyed then
     ModuleManager.ModSettings.HideConfigurationInterface;

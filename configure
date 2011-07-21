@@ -8,7 +8,7 @@ options="-Px86_64"
 if [ `uname` == "Darwin" ]; then
   echo "Setting special defaults for Mac OS X"
   Modules=("TModulePathes" "MacOS" "TModuleConfig" "Xml" "TModuleLog" "File" "TModuleLanguage" "TextFile" "TModuleGLContext" "GLFW" "TModuleInputHandler" "GLFW" "TModuleGLMng" "Default" "TModuleTextureManager" "Default" "TModuleShaderManager" "Dynamic" "TModuleFont" "TextureVariableWidth" "TModuleGUI" "Default" "TModuleGUIWindow" "Default" "TModuleGUITabBar" "Default" "TModuleGUIScrollBox" "Default" "TModuleGUILabel" "Default" "TModuleGUIImage" "Default" "TModuleGUIProgressBar" "Default" "TModuleGUIButton" "Default" "TModuleGUICheckBox" "Default" "TModuleGUIIconifiedButton" "Default" "TModuleGUIEdit" "Default" "TModuleGUISlider" "Default" "TModuleGUITimer" "Default" "TModuleLoadScreen" "Default" "TModuleMainMenu" "Modern" "TModuleOCFManager" "Default" "TModuleRenderer" "OWE" "TModuleCamera" "Default" "TModuleSettings" "Default" "TModuleScriptManager" "Bytecode" "TModuleSound" "OpenAL")
-  LinkerOpt="-Fl/usr/X11/lib/"
+  LinkerOpt="-Fl/usr/X11/lib/ -Fl/opt/local/lib/"
 fi
 
 while [ $# -gt 0 ]; do

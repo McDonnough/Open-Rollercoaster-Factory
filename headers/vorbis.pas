@@ -15,6 +15,7 @@ const
   {$ENDIF}
   {$IFDEF DARWIN}
     LIBNAME = 'libvorbisfile.dylib';
+    {$linklib libvorbisfile}
   {$ENDIF}
   {$IFDEF WINDOWS}
     LIBNAME = 'vorbisfile.dll';

@@ -83,6 +83,7 @@ begin
   fSoundBuffers[high(fSoundBuffers)] := TSoundBuffer.Create;
   alGenBuffers(1, @fSoundBuffers[high(fSoundBuffers)].Buffer);
   alBufferData(fSoundBuffers[high(fSoundBuffers)].Buffer, Formats[Channels], Data, Size, Rate);
+  Result := High(fSoundBuffers);
 end;
 
 procedure TModuleSoundOpenAL.SetMenuMode;

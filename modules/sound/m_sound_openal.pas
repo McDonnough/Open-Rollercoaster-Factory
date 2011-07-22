@@ -34,9 +34,12 @@ type
       procedure SetGameMode;
       procedure ApplyListenerChanges(VelocityFactor: Single = 1.0);
       procedure ApplySoundSourceChange(Handle: DWord; Position, Direction: TVector3D);
-      procedure ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping: Boolean);
+      procedure ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping, Relative: Boolean);
       procedure PlaySound(Handle: DWord);
       function NewSoundSource(BufferHandle: DWord): DWord;
+      function GetLength(BufferHandle: DWord): Single;
+      function GetPlayingOffset(SourceHandle: DWord): Single;
+      function IsRunning(SourceHandle: DWord): Boolean;
       procedure DeleteSoundSource(Handle: DWord);
       procedure CheckModConf;
       constructor Create;
@@ -127,12 +130,16 @@ begin
   fSoundHandles[Handle].PrevPosition := Position;
 end;
 
-procedure TModuleSoundOpenAL.ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping: Boolean);
+procedure TModuleSoundOpenAL.ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping, Relative: Boolean);
 begin
   if Looping then
     AlSourcei(fSoundHandles[Handle].Source, AL_LOOPING, AL_TRUE)
   else
     AlSourcei(fSoundHandles[Handle].Source, AL_LOOPING, AL_FALSE);
+  if Relative then
+    AlSourcei(fSoundHandles[Handle].Source, AL_SOURCE_RELATIVE, AL_TRUE)
+  else
+    AlSourcei(fSoundHandles[Handle].Source, AL_SOURCE_RELATIVE, AL_FALSE);
   alSourcef(fSoundHandles[Handle].Source, AL_GAIN, Volume);
   alSourcef(fSoundHandles[Handle].Source, AL_PITCH, 1.0);
 end;
@@ -154,6 +161,32 @@ begin
   alSourcef(fSoundHandles[Result].Source, AL_PITCH, 1.0);
 end;
 
+function TModuleSoundOpenAL.GetLength(BufferHandle: DWord): Single;
+var
+  BufferID: ALUInt;
+  Size, Channels, Frequency, BitsPerSample: ALInt;
+begin
+  BufferID := fSoundBuffers[BufferHandle].Buffer;
+  alGetBufferi(BufferID, AL_SIZE, Size);
+  alGetBufferi(BufferID, AL_FREQUENCY, Frequency);
+  alGetBufferi(BufferID, AL_CHANNELS, Channels);
+  alGetBufferi(BufferID, AL_BITS, BitsPerSample);
+  Result := Size / (Channels * Frequency * BitsPerSample / 8);
+end;
+
+function TModuleSoundOpenAL.GetPlayingOffset(SourceHandle: DWord): Single;
+begin
+  alGetSourcef(fSoundHandles[SourceHandle].Source, AL_SEC_OFFSET, Result);
+end;
+
+function TModuleSoundOpenAL.IsRunning(SourceHandle: DWord): Boolean;
+var
+  V: ALInt;
+begin
+  alGetSourcei(fSoundHandles[SourceHandle].Source, AL_SOURCE_STATE, V);
+  Result := V = AL_PLAYING;
+end;
+
 procedure TModuleSoundOpenAL.DeleteSoundSource(Handle: DWord);
 begin
   fSoundHandles[Handle].Free;
@@ -165,8 +198,6 @@ begin
 end;
 
 constructor TModuleSoundOpenAL.Create;
-var
-  argv: Array of PALByte;
 begin
   fModName := 'SoundOpenAL';
   fModType := 'Sound';

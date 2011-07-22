@@ -48,7 +48,7 @@ var
 implementation
 
 uses
-  m_varlist, u_files, u_functions, u_events, g_park;
+  m_varlist, u_files, u_functions, u_events;
 
 procedure TAbstractResource.setFinishedLoading(B: Boolean);
 begin

@@ -42,6 +42,7 @@ interface
       fModSettings: TModuleSettings;
       fModScriptManager: TModuleScriptManager;
       fModSound: TModuleSound;
+      fModBackgroundMusic: TModuleBackgroundMusic;
     public
       property ModModuleConfig: TModuleConfig read fModModuleConfig;
       property ModPathes: TModulePathes read fModPathes;
@@ -74,6 +75,7 @@ interface
       property ModSettings: TModuleSettings read fModSettings;
       property ModScriptManager: TModuleScriptManager read fModScriptManager;
       property ModSound: TModuleSound read fModSound;
+      property ModBackgroundMusic: TModuleBackgroundMusic read fModBackgroundMusic;
 
       /// Create all module instances
       procedure LoadModules;
@@ -184,10 +186,14 @@ begin
 
   fModSound := TModuleSound.Create;
   fModSound.CheckModConf;
+
+  fModBackgroundMusic := TModuleBackgroundMusic.Create;
+  fModBackgroundMusic.CheckModConf;
 end;
 
 procedure TModuleManager.UnloadModules;
 begin
+  fModBackgroundMusic.Free;
   fModSound.Free;
   fModScriptManager.Free;
   fModSettings.Free;

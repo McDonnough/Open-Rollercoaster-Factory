@@ -38,7 +38,7 @@ implementation
 
 uses
   m_varlist, DGLOpenGL, m_inputhandler_class, m_texmng_class, m_mainmenu_class, g_park, u_math, math, u_dialogs, u_events, g_parkui,
-  g_resources, u_scripts, u_vectors, s_setcreator, o_objectcreator;
+  g_resources, u_scripts, u_vectors, s_setcreator, o_objectcreator, g_music;
 
 type
   TParkLoadDialog = class
@@ -172,6 +172,7 @@ begin
   ModuleManager.ModGUI.CallSignals;
   ModuleManager.ModOCFManager.CheckLoaded;
   ResourceManager.Notify;
+  ModuleManager.ModBackgroundMusic.Advance;
 
   if SetCreator <> nil then
     if SetCreator.CanClose then

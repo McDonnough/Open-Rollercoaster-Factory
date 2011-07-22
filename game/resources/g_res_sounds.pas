@@ -110,10 +110,11 @@ begin
           setLength(Audio, Length(Audio) + 262144);
         BytesRead := ov_read(@fv, @Audio[TotalBytesRead], 4096, 0, 2, 1, @S);
         inc(TotalBytesRead, BytesRead);
-        if TotalBytesRead < 0 then
-          halt(1);
       until
-        BytesRead = 0;
+        BytesRead <= 0;
+
+      if TotalBytesRead <= 0 then
+        ModuleManager.ModLog.AddError('Failed to load sound resource: ' + GetFullName);
 
       fSoundSource := TSoundSource.Create(ModuleManager.ModSound.AddSoundBuffer(@Audio[0], TotalBytesRead, fv.vi^.channels, fv.vi^.rate));
       SetLength(Audio, 0);

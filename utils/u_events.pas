@@ -117,7 +117,7 @@ begin
     begin
     j := 0;
     while j <= high(fEvents[i].Callbacks) do
-      if fEvents[i].Callbacks[j] = Callback then
+      if (TMethod(fEvents[i].Callbacks[j]).Data = TMethod(Callback).Data) and (TMethod(fEvents[i].Callbacks[j]).Code = TMethod(Callback).Code) then
         begin
         for k := j + 1 to high(fEvents[i].Callbacks) do
           fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];
@@ -145,7 +145,7 @@ begin
       begin
       j := 0;
       while j <= high(fEvents[i].Callbacks) do
-        if fEvents[i].Callbacks[j] = Callback then
+        if (TMethod(fEvents[i].Callbacks[j]).Code = TMethod(Callback).Code) and (TMethod(fEvents[i].Callbacks[j]).Data = TMethod(Callback).Data) then
           begin
           for k := j + 1 to high(fEvents[i].Callbacks) do
             fEvents[i].Callbacks[k - 1] := fEvents[i].Callbacks[k];

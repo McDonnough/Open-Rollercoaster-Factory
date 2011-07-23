@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, g_terrain, g_camera, m_gui_button_class, m_gui_class, g_parkui, g_sky, u_selection, g_loader_ocf, u_dom, u_xml, g_particles,
-  g_resources, g_objects, g_res_textures, g_screen_capture, g_sets;
+  g_resources, g_objects, g_res_textures, g_screen_capture, g_sets, u_vectors, u_math;
 
 type
   TPark = class
@@ -243,6 +243,7 @@ begin
       begin
       fScreenCaptureTool.Advance;
       ModuleManager.ModSound.ApplyListenerChanges;
+      ModuleManager.ModBackgroundMusic.SetVolume(Min(1.0, Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Y - 256.0) / 44.0, 0.0, 1.0) + Clamp((VecLength(Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) - Vector(pTerrain.SizeX, pTerrain.SizeY) * 0.1) - VecLength(Vector(pTerrain.SizeX, pTerrain.SizeY) * 0.1)) / 100.0, 0.0, 1.0)));
       ModuleManager.ModRenderer.RenderScene;
       ParkUI.Drag;
       pSky.Advance;

@@ -137,6 +137,7 @@ begin
       Park := nil;
       end;
     ModuleManager.ModSound.SetMenuMode;
+    ModuleManager.ModBackgroundMusic.SetVolume(1.0);
     ModuleManager.ModMainMenu.Setup;
     end
   else

@@ -9,6 +9,9 @@ type
   TOCFManagerWorkingThread = class(TThread)
     protected
       fCanWork, fWorking: Boolean;
+    private
+      fIDs: Array of Integer;
+      i: Integer;
     public
       property Working: Boolean read fWorking;
       property CanWork: Boolean write fCanWork;
@@ -19,14 +22,15 @@ type
   TModuleOCFManagerDefault = class(TModuleOCFManagerClass)
     protected
       fSignalCounter: Integer;
-      fThread: TOCFManagerWorkingThread;
+      fThreads: Array of TOCFManagerWorkingThread;
       function AlreadyLoaded(FileName: String): Integer;
-    public
+    private
+      fAdditionalData: Array of Pointer;
       fFileNames: Array of String;
       fOCFFiles: Array of TOCFFile;
       fEvents: Array of String;
       fLoaded: Array of Boolean;
-      fAdditionalData: Array of Pointer;
+    public
       function FileCount: Integer;
       function LoadedFiles: Integer;
       procedure RequestOCFFile(FileName, Event: String; AdditionalData: Pointer);
@@ -45,19 +49,17 @@ uses
   m_varlist, u_events, u_files;
 
 procedure TOCFManagerWorkingThread.Execute;
-var
-  i: Integer;
 begin
   i := 0;
   fWorking := false;
   fCanWork := false;
   while not Terminated do
     begin
-    while (i <= high(ModuleManager.ModOCFManager.fFileNames)) and (fCanWork) do
+    while (i <= high(fIDs)) and (fCanWork) do
       begin
       fWorking := true;
-      ModuleManager.ModOCFManager.fOCFFiles[i] := TOCFFile.Create(ModuleManager.ModOCFManager.fFileNames[i]);
-      ModuleManager.ModOCFManager.fLoaded[i] := true;
+      ModuleManager.ModOCFManager.fOCFFiles[fIDs[i]] := TOCFFile.Create(ModuleManager.ModOCFManager.fFileNames[fIDs[i]]);
+      ModuleManager.ModOCFManager.fLoaded[fIDs[i]] := true;
       inc(i);
       end;
     fWorking := false;
@@ -97,6 +99,8 @@ end;
 procedure TModuleOCFManagerDefault.RequestOCFFile(FileName, Event: String; AdditionalData: Pointer);
 var
   i: Integer;
+  FoundThread: TOCFManagerWorkingThread;
+  MinIDsToGo: Integer;
 begin
   FileName := GetFirstExistingFileName(FileName);
   i := AlreadyLoaded(FileName);
@@ -104,7 +108,34 @@ begin
     EventManager.CallEvent(Event, fOCFFiles[i], AdditionalData)
   else
     begin
-    fThread.Sync;
+    FoundThread := nil;
+    for I := 0 to high(fThreads) do
+      if not fThreads[i].Working then
+        begin
+        FoundThread := fThreads[i];
+        break;
+        end;
+    if FoundThread = nil then
+      begin
+      if length(fThreads) < 4 then
+        begin
+        FoundThread := TOCFManagerWorkingThread.Create(false);
+        SetLength(fThreads, length(fThreads) + 1);
+        fThreads[high(fThreads)] := FoundThread;
+        end
+      else
+        begin
+        FoundThread := fThreads[0];
+        MinIDsToGo := high(fThreads[0].fIDs) - fThreads[0].i;
+        for I := 1 to high(fThreads) do
+          if high(fThreads[i].fIDs) - fThreads[i].i < MinIDsToGo then
+            begin
+            MinIDsToGo := high(fThreads[i].fIDs) - fThreads[i].i;
+            FoundThread := fThreads[i];
+            end;
+        end;
+      end;
+    FoundThread.CanWork := False;
     SetLength(fFileNames, Length(fFileNames) + 1);
     SetLength(fOCFFiles, Length(fOCFFiles) + 1);
     SetLength(fEvents, Length(fEvents) + 1);
@@ -115,6 +146,9 @@ begin
     fAdditionalData[high(fAdditionalData)] := AdditionalData;
     fOCFFiles[high(fOCFFiles)] := nil;
     fLoaded[high(fLoaded)] := false;
+    SetLength(FoundThread.fIDs, length(FoundThread.fIDs) + 1);
+    FoundThread.fIDs[high(FoundThread.fIDs)] := high(fLoaded);
+    FoundThread.CanWork := True;
     end;
 end;
 
@@ -137,16 +171,19 @@ begin
 end;
 
 procedure TModuleOCFManagerDefault.CheckLoaded;
+var
+  I: Integer;
 begin
   if fSignalCounter <= high(fLoaded) then
-    while fLoaded[fSignalCounter] do
+    if fLoaded[fSignalCounter] then
       begin
       EventManager.CallEvent(fEvents[fSignalCounter], fOCFFiles[fSignalCounter], fAdditionalData[fSignalCounter]);
       inc(fSignalCounter);
-      if fSignalCounter > high(fLoaded) then
-        break;
+//       if fSignalCounter > high(fLoaded) then
+//         break;
       end;
-  fThread.CanWork := True;
+  for I := 0 to high(fThreads) do 
+    fThreads[i].CanWork := True;
 end;
 
 function TModuleOCFManagerDefault.FileAlreadyLoaded(FileName: String): Boolean;
@@ -162,14 +199,15 @@ begin
 
   EventManager.AddCallback('TOCFManager.Loaded', @__Loaded);
 
-  fThread := TOCFManagerWorkingThread.Create(true);
+  setLength(fThreads, 1);
+  fThreads[0] := TOCFManagerWorkingThread.Create(true);
 
   fSignalCounter := 0;
 end;
 
 procedure TModuleOCFManagerDefault.CheckModConf;
 begin
-  fThread.Resume;
+  fThreads[0].Resume;
 end;
 
 procedure TModuleOCFManagerDefault.__Loaded(Event: String; Data, Result: Pointer);
@@ -181,11 +219,13 @@ destructor TModuleOCFManagerDefault.Free;
 var
   i: Integer;
 begin
-  fThread.Sync;
+  for i := 0 to high(fThreads) do
+    fThreads[i].Sync;
   for i := 0 to high(fOCFFiles) do
     if fOCFFiles[i] <> nil then
       fOCFFiles[i].Free;
-  fThread.Free;
+  for i := 0 to high(fThreads) do
+    fThreads[i].Free;
   EventManager.RemoveCallback(@__Loaded);
 end;
 

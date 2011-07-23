@@ -148,14 +148,15 @@ procedure TResourceManager.Notify;
 var
   i: Integer;
 begin
-  i := 0;
-  while i <= high(fNotificationsRemaining) do
+  if length(fNotificationsRemaining) > 0 then
     begin
-    EventManager.CallEvent('TResource.FinishedLoading:' + fNotificationsRemaining[i].Name, fNotificationsRemaining[i], nil);
-    EventManager.RemoveCallback('TResource.FinishedLoading:' + fNotificationsRemaining[i].Name);
-    inc(i);
+    EventManager.CallEvent('TResource.FinishedLoading:' + fNotificationsRemaining[0].Name, fNotificationsRemaining[0], nil);
+    EventManager.RemoveCallback('TResource.FinishedLoading:' + fNotificationsRemaining[0].Name);
+    for I := 1 to high(fNotificationsRemaining) do
+      fNotificationsRemaining[I - 1] := fNotificationsRemaining[I];
     end;
-  setlength(fNotificationsRemaining, 0);
+  if length(fNotificationsRemaining) > 0 then
+    setlength(fNotificationsRemaining, length(fNotificationsRemaining) - 1);
 end;
 
 constructor TResourceManager.Create;

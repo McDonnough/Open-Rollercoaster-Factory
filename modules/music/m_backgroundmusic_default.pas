@@ -77,7 +77,7 @@ procedure TModuleBackgroundMusicDefault.AssignNextSong(Event: String; Data, Resu
 begin
   fNextSoundSource := TSoundResource(Data).SoundSource.Duplicate;
   fNextSoundSource.Looping := 0;
-  fNextSoundSource.Relative := True;
+  fNextSoundSource.Relative := 1;
   fNextSoundSource.Volume := fVolume * fVolumeFactor;
   EventManager.RemoveCallback(Event, @AssignNextSong);
 end;
@@ -90,7 +90,6 @@ begin
       AdvanceSongs;
     if fNextSoundSource <> nil then
       begin
-      fNextSoundSource.UpdateProperties;
       if fCurrentSoundSource = nil then
         begin
         fNextSoundSource.Play;
@@ -99,7 +98,7 @@ begin
         end
       else
         begin
-        if (not fCurrentSoundSource.IsRunning) and (fCurrentSoundSource.HasPlayed) then
+        if (fCurrentSoundSource.Playing = 0) and (fCurrentSoundSource.HasPlayed) then
           begin
           fNextSoundSource.Play;
           Display(fNextSong);
@@ -107,8 +106,6 @@ begin
           end;
         end;
       end;
-    if fCurrentSoundSource <> nil then
-      fCurrentSoundSource.UpdateProperties;
     if fDisplaying then
       begin
       fDisplayTime := fDisplayTime + FPSDisplay.MS / 1000;

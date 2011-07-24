@@ -709,7 +709,7 @@ begin
     TParticleGroup(ParticleGroups[i]).VelocityVariance := Vector3D(Vector(TParticleGroup(ParticleGroups[i]).OriginalVelocityVariance, 0.0) * CalculatedMatrix);
     end;
   for I := 0 to high(SoundSources) do
-    SoundSources[I].ApplyMatrix(CalculatedMatrix);
+    SoundSources[I].Matrix := CalculatedMatrix;
   for i := 0 to high(Children) do
     Children[i].UpdateMatrix;
 end;

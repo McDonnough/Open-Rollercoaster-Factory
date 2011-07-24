@@ -6,43 +6,46 @@ uses
   SysUtils, Classes, u_vectors, m_module, u_scripts, m_scriptmng_class;
 
 type
+  TSoundSource = class;
+
   TModuleSoundClass = class(TBasicModule)
+    protected
+      fIsInMenuMode: Boolean;
     public
+      property IsInMenuMode: Boolean read fIsInMenuMode;
+      procedure Advance; virtual abstract;
       function AddSoundbuffer(Data: Pointer; Size: Integer; Channels: Integer; Rate: Integer): DWord; virtual abstract;
       procedure SetMenuMode; virtual abstract;
       procedure SetGameMode; virtual abstract;
       procedure ApplyListenerChanges(VelocityFactor: Single = 1.0); virtual abstract;
-      procedure ApplySoundSourceChange(Handle: DWord; Position, Direction: TVector3D); virtual abstract;
-      procedure ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping, Relative: Boolean); virtual abstract;
-      procedure PlaySound(Handle: DWord); virtual abstract;
-      function NewSoundSource(BufferHandle: DWord): DWord; virtual abstract;
       function GetLength(BufferHandle: DWord): Single; virtual abstract;
-      function GetPlayingOffset(SourceHandle: DWord): Single; virtual abstract;
-      function IsRunning(SourceHandle: DWord): Boolean; virtual abstract;
-      procedure DeleteSoundSource(Handle: DWord); virtual abstract;
+      procedure NewSoundSource(SoundSource: TSoundSource); virtual abstract;
+      procedure DeleteSoundSource(SoundSource: TSoundSource); virtual abstract;
     end;
 
   TSoundSource = class
     private
-      fHandle, fBufferHandle: DWord;
+      fBufferHandle: DWord;
       fLength: Single;
+      fListenerStrength: Single;
       fHasPlayed: Boolean;
     public
+      Matrix: TMatrix4D;
+      PlayingOffset: Single;
+      PrevPosition, Velocity: TVector3D;
       Position, Direction: TVector3D;
       Looping, Playing: SInt;
-      Volume: Single;
-      Relative: Boolean;
-      property Handle: DWord read fHandle;
+      Volume, Pitch: Single;
+      Relative: SInt;
+      property ListenerStrength: Single read fListenerStrength;
       property BufferHandle: DWord read fBufferHandle;
       property TrackLength: Single read fLength;
       property HasPlayed: Boolean read fHasPlayed;
-      procedure UpdateProperties;
-      procedure ApplyMatrix(M: TMatrix4D);
       procedure Play;
       function Duplicate: TSoundSource;
-      function GetCurrentPlayingOffset: Single;
-      function IsRunning: Boolean;
+      procedure CalculateListenerStrength;
       procedure SetIO(Script: TScript);
+      procedure Advance;
       class procedure RegisterStruct;
       constructor Create(Buffer: DWord);
       destructor Free;
@@ -51,25 +54,14 @@ type
 implementation
 
 uses
-  m_varlist;
+  m_varlist, main;
 
 var
   ioSize: Integer;
 
-procedure TSoundSource.UpdateProperties;
-begin
-  ModuleManager.ModSound.ApplySoundPropertyChange(fHandle, Volume, Looping <> 0, Relative);
-end;
-
-procedure TSoundSource.ApplyMatrix(M: TMatrix4D);
-begin
-  ModuleManager.ModSound.ApplySoundSourceChange(fHandle, Vector3D(Vector(Position, 1.0) * M), Vector3D(Vector(Direction, 0.0) * M));
-  UpdateProperties;
-end;
-
 procedure TSoundSource.Play;
 begin
-  ModuleManager.ModSound.PlaySound(fHandle);
+  Playing := 1;
   fHasPlayed := True;
 end;
 
@@ -81,27 +73,39 @@ begin
   Result.Looping := Looping;
   Result.Volume := Volume;
   Result.fBufferHandle := BufferHandle;
-  ModuleManager.ModSound.ApplySoundSourceChange(Result.Handle, Result.Position, Result.Direction);
-  Result.UpdateProperties;
 end;
 
-function TSoundSource.GetCurrentPlayingOffset: Single;
+procedure TSoundSource.CalculateListenerStrength;
 begin
-  Result := ModuleManager.ModSound.GetPlayingOffset(fHandle);
-end;
-
-function TSoundSource.IsRunning: Boolean;
-begin
-  Result := ModuleManager.ModSound.IsRunning(fHandle);
+  if (Relative = 1) or (ModuleManager.ModSound.IsInMenuMode) then
+    fListenerStrength := Playing * Volume / (0.01 + VecLengthNoRoot(Vector3D(Vector(Position, 1.0) * Matrix)))
+  else
+    fListenerStrength := Playing * Volume / (0.01 + VecLengthNoRoot(Vector3D(Vector(Position, 1.0) * Matrix) - ModuleManager.ModCamera.ActiveCamera.Position));
 end;
 
 procedure TSoundSource.SetIO(Script: TScript);
 begin
   Script.SetIO(@Position, ioSize - SizeOf(Single), True);
   Script.SetIO(@fLength, SizeOf(Single), False);
-  if Playing <> 0 then
-    Play;
-  Playing := 0;
+end;
+
+procedure TSoundSource.Advance;
+begin
+  CalculateListenerStrength;
+  Velocity := (Vector3D(Vector(Position, 1.0) * Matrix) - PrevPosition) / FPSDisplay.MS * 1000;
+  PrevPosition := Vector3D(Vector(Position, 1.0) * Matrix);
+  if Playing = 1 then
+    begin
+    PlayingOffset += 0.001 * FPSDisplay.MS;
+    if PlayingOffset > fLength then
+      if Looping = 1 then
+        PlayingOffset -= fLength
+      else
+        begin
+        Playing := 0;
+        PlayingOffset := fLength;
+        end;
+    end;
 end;
 
 class procedure TSoundSource.RegisterStruct;
@@ -112,28 +116,32 @@ begin
    'int looping' + #10 +
    'int play' + #10 +
    'float volume' + #10 +
+   'float pitch' + #10 +
    'float length');
   ioSize := ModuleManager.ModScriptManager.DataStructureSize('SoundSource');
 end;
 
 constructor TSoundSource.Create(Buffer: DWord);
 begin
-  fHandle := ModuleManager.ModSound.NewSoundSource(Buffer);
   fBufferHandle := Buffer;
   Position := Vector(0, 0, 0);
+  PrevPosition := Vector(0, 0, 0);
+  Velocity := Vector(0, 0, 0);
   Direction := Vector(0, 0, 0);
   Volume := 1.0;
   Looping := 1;
-  fLength := ModuleManager.ModSound.GetLength(Buffer);
-  ModuleManager.ModSound.ApplySoundSourceChange(fHandle, Position, Direction);
-  UpdateProperties;
+  Playing := 0;
+  Pitch := 1.0;
+  PlayingOffset := 0;
+  Relative := 0;
   fHasPlayed := False;
-  Relative := False;
+  fLength := ModuleManager.ModSound.GetLength(Buffer);
+  ModuleManager.ModSound.NewSoundSource(Self);
 end;
 
 destructor TSoundSource.Free;
 begin
-  ModuleManager.ModSound.DeleteSoundSource(fHandle);
+  ModuleManager.ModSound.DeleteSoundSource(Self);
 end;
 
 end.

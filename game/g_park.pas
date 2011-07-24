@@ -242,6 +242,7 @@ begin
     else
       begin
       fScreenCaptureTool.Advance;
+      ModuleManager.ModSound.SetGameMode;
       ModuleManager.ModSound.ApplyListenerChanges;
       ModuleManager.ModBackgroundMusic.SetVolume(Min(1.0, Clamp((ModuleManager.ModCamera.ActiveCamera.Position.Y - 256.0) / 44.0, 0.0, 1.0) + Clamp((VecLength(Vector(ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z) - Vector(pTerrain.SizeX, pTerrain.SizeY) * 0.1) - VecLength(Vector(pTerrain.SizeX, pTerrain.SizeY) * 0.1)) / 100.0, 0.0, 1.0)));
       ModuleManager.ModRenderer.RenderScene;

@@ -152,7 +152,6 @@ begin
         Text := 'Initializing';
         SetVisibility(True);
         end;
-      ModuleManager.ModSound.SetGameMode;
       end;
     end;
 end;
@@ -173,6 +172,7 @@ begin
   ModuleManager.ModGUI.CallSignals;
   ModuleManager.ModOCFManager.CheckLoaded;
   ResourceManager.Notify;
+  ModuleManager.ModSound.Advance;
   ModuleManager.ModBackgroundMusic.Advance;
 
   if SetCreator <> nil then

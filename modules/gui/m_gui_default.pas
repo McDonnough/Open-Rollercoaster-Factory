@@ -54,7 +54,7 @@ var
       CImage: TImage(Component).Render;
       CCheckBox: TCheckBox(Component).Render;
       end;
-    if (Component.Rendered) and (Component.Width > 0) and (Component.Height > 0) then
+    if Component.Rendered then
       begin
       glTranslatef(Round(Component.Left), Round(Component.Top), 1);
       for i := 0 to high(Component.Children) do

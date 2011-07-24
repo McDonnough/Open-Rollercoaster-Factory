@@ -64,7 +64,10 @@ void main(void) {
     normal = normalize(M * (vec3(texture2D(NormalMap, gl_TexCoord[0].xy)) - vec3(0.5, 0.5, 0.5)));
   }
   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Vertex, 1.0)).xyz);
-  gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal))))));
+  if (gl_FrontMaterial.specular.g > 0.0)
+    gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal))))));
+  else
+    gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
   gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);
   gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
 }

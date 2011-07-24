@@ -127,6 +127,7 @@ type
   TGeoMesh = class
     public
       MeshID: Integer;
+      StaticMesh: Boolean;
       Name: String;
       Bone: TBone;
       Changed: Boolean;
@@ -174,6 +175,7 @@ type
       Script: TScript;
       Matrix: TMatrix4D;
       FirstRun: Boolean;
+      Name: String;
       property SelectionID: Integer read ObjectID;
       function AddArmature: TArmature;
       function AddMesh: TGeoMesh;
@@ -639,6 +641,7 @@ procedure TGeoMesh.AddBoneToAll(B: TBone);
 var
   i: Integer;
 begin
+  StaticMesh := False;
   for i := 0 to high(Vertices) do
     begin
     SetLength(Vertices[i].Bones, length(Vertices[i].Bones) + 1);
@@ -717,6 +720,8 @@ var
   CalculatedVertexPosition: TVector3D;
   TotalMeshOffset, ObjectOffset, RelativeMeshOffset: TVector3D;
 begin
+  if StaticMesh then
+    exit;
   TotalMeshOffset := Vector3D(Vector(0, 0, 0, 1) * CalculatedMatrix);
   ObjectOffset := Vector3D(Vector(0, 0, 0, 1) * ParentObject.Matrix);
   RelativeMeshOffset := TotalMeshOffset - ObjectOffset;
@@ -770,6 +775,7 @@ end;
 
 constructor TGeoMesh.Create;
 begin
+  StaticMesh := True;
   MeshID := -1;
   ParentObject := nil;
   Parent := nil;
@@ -842,6 +848,7 @@ var
 begin
   Result := TGeoObject.Create;
 
+  Result.Name := Name;
   Result.Mirror := Mirror;
 
   if Script <> nil then
@@ -883,9 +890,15 @@ procedure TGeoObject.Register;
 var
   i: Integer;
 begin
+  if Name = '' then
+    Name := 'Object' + IntToStr(ObjectCount);
   EventManager.CallEvent('TGeoObject.Created', Self, nil);
   for i := 0 to high(Meshes) do
+    begin
+    if Meshes[i].Name = '' then
+      Meshes[i].Name := 'Mesh' + IntToStr(i);
     Meshes[i].Register;
+    end;
 end;
 
 procedure TGeoObject.RecalcFaceNormals;
@@ -1098,6 +1111,7 @@ end;
 
 constructor TGeoObject.Create;
 begin
+  Name := '';
   Mirror := Vector(1, 1, 1);
   Matrix := Identity4D;
   Script := nil;

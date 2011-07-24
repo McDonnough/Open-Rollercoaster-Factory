@@ -63,6 +63,7 @@ type
       fLastMode: GLEnum;
       fMesh: TGeoMesh;
       fRadius: Single;
+      fIsStatic: Boolean;
       procedure Map(Mode: GLEnum);
       procedure UnMap;
 
@@ -154,6 +155,7 @@ const
 
 var
   fCurrentFBO: TFBO = nil;
+  fCurrentVBO: TObjectVBO = nil;
 
 procedure TVBO.Map(Mode: GLEnum);
 begin
@@ -259,6 +261,7 @@ begin
   UnMap;
   glDisableClientState(GL_VERTEX_ARRAY);
   glBindBufferARB(GL_ARRAY_BUFFER, 0);
+  fCurrentVBO := nil;
 end;
 
 constructor TVBO.Create(VertCount: Integer; Format, PolygonType: GLEnum);
@@ -469,10 +472,14 @@ end;
 
 procedure TObjectVBO.Bind;
 begin
-  if fMesh <> nil then
-    LookForChanges;
+  if not fIsStatic then
+    if fMesh <> nil then
+      LookForChanges;
+  if fCurrentVBO = self then
+    exit;
   glBindBufferARB(GL_ARRAY_BUFFER, fVertexBuffer);
   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, fIndexBuffer);
+  fCurrentVBO := Self;
 end;
 
 procedure TObjectVBO.Render;
@@ -498,6 +505,7 @@ end;
 
 procedure TObjectVBO.Unbind;
 begin
+  fCurrentVBO := nil;
   UnMap;
   glBindBufferARB(GL_ARRAY_BUFFER, 0);
   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -507,6 +515,8 @@ constructor TObjectVBO.Create(Mesh: TGeoMesh);
 var
   i, j, k, l, VC: Integer;
 begin
+  fIsStatic := False;
+  
   SetLength(fMeshVertexIDList, 3 * Length(Mesh.Faces));
   SetLength(fMeshTextureVertexIDList, 3 * Length(Mesh.Faces));
 
@@ -527,12 +537,14 @@ begin
       TexCoords[3 * i + j] := Mesh.TextureVertices[Mesh.Faces[i].TexCoords[j]].Position;
       end;
     end;
+  fIsStatic := Mesh.StaticMesh;
 end;
 
 constructor TObjectVBO.Create(VertexCount, FaceCount: DWord; Mesh: TGeoMesh = nil);
 var
   i: Integer;
 begin
+  fIsStatic := False;
   fRadius := 0;
   fMesh := Mesh;
   fVertices := VertexCount;

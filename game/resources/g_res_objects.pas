@@ -71,6 +71,8 @@ procedure TObjectResource.FinalCreation;
 var
   i, j: Integer;
 begin
+  fGeoObject.Name := GetFullName();
+
   if fScriptResource <> nil then
     fGeoObject.Script := fScriptResource.ScriptCode.CreateInstance;
 

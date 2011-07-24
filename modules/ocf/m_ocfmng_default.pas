@@ -19,20 +19,28 @@ type
       procedure Sync;
     end;
 
+  TEventQuery = record
+    Event, Filename: String;
+    AdditionalData: Pointer;
+    end;
+
   TModuleOCFManagerDefault = class(TModuleOCFManagerClass)
     protected
       fSignalCounter: Integer;
       fThreads: Array of TOCFManagerWorkingThread;
       function AlreadyLoaded(FileName: String): Integer;
+      function AlreadyRequested(FileName: String): Integer;
     private
       fAdditionalData: Array of Pointer;
       fFileNames: Array of String;
       fOCFFiles: Array of TOCFFile;
       fEvents: Array of String;
       fLoaded: Array of Boolean;
+      fEventQuery: Array of TEventQuery;
     public
       function FileCount: Integer;
       function LoadedFiles: Integer;
+      procedure QueryEventCaller(FileName, Event: String; AdditionalData: Pointer);
       procedure RequestOCFFile(FileName, Event: String; AdditionalData: Pointer);
       procedure ReloadOCFFile(FileName, Event: String; AdditionalData: Pointer);
       procedure CheckLoaded;
@@ -75,6 +83,14 @@ begin
     sleep(10);
 end;
 
+procedure TModuleOCFManagerDefault.QueryEventCaller(FileName, Event: String; AdditionalData: Pointer);
+begin
+  setLength(fEventQuery, length(fEventQuery) + 1);
+  fEventQuery[high(fEventQuery)].FileName := FileName;
+  fEventQuery[high(fEventQuery)].Event := Event;
+  fEventQuery[high(fEventQuery)].AdditionalData := AdditionalData;
+end;
+
 function TModuleOCFManagerDefault.FileCount: Integer;
 begin
   Result := length(fLoaded);
@@ -96,6 +112,14 @@ begin
   Result := -1;
 end;
 
+function TModuleOCFManagerDefault.AlreadyRequested(FileName: String): Integer;
+begin
+  for Result := 0 to high(fFileNames) do
+    if fFileNames[Result] = FileName then
+      exit;
+  Result := -1;
+end;
+
 procedure TModuleOCFManagerDefault.RequestOCFFile(FileName, Event: String; AdditionalData: Pointer);
 var
   i: Integer;
@@ -106,6 +130,8 @@ begin
   i := AlreadyLoaded(FileName);
   if i > -1 then
     EventManager.CallEvent(Event, fOCFFiles[i], AdditionalData)
+  else if AlreadyRequested(FileName) > -1 then
+    QueryEventCaller(FileName, Event, AdditionalData)
   else
     begin
     FoundThread := nil;
@@ -178,10 +204,23 @@ begin
     if fLoaded[fSignalCounter] then
       begin
       EventManager.CallEvent(fEvents[fSignalCounter], fOCFFiles[fSignalCounter], fAdditionalData[fSignalCounter]);
+      for I := 0 to high(fEventQuery) do
+        if fEventQuery[i].FileName = fFileNames[fSignalCounter] then
+          begin
+          EventManager.CallEvent(fEventQuery[i].Event, fOCFFiles[fSignalCounter], fEventQuery[i].AdditionalData);
+          fEventQuery[i].FileName := #1;
+          end;
       inc(fSignalCounter);
 //       if fSignalCounter > high(fLoaded) then
 //         break;
       end;
+  for I := 0 to high(fEventQuery) do
+    if I <= high(fEventQuery) then
+      if fEventQuery[i].FileName = #1 then
+        begin
+        fEventQuery[i] := fEventQuery[high(fEventQuery)];
+        SetLength(fEventQuery, length(fEventQuery) - 1);
+        end;
   for I := 0 to high(fThreads) do 
     fThreads[i].CanWork := True;
 end;

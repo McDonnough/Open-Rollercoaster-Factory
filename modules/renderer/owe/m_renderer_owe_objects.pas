@@ -360,7 +360,7 @@ begin
     begin
     if (fLastBoundReflectionMap <> nil) or (fFirstMesh) then
       begin
-      ModuleManager.ModTexMng.ActivateTexUnit(0);
+      ModuleManager.ModTexMng.ActivateTexUnit(3);
       ModuleManager.ModTexMng.BindTexture(-1);
       fLastBoundReflectionMap := nil;
       end;
@@ -401,7 +401,8 @@ begin
 //   exit;
   fSelectionShader.Bind;
   fCurrentShader := fSelectionShader;
-  
+
+  glEnable(GL_CULL_FACE);
   for i := 0 to high(Park.SelectionEngine.fSelectableObjects) do
     begin
     CurrO := Park.SelectionEngine.fSelectableObjects[i].O;
@@ -430,13 +431,13 @@ begin
         continue;
       if not CurrMM.Visible then
         continue;
-      if CurrO.Meshes[j].Material.Texture <> nil then
-        CurrO.Meshes[j].Material.Texture.Bind(0)
-      else
-        begin
-        ModuleManager.ModTexMng.ActivateTexUnit(0);
-        ModuleManager.ModTexMng.BindTexture(-1);
-        end;
+//       if CurrO.Meshes[j].Material.Texture <> nil then
+//         CurrO.Meshes[j].Material.Texture.Bind(0)
+//       else
+//         begin
+//         ModuleManager.ModTexMng.ActivateTexUnit(0);
+//         ModuleManager.ModTexMng.BindTexture(-1);
+//         end;
       MakeOGLCompatibleMatrix(CurrO.Meshes[j].CalculatedMatrix, @Matrix[0]);
 
       fCurrentShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
@@ -774,6 +775,7 @@ begin
   EventManager.RemoveCallback(@AddParticleGroup);
   EventManager.RemoveCallback(@DeleteParticleGroup);
   Sync;
+  sleep(10);
   inherited Free;
 end;
 

@@ -437,6 +437,7 @@ begin
     fSun.Free;
   Terminate;
   Sync;
+  sleep(10);
   inherited Free;
 end;
 

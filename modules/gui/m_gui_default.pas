@@ -54,16 +54,15 @@ var
       CImage: TImage(Component).Render;
       CCheckBox: TCheckBox(Component).Render;
       end;
-    if Component.Rendered then
+    if (Component.Rendered) and (Component.Width > 0) and (Component.Height > 0) then
       begin
-      glPushMatrix;
       glTranslatef(Round(Component.Left), Round(Component.Top), 1);
       for i := 0 to high(Component.Children) do
         begin
         glScissor(Round(Component.MinX), ResY - Round(Component.MaxY), Round(Component.MaxX - Component.MinX), Round(Component.MaxY - Component.MinY));
         RenderComponent(Component.ChildrenRightOrder[i]);
         end;
-      glPopMatrix;
+      glTranslatef(-Round(Component.Left), -Round(Component.Top), -1);
       end;
   end;
 

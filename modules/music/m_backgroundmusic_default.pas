@@ -15,6 +15,7 @@ type
       fFadingNext, fFadingCurrent: Single;
       fTrackName, fAlbumName, fArtistName, fGenre: TLabel;
       fBackgroundImage, fIcon: TImage;
+      fVolumeFactor: Single;
       ResX, ResY: Integer;
       fDisplaying: Boolean;
       function GetRandomSong: TSong;
@@ -31,7 +32,7 @@ type
 implementation
 
 uses
-  u_events, m_varlist, u_vectors, main;
+  u_events, m_varlist, u_vectors, main, u_functions;
 
 function TModuleBackgroundMusicDefault.GetRandomSong: TSong;
 var
@@ -77,56 +78,66 @@ begin
   fNextSoundSource := TSoundResource(Data).SoundSource.Duplicate;
   fNextSoundSource.Looping := 0;
   fNextSoundSource.Relative := True;
+  fNextSoundSource.Volume := fVolume * fVolumeFactor;
   EventManager.RemoveCallback(Event, @AssignNextSong);
 end;
 
 procedure TModuleBackgroundMusicDefault.Advance;
 begin
-  if fNextSong = nil then
-    AdvanceSongs;
-  if fNextSoundSource <> nil then
+  if fVolumeFactor > 0 then
     begin
-    fNextSoundSource.UpdateProperties;
-    if fCurrentSoundSource = nil then
-      begin
-      fNextSoundSource.Play;
-      Display(fNextSong);
+    if fNextSong = nil then
       AdvanceSongs;
-      end
-    else
+    if fNextSoundSource <> nil then
       begin
-      if (not fCurrentSoundSource.IsRunning) and (fCurrentSoundSource.HasPlayed) then
+      fNextSoundSource.UpdateProperties;
+      if fCurrentSoundSource = nil then
         begin
         fNextSoundSource.Play;
         Display(fNextSong);
         AdvanceSongs;
+        end
+      else
+        begin
+        if (not fCurrentSoundSource.IsRunning) and (fCurrentSoundSource.HasPlayed) then
+          begin
+          fNextSoundSource.Play;
+          Display(fNextSong);
+          AdvanceSongs;
+          end;
         end;
       end;
-    end;
-  if fCurrentSoundSource <> nil then
-    fCurrentSoundSource.UpdateProperties;
-  if fDisplaying then
-    begin
-    fDisplayTime := fDisplayTime + FPSDisplay.MS / 1000;
-    if fDisplayTime > 3 then
+    if fCurrentSoundSource <> nil then
+      fCurrentSoundSource.UpdateProperties;
+    if fDisplaying then
       begin
-      fBackgroundImage.Left := ResX + 8;
-      fDisplaying := False;
+      fDisplayTime := fDisplayTime + FPSDisplay.MS / 1000;
+      if fDisplayTime > 3 then
+        begin
+        fBackgroundImage.Left := ResX + 8;
+        fDisplaying := False;
+        end;
       end;
-    end;
+  end;
 end;
 
 procedure TModuleBackgroundMusicDefault.SetVolume(V: Single);
 begin
   fVolume := V;
   if fCurrentSoundSource <> nil then
-    fCurrentSoundSource.Volume := V;
+    fCurrentSoundSource.Volume := V * fVolumeFactor;
   if fNextSoundSource <> nil then
-    fNextSoundSource.Volume := V;
+    fNextSoundSource.Volume := V * fVolumeFactor;
 end;
 
 procedure TModuleBackgroundMusicDefault.CheckModConf;
 begin
+  if GetConfVal('used') <> '1' then
+    begin
+    SetConfVal('used', '1');
+    SetConfVal('volume', '1');
+    end;
+  fVolumeFactor := StrToFloatWD(GetConfVal('volume'), 1.0);
 end;
 
 constructor TModuleBackgroundMusicDefault.Create;

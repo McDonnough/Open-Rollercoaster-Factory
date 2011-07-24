@@ -1031,7 +1031,10 @@ begin
 
     // Tags
     while fTagList.Count > 0 do
+      begin
       fTagList.DeleteItem(fTagList.Items[fTagList.Count - 1]);
+      fTagList.FinalDeleteItem(nil);
+      end;
 
     // Previews
     while fAllPreviews.Count > 0 do

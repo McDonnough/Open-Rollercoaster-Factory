@@ -32,6 +32,12 @@ type
     Distance: Single;
     end;
 
+  TMeshClass = record
+    InternalMeshName: String;
+    VBO: TObjectVBO;
+    Meshes: Array of TManagedMesh;
+    end;
+
   TRObjects = class(TThread)
     protected
       fManagedObjects: Array of TManagedObject;
@@ -48,7 +54,11 @@ type
       fExcludedMeshObject: TManagedObject;
       fExcludedMesh: TManagedMesh;
       fCanWork, fWorking: Boolean;
+      fLastBoundReflectionMap, fLastBoundTexture, fLastBoundBumpmap: TTexture;
+      fLastBoundVBO: TObjectVBO;
       fTransparentMeshOrder: Array of TMeshDistanceAssoc;
+      fMeshClasses: Array of TMeshClass;
+      fFirstMesh: Boolean;
       function getWorking: Boolean;
     public
       CurrentGBuffer: TFBO;
@@ -80,8 +90,8 @@ type
       procedure RenderTransparent;
       procedure QuickSortTransparentMeshes;
       function CalculateLODDistance(D: Single): Single;
-      procedure Clear;
       constructor Create;
+      procedure Clear;
     end;
 
 implementation
@@ -127,7 +137,8 @@ end;
 
 procedure TRObjects.AddMesh(Event: String; Data, Result: Pointer);
 var
-  i: Integer;
+  i, FoundClass: Integer;
+  FullMeshName: String;
 begin
   fLastManagedObject := Max(fLastManagedObject, 0);
   if fManagedObjects[fLastManagedObject].GeoObject <> TGeoObject(Data) then
@@ -137,17 +148,42 @@ begin
   setLength(fManagedObjects[fLastManagedObject].Meshes, length(fManagedObjects[fLastManagedObject].Meshes) + 1);
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)] := TManagedMesh.Create;
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].GeoMesh := TGeoMesh(Result);
-  fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].VBO := TObjectVBO.Create(TGeoMesh(Result));
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Transparent := TGeoMesh(Result).Material.Transparent;
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].ReflectionFramesToGo := Round(Random * ModuleManager.ModRenderer.ReflectionUpdateInterval);
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Reflection := nil;
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].ParentObject := fManagedObjects[fLastManagedObject];
-  Sync;
-  SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := fManagedObjects[fLastManagedObject];
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
+  if fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Transparent then
+    begin
+    Sync;
+    SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := fManagedObjects[fLastManagedObject];
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh.VBO := TObjectVBO.Create(TGeoMesh(Result));
+    end
+  else
+    begin
+    FullMeshName := TGeoObject(Data).Name + #10 + TGeoMesh(Result).Name;
+    FoundClass := -1;
+    if TGeoMesh(Result).StaticMesh then
+      for I := 0 to high(fMeshClasses) do
+        if fMeshClasses[I].InternalMeshName = FullMeshName then
+          begin
+          FoundClass := I;
+          break;
+          end;
+    if FoundClass = -1 then
+      begin
+      SetLength(fMeshClasses, length(fMeshClasses) + 1);
+      fMeshClasses[high(fMeshClasses)].InternalMeshName := FullMeshName;
+      fMeshClasses[high(fMeshClasses)].VBO := TObjectVBO.Create(TGeoMesh(Result));
+      FoundClass := high(fMeshClasses);
+      end;
+    SetLength(fMeshClasses[FoundClass].Meshes, length(fMeshClasses[FoundClass].Meshes) + 1);
+    fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+    fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)].VBO := fMeshClasses[FoundClass].VBO;
+    end;
 end;
 
 procedure TRObjects.AddParticleGroup(Event: String; Data, Result: Pointer);
@@ -166,7 +202,7 @@ var
 begin
   Sync;
   for i := 0 to high(fTransparentMeshOrder) do
-    if Pointer(fTransparentMeshOrder[i].ParticleGroup) = Data then
+    if (Pointer(fTransparentMeshOrder[i].ParticleGroup) = Data) and (Data <> nil) then
       begin
       fTransparentMeshOrder[i] := fTransparentMeshOrder[high(fTransparentMeshOrder)];
       SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) - 1);
@@ -176,7 +212,8 @@ end;
 
 procedure TRObjects.DeleteMesh(Event: String; Data, Result: Pointer);
 var
-  i, mesh: Integer;
+  i, j, mesh: Integer;
+  fMeshClass, fMeshInClass: Integer;
 begin
   mesh := -1;
   fLastManagedObject := Max(fLastManagedObject, 0);
@@ -191,18 +228,42 @@ begin
     begin
     with fManagedObjects[fLastManagedObject].Meshes[mesh] do
       begin
-      VBO.Free;
       if Reflection <> nil then
         Reflection.Free;
       end;
     Sync;
     for i := 0 to high(fTransparentMeshOrder) do
-      if fTransparentMeshOrder[i].Mesh = fManagedObjects[fLastManagedObject].Meshes[mesh] then
+      if (fTransparentMeshOrder[i].Mesh = fManagedObjects[fLastManagedObject].Meshes[mesh]) and (fTransparentMeshOrder[i].ParticleGroup = nil) then
         begin
         fTransparentMeshOrder[i] := fTransparentMeshOrder[high(fTransparentMeshOrder)];
         SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) - 1);
         break;
         end;
+    fMeshClass := -1;
+    fMeshInClass := -1;
+    for I := 0 to high(fMeshClasses) do
+      begin
+      for J := 0 to high(fMeshClasses[i].Meshes) do
+        if fMeshClasses[I].Meshes[J] = fManagedObjects[fLastManagedObject].Meshes[mesh] then
+          begin
+          fMeshClass := I;
+          fMeshInClass := J;
+          break;
+          end;
+      if fMeshClass <> -1 then
+        break;
+      end;
+    if not ((fMeshClass = -1) or (fMeshInClass = -1)) then
+      begin
+      fMeshClasses[fMeshClass].Meshes[fMeshInClass] := fMeshClasses[fMeshClass].Meshes[high(fMeshClasses[fMeshClass].Meshes)];
+      SetLength(fMeshClasses[fMeshClass].Meshes, length(fMeshClasses[fMeshClass].Meshes) - 1);
+      if length(fMeshClasses[fMeshClass].Meshes) = 0 then
+        begin
+        fMeshClasses[fMeshClass].VBO.Free;
+        fMeshClasses[fMeshClass] := fMeshClasses[high(fMeshClasses)];
+        Setlength(fMeshClasses, length(fMeshClasses) - 1);
+        end;
+      end;
     fManagedObjects[fLastManagedObject].Meshes[mesh].Free;
     fManagedObjects[fLastManagedObject].Meshes[mesh] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
     SetLength(fManagedObjects[fLastManagedObject].Meshes, length(fManagedObjects[fLastManagedObject].Meshes) - 1);
@@ -218,25 +279,41 @@ begin
     begin
     if BumpMap <> nil then
       begin
-      BumpMap.Bind(1);
-      fCurrentShader.UniformI('HasNormalMap', 1);
+      if (BumpMap <> fLastBoundBumpmap) or (fFirstMesh) then
+        begin
+        BumpMap.Bind(1);
+        fLastBoundBumpmap := BumpMap;
+        fCurrentShader.UniformI('HasNormalMap', 1);
+        end;
       end
     else
       begin
-      ModuleManager.ModTexMng.ActivateTexUnit(1);
-      ModuleManager.ModTexMng.BindTexture(-1);
-      fCurrentShader.UniformI('HasNormalMap', 0);
+      if (fLastBoundBumpmap <> nil) or (fFirstMesh) then
+        begin
+        ModuleManager.ModTexMng.ActivateTexUnit(1);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        fCurrentShader.UniformI('HasNormalMap', 0);
+        fLastBoundBumpmap := nil;
+        end;
       end;
     if Texture <> nil then
       begin
-      Texture.Bind(0);
-      fCurrentShader.UniformI('HasTexture', 1);
+      if (Texture <> fLastBoundTexture) or (fFirstMesh) then
+        begin
+        Texture.Bind(0);
+        fCurrentShader.UniformI('HasTexture', 1);
+        fLastBoundTexture := Texture;
+        end;
       end
     else
       begin
-      ModuleManager.ModTexMng.ActivateTexUnit(0);
-      ModuleManager.ModTexMng.BindTexture(-1);
-      fCurrentShader.UniformI('HasTexture', 0);
+      if (fLastBoundTexture <> nil) or (fFirstMesh) then
+        begin
+        ModuleManager.ModTexMng.ActivateTexUnit(0);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        fCurrentShader.UniformI('HasTexture', 0);
+        fLastBoundTexture := nil;
+        end;
       end;
     fCurrentShader.UniformF('Mediums', 1.0, Max(0.001, RefractiveIndex));
     if (RefractiveIndex = 0.0) and (Transparent) then
@@ -253,8 +330,9 @@ end;
 procedure TRObjects.Render(Mesh: TManagedMesh);
 var
   Matrix: Array[0..15] of Single;
+  ReflectionMapToBind: TTexture;
 begin
-  fCurrentShader.Bind;
+//   fCurrentShader.Bind;
   if ShadowMode then
     begin
     fCurrentShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
@@ -270,22 +348,50 @@ begin
 
   BindMaterial(Mesh.GeoMesh.Material);
 
-  if not (MaterialMode or ShadowMode or LightShadowMode) then
-    if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
-      Mesh.Reflection.Map.Textures[0].Bind(3)
-    else
-      ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(3);
+  if Mesh.GeoMesh.Material.Reflectivity > 0.01 then
+    begin
+    if not (MaterialMode or ShadowMode or LightShadowMode) then
+      if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
+        ReflectionMapToBind := Mesh.Reflection.Map.Textures[0]
+      else
+        ReflectionMapToBind := ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0];
+    if (ReflectionMapToBind <> fLastBoundReflectionMap) or (fFirstMesh) then
+      begin
+      ReflectionMapToBind.Bind(3);
+      fLastBoundReflectionMap := ReflectionMapToBind;
+      end;
+    end
+  else
+    begin
+    if (fLastBoundReflectionMap <> nil) or (fFirstMesh) then
+      begin
+      ModuleManager.ModTexMng.ActivateTexUnit(3);
+      ModuleManager.ModTexMng.BindTexture(-1);
+      fLastBoundReflectionMap := nil;
+      end;
+    end;
 
   MakeOGLCompatibleMatrix(Mesh.GeoMesh.CalculatedMatrix, @Matrix[0]);
 
   fCurrentShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
   fCurrentShader.UniformF('ViewPoint', ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
 
-  Mesh.VBO.Bind;
-  Mesh.VBO.Render;
-  Mesh.VBO.UnBind;
+  if Mesh.VBO <> fLastBoundVBO then
+    begin
+    if fLastBoundVBO <> nil then
+      fLastBoundVBO.Unbind;
+    fLastBoundVBO := Mesh.VBO;
+    end;
+  if fLastBoundVBO <> nil then
+    begin
+    fLastBoundVBO.Bind;
+    fLastBoundVBO.Render;
+    fLastBoundVBO.Unbind;
+    end;
 
-  fCurrentShader.Unbind;
+//   fCurrentShader.Unbind;
+
+  fFirstMesh := False;
 end;
 
 procedure TRObjects.RenderSelectable;
@@ -297,9 +403,11 @@ var
   CurrMM: TManagedMesh;
   Matrix: Array[0..15] of Single;
 begin
+//   exit;
   fSelectionShader.Bind;
   fCurrentShader := fSelectionShader;
 
+  glEnable(GL_CULL_FACE);
   for i := 0 to high(Park.SelectionEngine.fSelectableObjects) do
     begin
     CurrO := Park.SelectionEngine.fSelectableObjects[i].O;
@@ -328,13 +436,13 @@ begin
         continue;
       if not CurrMM.Visible then
         continue;
-      if CurrO.Meshes[j].Material.Texture <> nil then
-        CurrO.Meshes[j].Material.Texture.Bind(0)
-      else
-        begin
-        ModuleManager.ModTexMng.ActivateTexUnit(0);
-        ModuleManager.ModTexMng.BindTexture(-1);
-        end;
+//       if CurrO.Meshes[j].Material.Texture <> nil then
+//         CurrO.Meshes[j].Material.Texture.Bind(0)
+//       else
+//         begin
+//         ModuleManager.ModTexMng.ActivateTexUnit(0);
+//         ModuleManager.ModTexMng.BindTexture(-1);
+//         end;
       MakeOGLCompatibleMatrix(CurrO.Meshes[j].CalculatedMatrix, @Matrix[0]);
 
       fCurrentShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
@@ -356,6 +464,11 @@ var
   i, j: Integer;
 begin
   Sync;
+  fFirstMesh := True;
+  fLastBoundReflectionMap := nil;
+  fLastBoundBumpmap := nil;
+  fLastBoundTexture := nil;
+  fLastBoundVBO := nil;
   if (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
     ModuleManager.ModRenderer.RParticles.Prepare;
   if MaterialMode then
@@ -401,15 +514,29 @@ begin
           ModuleManager.ModRenderer.InvertFrontFace;
       end
     else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
+//       begin
       ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
+//       fFirstMesh := True;
+//       fLastBoundReflectionMap := nil;
+//       fLastBoundBumpmap := nil;
+//       fLastBoundTexture := nil;
+//       fLastBoundVBO := nil;
+//       end;
     inc(fCurrentMaterialCount);
     end;
+  if fLastBoundVBO <> nil then
+    fLastBoundVBO.Unbind;
 end;
 
 procedure TRObjects.RenderOpaque;
 var
   i, j: Integer;
 begin
+  fFirstMesh := True;
+  fLastBoundReflectionMap := nil;
+  fLastBoundBumpmap := nil;
+  fLastBoundTexture := nil;
+  fLastBoundVBO := nil;
   MaterialMode := False;
   if ShadowMode then
     fCurrentShader := fOpaqueShadowShader
@@ -417,20 +544,26 @@ begin
     fCurrentShader := fOpaqueLightShadowShader
   else
     fCurrentShader := fOpaqueShader;
-  for i := 0 to high(fManagedObjects) do
+  fCurrentShader.Bind;
+  for i := 0 to high(fMeshClasses) do
     begin
-    fCurrentShader.UniformF('Mirror', fManagedObjects[i].GeoObject.Mirror);
-    with fManagedObjects[i].GeoObject.Mirror do
-      if X * Y * Z < 0 then
-        ModuleManager.ModRenderer.InvertFrontFace;
-    for j := 0 to high(fManagedObjects[i].Meshes) do
-      if ((fManagedObjects[i].Meshes[j].Visible) or (ShadowMode)) and ((fManagedObjects[i] <> fExcludedMeshObject) or (fManagedObjects[i].Meshes[j] <> fExcludedMesh)) then
-        if not fManagedObjects[i].Meshes[j].Transparent then
-          Render(fManagedObjects[i].Meshes[j]);
-    with fManagedObjects[i].GeoObject.Mirror do
-      if X * Y * Z < 0 then
-        ModuleManager.ModRenderer.InvertFrontFace;
+    for j := 0 to high(fMeshClasses[i].Meshes) do
+      begin
+      fCurrentShader.UniformF('Mirror', fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror);
+      with fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror do
+        if X * Y * Z < 0 then
+          ModuleManager.ModRenderer.InvertFrontFace;
+      if ((fMeshClasses[i].Meshes[j].Visible) or (ShadowMode)) and ((fMeshClasses[i].Meshes[j].ParentObject <> fExcludedMeshObject) or (fMeshClasses[i].Meshes[j] <> fExcludedMesh)) then
+        if not fMeshClasses[i].Meshes[j].Transparent then
+          Render(fMeshClasses[i].Meshes[j]);
+      with fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror do
+        if X * Y * Z < 0 then
+          ModuleManager.ModRenderer.InvertFrontFace;
+      end;
     end;
+  fCurrentShader.Unbind;
+  if fLastBoundVBO <> nil then
+    fLastBoundVBO.Unbind;
 end;
 
 procedure TRObjects.CheckVisibility;
@@ -491,7 +624,7 @@ end;
 constructor TRObjects.Create;
 begin
   inherited Create(false);
-
+  
   writeln('Hint: Initializing object renderer');
 
   MaterialMode := False;
@@ -636,6 +769,8 @@ begin
 end;
 
 procedure TRObjects.Clear;
+var
+  I, J: Integer;
 begin
   Terminate;
   fReflectionPass.Free;
@@ -654,6 +789,15 @@ begin
   EventManager.RemoveCallback(@AddParticleGroup);
   EventManager.RemoveCallback(@DeleteParticleGroup);
   Sync;
+  for I := 0 to high(fManagedObjects) do
+    begin
+    for J := 0 to high(fManagedObjects[J].Meshes) do
+      fManagedObjects[i].Meshes[j].Free;
+    fManagedObjects[i].Free;
+    end;
+  for I := 0 to high(fMeshClasses) do
+    fMeshClasses[i].VBO.Free;
+  sleep(10);
 end;
 
 

@@ -512,7 +512,14 @@ begin
           ModuleManager.ModRenderer.InvertFrontFace;
       end
     else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
+      begin
       ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
+      fFirstMesh := True;
+      fLastBoundReflectionMap := nil;
+      fLastBoundBumpmap := nil;
+      fLastBoundTexture := nil;
+      fLastBoundVBO := nil;
+      end;
     inc(fCurrentMaterialCount);
     end;
   if fLastBoundVBO <> nil then

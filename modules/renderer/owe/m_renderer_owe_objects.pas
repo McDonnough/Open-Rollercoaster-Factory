@@ -160,30 +160,26 @@ begin
     fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := fManagedObjects[fLastManagedObject];
     fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
     fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
-    fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh.VBO := TObjectVBO.Create(TGeoMesh(Result));
-    end
-  else
-    begin
-    FullMeshName := TGeoObject(Data).Name + #10 + TGeoMesh(Result).Name;
-    FoundClass := -1;
-    if TGeoMesh(Result).StaticMesh then
-      for I := 0 to high(fMeshClasses) do
-        if fMeshClasses[I].InternalMeshName = FullMeshName then
-          begin
-          FoundClass := I;
-          break;
-          end;
-    if FoundClass = -1 then
-      begin
-      SetLength(fMeshClasses, length(fMeshClasses) + 1);
-      fMeshClasses[high(fMeshClasses)].InternalMeshName := FullMeshName;
-      fMeshClasses[high(fMeshClasses)].VBO := TObjectVBO.Create(TGeoMesh(Result));
-      FoundClass := high(fMeshClasses);
-      end;
-    SetLength(fMeshClasses[FoundClass].Meshes, length(fMeshClasses[FoundClass].Meshes) + 1);
-    fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
-    fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)].VBO := fMeshClasses[FoundClass].VBO;
     end;
+  FullMeshName := TGeoObject(Data).Name + #10 + TGeoMesh(Result).Name;
+  FoundClass := -1;
+  if TGeoMesh(Result).StaticMesh then
+    for I := 0 to high(fMeshClasses) do
+      if fMeshClasses[I].InternalMeshName = FullMeshName then
+        begin
+        FoundClass := I;
+        break;
+        end;
+  if FoundClass = -1 then
+    begin
+    SetLength(fMeshClasses, length(fMeshClasses) + 1);
+    fMeshClasses[high(fMeshClasses)].InternalMeshName := FullMeshName;
+    fMeshClasses[high(fMeshClasses)].VBO := TObjectVBO.Create(TGeoMesh(Result));
+    FoundClass := high(fMeshClasses);
+    end;
+  SetLength(fMeshClasses[FoundClass].Meshes, length(fMeshClasses[FoundClass].Meshes) + 1);
+  fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+  fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)].VBO := fMeshClasses[FoundClass].VBO;
 end;
 
 procedure TRObjects.AddParticleGroup(Event: String; Data, Result: Pointer);
@@ -348,26 +344,29 @@ begin
 
   BindMaterial(Mesh.GeoMesh.Material);
 
-  if Mesh.GeoMesh.Material.Reflectivity > 0.01 then
+  if fCurrentShader <> fTransparentMaterialShader then
     begin
-    if not (MaterialMode or ShadowMode or LightShadowMode) then
-      if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
-        ReflectionMapToBind := Mesh.Reflection.Map.Textures[0]
-      else
-        ReflectionMapToBind := ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0];
-    if (ReflectionMapToBind <> fLastBoundReflectionMap) or (fFirstMesh) then
+    if Mesh.GeoMesh.Material.Reflectivity > 0.01 then
       begin
-      ReflectionMapToBind.Bind(3);
-      fLastBoundReflectionMap := ReflectionMapToBind;
-      end;
-    end
-  else
-    begin
-    if (fLastBoundReflectionMap <> nil) or (fFirstMesh) then
+      if not (MaterialMode or ShadowMode or LightShadowMode) then
+        if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
+          ReflectionMapToBind := Mesh.Reflection.Map.Textures[0]
+        else
+          ReflectionMapToBind := ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0];
+      if (ReflectionMapToBind <> fLastBoundReflectionMap) or (fFirstMesh) then
+        begin
+        ReflectionMapToBind.Bind(3);
+        fLastBoundReflectionMap := ReflectionMapToBind;
+        end;
+      end
+    else
       begin
-      ModuleManager.ModTexMng.ActivateTexUnit(3);
-      ModuleManager.ModTexMng.BindTexture(-1);
-      fLastBoundReflectionMap := nil;
+      if (fLastBoundReflectionMap <> nil) or (fFirstMesh) then
+        begin
+        ModuleManager.ModTexMng.ActivateTexUnit(3);
+        ModuleManager.ModTexMng.BindTexture(-1);
+        fLastBoundReflectionMap := nil;
+        end;
       end;
     end;
 

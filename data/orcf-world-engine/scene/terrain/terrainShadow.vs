@@ -12,7 +12,7 @@ uniform vec2 Offset;
 varying vec3 VData;
 
 void main(void) {
-  vec2 FakeVertex = Offset + gl_MultiTexCoord0.xy;
+  vec2 FakeVertex = Offset + gl_Vertex.xz;
   VData = vec3(Offset.x + gl_Vertex.x, texture2D(TerrainMap, FakeVertex / TerrainSize + TOffset).b * 256.0, Offset.y + gl_Vertex.z);
   vec3 Vertex = VData;
   vec3 dir = Vertex - gl_LightSource[0].position.xyz;

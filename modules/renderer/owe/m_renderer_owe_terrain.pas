@@ -31,6 +31,15 @@ type
       constructor Create(iX, iY: Integer);
     end;
 
+  TIndexedTerrainVBO = class
+    protected
+      fVertexBuffer, fIndexBuffer, fQuads: GLUInt;
+    public
+      procedure Render;
+      constructor Create(QuadCount: Integer; BlockSize, Offset: Single);
+      destructor Free;
+    end;
+
   TRTerrain = class(TThread)
     protected
       fForcedHeightLine: Single;
@@ -38,7 +47,8 @@ type
       fTerrainMap: TTexture;
       fCanWork, fWorking: Boolean;
       fGeometryPassShader, fLightShadowPassShader, fSimpleGeometryPassShader, fShadowPassShader, fSelectionShader: TShader;
-      fRawVBO, fFineVBO, fHDVBO, fBorderVBO, fOuterHillVBO: TVBO;
+      fBorderVBO, fOuterHillVBO: TVBO;
+      fRawVBO, fFineVBO, fHDVBO: TIndexedTerrainVBO;
       fXBlocks, fYBlocks: Integer;
       fRenderHDVBO: Integer;
       procedure Execute; override;
@@ -51,9 +61,9 @@ type
       property XBlocks: Integer read fXBlocks;
       property YBlocks: Integer read fYBlocks;
       property Working: Boolean read fWorking write fCanWork;
-      property RawVBO: TVBO read fRawVBO;
-      property FineVBO: TVBO read fFineVBO;
-      property HDVBO: TVBO read fHDVBO;
+      property RawVBO: TIndexedTerrainVBO read fRawVBO;
+      property FineVBO: TIndexedTerrainVBO read fFineVBO;
+      property HDVBO: TIndexedTerrainVBO read fHDVBO;
       property GeometryPassShader: TShader read fGeometryPassShader;
       property ShadowPassShader: TShader read fShadowPassShader;
       property LightShadowPassShader: TShader read fLightShadowPassShader;
@@ -76,6 +86,69 @@ implementation
 uses
   m_varlist, g_park;
 
+procedure TIndexedTerrainVBO.Render;
+begin
+  glBindBufferARB(GL_ARRAY_BUFFER, fVertexBuffer);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, fIndexBuffer);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glVertexPointer(3, GL_FLOAT, 0, Pointer(0));
+
+  glDrawElements(GL_QUADS, 4 * fQuads, GL_UNSIGNED_INT, nil);
+
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glBindBufferARB(GL_ARRAY_BUFFER, 0);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
+end;
+
+constructor TIndexedTerrainVBO.Create(QuadCount: Integer; BlockSize, Offset: Single);
+var
+  fIndexPointer: PGLInt;
+  fVBOPointer: PVector3D;
+  i, j: Integer;
+begin
+  fQuads := QuadCount * QuadCount;
+
+  glGenBuffers(1, @fVertexBuffer);
+  glGenBuffers(1, @fIndexBuffer);
+  glBindBufferARB(GL_ARRAY_BUFFER, fVertexBuffer);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, fIndexBuffer);
+
+  glBufferData(GL_ARRAY_BUFFER, SizeOf(TVector3D) * (QuadCount + 1) * (QuadCount + 1), nil, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * Sizeof(GLUInt) * fQuads, nil, GL_STATIC_DRAW);
+
+  fVBOPointer := glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+  fIndexPointer := glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+
+  for I := 0 to QuadCount do
+    for J := 0 to QuadCount do
+      begin
+      fVBOPointer^ := Vector(BlockSize * I + Offset, 1.0, BlockSize * J + Offset);
+      inc(fVBOPointer);
+      end;
+
+  for I := 0 to QuadCount - 1 do
+    for J := 0 to QuadCount - 1 do
+      begin
+      fIndexPointer^ := (QuadCount + 1) * I + J + 1; inc(fIndexPointer);
+      fIndexPointer^ := (QuadCount + 1) * I + J + QuadCount + 2; inc(fIndexPointer);
+      fIndexPointer^ := (QuadCount + 1) * I + J + QuadCount + 1; inc(fIndexPointer);
+      fIndexPointer^ := (QuadCount + 1) * I + J; inc(fIndexPointer);
+      end;
+
+  glUnMapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+  glUnMapBuffer(GL_ARRAY_BUFFER);
+
+  glBindBufferARB(GL_ARRAY_BUFFER, 0);
+  glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
+end;
+
+destructor TIndexedTerrainVBO.Free;
+begin
+  glDeleteBuffers(1, @fVertexBuffer);
+  glDeleteBuffers(1, @fIndexBuffer);
+end;
+
 procedure TTerrainBlock.RenderRaw;
 begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Border', 0);
@@ -83,9 +156,9 @@ begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-  ModuleManager.ModRenderer.RTerrain.RawVBO.Bind;
+//   ModuleManager.ModRenderer.RTerrain.RawVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.RawVBO.Render;
-  ModuleManager.ModRenderer.RTerrain.RawVBO.UnBind;
+//   ModuleManager.ModRenderer.RTerrain.RawVBO.UnBind;
 end;
 
 procedure TTerrainBlock.RenderFine;
@@ -95,9 +168,9 @@ begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-  ModuleManager.ModRenderer.RTerrain.FineVBO.Bind;
+//   ModuleManager.ModRenderer.RTerrain.FineVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.FineVBO.Render;
-  ModuleManager.ModRenderer.RTerrain.FineVBO.UnBind;
+//   ModuleManager.ModRenderer.RTerrain.FineVBO.UnBind;
 end;
 
 procedure TTerrainBlock.RenderOneFace;
@@ -335,9 +408,9 @@ begin
     CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
     CurrentShader.UniformF('Offset', Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.x)), 0, 0.2 * Park.pTerrain.SizeX - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance), Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.z)), 0, 0.2 * Park.pTerrain.SizeY - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance));
     CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-    fHDVBO.Bind;
+//     fHDVBO.Bind;
     fHDVBO.Render;
-    fHDVBO.Unbind;
+//     fHDVBO.Unbind;
     end;
 
   if (BorderEnabled) and (CurrentShader <> fShadowPassShader) then
@@ -962,50 +1035,9 @@ begin
   fSelectionShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/selection.fs');
   fSelectionShader.UniformI('TerrainMap', 0);
 
-  fFineVBO := TVBO.Create(34 * 34 * 4, GL_T2F_V3F, GL_QUADS);
-  for i := 0 to 33 do
-    for j := 0 to 33 do
-      begin
-      fFineVBO.TexCoords[4 * (34 * i + j) + 3] := Vector(0.8 * i - 0.8,      0.8 * j - 0.8);
-      fFineVBO.Vertices[4 * (34 * i + j) + 3]  := Vector(0.8 * i - 0.8, 1.0, 0.8 * j - 0.8);
-      fFineVBO.TexCoords[4 * (34 * i + j) + 2] := Vector(0.8 * i - 0.0,      0.8 * j - 0.8);
-      fFineVBO.Vertices[4 * (34 * i + j) + 2]  := Vector(0.8 * i + 0.0, 1.0, 0.8 * j - 0.8);
-      fFineVBO.TexCoords[4 * (34 * i + j) + 1] := Vector(0.8 * i - 0.0,      0.8 * j - 0.0);
-      fFineVBO.Vertices[4 * (34 * i + j) + 1]  := Vector(0.8 * i + 0.0, 1.0, 0.8 * j + 0.0);
-      fFineVBO.TexCoords[4 * (34 * i + j) + 0] := Vector(0.8 * i - 0.8,      0.8 * j - 0.0);
-      fFineVBO.Vertices[4 * (34 * i + j) + 0]  := Vector(0.8 * i - 0.8, 1.0, 0.8 * j + 0.0);
-      end;
-  fFineVBO.Unbind;
-
-  fRawVBO := TVBO.Create(18 * 18 * 4, GL_T2F_V3F, GL_QUADS);
-  for i := 0 to 17 do
-    for j := 0 to 17 do
-      begin
-      fRawVBO.TexCoords[4 * (18 * i + j) + 3] := Vector(1.6 * i - 1.6,      1.6 * j - 1.6);
-      fRawVBO.Vertices[4 * (18 * i + j) + 3]  := Vector(1.6 * i - 1.6, 1.0, 1.6 * j - 1.6);
-      fRawVBO.TexCoords[4 * (18 * i + j) + 2] := Vector(1.6 * i + 0.0,      1.6 * j - 1.6);
-      fRawVBO.Vertices[4 * (18 * i + j) + 2]  := Vector(1.6 * i + 0.0, 1.0, 1.6 * j - 1.6);
-      fRawVBO.TexCoords[4 * (18 * i + j) + 1] := Vector(1.6 * i + 0.0,      1.6 * j + 0.0);
-      fRawVBO.Vertices[4 * (18 * i + j) + 1]  := Vector(1.6 * i + 0.0, 1.0, 1.6 * j + 0.0);
-      fRawVBO.TexCoords[4 * (18 * i + j) + 0] := Vector(1.6 * i - 1.6,      1.6 * j + 0.0);
-      fRawVBO.Vertices[4 * (18 * i + j) + 0]  := Vector(1.6 * i - 1.6, 1.0, 1.6 * j + 0.0);
-      end;
-  fRawVBO.Unbind;
-
-  fHDVBO := TVBO.Create(Round(ModuleManager.ModRenderer.TerrainTesselationDistance * 10) * Round(ModuleManager.ModRenderer.TerrainTesselationDistance * 10) * 4, GL_T2F_V3F, GL_QUADS);
-  for i := 0 to Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) - 1 do
-    for j := 0 to Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) - 1 do
-      begin
-      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 3] := Vector(0.2 * i - 0.2,      0.2 * j - 0.2);
-      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 3]  := Vector(0.2 * i - 0.2, 1.0, 0.2 * j - 0.2);
-      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 2] := Vector(0.2 * i + 0.0,      0.2 * j - 0.2);
-      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 2]  := Vector(0.2 * i + 0.0, 1.0, 0.2 * j - 0.2);
-      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 1] := Vector(0.2 * i + 0.0,      0.2 * j + 0.0);
-      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 1]  := Vector(0.2 * i + 0.0, 1.0, 0.2 * j + 0.0);
-      fHDVBO.TexCoords[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 0] := Vector(0.2 * i - 0.2,      0.2 * j + 0.0);
-      fHDVBO.Vertices[4 * (Round(10 * ModuleManager.ModRenderer.TerrainTesselationDistance) * i + j) + 0]  := Vector(0.2 * i - 0.2, 1.0, 0.2 * j + 0.0);
-      end;
-  fHDVBO.Unbind;
+  fFineVBO := TIndexedTerrainVBO.Create(34, 0.8, -0.8);
+  fRawVBO := TIndexedTerrainVBO.Create(18, 1.6, -1.6);
+  fHDVBO := TIndexedTerrainVBO.Create(Round(ModuleManager.ModRenderer.TerrainTesselationDistance * 10), 0.2, 0);
 
   fBorderVBO := nil;
   fOuterHillVBO := nil;

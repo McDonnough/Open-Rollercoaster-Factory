@@ -13,7 +13,7 @@ varying vec3 dir;
 varying vec3 Vertex;
 
 void main(void) {
-  vec2 FakeVertex = Offset + gl_MultiTexCoord0.xy;
+  vec2 FakeVertex = Offset + gl_Vertex.xz;
   Vertex = vec3(Offset.x + gl_Vertex.x, mix(64.0, texture2D(TerrainMap, FakeVertex / TerrainSize + TOffset).b * 256.0, gl_Vertex.y), Offset.y + gl_Vertex.z);
   dir = Vertex - gl_LightSource[1].position.xyz;
   gl_Position = gl_ModelViewProjectionMatrix * vec4(Vertex, 1.0);

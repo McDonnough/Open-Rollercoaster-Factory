@@ -13,7 +13,7 @@ varying vec2 FakeVertex;
 varying float YFactor;
 
 void main(void) {
-  FakeVertex = Offset + gl_MultiTexCoord0.xy;
+  FakeVertex = Offset + gl_Vertex.xz;
   Vertex = vec3(Offset.x + gl_Vertex.x, mix(64.0, texture2D(TerrainMap, FakeVertex / TerrainSize + TOffset).b * 256.0, gl_Vertex.y), Offset.y + gl_Vertex.z);
   YFactor = gl_Vertex.y;
   NormalFactor = gl_Normal;

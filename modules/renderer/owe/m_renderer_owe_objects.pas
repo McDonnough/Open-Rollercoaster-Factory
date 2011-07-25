@@ -152,34 +152,38 @@ begin
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].ReflectionFramesToGo := Round(Random * ModuleManager.ModRenderer.ReflectionUpdateInterval);
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Reflection := nil;
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].ParentObject := fManagedObjects[fLastManagedObject];
-  Sync;
   if fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Transparent then
     begin
+    Sync;
     SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
     fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
     fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := fManagedObjects[fLastManagedObject];
     fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
     fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
-    end;
-  FullMeshName := TGeoObject(Data).Name + #10 + TGeoMesh(Result).Name;
-  FoundClass := -1;
-  if TGeoMesh(Result).StaticMesh then
-    for I := 0 to high(fMeshClasses) do
-      if fMeshClasses[I].InternalMeshName = FullMeshName then
-        begin
-        FoundClass := I;
-        break;
-        end;
-  if FoundClass = -1 then
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh.VBO := TObjectVBO.Create(TGeoMesh(Result));
+    end
+  else
     begin
-    SetLength(fMeshClasses, length(fMeshClasses) + 1);
-    fMeshClasses[high(fMeshClasses)].InternalMeshName := FullMeshName;
-    fMeshClasses[high(fMeshClasses)].VBO := TObjectVBO.Create(TGeoMesh(Result));
-    FoundClass := high(fMeshClasses);
+    FullMeshName := TGeoObject(Data).Name + #10 + TGeoMesh(Result).Name;
+    FoundClass := -1;
+    if TGeoMesh(Result).StaticMesh then
+      for I := 0 to high(fMeshClasses) do
+        if fMeshClasses[I].InternalMeshName = FullMeshName then
+          begin
+          FoundClass := I;
+          break;
+          end;
+    if FoundClass = -1 then
+      begin
+      SetLength(fMeshClasses, length(fMeshClasses) + 1);
+      fMeshClasses[high(fMeshClasses)].InternalMeshName := FullMeshName;
+      fMeshClasses[high(fMeshClasses)].VBO := TObjectVBO.Create(TGeoMesh(Result));
+      FoundClass := high(fMeshClasses);
+      end;
+    SetLength(fMeshClasses[FoundClass].Meshes, length(fMeshClasses[FoundClass].Meshes) + 1);
+    fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+    fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)].VBO := fMeshClasses[FoundClass].VBO;
     end;
-  SetLength(fMeshClasses[FoundClass].Meshes, length(fMeshClasses[FoundClass].Meshes) + 1);
-  fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)] := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
-  fMeshClasses[FoundClass].Meshes[high(fMeshClasses[FoundClass].Meshes)].VBO := fMeshClasses[FoundClass].VBO;
 end;
 
 procedure TRObjects.AddParticleGroup(Event: String; Data, Result: Pointer);
@@ -249,9 +253,7 @@ begin
       if fMeshClass <> -1 then
         break;
       end;
-    if (fMeshClass = -1) or (fMeshInClass = -1) then
-      ModuleManager.ModLog.AddError('Something went wrong deleting a mesh...')
-    else
+    if not ((fMeshClass = -1) or (fMeshInClass = -1)) then
       begin
       fMeshClasses[fMeshClass].Meshes[fMeshInClass] := fMeshClasses[fMeshClass].Meshes[high(fMeshClasses[fMeshClass].Meshes)];
       SetLength(fMeshClasses[fMeshClass].Meshes, length(fMeshClasses[fMeshClass].Meshes) - 1);
@@ -512,14 +514,14 @@ begin
           ModuleManager.ModRenderer.InvertFrontFace;
       end
     else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
-      begin
+//       begin
       ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
-      fFirstMesh := True;
-      fLastBoundReflectionMap := nil;
-      fLastBoundBumpmap := nil;
-      fLastBoundTexture := nil;
-      fLastBoundVBO := nil;
-      end;
+//       fFirstMesh := True;
+//       fLastBoundReflectionMap := nil;
+//       fLastBoundBumpmap := nil;
+//       fLastBoundTexture := nil;
+//       fLastBoundVBO := nil;
+//       end;
     inc(fCurrentMaterialCount);
     end;
   if fLastBoundVBO <> nil then

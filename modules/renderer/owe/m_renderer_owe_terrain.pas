@@ -91,7 +91,6 @@ begin
   glBindBufferARB(GL_ARRAY_BUFFER, fVertexBuffer);
   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, fIndexBuffer);
   glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   glVertexPointer(3, GL_FLOAT, 0, Pointer(0));
 
   glDrawElements(GL_QUADS, 4 * fQuads, GL_UNSIGNED_INT, nil);
@@ -156,9 +155,7 @@ begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-//   ModuleManager.ModRenderer.RTerrain.RawVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.RawVBO.Render;
-//   ModuleManager.ModRenderer.RTerrain.RawVBO.UnBind;
 end;
 
 procedure TTerrainBlock.RenderFine;
@@ -168,9 +165,7 @@ begin
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
   ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-//   ModuleManager.ModRenderer.RTerrain.FineVBO.Bind;
   ModuleManager.ModRenderer.RTerrain.FineVBO.Render;
-//   ModuleManager.ModRenderer.RTerrain.FineVBO.UnBind;
 end;
 
 procedure TTerrainBlock.RenderOneFace;
@@ -408,9 +403,7 @@ begin
     CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
     CurrentShader.UniformF('Offset', Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.x)), 0, 0.2 * Park.pTerrain.SizeX - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance), Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.z)), 0, 0.2 * Park.pTerrain.SizeY - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance));
     CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-//     fHDVBO.Bind;
     fHDVBO.Render;
-//     fHDVBO.Unbind;
     end;
 
   if (BorderEnabled) and (CurrentShader <> fShadowPassShader) then

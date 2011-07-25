@@ -151,6 +151,7 @@ begin
       fThread.fSoundResource := Self;
       fThread.fDone := False;
       fThread.Resume;
+      fThread.fDone := True;
       EventManager.AddCallback('MainLoop', @CheckDecoderState);
       end;
     end;
@@ -162,6 +163,7 @@ begin
     begin
     fSoundSource := TSoundSource.Create(ModuleManager.ModSound.AddSoundBuffer(@Audio[0], fThread.TotalBytesRead, fChannels, fRate));
     SetLength(Audio, 0);
+    fThread.Terminate;
     fThread.Free;
     fThread := nil;
     FinishedLoading := True;

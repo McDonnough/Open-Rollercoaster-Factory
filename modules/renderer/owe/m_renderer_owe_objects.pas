@@ -91,7 +91,7 @@ type
       procedure QuickSortTransparentMeshes;
       function CalculateLODDistance(D: Single): Single;
       constructor Create;
-      procedure Free;
+      procedure Clear;
     end;
 
 implementation
@@ -153,11 +153,14 @@ begin
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Reflection := nil;
   fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].ParentObject := fManagedObjects[fLastManagedObject];
   Sync;
-  SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := fManagedObjects[fLastManagedObject];
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
-  fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
+  if fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)].Transparent then
+    begin
+    SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) + 1);
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].Mesh := fManagedObjects[fLastManagedObject].Meshes[high(fManagedObjects[fLastManagedObject].Meshes)];
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].ManagedObject := fManagedObjects[fLastManagedObject];
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].ParticleGroup := nil;
+    fTransparentMeshOrder[high(fTransparentMeshOrder)].Distance := 0;
+    end;
   FullMeshName := TGeoObject(Data).Name + #10 + TGeoMesh(Result).Name;
   FoundClass := -1;
   if TGeoMesh(Result).StaticMesh then
@@ -195,7 +198,7 @@ var
 begin
   Sync;
   for i := 0 to high(fTransparentMeshOrder) do
-    if Pointer(fTransparentMeshOrder[i].ParticleGroup) = Data then
+    if (Pointer(fTransparentMeshOrder[i].ParticleGroup) = Data) and (Data <> nil) then
       begin
       fTransparentMeshOrder[i] := fTransparentMeshOrder[high(fTransparentMeshOrder)];
       SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) - 1);
@@ -226,7 +229,7 @@ begin
       end;
     Sync;
     for i := 0 to high(fTransparentMeshOrder) do
-      if fTransparentMeshOrder[i].Mesh = fManagedObjects[fLastManagedObject].Meshes[mesh] then
+      if (fTransparentMeshOrder[i].Mesh = fManagedObjects[fLastManagedObject].Meshes[mesh]) and (fTransparentMeshOrder[i].ParticleGroup = nil) then
         begin
         fTransparentMeshOrder[i] := fTransparentMeshOrder[high(fTransparentMeshOrder)];
         SetLength(fTransparentMeshOrder, length(fTransparentMeshOrder) - 1);
@@ -756,7 +759,9 @@ begin
     sleep(1);
 end;
 
-procedure TRObjects.Free;
+procedure TRObjects.Clear;
+var
+  I, J: Integer;
 begin
   Terminate;
   fReflectionPass.Free;
@@ -775,8 +780,15 @@ begin
   EventManager.RemoveCallback(@AddParticleGroup);
   EventManager.RemoveCallback(@DeleteParticleGroup);
   Sync;
+  for I := 0 to high(fManagedObjects) do
+    begin
+    for J := 0 to high(fManagedObjects[J].Meshes) do
+      fManagedObjects[i].Meshes[j].Free;
+    fManagedObjects[i].Free;
+    end;
+  for I := 0 to high(fMeshClasses) do
+    fMeshClasses[i].VBO.Free;
   sleep(10);
-  inherited Free;
 end;
 
 

@@ -25,8 +25,8 @@ type
       procedure Render;
       procedure Sync;
       procedure Update;
+      procedure Clear;
       constructor Create(MaterialID: Integer);
-      destructor Free;
     end;
 
   TRAutoplants = class
@@ -163,7 +163,7 @@ begin
   fVBO.Unbind;
 end;
 
-destructor TAutoplantGroup.Free;
+procedure TAutoplantGroup.Clear;
 begin
   Terminate;
   fVBO.Free;
@@ -177,7 +177,10 @@ var
   i: Integer;
 begin
   for i := 0 to high(fAutoplantGroups) do
+    begin
+    fAutoplantGroups[i].Clear;
     fAutoplantGroups[i].Free;
+    end;
   SetLength(fAutoplantGroups, 0);
   for i := 0 to high(Park.pTerrain.Collection.Materials) do
     if Park.pTerrain.Collection.Materials[i].AutoplantProperties.Available then
@@ -258,7 +261,10 @@ begin
   EventManager.RemoveCallback(@UpdateCollection);
 
   for i := 0 to high(fAutoplantGroups) do
+    begin
+    fAutoplantGroups[i].Clear;
     fAutoplantGroups[i].Free;
+    end;
 
   fGeometryPassShader.Free;
   fMaterialPassShader.Free;

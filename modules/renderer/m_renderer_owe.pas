@@ -517,11 +517,14 @@ begin
 
   fRendererWater.Free;
   fRendererAutoplants.Free;
+  fRendererTerrain.Clear;
   fRendererTerrain.Free;
   fRendererSky.Free;
   fRendererParticles.Free;
+  fRendererObjects.Clear;
   fRendererObjects.Free;
   fRendererCamera.Free;
+  fLightManager.Clear;
   fLightManager.Free;
 
   fLensFlareMask.Free;

@@ -155,7 +155,6 @@ const
 
 var
   fCurrentFBO: TFBO = nil;
-  fCurrentVBO: TObjectVBO = nil;
 
 procedure TVBO.Map(Mode: GLEnum);
 begin
@@ -261,7 +260,6 @@ begin
   UnMap;
   glDisableClientState(GL_VERTEX_ARRAY);
   glBindBufferARB(GL_ARRAY_BUFFER, 0);
-  fCurrentVBO := nil;
 end;
 
 constructor TVBO.Create(VertCount: Integer; Format, PolygonType: GLEnum);
@@ -475,11 +473,8 @@ begin
   if not fIsStatic then
     if fMesh <> nil then
       LookForChanges;
-  if fCurrentVBO = self then
-    exit;
   glBindBufferARB(GL_ARRAY_BUFFER, fVertexBuffer);
   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, fIndexBuffer);
-  fCurrentVBO := Self;
 end;
 
 procedure TObjectVBO.Render;
@@ -505,7 +500,6 @@ end;
 
 procedure TObjectVBO.Unbind;
 begin
-  fCurrentVBO := nil;
   UnMap;
   glBindBufferARB(GL_ARRAY_BUFFER, 0);
   glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);

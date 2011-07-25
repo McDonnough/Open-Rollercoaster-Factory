@@ -139,6 +139,8 @@ begin
 end;
 
 procedure TResourceManager.AddFinishedResource(Resource: TAbstractResource);
+var
+  I: Integer;
 begin
   setLength(fNotificationsRemaining, length(fNotificationsRemaining) + 1);
   fNotificationsRemaining[high(fNotificationsRemaining)] := Resource;
@@ -146,17 +148,16 @@ end;
 
 procedure TResourceManager.Notify;
 var
-  i: Integer;
+  i, j: Integer;
 begin
-  if length(fNotificationsRemaining) > 0 then
+  i := 0;
+  while i <= high(fNotificationsRemaining) do
     begin
-    EventManager.CallEvent('TResource.FinishedLoading:' + fNotificationsRemaining[0].Name, fNotificationsRemaining[0], nil);
-    EventManager.RemoveCallback('TResource.FinishedLoading:' + fNotificationsRemaining[0].Name);
-    for I := 1 to high(fNotificationsRemaining) do
-      fNotificationsRemaining[I - 1] := fNotificationsRemaining[I];
+    EventManager.CallEvent('TResource.FinishedLoading:' + fNotificationsRemaining[i].Name, fNotificationsRemaining[i], nil);
+    EventManager.RemoveCallback('TResource.FinishedLoading:' + fNotificationsRemaining[i].Name);
+    inc(i);
     end;
-  if length(fNotificationsRemaining) > 0 then
-    setlength(fNotificationsRemaining, length(fNotificationsRemaining) - 1);
+  setLength(fNotificationsRemaining, 0);
 end;
 
 constructor TResourceManager.Create;

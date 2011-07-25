@@ -99,7 +99,7 @@ begin
   for I := 0 to high(fSoundHandles) do
     if (fSoundHandles[I].ALSourceID = -1) and (I < AL_SOUND_SOURCES) then
       fSoundHandles[I].GainedALSource := True
-    else if (fSoundHandles[I].ALSourceID <> 0) and (I >= AL_SOUND_SOURCES) then
+    else if (fSoundHandles[I].ALSourceID <> -1) and (I >= AL_SOUND_SOURCES) then
       fSoundHandles[I].LostALSource := True;
   
   for I := 0 to high(fSoundHandles) do
@@ -212,45 +212,6 @@ begin
   alListenerfv(AL_ORIENTATION, @ListenerDir[0]);
 end;
 
-{procedure TModuleSoundOpenAL.ApplySoundSourceChange(Handle: DWord; Position, Direction: TVector3D);
-var
-  Velocity: TVector3D;
-begin
-  Velocity := (Position - fSoundHandles[Handle].PrevPosition) / FPSDisplay.MS * 1000;
-  fSoundHandles[Handle].Initialized := True;
-  fSoundHandles[Handle].PrevPosition := Position;
-
-  if fSoundHandles[Handle].Source <> 0 then
-    begin
-    alSourcefv(fSoundHandles[Handle].Source, AL_POSITION, @Position);
-    if fSoundHandles[Handle].Initialized then
-      alSourcefv(fSoundHandles[Handle].Source, AL_VELOCITY, @Velocity);
-    alSourcefv(fSoundHandles[Handle].Source, AL_DIRECTION , @Direction);
-    end;
-end;
-
-procedure TModuleSoundOpenAL.ApplySoundPropertyChange(Handle: DWord; Volume: Single; Looping, Relative: Boolean);
-begin
-  if fSoundHandles[Handle].Source <> 0 then
-    begin
-    if Looping then
-      AlSourcei(fSoundHandles[Handle].Source, AL_LOOPING, AL_TRUE)
-    else
-      AlSourcei(fSoundHandles[Handle].Source, AL_LOOPING, AL_FALSE);
-    if Relative then
-      AlSourcei(fSoundHandles[Handle].Source, AL_SOURCE_RELATIVE, AL_TRUE)
-    else
-      AlSourcei(fSoundHandles[Handle].Source, AL_SOURCE_RELATIVE, AL_FALSE);
-    alSourcef(fSoundHandles[Handle].Source, AL_GAIN, Volume);
-    end;
-end;
-
-procedure TModuleSoundOpenAL.PlaySound(Handle: DWord);
-begin
-  if fSoundHandles[Handle].Source <> 0 then
-    alSourcePlay(fSoundHandles[Handle].Source);
-end;
-}
 procedure TModuleSoundOpenAL.NewSoundSource(SoundSource: TSoundSource);
 begin
   setLength(fSoundHandles, length(fSoundHandles) + 1);
@@ -273,27 +234,6 @@ begin
   Result := Size / (Channels * Frequency * BitsPerSample / 8);
 end;
 
-// function TModuleSoundOpenAL.GetCurrentPlayingOffset(Source: TSoundSource): Single;
-// begin
-{  if fSoundHandles[SourceHandle].Source <> 0 then
-    alGetSourcef(fSoundHandles[SourceHandle].Source, AL_SEC_OFFSET, Result)
-  else}
-//     Result := 0;
-// end;
-{
-function TModuleSoundOpenAL.IsRunning(SourceHandle: DWord): Boolean;
-var
-  V: ALInt;
-begin
-  if fSoundHandles[SourceHandle].Source = 0 then
-    Result := False
-  else
-    begin
-    alGetSourcei(fSoundHandles[SourceHandle].Source, AL_SOURCE_STATE, V);
-    Result := V = AL_PLAYING;
-    end;
-end;}
-
 procedure TModuleSoundOpenAL.DeleteSoundSource(SoundSource: TSoundSource);
 var
   I: Integer;
@@ -301,7 +241,7 @@ begin
   for I := 0 to high(fSoundHandles) do
     if fSoundHandles[I].SoundSource = SoundSource then
       begin
-      if fSoundHandles[I].ALSourceID >= 0 then
+      if fSoundHandles[I].ALSourceID <> -1 then
         begin
         alSourcesFree[fSoundHandles[I].ALSourceID] := True;
         alSourceStop(alTrueSources[fSoundHandles[I].ALSourceID]);
@@ -310,6 +250,7 @@ begin
       setLength(fSoundHandles, length(fSoundHandles) - 1);
       exit;
       end;
+  ModuleManager.ModLog.AddError('Something went wrong deleting a sound source');
 end;
 
 procedure TModuleSoundOpenAL.CheckModConf;

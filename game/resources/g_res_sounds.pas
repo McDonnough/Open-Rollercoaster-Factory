@@ -84,40 +84,44 @@ var
   BytesRead: long;
   S: Integer;
 begin
-  with Data.ResourceByName(fSoundResource.SubResourceName) do
-    begin
-    Callbacks.read_func := @ReadFunc;
-    Callbacks.seek_func := nil;
-    Callbacks.close_func := nil;
-    Callbacks.tell_func := nil;
+  try
+    with Data.ResourceByName(fSoundResource.SubResourceName) do
+      begin
+      Callbacks.read_func := @ReadFunc;
+      Callbacks.seek_func := nil;
+      Callbacks.close_func := nil;
+      Callbacks.tell_func := nil;
 
-    A.Bytes := Length(Data.Bin[Section].Stream.Data);
-    A.BytesRead := 0;
-    A.FirstByte := @Data.Bin[Section].Stream.Data[0];
+      A.Bytes := Length(Data.Bin[Section].Stream.Data);
+      A.BytesRead := 0;
+      A.FirstByte := @Data.Bin[Section].Stream.Data[0];
 
-    SetLength(fSoundResource.Audio, 0);
-    TotalBytesRead := 0;
+      SetLength(fSoundResource.Audio, 0);
+      TotalBytesRead := 0;
 
-    S := 0;
+      S := 0;
 
-    ov_open_callbacks(@A, @fv, nil, 0, Callbacks);
-    repeat
-      if Length(fSoundResource.Audio) < TotalBytesRead + 4096 then
-        setLength(fSoundResource.Audio, Length(fSoundResource.Audio) + 262144);
-      BytesRead := ov_read(@fv, @fSoundResource.Audio[TotalBytesRead], 4096, 0, 2, 1, @S);
-      inc(TotalBytesRead, BytesRead);
-    until
-      BytesRead <= 0;
+      ov_open_callbacks(@A, @fv, nil, 0, Callbacks);
+      repeat
+        if Length(fSoundResource.Audio) < TotalBytesRead + 4096 then
+          setLength(fSoundResource.Audio, Length(fSoundResource.Audio) + 262144);
+        BytesRead := ov_read(@fv, @fSoundResource.Audio[TotalBytesRead], 4096, 0, 2, 1, @S);
+        inc(TotalBytesRead, BytesRead);
+      until
+        BytesRead <= 0;
 
-    if TotalBytesRead <= 0 then
-      ModuleManager.ModLog.AddError('Failed to load sound resource: ' + fSoundResource.GetFullName);
+      if TotalBytesRead <= 0 then
+        writeln('Failed to load sound resource: ' + fSoundResource.GetFullName);
 
-    fSoundResource.fChannels := fv.vi^.channels;
-    fSoundResource.fRate := fv.vi^.rate;
+      fSoundResource.fChannels := fv.vi^.channels;
+      fSoundResource.fRate := fv.vi^.rate;
 
-    ov_clear(@fv);
+      ov_clear(@fv);
+      end;
+    fDone := True;
+  except
+    writeln('Error in sound decoder thread');
     end;
-  fDone := True;
 end;
 
 class function TSoundResource.Get(ResourceName: String): TSoundResource;

@@ -87,8 +87,8 @@ type
       procedure LoadSet(FileName: String); // Add a set to the list sorted by nams
       procedure LoadAll;
       function GetObjectsByTags(Tags: AString): TGameObjectList;
+      procedure Clear;
       constructor Create;
-      destructor Free;
     end;
 
 implementation
@@ -378,8 +378,8 @@ end;
 
 constructor TGameObjectManager.Create;
 begin
-  writeln('Hint: Creating GameObjectManager object');
   inherited Create(True);
+  writeln('Hint: Creating GameObjectManager object');
   fDone := False;
   fLoaded := False;
   fSets := TLinkedList.Create;
@@ -388,7 +388,7 @@ begin
   EventManager.AddCallback('TGameObjectManager.DoLoadSet', @DoLoadSet);
 end;
 
-destructor TGameObjectManager.Free;
+procedure TGameObjectManager.Clear;
 begin
   writeln('Hint: Deleting GameObjectManager object');
 

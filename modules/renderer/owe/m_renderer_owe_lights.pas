@@ -59,8 +59,8 @@ type
       procedure RemoveLightSource(Event: String; Data, Result: Pointer);
       procedure QuicksortLights;
       procedure CreateShadows;
+      procedure Clear;
       constructor Create;
-      procedure Free;
     end;
 
 implementation
@@ -425,7 +425,7 @@ begin
   EventManager.AddCallback('TLightSource.Deleted', @RemoveLightSource);
 end;
 
-procedure TLightManager.Free;
+procedure TLightManager.Clear;
 var
   i: Integer;
 begin
@@ -438,7 +438,6 @@ begin
   Terminate;
   Sync;
   sleep(10);
-  inherited Free;
 end;
 
 end.

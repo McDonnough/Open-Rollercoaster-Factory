@@ -351,6 +351,7 @@ begin
   pTerrain.Free;
   pObjects.Free;
   pParticles.Free;
+  fGameObjectManager.Clear;
   fGameObjectManager.Free;
   ModuleManager.ModRenderer.Unload;
 end;

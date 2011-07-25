@@ -960,6 +960,7 @@ begin
     if Meshes[i].Name = Mesh then
       Result := Meshes[i];
 end;
+
 procedure TGeoObject.ExecuteScript;
 begin
   if Script <> nil then

@@ -67,8 +67,8 @@ type
       procedure ChangeTerrainEditorState(Event: String; Data, Result: Pointer);
       procedure SetHeightLine(Event: String; Data, Result: Pointer);
       function GetBlock(X, Y: Single): TTerrainBlock;
+      procedure Clear;
       constructor Create;
-      destructor Free;
     end;
 
 implementation
@@ -904,6 +904,32 @@ begin
   Result := Blocks[r];
 end;
 
+procedure TRTerrain.Clear;
+var
+  i, j: Integer;
+begin
+  EventManager.RemoveCallback(@SetHeightLine);
+  EventManager.RemoveCallback(@ChangeTerrainEditorState);
+  EventManager.RemoveCallback(@ApplyChanges);
+  EventManager.RemoveCallback(@UpdateCollection);
+  Terminate;
+  Sync;
+  fSelectionShader.Free;
+  fLightShadowPassShader.Free;
+  fShadowPassShader.Free;
+  fSimpleGeometryPassShader.Free;
+  fGeometryPassShader.Free;
+  if fTerrainMap <> nil then
+    fTerrainMap.Free;
+  fBorderVBO.Free;
+  fRawVBO.Free;
+  fFineVBO.Free;
+  fHDVBO.Free;
+  for i := 0 to high(Blocks) do
+    Blocks[i].Free;
+  sleep(100);
+end;
+
 constructor TRTerrain.Create;
 var
   i, j: Integer;
@@ -998,32 +1024,6 @@ begin
   EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
 
   inherited Create(false);
-end;
-
-destructor TRTerrain.Free;
-var
-  i, j: Integer;
-begin
-  EventManager.RemoveCallback(@SetHeightLine);
-  EventManager.RemoveCallback(@ChangeTerrainEditorState);
-  EventManager.RemoveCallback(@ApplyChanges);
-  EventManager.RemoveCallback(@UpdateCollection);
-  Terminate;
-  Sync;
-  fSelectionShader.Free;
-  fLightShadowPassShader.Free;
-  fShadowPassShader.Free;
-  fSimpleGeometryPassShader.Free;
-  fGeometryPassShader.Free;
-  if fTerrainMap <> nil then
-    fTerrainMap.Free;
-  fBorderVBO.Free;
-  fRawVBO.Free;
-  fFineVBO.Free;
-  fHDVBO.Free;
-  for i := 0 to high(Blocks) do
-    Blocks[i].Free;
-  sleep(100);
 end;
 
 end.

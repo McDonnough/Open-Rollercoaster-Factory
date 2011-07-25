@@ -24,7 +24,7 @@ uses
 
 procedure TGameLeave.doQuit(Event: String; Data, Result: Pointer);
 begin
-  changeRenderState(rsMainMenu);
+  Park.Close := True;
 end;
 
 procedure TGameLeave.SaveGame(Event: String; Data, Result: Pointer);

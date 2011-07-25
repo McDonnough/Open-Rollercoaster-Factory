@@ -254,6 +254,9 @@ begin
     ModuleManager.ModGLContext.EndMainLoop;
     ChangeRenderState(rsMainMenu);
     end;
+  if Park <> nil then
+    if Park.Close then
+      ChangeRenderState(rsMainMenu);
 end;
 
 end.

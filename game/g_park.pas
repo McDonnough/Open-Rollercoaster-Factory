@@ -30,6 +30,7 @@ type
 
       fName, fAuthor, fDescription: String;
       SelectionMode: Byte;
+      Close: Boolean;
 
       property ScreenCaptureTool: TScreenCaptureTool read fScreenCaptureTool;
       property GameObjectManager: TGameObjectManager read fGameObjectManager;
@@ -134,6 +135,8 @@ begin
   fLoadState := 0;
 
   SelectionMode := S_DEFAULT_SELECTION;
+
+  Close := False;
 end;
 
 procedure TPark.ContinueLoading;

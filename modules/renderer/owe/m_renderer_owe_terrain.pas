@@ -209,7 +209,7 @@ begin
 
       end;
     fWorking := False;
-    sleep(10);
+    sleep(1);
     end;
   writeln('Hint: Terminated terrain renderer thread');
 end;

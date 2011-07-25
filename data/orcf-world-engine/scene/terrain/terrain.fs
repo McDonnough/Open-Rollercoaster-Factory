@@ -59,10 +59,10 @@ void main(void) {
   gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
 
   float TexIDs[4];
-  TexIDs[0] = texture2D(TerrainMap, (iVertex + ivec2(0, 0)) / TerrainSize / 5.0).r * 65536.0;
-  TexIDs[1] = texture2D(TerrainMap, (iVertex + ivec2(1, 0)) / TerrainSize / 5.0).r * 65536.0;
-  TexIDs[2] = texture2D(TerrainMap, (iVertex + ivec2(0, 1)) / TerrainSize / 5.0).r * 65536.0;
-  TexIDs[3] = texture2D(TerrainMap, (iVertex + ivec2(1, 1)) / TerrainSize / 5.0).r * 65536.0;
+  TexIDs[0] = texelFetch2DOffset(TerrainMap, iVertex, 0, ivec2(0, 0)).r * 65536.0;
+  TexIDs[1] = texelFetch2DOffset(TerrainMap, iVertex, 0, ivec2(1, 0)).r * 65536.0;
+  TexIDs[2] = texelFetch2DOffset(TerrainMap, iVertex, 0, ivec2(0, 1)).r * 65536.0;
+  TexIDs[3] = texelFetch2DOffset(TerrainMap, iVertex, 0, ivec2(1, 1)).r * 65536.0;
 
   TexCoord = mat4(
     vec4((TexIDs[0] / 4.0 - floor(TexIDs[0] / 4.0)), floor(TexIDs[0] / 4.0) / 4.0, 0.0, 1.0),

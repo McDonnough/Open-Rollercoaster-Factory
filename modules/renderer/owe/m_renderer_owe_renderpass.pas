@@ -177,9 +177,9 @@ begin
     GBuffer.Textures[2].Bind(0);
 
     ModuleManager.ModRenderer.SunShader.Bind;
-    ModuleManager.ModRenderer.SunShader.UniformI('UseSSAO', 0);
-    ModuleManager.ModRenderer.SunShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
-    ModuleManager.ModRenderer.SunShader.UniformF('ShadowOffset', ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
+    ModuleManager.ModRenderer.SunShader.UniformI(ModuleManager.ModRenderer.Uniforms[UNIFORM_SUN_USESSAO], 0);
+    ModuleManager.ModRenderer.SunShader.UniformF(ModuleManager.ModRenderer.Uniforms[UNIFORM_SUN_SHADOWSIZE], ModuleManager.ModRenderer.ShadowSize);
+    ModuleManager.ModRenderer.SunShader.UniformF(ModuleManager.ModRenderer.Uniforms[UNIFORM_SUN_SHADOWOFFSET], ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
     DrawFullscreenQuad;
     ModuleManager.ModRenderer.SunShader.Unbind;
 
@@ -237,10 +237,10 @@ begin
       ModuleManager.ModRenderer.FogColor := Vector(1.0, 1.0, 1.0);
       ModuleManager.ModRenderer.FogStrength := 0.0;
       end;
-    ModuleManager.ModRenderer.CompositionShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
-    ModuleManager.ModRenderer.CompositionShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
-    ModuleManager.ModRenderer.CompositionShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
-    ModuleManager.ModRenderer.CompositionShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
+    ModuleManager.ModRenderer.CompositionShader.UniformF(ModuleManager.ModRenderer.Uniforms[UNIFORM_COMPOSITION_FOGCOLOR], ModuleManager.ModRenderer.FogColor);
+    ModuleManager.ModRenderer.CompositionShader.UniformF(ModuleManager.ModRenderer.Uniforms[UNIFORM_COMPOSITION_FOGSTRENGTH], ModuleManager.ModRenderer.FogStrength);
+    ModuleManager.ModRenderer.CompositionShader.UniformF(ModuleManager.ModRenderer.Uniforms[UNIFORM_COMPOSITION_WATERHEIGHT], ModuleManager.ModRenderer.RWater.CurrentHeight);
+    ModuleManager.ModRenderer.CompositionShader.UniformF(ModuleManager.ModRenderer.Uniforms[UNIFORM_COMPOSITION_WATERREFRACTIONMODE], ModuleManager.ModRenderer.FogRefractMode);
 
     GBuffer.Textures[4].Bind(3);
     GBuffer.Textures[3].Bind(4);

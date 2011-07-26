@@ -194,11 +194,6 @@ type
       destructor Free;
     end;
 
-implementation
-
-uses
-  m_varlist, u_events, main, g_parkui, g_object_builder;
-
 const
   UNIFORM_SSAO_RANDOMOFFSET = 0;
   UNIFORM_SUN_USESSAO = 1;
@@ -223,6 +218,11 @@ const
   UNIFORM_HDRAVERAGE_SIZE = 20;
   UNIFORM_HDRAVERAGE_DIR = 21;
   UNIFORM_BLOOMBLUR_BLURDIRECTION = 22;
+
+implementation
+
+uses
+  m_varlist, u_events, main, g_parkui, g_object_builder;
 
 procedure TModuleRendererOWE.DynamicSettingsSetNormal;
 begin

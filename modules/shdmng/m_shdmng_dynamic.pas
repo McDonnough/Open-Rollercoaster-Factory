@@ -26,7 +26,7 @@ type
       constructor Create;
       destructor Free;
       procedure CheckModConf;
-      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer;
+      function LoadShader(var ProgramHandle: GLUInt; VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer;
       procedure BindShader(Shader: Integer);
       procedure DeleteShader(Shader: Integer);
       procedure Uniformf(VName: String; v0: GLfloat);
@@ -78,7 +78,7 @@ procedure TModuleShaderManagerDynamic.CheckModConf;
 begin
 end;
 
-function TModuleShaderManagerDynamic.LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer;
+function TModuleShaderManagerDynamic.LoadShader(var ProgramHandle: GLUInt; VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer;
   function glSlang_GetInfoLog(glObject: GLHandle): String;
   var
     blen,slen: GLInt;
@@ -147,6 +147,8 @@ begin
 
   glDeleteShader(VSObject);
   glDeleteShader(FSObject);
+
+  ProgramHandle := fShdRef[Result].ID;
 end;
 
 procedure TModuleShaderManagerDynamic.BindShader(Shader: Integer);

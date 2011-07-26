@@ -308,7 +308,7 @@ begin
         begin
         BumpMap.Bind(1);
         fLastBoundBumpmap := BumpMap;
-        fCurrentShader.UniformI('HasNormalMap', 1);
+        fCurrentShader.UniformI(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_HASNORMALMAP], 1);
         end;
       end
     else
@@ -317,7 +317,7 @@ begin
         begin
         ModuleManager.ModTexMng.ActivateTexUnit(1);
         ModuleManager.ModTexMng.BindTexture(-1);
-        fCurrentShader.UniformI('HasNormalMap', 0);
+        fCurrentShader.UniformI(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_HASNORMALMAP], 0);
         fLastBoundBumpmap := nil;
         end;
       end;
@@ -326,7 +326,7 @@ begin
       if (Texture <> fLastBoundTexture) or (fFirstMesh) then
         begin
         Texture.Bind(0);
-        fCurrentShader.UniformI('HasTexture', 1);
+        fCurrentShader.UniformI(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_HASTEXTURE], 1);
         fLastBoundTexture := Texture;
         end;
       end
@@ -336,13 +336,13 @@ begin
         begin
         ModuleManager.ModTexMng.ActivateTexUnit(0);
         ModuleManager.ModTexMng.BindTexture(-1);
-        fCurrentShader.UniformI('HasTexture', 0);
+        fCurrentShader.UniformI(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_HASTEXTURE], 0);
         fLastBoundTexture := nil;
         end;
       end;
-    fCurrentShader.UniformF('Mediums', 1.0, Max(0.001, RefractiveIndex));
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MEDIUMS], 1.0, Max(0.001, RefractiveIndex));
     if (RefractiveIndex = 0.0) and (Transparent) then
-      fCurrentShader.UniformF('Mediums', 1.0, 1.00001);
+      fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MEDIUMS], 1.0, 1.00001);
     Spec := Vector(Specularity, Reflectivity, 0, 0);
     MyHardness := Clamp(Hardness, 0, 128);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, @Color.X);
@@ -360,15 +360,15 @@ begin
 // fCurrentShader.Bind;
   if ShadowMode then
     begin
-    fCurrentShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
-    fCurrentShader.UniformF('ShadowOffset', ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_SHADOWSIZE], ModuleManager.ModRenderer.ShadowSize);
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_SHADOWOFFSET], ModuleManager.ModRenderer.ShadowOffset.X, ModuleManager.ModRenderer.ShadowOffset.Y, ModuleManager.ModRenderer.ShadowOffset.Z);
     end;
   if MaterialMode then
     begin
-    fCurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
-    fCurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
-    fCurrentShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
-    fCurrentShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_FOGCOLOR], ModuleManager.ModRenderer.FogColor);
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_FOGSTRENGTH], ModuleManager.ModRenderer.FogStrength);
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_WATERHEIGHT], ModuleManager.ModRenderer.RWater.CurrentHeight);
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_WATERREFRACTIONMODE], ModuleManager.ModRenderer.FogRefractMode);
     end;
 
   BindMaterial(Mesh.GeoMesh.Material);
@@ -378,15 +378,19 @@ begin
     if Mesh.GeoMesh.Material.Reflectivity > 0.01 then
       begin
       if not (MaterialMode or ShadowMode or LightShadowMode) then
+        begin
         if ((Mesh.GeoMesh.Material.Reflectivity * Power(0.5, ModuleManager.ModRenderer.ReflectionRealtimeDistanceExponent * Max(0, VecLength(ModuleManager.ModCamera.ActiveCamera.Position - Vector3D(Vector(0, 0, 0, 1) * Mesh.GeoMesh.CalculatedMatrix)) - Mesh.VBO.Radius)) > ModuleManager.ModRenderer.ReflectionRealtimeMinimum) and (Mesh.Reflection <> nil)) and not (Mesh.GeoMesh.Material.OnlyEnvironmentMapHint) then
           ReflectionMapToBind := Mesh.Reflection.Map.Textures[0]
         else
           ReflectionMapToBind := ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0];
-      if (ReflectionMapToBind <> fLastBoundReflectionMap) or (fFirstMesh) then
-        begin
-        ReflectionMapToBind.Bind(3);
-        fLastBoundReflectionMap := ReflectionMapToBind;
-        end;
+        if (ReflectionMapToBind <> fLastBoundReflectionMap) or (fFirstMesh) then
+          begin
+          ReflectionMapToBind.Bind(3);
+          fLastBoundReflectionMap := ReflectionMapToBind;
+          end;
+        end
+      else
+        fLastBoundReflectionMap := nil;
       end
     else
       begin
@@ -401,8 +405,8 @@ begin
 
   MakeOGLCompatibleMatrix(Mesh.GeoMesh.CalculatedMatrix, @Matrix[0]);
 
-  fCurrentShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
-  fCurrentShader.UniformF('ViewPoint', ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
+  fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_TRANSFORMMATRIX], @Matrix[0]);
+  fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIEWPOINT], ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
 
   if Mesh.VBO <> fLastBoundVBO then
     begin
@@ -513,6 +517,7 @@ begin
     fCurrentShader := fTransparentMaterialShader
   else
     fCurrentShader := fTransparentShader;
+  fCurrentShader.Bind;
   for i := 0 to high(fTransparentMeshOrder) do
     begin
     if fTransparentMeshOrder[i].Mesh <> nil then
@@ -542,18 +547,20 @@ begin
           ModuleManager.ModRenderer.InvertFrontFace;
       end
     else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
-//       begin
+      begin
       ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
 //       fFirstMesh := True;
 //       fLastBoundReflectionMap := nil;
 //       fLastBoundBumpmap := nil;
 //       fLastBoundTexture := nil;
 //       fLastBoundVBO := nil;
-//       end;
+      fCurrentShader.Bind;
+      end;
     inc(fCurrentMaterialCount);
     end;
   if fLastBoundVBO <> nil then
     fLastBoundVBO.Unbind;
+  fCurrentShader.Unbind;
 end;
 
 procedure TRObjects.RenderOpaque;

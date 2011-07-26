@@ -13,6 +13,7 @@ type
       fTexture, fBGTexture: TTexture;
       fShader, fDrawShader: TShader;
       fShadowFBO: TFBO;
+      Uniforms: Array[0..2] of GLUInt;
       X, Y: Integer;
     public
       constructor Create;
@@ -25,6 +26,11 @@ implementation
 
 uses
   m_varlist;
+
+const
+  UNIFORM_USEWINTEX = 0;
+  UNIFORM_BLURAMOUNT = 1;
+  UNIFORM_LEFTOFFSET = 2;
 
 constructor TModuleGUIWindowDefault.Create;
 begin
@@ -55,11 +61,14 @@ begin
   fShader.UniformI('BackTex', 1);
   fShader.UniformI('WinTex', 0);
   fShader.UniformF('Screen', X, Y);
+  Uniforms[UNIFORM_USEWINTEX] := fShader.GetUniformLocation('UseWinTex');
+  Uniforms[UNIFORM_BLURAMOUNT] := fShader.GetUniformLocation('BlurAmount');
   fShader.Unbind;
 
   fDrawShader := TShader.Create('guiwindowdefault/draw.vs', 'guiwindowdefault/draw.fs');
   fDrawShader.Bind;
   fDrawShader.UniformI('Mask', 0);
+  Uniforms[UNIFORM_LEFTOFFSET] := fDrawShader.GetUniformLocation('LeftOffset');
   fDrawShader.Unbind;
 end;
 
@@ -154,18 +163,18 @@ begin
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, X, Y, 0);
 
   fShader.Bind;
-  fShader.UniformI('UseWinTex', 1);
-  fShader.UniformF('BlurAmount', Window.Alpha, 0.0);
+  fShader.UniformI(Uniforms[UNIFORM_USEWINTEX], 1);
+  fShader.UniformF(Uniforms[UNIFORM_BLURAMOUNT], Window.Alpha, 0.0);
   RenderWindow;
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, X, Y, 0);
 
-  fShader.UniformF('BlurAmount', 0.0, Window.Alpha);
+  fShader.UniformF(Uniforms[UNIFORM_BLURAMOUNT], 0.0, Window.Alpha);
   RenderWindow;
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, X, Y, 0);
 
   fShader.Unbind;
   fDrawShader.Bind;
-  fDrawShader.UniformF('LeftOffset', Window.Left / 2);
+  fDrawShader.UniformF(Uniforms[UNIFORM_LEFTOFFSET], Window.Left / 2);
   fTexture.Bind(0);
 
   glEnable(GL_BLEND);
@@ -187,8 +196,8 @@ begin
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, X, Y, 0);
 
   fShader.Bind;
-  fShader.UniformI('UseWinTex', 0);
-  fShader.UniformF('BlurAmount', Window.Alpha, 0.0);
+  fShader.UniformI(Uniforms[UNIFORM_USEWINTEX], 0);
+  fShader.UniformF(Uniforms[UNIFORM_BLURAMOUNT], Window.Alpha, 0.0);
   glBegin(GL_QUADS);
     glTexCoord2f(0, 0); glVertex2f(0, 0);
     glTexCoord2f(1, 0); glVertex2f(X, 0);
@@ -198,7 +207,7 @@ begin
 
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, X, Y, 0);
 
-  fShader.UniformF('BlurAmount', 0.0, Window.Alpha);
+  fShader.UniformF(Uniforms[UNIFORM_BLURAMOUNT], 0.0, Window.Alpha);
   glBegin(GL_QUADS);
     glTexCoord2f(0, 0); glVertex2f(0, 0);
     glTexCoord2f(1, 0); glVertex2f(X, 0);

@@ -16,7 +16,7 @@ type
         *@param fragment shader file name
         *@return shader ID
         *)
-      function LoadShader(var ProgramHandle: GLUInt; VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer; virtual abstract;
+      function LoadShader(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer; virtual abstract;
 
       (**
         * Bind shader
@@ -58,20 +58,16 @@ type
   TShader = class
     protected
       fID: Integer;
-      fProgramHandle: GLUInt;
     public
       (**
         * Bind shader
         *)
-      procedure Bind; inline;
+      procedure Bind;
 
       (**
         * Unbind shader
         *)
-      procedure Unbind; inline;
-
-      (** Get uniform location **)
-      function GetUniformLocation(VName: String): GLUInt;
+      procedure Unbind;
 
       (**
         * Set integer uniform variable
@@ -82,10 +78,6 @@ type
       procedure UniformI(VName: String; V1, V2: GLInt);
       procedure UniformI(VName: String; V1, V2, V3: GLInt);
       procedure UniformI(VName: String; V1, V2, V3, V4: GLInt);
-      procedure UniformI(VName: GLUInt; V1: GLInt); inline;
-      procedure UniformI(VName: GLUInt; V1, V2: GLInt); inline;
-      procedure UniformI(VName: GLUInt; V1, V2, V3: GLInt); inline;
-      procedure UniformI(VName: GLUInt; V1, V2, V3, V4: GLInt); inline;
 
       (**
         * Set float uniform variable
@@ -96,17 +88,10 @@ type
       procedure UniformF(VName: String; V1, V2: GLFloat);
       procedure UniformF(VName: String; V1, V2, V3: GLFloat);
       procedure UniformF(VName: String; V1, V2, V3, V4: GLFloat);
-      procedure UniformF(VName: GLUInt; V1: GLFloat); inline;
-      procedure UniformF(VName: GLUInt; V1, V2: GLFloat); inline;
-      procedure UniformF(VName: GLUInt; V1, V2, V3: GLFloat); inline;
-      procedure UniformF(VName: GLUInt; V1, V2, V3, V4: GLFloat); inline;
 
       procedure UniformF(VName: String; V: TVector2D);
       procedure UniformF(VName: String; V: TVector3D);
       procedure UniformF(VName: String; V: TVector4D);
-      procedure UniformF(VName: GLUInt; V: TVector2D); inline;
-      procedure UniformF(VName: GLUInt; V: TVector3D); inline;
-      procedure UniformF(VName: GLUInt; V: TVector4D); inline;
 
       (**
         * Set a matrix uniform variable
@@ -115,8 +100,6 @@ type
         *)
       procedure UniformMatrix3D(VName: String; V: Pointer);
       procedure UniformMatrix4D(VName: String; V: Pointer);
-      procedure UniformMatrix3D(VName: GLUInt; V: Pointer); inline;
-      procedure UniformMatrix4D(VName: GLUInt; V: Pointer); inline;
 
       (**
         * Load a shader from files
@@ -134,76 +117,73 @@ implementation
 uses
   m_varlist, u_files;
 
-var
-  fCurrentShader: TShader = nil;
-
 procedure TShader.Bind;
 begin
-  glUseProgram(fProgramHandle);
+  ModuleManager.ModShdMng.BindShader(fID);
 end;
 
 procedure TShader.Unbind;
 begin
-  glUseProgram(0);
+  ModuleManager.ModShdMng.BindShader(-1);
 end;
 
 procedure TShader.UniformI(VName: String; V1: GLInt);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformi(VName, V1);
 end;
 
 procedure TShader.UniformI(VName: String; V1, V2: GLInt);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformi(VName, V1, V2);
 end;
 
 procedure TShader.UniformI(VName: String; V1, V2, V3: GLInt);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformi(VName, V1, V2, V3);
 end;
 
 procedure TShader.UniformI(VName: String; V1, V2, V3, V4: GLInt);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformi(VName, V1, V2, V3, V4);
 end;
 
 procedure TShader.UniformF(VName: String; V1: GLFloat);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformf(VName, V1);
 end;
 
 procedure TShader.UniformF(VName: String; V1, V2: GLFloat);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformf(VName, V1, V2);
 end;
 
 procedure TShader.UniformF(VName: String; V1, V2, V3: GLFloat);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformf(VName, V1, V2, V3);
 end;
 
 procedure TShader.UniformF(VName: String; V1, V2, V3, V4: GLFloat);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.Uniformf(VName, V1, V2, V3, V4);
 end;
 
 procedure TShader.UniformMatrix3D(VName: String; V: Pointer);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.UniformMatrix3D(VName, V);
 end;
 
 procedure TShader.UniformMatrix4D(VName: String; V: Pointer);
 begin
-//   Bind;
+  Bind;
   ModuleManager.ModShdMng.UniformMatrix4D(VName, V);
 end;
 
@@ -222,84 +202,13 @@ begin
   UniformF(VName, V.X, V.Y, V.Z, V.W);
 end;
 
-procedure TShader.UniformI(VName: GLUInt; V1: GLInt); inline;
-begin
-  glUniform1i(VName, V1);
-end;
-
-procedure TShader.UniformI(VName: GLUInt; V1, V2: GLInt); inline;
-begin
-  glUniform2i(VName, V1, V2);
-end;
-
-procedure TShader.UniformI(VName: GLUInt; V1, V2, V3: GLInt); inline;
-begin
-  glUniform3i(VName, V1, V2, V3);
-end;
-
-procedure TShader.UniformI(VName: GLUInt; V1, V2, V3, V4: GLInt); inline;
-begin
-  glUniform4i(VName, V1, V2, V3, V4);
-end;
-
-procedure TShader.UniformF(VName: GLUInt; V1: GLFloat); inline;
-begin
-  glUniform1f(VName, V1);
-end;
-
-procedure TShader.UniformF(VName: GLUInt; V1, V2: GLFloat); inline;
-begin
-  glUniform2f(VName, V1, V2);
-end;
-
-procedure TShader.UniformF(VName: GLUInt; V1, V2, V3: GLFloat); inline;
-begin
-  glUniform3f(VName, V1, V2, V3);
-end;
-
-procedure TShader.UniformF(VName: GLUInt; V1, V2, V3, V4: GLFloat); inline;
-begin
-  glUniform4f(VName, V1, V2, V3, V4);
-end;
-
-procedure TShader.UniformF(VName: GLUInt; V: TVector2D); inline;
-begin
-  glUniform2f(VName, V.X, V.Y);
-end;
-
-procedure TShader.UniformF(VName: GLUInt; V: TVector3D); inline;
-begin
-  glUniform3f(VName, V.X, V.Y, V.Z);
-end;
-
-procedure TShader.UniformF(VName: GLUInt; V: TVector4D); inline;
-begin
-  glUniform4f(VName, V.X, V.Y, V.Z, V.W);
-end;
-
-procedure TShader.UniformMatrix3D(VName: GLUInt; V: Pointer); inline;
-begin
-  glUniformMatrix3fv(VName, 1, False, V);
-end;
-
-procedure TShader.UniformMatrix4D(VName: GLUInt; V: Pointer); inline;
-begin
-  glUniformMatrix4fv(VName, 1, False, V);
-end;
-
-function TShader.GetUniformLocation(VName: String): GLUInt;
-begin
-  Result := glGetUniformLocation(fProgramHandle, PChar(VName));
-end;
-
 constructor TShader.Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP);
 begin
   VSFile := GetFirstExistingFilename(VSFile);
   FSFile := GetFirstExistingFilename(FSFile);
   if GSFile <> '' then
     GSFile := GetFirstExistingFilename(GSFile);
-  fID := ModuleManager.ModShdMng.LoadShader(fProgramHandle, ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile), ModuleManager.ModPathes.Convert(GSFile), VerticesOut, InputType, OutputType);
-  Bind;
+  fID := ModuleManager.ModShdMng.LoadShader(ModuleManager.ModPathes.Convert(VSFile), ModuleManager.ModPathes.Convert(FSFile), ModuleManager.ModPathes.Convert(GSFile), VerticesOut, InputType, OutputType)
 end;
 
 destructor TShader.Free;

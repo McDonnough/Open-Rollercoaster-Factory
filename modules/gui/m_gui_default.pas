@@ -41,7 +41,7 @@ var
       if ((Component.Alpha <= 0.01) or (Component.Width <= 0) or (Component.Height <= 0)) then
         exit;
     case Component.ComponentType of
-      CWindow: TWindow(Component).Render;
+//       CWindow: TWindow(Component).Render;
       CTabBar: TTabBar(Component).Render;
       CLabel: TLabel(Component).Render;
       CProgressBar: TProgressBar(Component).Render;

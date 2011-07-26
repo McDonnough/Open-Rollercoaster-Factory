@@ -138,7 +138,7 @@ const
   end;
 
 begin
-  if not Window.HasBackground then
+//   if not Window.HasBackground then
     exit;
 
   glEnable(GL_BLEND);
@@ -146,7 +146,7 @@ begin
   glEnable(GL_ALPHA_TEST);
   glAlphaFunc(GL_GREATER, 0.0);
 
-  glColor4f(1, 1, 1, Window.Alpha);
+  glColor4f(1, 1, 1, 0);
 
   fTexture.Bind(0);
   fBGTexture.Bind(1);
@@ -189,22 +189,22 @@ begin
   fShader.Bind;
   fShader.UniformI('UseWinTex', 0);
   fShader.UniformF('BlurAmount', Window.Alpha, 0.0);
-  glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex2f(0, 0);
-    glTexCoord2f(1, 0); glVertex2f(X, 0);
-    glTexCoord2f(1, 1); glVertex2f(X, Y);
-    glTexCoord2f(0, 1); glVertex2f(0, Y);
-  glEnd;
+//   glBegin(GL_QUADS);
+//     glTexCoord2f(0, 0); glVertex2f(0, 0);
+//     glTexCoord2f(1, 0); glVertex2f(X, 0);
+//     glTexCoord2f(1, 1); glVertex2f(X, Y);
+//     glTexCoord2f(0, 1); glVertex2f(0, Y);
+//   glEnd;
 
   glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, X, Y, 0);
 
   fShader.UniformF('BlurAmount', 0.0, Window.Alpha);
-  glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex2f(0, 0);
-    glTexCoord2f(1, 0); glVertex2f(X, 0);
-    glTexCoord2f(1, 1); glVertex2f(X, Y);
-    glTexCoord2f(0, 1); glVertex2f(0, Y);
-  glEnd;
+//   glBegin(GL_QUADS);
+//     glTexCoord2f(0, 0); glVertex2f(0, 0);
+//     glTexCoord2f(1, 0); glVertex2f(X, 0);
+//     glTexCoord2f(1, 1); glVertex2f(X, Y);
+//     glTexCoord2f(0, 1); glVertex2f(0, Y);
+//   glEnd;
 
   fDrawShader.Bind;
   fTexture.Bind(0);
@@ -218,6 +218,7 @@ begin
   fDrawShader.Unbind;
 
   glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   fShadowFBO.Textures[0].Bind(0);
   glColor4f(1, 1, 1, Window.Alpha);

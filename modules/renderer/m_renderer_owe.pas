@@ -78,6 +78,7 @@ type
       FogStrength, FogRefractMode: Single;
       FogColor: TVector3D;
       RenderParticles: Boolean;
+      Uniforms: Array[0..22] of GLUInt;
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
       property RSky: TRSky read fRendererSky;
@@ -197,6 +198,31 @@ implementation
 
 uses
   m_varlist, u_events, main, g_parkui, g_object_builder;
+
+const
+  UNIFORM_SSAO_RANDOMOFFSET = 0;
+  UNIFORM_SUN_USESSAO = 1;
+  UNIFORM_SUN_TERRAINSIZE = 2;
+  UNIFORM_SUN_SHADOWSIZE = 3;
+  UNIFORM_SUN_SHADOWOFFSET = 4;
+  UNIFORM_SUN_BUMPOFFSET = 5;
+  UNIFORM_SUNRAY_VECTOFRONT = 6;
+  UNIFORM_COMPOSITION_FOGCOLOR = 7;
+  UNIFORM_COMPOSITION_FOGSTRENGTH = 8;
+  UNIFORM_COMPOSITION_WATERHEIGHT = 9;
+  UNIFORM_COMPOSITION_WATERREFRACTIONMODE = 10;
+  UNIFORM_GRID_OFFSET = 11;
+  UNIFORM_GRID_SIZE = 12;
+  UNIFORM_GRID_ROTMAT = 13;
+  UNIFORM_UNDERWATER_HEIGHT = 14;
+  UNIFORM_UNDERWATER_VIEWPOINT = 15;
+  UNIFORM_UNDERWATER_BUMPOFFSET = 16;
+  UNIFORM_FOCALBLUR_FOCUSDISTANCE = 17;
+  UNIFORM_FOCALBLUR_SCREEN = 18;
+  UNIFORM_FOCALBLUR_STRENGTH = 19;
+  UNIFORM_HDRAVERAGE_SIZE = 20;
+  UNIFORM_HDRAVERAGE_DIR = 21;
+  UNIFORM_BLOOMBLUR_BLURDIRECTION = 22;
 
 procedure TModuleRendererOWE.DynamicSettingsSetNormal;
 begin
@@ -376,6 +402,8 @@ begin
 
   fHDRAverageShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/hdr.fs');
   fHDRAverageShader.UniformI('Texture', 0);
+  Uniforms[UNIFORM_HDRAVERAGE_DIR] := fHDRAverageShader.GetUniformLocation('Dir');
+  Uniforms[UNIFORM_HDRAVERAGE_SIZE] := fHDRAverageShader.GetUniformLocation('Size');
 
   fAAShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/fsaa.fs');
   fAAShader.UniformI('Texture', 0);
@@ -391,6 +419,7 @@ begin
   fSunRayShader.UniformF('decay', 1.0);
   fSunRayShader.UniformF('density', 0.5);
   fSunRayShader.UniformF('weight', 5.2);
+  Uniforms[UNIFORM_SUNRAY_VECTOFRONT] := fSunRayShader.GetUniformLocation('VecToFront');
 
   fSunShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/sun.fs');
   fSunShader.UniformI('GeometryTexture', 0);
@@ -400,12 +429,18 @@ begin
   fSunShader.UniformI('HeightMap', 4);
   fSunShader.UniformI('SSAOTexture', 5);
   fSunShader.UniformI('EmissionTexture', 6);
+  Uniforms[UNIFORM_SUN_TERRAINSIZE] := fSunShader.GetUniformLocation('TerrainSize');
+  Uniforms[UNIFORM_SUN_BUMPOFFSET] := fSunShader.GetUniformLocation('BumpOffset');
+  Uniforms[UNIFORM_SUN_SHADOWOFFSET] := fSunShader.GetUniformLocation('ShadowOffset');
+  Uniforms[UNIFORM_SUN_SHADOWSIZE] := fSunShader.GetUniformLocation('ShadowSize');
+  Uniforms[UNIFORM_SUN_USESSAO] := fSunShader.GetUniformLocation('UseSSAO');
 
   fSSAOShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/ssao.fs');
   fSSAOShader.UniformI('GeometryTexture', 0);
   fSSAOShader.UniformI('NormalTexture', 1);
   fSSAOShader.UniformI('EmissionTexture', 2);
   fSSAOShader.UniformI('ScreenSize', ResX, ResY);
+  Uniforms[UNIFORM_SSAO_RANDOMOFFSET] := fSSAOShader.GetUniformLocation('RandomOffset');
 
   fLightShader := TShader.Create('orcf-world-engine/inferred/lightcube.vs', 'orcf-world-engine/inferred/light.fs');
   fLightShader.UniformI('GeometryTexture', 0);
@@ -426,9 +461,16 @@ begin
   fCompositionShader.UniformI('MaterialMap', 4);
   fCompositionShader.UniformI('SpecularTexture', 6);
   fCompositionShader.UniformI('LightTexture', 7);
+  Uniforms[UNIFORM_COMPOSITION_FOGCOLOR] := fCompositionShader.GetUniformLocation('FogColor');
+  Uniforms[UNIFORM_COMPOSITION_FOGSTRENGTH] := fCompositionShader.GetUniformLocation('FogStrength');
+  Uniforms[UNIFORM_COMPOSITION_WATERHEIGHT] := fCompositionShader.GetUniformLocation('WaterHeight');
+  Uniforms[UNIFORM_COMPOSITION_WATERREFRACTIONMODE] := fCompositionShader.GetUniformLocation('WaterRefractionMode');
 
   fGridShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/grid.fs');
   fGridShader.UniformI('GeometryTex', 2);
+  Uniforms[UNIFORM_GRID_OFFSET] := fGridShader.GetUniformLocation('Offset');
+  Uniforms[UNIFORM_GRID_SIZE] := fGridShader.GetUniformLocation('Size');
+  Uniforms[UNIFORM_GRID_ROTMAT] := fGridShader.GetUniformLocation('RotMat');
 
   fLensFlareShader := TShader.Create('orcf-world-engine/postprocess/lensflare.vs', 'orcf-world-engine/postprocess/lensflare.fs');
   fLensFlareShader.UniformI('Texture', 0);
@@ -441,22 +483,27 @@ begin
 
   fBloomBlurShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/blur.fs');
   fBloomBlurShader.UniformI('Tex', 0);
+  Uniforms[UNIFORM_BLOOMBLUR_BLURDIRECTION] := fBloomBlurShader.GetUniformLocation('BlurDirection');
 
   fFocalBlurShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/focalblur.fs');
   fFocalBlurShader.UniformI('SceneTexture', 0);
   fFocalBlurShader.UniformI('GeometryTexture', 1);
+  Uniforms[UNIFORM_FOCALBLUR_FOCUSDISTANCE] := fFocalBlurShader.GetUniformLocation('FocusDistance');
+  Uniforms[UNIFORM_FOCALBLUR_SCREEN] := fFocalBlurShader.GetUniformLocation('Screen');
+  Uniforms[UNIFORM_FOCALBLUR_STRENGTH] := fFocalBlurShader.GetUniformLocation('Strength');
 
   fShadowDepthShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/shadowDepth.fs');
   fShadowDepthShader.UniformI('AdvanceSamples', Round(FSAASamples / ShadowBufferSamples));
   fShadowDepthShader.UniformI('GeometryTexture', 0);
 
   fBlackShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/black.fs');
-  fBlackShader.Unbind;
 
   fUnderWaterShader := TShader.Create('orcf-world-engine/postprocess/underWater.vs', 'orcf-world-engine/postprocess/underWater.fs');
   fUnderWaterShader.UniformI('GeometryMap', 0);
   fUnderWaterShader.UniformI('RenderedScene', 1);
-  fUnderWaterShader.Unbind;
+  Uniforms[UNIFORM_UNDERWATER_HEIGHT] := fUnderWaterShader.GetUniformLocation('Height');
+  Uniforms[UNIFORM_UNDERWATER_BUMPOFFSET] := fUnderWaterShader.GetUniformLocation('BumpOffset');
+  Uniforms[UNIFORM_UNDERWATER_VIEWPOINT] := fUnderWaterShader.GetUniformLocation('ViewPoint');
 
   fSimpleShader := TShader.Create('orcf-world-engine/inferred/simple.vs', 'orcf-world-engine/inferred/simple.fs');
   fSimpleShader.Unbind;
@@ -883,7 +930,7 @@ begin
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
 
       fSSAOShader.Bind;
-      fSSAOShader.UniformF('RandomOffset', 100 * Random);
+      fSSAOShader.UniformF(Uniforms[UNIFORM_SSAO_RANDOMOFFSET], 100 * Random);
       GBuffer.Textures[5].Bind(2);
       GBuffer.Textures[1].Bind(1);
       GBuffer.Textures[2].Bind(0);
@@ -1010,13 +1057,13 @@ begin
 
       SunShader.Bind;
       if UseScreenSpaceAmbientOcclusion then
-        SunShader.UniformI('UseSSAO', 1)
+        SunShader.UniformI(Uniforms[UNIFORM_SUN_USESSAO], 1)
       else
-        SunShader.UniformI('UseSSAO', 0);
-      SunShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-      SunShader.UniformF('ShadowSize', ShadowSize);
-      SunShader.UniformF('ShadowOffset', ShadowOffset);
-      SunShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
+        SunShader.UniformI(Uniforms[UNIFORM_SUN_USESSAO], 0);
+      SunShader.UniformF(Uniforms[UNIFORM_SUN_TERRAINSIZE], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+      SunShader.UniformF(Uniforms[UNIFORM_SUN_SHADOWSIZE], ShadowSize);
+      SunShader.UniformF(Uniforms[UNIFORM_SUN_SHADOWOFFSET], ShadowOffset);
+      SunShader.UniformF(Uniforms[UNIFORM_SUN_BUMPOFFSET], RWater.BumpOffset.X, RWater.BumpOffset.Y);
       DrawFullscreenQuad;
       SunShader.Unbind;
 
@@ -1071,7 +1118,7 @@ begin
       SpareBuffer.Textures[0].Bind(0);
 
       fSunRayShader.Bind;
-      fSunRayShader.UniformF('VecToFront', fVecToFront.X, fVecToFront.Y, fVecToFront.Z);;
+      fSunRayShader.UniformF(Uniforms[UNIFORM_SUNRAY_VECTOFRONT], fVecToFront.X, fVecToFront.Y, fVecToFront.Z);;
       DrawFullscreenQuad;
       fSunRayShader.Unbind;
 
@@ -1097,10 +1144,10 @@ begin
         FogColor := Vector3D(Pow(RSky.Sun.AmbientColor + RSky.Sun.Color, 0.33)) * 0.5;
         FogStrength := RSky.FogStrength;
         end;
-      CompositionShader.UniformF('FogColor', FogColor);
-      CompositionShader.UniformF('FogStrength', FogStrength);
-      CompositionShader.UniformF('WaterHeight', 0);
-      CompositionShader.UniformF('WaterRefractionMode', 0);
+      CompositionShader.UniformF(Uniforms[UNIFORM_COMPOSITION_FOGCOLOR], FogColor);
+      CompositionShader.UniformF(Uniforms[UNIFORM_COMPOSITION_FOGSTRENGTH], FogStrength);
+      CompositionShader.UniformF(Uniforms[UNIFORM_COMPOSITION_WATERHEIGHT], 0);
+      CompositionShader.UniformF(Uniforms[UNIFORM_COMPOSITION_WATERREFRACTIONMODE], 0);
 
       GBuffer.Textures[4].Bind(3);
       GBuffer.Textures[3].Bind(4);
@@ -1152,9 +1199,9 @@ begin
         MakeOGLCompatibleMatrix(RotationMatrix(TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridRotation, Vector(0, -1, 0)), @Matrix[0]);
 
         fGridShader.Bind;
-        fGridShader.UniformF('Offset', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridOffset);
-        fGridShader.UniformF('Size', TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridSize);
-        fGridShader.UniformMatrix4D('RotMat', @Matrix[0]);
+        fGridShader.UniformF(Uniforms[UNIFORM_GRID_OFFSET], TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridOffset);
+        fGridShader.UniformF(Uniforms[UNIFORM_GRID_SIZE], TGameObjectBuilder(ParkUI.GetWindowByName('object_builder')).GridSize);
+        fGridShader.UniformMatrix4D(Uniforms[UNIFORM_GRID_ROTMAT], @Matrix[0]);
 
         DrawFullscreenQuad;
 
@@ -1190,9 +1237,9 @@ begin
       fSpareBuffer.Bind;
       glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT);
       fUnderWaterShader.Bind;
-      fUnderWaterShader.UniformF('Height', fWaterHeight);
-      fUnderWaterShader.UniformF('ViewPoint', ViewPoint.X, ViewPoint.Y, ViewPoint.Z);
-      fUnderWaterShader.UniformF('BumpOffset', RWater.BumpOffset.X, RWater.BumpOffset.Y);
+      fUnderWaterShader.UniformF(Uniforms[UNIFORM_UNDERWATER_HEIGHT], fWaterHeight);
+      fUnderWaterShader.UniformF(Uniforms[UNIFORM_UNDERWATER_VIEWPOINT], ViewPoint.X, ViewPoint.Y, ViewPoint.Z);
+      fUnderWaterShader.UniformF(Uniforms[UNIFORM_UNDERWATER_BUMPOFFSET], RWater.BumpOffset.X, RWater.BumpOffset.Y);
 
       fSceneBuffer.Textures[0].Bind(1);
       GBuffer.Textures[2].Bind(0);
@@ -1254,9 +1301,9 @@ begin
       FocalBlurBuffer.Textures[0].Bind(0);
 
       fFocalBlurShader.Bind;
-      fFocalBlurShader.UniformF('FocusDistance', FocusDistance);
-      fFocalBlurShader.UniformF('Screen', ResX, ResY);
-      fFocalBlurShader.UniformF('Strength', 1.0);
+      fFocalBlurShader.UniformF(Uniforms[UNIFORM_FOCALBLUR_FOCUSDISTANCE], FocusDistance);
+      fFocalBlurShader.UniformF(Uniforms[UNIFORM_FOCALBLUR_SCREEN], ResX, ResY);
+      fFocalBlurShader.UniformF(Uniforms[UNIFORM_FOCALBLUR_STRENGTH], 1.0);
       DrawFullscreenQuad;
       fFocalBlurShader.Unbind;
 
@@ -1291,15 +1338,15 @@ begin
 
     fHDRBuffer.Bind;
       fSceneBuffer.Textures[0].Bind(0);
-      fHDRAverageShader.UniformI('Size', BufferSizeY);
-      fHDRAverageShader.UniformI('Dir', 0, 1);
+      fHDRAverageShader.UniformI(Uniforms[UNIFORM_HDRAVERAGE_SIZE], BufferSizeY);
+      fHDRAverageShader.UniformI(Uniforms[UNIFORM_HDRAVERAGE_DIR], 0, 1);
       DrawFullscreenQuad;
     fHDRBuffer.Unbind;
 
     fHDRBuffer2.Bind;
       fHDRBuffer.Textures[0].Bind(0);
-      fHDRAverageShader.UniformI('Size', BufferSizeX);
-      fHDRAverageShader.UniformI('Dir', 1, 0);
+      fHDRAverageShader.UniformI(Uniforms[UNIFORM_HDRAVERAGE_SIZE], BufferSizeX);
+      fHDRAverageShader.UniformI(Uniforms[UNIFORM_HDRAVERAGE_DIR], 1, 0);
       DrawFullscreenQuad;
     fHDRBuffer2.Unbind;
 
@@ -1325,14 +1372,14 @@ begin
 
       fBloomBlurShader.Bind;
 
-      fBloomBlurShader.UniformF('BlurDirection', 1.0 / BloomBuffer.Width * SSAOSize, 0.0);
+      fBloomBlurShader.UniformF(Uniforms[UNIFORM_BLOOMBLUR_BLURDIRECTION], 1.0 / BloomBuffer.Width * SSAOSize, 0.0);
       BloomBuffer.Textures[0].Bind(0);
 
       fTmpBloomBuffer.Bind;
       DrawFullscreenQuad;
       fTmpBloomBuffer.Unbind;
 
-      fBloomBlurShader.UniformF('BlurDirection', 0.0, 1.0 / BloomBuffer.Height * SSAOSize);
+      fBloomBlurShader.UniformF(Uniforms[UNIFORM_BLOOMBLUR_BLURDIRECTION], 0.0, 1.0 / BloomBuffer.Height * SSAOSize);
       fTmpBloomBuffer.Textures[0].Bind(0);
 
       BloomBuffer.Bind;

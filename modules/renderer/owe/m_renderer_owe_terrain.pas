@@ -56,6 +56,8 @@ type
       Blocks: Array of TTerrainBlock;
       CurrentShader: TShader;
       BorderEnabled: Boolean;
+      Shaders: Array[0..4] of TShader;
+      Uniforms: Array[0..4, 0..12] of GLUInt;
       property TerrainEditorIsOpen: Boolean read fTerrainEditorIsOpen;
       property TerrainMap: TTexture read fTerrainMap;
       property XBlocks: Integer read fXBlocks;
@@ -85,6 +87,27 @@ implementation
 
 uses
   m_varlist, g_park;
+
+const
+  SHADER_GEOMETRY = 0;
+  SHADER_LIGHT_SHADOW = 1;
+  SHADER_SIMPLE_GEOMETRY = 2;
+  SHADER_SHADOW_PASS = 3;
+  SHADER_SELECTION = 4;
+
+  UNIFORM_ANY_BORDER = 0;
+  UNIFORM_ANY_TERRAINSIZE = 1;
+  UNIFORM_ANY_TOFFSET = 2;
+  UNIFORM_ANY_OFFSET = 3;
+  UNIFORM_ANY_NORMALMOD = 4;
+  UNIFORM_ANY_TERRAINTESSELATIONDISTANCE = 5;
+  UNIFORM_ANY_TERRAINBUMPMAPDISTANCE = 6;
+  UNIFORM_ANY_CAMERA = 7;
+  UNIFORM_ANY_POINTTOHIGHLIGHT = 8;
+  UNIFORM_ANY_HEIGHTLINE = 9;
+  UNIFORM_ANY_MIN = 10;
+  UNIFORM_ANY_MAX = 11;
+  UNIFORM_ANY_SELECTIONMESHID = 12;
 
 procedure TIndexedTerrainVBO.Render;
 begin
@@ -150,31 +173,40 @@ end;
 
 procedure TTerrainBlock.RenderRaw;
 begin
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Border', 0);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-  ModuleManager.ModRenderer.RTerrain.RawVBO.Render;
+  with ModuleManager.ModRenderer.RTerrain do
+    begin
+    CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_BORDER], 0);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TERRAINSIZE], 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TOFFSET], 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_OFFSET], 25.6 * fX, 25.6 * fY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_NORMALMOD], 0, 0, 0, 0);
+    RawVBO.Render;
+    end;
 end;
 
 procedure TTerrainBlock.RenderFine;
 begin
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Border', 0);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
-  ModuleManager.ModRenderer.RTerrain.FineVBO.Render;
+  with ModuleManager.ModRenderer.RTerrain do
+    begin
+    CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_BORDER], 0);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TERRAINSIZE], 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TOFFSET], 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_OFFSET], 25.6 * fX, 25.6 * fY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_NORMALMOD], 0, 0, 0, 0);
+    FineVBO.Render;
+    end;
 end;
 
 procedure TTerrainBlock.RenderOneFace;
 begin
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformI('Border', 0);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('Offset', 25.6 * fX, 25.6 * fY);
-  ModuleManager.ModRenderer.RTerrain.CurrentShader.UniformF('NormalMod', 0, 1, 0, 1);
+  with ModuleManager.ModRenderer.RTerrain do
+    begin
+    CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_BORDER], 0);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TERRAINSIZE], 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TOFFSET], 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_OFFSET], 25.6 * fX, 25.6 * fY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_NORMALMOD], 0, 0, 0, 0);
+    end;
 
   glBegin(GL_QUADS);
     glTexCoord2f(0, 25.6);    glVertex3f(0, 1, 25.6);
@@ -294,7 +326,7 @@ begin
   fTerrainMap.SetFilter(GL_NEAREST, GL_NEAREST);
   fSelectionShader.Bind;
   CurrentShader := fSelectionShader;
-  CurrentShader.UniformI('SelectionMeshID', ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
+  CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_SELECTIONMESHID], ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
 
   SetLength(BlockIDs, length(Blocks));
   SetLength(DistanceValues, length(Blocks));
@@ -358,27 +390,27 @@ begin
         end;
 
   CurrentShader.Bind;
-  CurrentShader.UniformF('TerrainTesselationDistance', ModuleManager.ModRenderer.CurrentTerrainTesselationDistance * fRenderHDVBO);
-  CurrentShader.UniformF('TerrainBumpmapDistance', ModuleManager.ModRenderer.CurrentTerrainBumpmapDistance);
-  CurrentShader.UniformF('Camera', ModuleManager.ModCamera.ActiveCamera.Position.x, ModuleManager.ModCamera.ActiveCamera.Position.z);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TERRAINTESSELATIONDISTANCE], ModuleManager.ModRenderer.CurrentTerrainTesselationDistance * fRenderHDVBO);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TERRAINBUMPMAPDISTANCE], ModuleManager.ModRenderer.CurrentTerrainBumpmapDistance);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_CAMERA], ModuleManager.ModCamera.ActiveCamera.Position.x, ModuleManager.ModCamera.ActiveCamera.Position.z);
 
   if (Park.pTerrain.CurrMark.X >= 0) and (Park.pTerrain.CurrMark.Y >= 0) and (Park.pTerrain.CurrMark.X <= 0.2 * Park.pTerrain.SizeX) and (Park.pTerrain.CurrMark.Y <= 0.2 * Park.pTerrain.SizeY) and (Park.pTerrain.MarkMode = 0) then
-    CurrentShader.UniformF('PointToHighlight', Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_POINTTOHIGHLIGHT], Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y)
   else
-    CurrentShader.UniformF('PointToHighlight', -15000, -15000);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_POINTTOHIGHLIGHT], -15000, -15000);
   if (Park.pTerrain.MarkMode = 1) then
-    CurrentShader.UniformF('HeightLine', 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_HEIGHTLINE], 0.1 + Round(10 * Park.pTerrain.HeightMap[Park.pTerrain.CurrMark.X, Park.pTerrain.CurrMark.Y]) / 10)
   else
-    CurrentShader.UniformF('HeightLine', fForcedHeightLine);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_HEIGHTLINE], fForcedHeightLine);
   if fTerrainEditorIsOpen then
     begin
-    CurrentShader.UniformF('Min', 0, 0);
-    CurrentShader.UniformF('Max', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_MIN], 0, 0);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_MAX], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
     end
   else
     begin
-    CurrentShader.UniformF('Min', -15000, -15000);
-    CurrentShader.UniformF('Max', 15000, 15000);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_MIN], -15000, -15000);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_MAX], 15000, 15000);
     end;
 
   ModuleManager.ModTexMng.ActivateTexUnit(0);
@@ -398,11 +430,11 @@ begin
 
   if (ModuleManager.ModRenderer.CurrentTerrainTesselationDistance > 0) and (ModuleManager.ModRenderer.MaxRenderDistance >= VecLength(ModuleManager.ModRenderer.ViewPoint - ModuleManager.ModCamera.ActiveCamera.Position + Vector(0, -ModuleManager.ModCamera.ActiveCamera.Position.Y + Park.pTerrain.HeightMap[ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z], 0)) - 1.732 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance) and (fRenderHDVBO = 1) then
     begin
-    CurrentShader.UniformI('Border', 2);
-    CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-    CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
-    CurrentShader.UniformF('Offset', Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.x)), 0, 0.2 * Park.pTerrain.SizeX - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance), Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.z)), 0, 0.2 * Park.pTerrain.SizeY - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance));
-    CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
+    CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_BORDER], 2);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TERRAINSIZE], 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TOFFSET], 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_OFFSET], Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.x)), 0, 0.2 * Park.pTerrain.SizeX - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance), Clamp(0.2 * Round(5 * (-ModuleManager.ModRenderer.CurrentTerrainTesselationDistance + ModuleManager.ModCamera.ActiveCamera.Position.z)), 0, 0.2 * Park.pTerrain.SizeY - 2 * ModuleManager.ModRenderer.CurrentTerrainTesselationDistance));
+    CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_NORMALMOD], 0, 0, 0, 0);
     fHDVBO.Render;
     end;
 
@@ -410,11 +442,11 @@ begin
     if (ModuleManager.ModRenderer.ViewPoint.X < ModuleManager.ModRenderer.MaxRenderDistance) or (ModuleManager.ModRenderer.ViewPoint.Z < ModuleManager.ModRenderer.MaxRenderDistance) or
        (0.2 * Park.pTerrain.SizeX - ModuleManager.ModRenderer.ViewPoint.X < ModuleManager.ModRenderer.MaxRenderDistance) or (0.2 * Park.pTerrain.SizeY - ModuleManager.ModRenderer.ViewPoint.Z < ModuleManager.ModRenderer.MaxRenderDistance) then
       begin
-      CurrentShader.UniformI('Border', 1);
-      CurrentShader.UniformF('TerrainSize', 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
-      CurrentShader.UniformF('TOffset', 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
-      CurrentShader.UniformF('Offset', 0, 0);
-      CurrentShader.UniformF('NormalMod', 0, 0, 0, 0);
+      CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_BORDER], 1);
+      CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TERRAINSIZE], 0.2 * Park.pTerrain.SizeX, 0.2 * Park.pTerrain.SizeY);
+      CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_TOFFSET], 0.5 / Park.pTerrain.SizeX, 0.5 / Park.pTerrain.SizeY);
+      CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_OFFSET], 0, 0);
+      CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_NORMALMOD], 0, 0, 0, 0);
 
       fBorderVBO.Bind;
       fBorderVBO.Render;
@@ -998,7 +1030,7 @@ end;
 
 constructor TRTerrain.Create;
 var
-  i, j: Integer;
+  i: Integer;
 begin
   writeln('Hint: Initializing terrain renderer');
   fTerrainMap := nil;
@@ -1015,18 +1047,46 @@ begin
   fGeometryPassShader.UniformI('TerrainMap', 0);
   fGeometryPassShader.UniformI('HeightLine', -1);
   fGeometryPassShader.UniformI('TerrainTexture', 1);
+  fGeometryPassShader.Tag := SHADER_GEOMETRY;
 
   fSimpleGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainSimple.vs', 'orcf-world-engine/scene/terrain/terrainSimple.fs');
   fSimpleGeometryPassShader.UniformI('TerrainTexture', 1);
+  fSimpleGeometryPassShader.Tag := SHADER_SIMPLE_GEOMETRY;
 
   fShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainShadow.vs', 'orcf-world-engine/scene/terrain/terrainShadow.fs');
   fShadowPassShader.UniformI('TerrainMap', 0);
+  fShadowPassShader.Tag := SHADER_SHADOW_PASS;
 
   fLightShadowPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrainLightShadow.vs', 'orcf-world-engine/scene/terrain/terrainLightShadow.fs');
   fLightShadowPassShader.UniformI('TerrainMap', 0);
+  fLightShadowPassShader.Tag := SHADER_LIGHT_SHADOW;
 
   fSelectionShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/inferred/selection.fs');
   fSelectionShader.UniformI('TerrainMap', 0);
+  fSelectionShader.Tag := SHADER_SELECTION;
+
+  Shaders[SHADER_GEOMETRY] := fGeometryPassShader;
+  Shaders[SHADER_LIGHT_SHADOW] := fLightShadowPassShader;
+  Shaders[SHADER_SIMPLE_GEOMETRY] := fSimpleGeometryPassShader;
+  Shaders[SHADER_SHADOW_PASS] := fShadowPassShader;
+  Shaders[SHADER_SELECTION] := fSelectionShader;
+
+  for I := 0 to high(Shaders) do
+    begin
+    Uniforms[I, UNIFORM_ANY_BORDER] := Shaders[I].GetUniformLocation('Border');
+    Uniforms[I, UNIFORM_ANY_TERRAINSIZE] := Shaders[I].GetUniformLocation('TerrainSize');
+    Uniforms[I, UNIFORM_ANY_TOFFSET] := Shaders[I].GetUniformLocation('TOffset');
+    Uniforms[I, UNIFORM_ANY_OFFSET] := Shaders[I].GetUniformLocation('Offset');
+    Uniforms[I, UNIFORM_ANY_NORMALMOD] := Shaders[I].GetUniformLocation('NormalMod');
+    Uniforms[I, UNIFORM_ANY_TERRAINTESSELATIONDISTANCE] := Shaders[I].GetUniformLocation('TerrainTesselationDistance');
+    Uniforms[I, UNIFORM_ANY_TERRAINBUMPMAPDISTANCE] := Shaders[I].GetUniformLocation('TerrainBumpmapDistance');
+    Uniforms[I, UNIFORM_ANY_CAMERA] := Shaders[I].GetUniformLocation('Camera');
+    Uniforms[I, UNIFORM_ANY_POINTTOHIGHLIGHT] := Shaders[I].GetUniformLocation('PointToHighlight');
+    Uniforms[I, UNIFORM_ANY_HEIGHTLINE] := Shaders[I].GetUniformLocation('HeightLine');
+    Uniforms[I, UNIFORM_ANY_MIN] := Shaders[I].GetUniformLocation('Min');
+    Uniforms[I, UNIFORM_ANY_MAX] := Shaders[I].GetUniformLocation('Max');
+    Uniforms[I, UNIFORM_ANY_SELECTIONMESHID] := Shaders[I].GetUniformLocation('SelectionMeshID');
+    end;
 
   fFineVBO := TIndexedTerrainVBO.Create(34, 0.8, -0.8);
   fRawVBO := TIndexedTerrainVBO.Create(18, 1.6, -1.6);

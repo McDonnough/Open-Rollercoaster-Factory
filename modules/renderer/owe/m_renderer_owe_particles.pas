@@ -262,7 +262,7 @@ begin
   fGeometryShader.UniformI('Texture', 0);
   fGeometryShader.UniformI('TransparencyMask', 7);
   fGeometryShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
-  fGeometryShader.Tag := 0;
+  fGeometryShader.Tag := SHADER_GEOMETRY;
 
   fMaterialShader := TShader.Create('orcf-world-engine/scene/particles/particles.vs', 'orcf-world-engine/scene/particles/particles-material.fs');
   fMaterialShader.UniformI('Texture', 0);
@@ -271,7 +271,7 @@ begin
   fMaterialShader.UniformI('MaterialMap', 6);
   fMaterialShader.UniformI('SpecularTexture', 4);
   fMaterialShader.UniformI('LightTexture', 7);
-  fMaterialShader.Tag := 1;
+  fMaterialShader.Tag := SHADER_MATERIAL;
 
   Shaders[SHADER_GEOMETRY] := fGeometryShader;
   Shaders[SHADER_MATERIAL] := fMaterialShader;

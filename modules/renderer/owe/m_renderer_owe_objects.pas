@@ -64,8 +64,6 @@ type
       CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
       ShadowMode, MaterialMode, LightShadowMode: Boolean;
-      Uniforms: Array[0..7, 0..15] of GLUInt;
-      Shaders: Array[0..7] of TShader;
       property CurrentMaterialCount: Integer read fCurrentMaterialCount;
       property Working: Boolean read getWorking write fCanWork;
       property OpaqueShader: TShader read fOpaqueShader;
@@ -100,33 +98,6 @@ implementation
 
 uses
   u_events, m_varlist, g_park;
-
-const
-  SHADER_OPAQUE = 0;
-  SHADER_TRANSPARENT = 1;
-  SHADER_TRANSPARENT_MATERIAL = 2;
-  SHADER_SELECTION = 3;
-  SHADER_OPAQUE_SHADOW = 4;
-  SHADER_OPAQUE_SHADOW_LIGHT = 5;
-  SHADER_TRANSPARENT_SHADOW = 6;
-  SHADER_TRANSPARENT_SHADOW_LIGHT = 7;
-
-  UNIFORM_ANY_HASNORMALMAP = 0;
-  UNIFORM_ANY_HASTEXTURE = 1;
-  UNIFORM_ANY_MEDIUMS = 2;
-  UNIFORM_ANY_SHADOWSIZE = 3;
-  UNIFORM_ANY_SHADOWOFFSET = 4;
-  UNIFORM_ANY_FOGCOLOR = 5;
-  UNIFORM_ANY_FOGSTRENGTH = 6;
-  UNIFORM_ANY_WATERHEIGHT = 7;
-  UNIFORM_ANY_WATERREFRACTIONMODE = 8;
-  UNIFORM_ANY_TRANSFORMMATRIX = 9;
-  UNIFORM_ANY_VIEWPOINT = 10;
-  UNIFORM_ANY_SELECTIONMESHID = 11;
-  UNIFORM_ANY_MIRROR = 12;
-  UNIFORM_ANY_ALPHA = 13;
-  UNIFORM_ANY_MASKOFFSET = 14;
-  UNIFORM_ANY_MATERIALID = 15;
 
 function TRObjects.getWorking: Boolean;
 begin
@@ -357,7 +328,7 @@ var
   Matrix: Array[0..15] of Single;
   ReflectionMapToBind: TTexture;
 begin
-// fCurrentShader.Bind;
+//   fCurrentShader.Bind;
   if ShadowMode then
     begin
     fCurrentShader.UniformF('ShadowSize', ModuleManager.ModRenderer.ShadowSize);
@@ -417,7 +388,7 @@ begin
     fLastBoundVBO.Unbind;
     end;
 
-// fCurrentShader.Unbind;
+//   fCurrentShader.Unbind;
 
   fFirstMesh := False;
 end;
@@ -448,14 +419,14 @@ begin
     if CurrMO = nil then
       continue;
     Color := CurrO.SelectionID;
-    fCurrentShader.UniformI(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_SELECTIONMESHID], ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
-    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MIRROR], CurrO.Mirror);
+    fCurrentShader.UniformI('SelectionMeshID', ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
+    fCurrentShader.UniformF('Mirror', CurrO.Mirror);
     with CurrO.Mirror do
       if X * Y * Z < 0 then
         ModuleManager.ModRenderer.InvertFrontFace;
     for j := 0 to high(CurrO.Meshes) do
       begin
-      fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_ALPHA], CurrO.Meshes[j].Material.Color.W);
+      fCurrentShader.UniformF('Alpha', CurrO.Meshes[j].Material.Color.W);
       CurrMM := nil;
       for k := 0 to high(CurrMO.Meshes) do
         if CurrMO.Meshes[k].GeoMesh = CurrO.Meshes[j] then
@@ -473,7 +444,7 @@ begin
 //         end;
       MakeOGLCompatibleMatrix(CurrO.Meshes[j].CalculatedMatrix, @Matrix[0]);
 
-      fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_TRANSFORMMATRIX], @Matrix[0]);
+      fCurrentShader.UniformMatrix4D('TransformMatrix', @Matrix[0]);
 
       CurrMM.VBO.Bind;
       CurrMM.VBO.Render;
@@ -517,7 +488,7 @@ begin
     begin
     if fTransparentMeshOrder[i].Mesh <> nil then
       begin
-      fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MIRROR], fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror);
+      fCurrentShader.UniformF('Mirror', fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror);
       with fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror do
         if X * Y * Z < 0 then
           ModuleManager.ModRenderer.InvertFrontFace;
@@ -525,8 +496,8 @@ begin
         if fTransparentMeshOrder[i].Mesh.Transparent then
           begin
           if fCurrentShader = fTransparentShader then
-            fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MASKOFFSET], fCurrentMaterialCount / 16, 0);
-          fCurrentShader.UniformI(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MATERIALID], (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
+            fCurrentShader.UniformF('MaskOffset', fCurrentMaterialCount / 16, 0);
+          fCurrentShader.UniformI('MaterialID', (fCurrentMaterialCount shr 16) and $FF, (fCurrentMaterialCount shr 8) and $FF, fCurrentMaterialCount and $FF);
           if not (ShadowMode or LightShadowMode) then
             begin
             // Render back sides first
@@ -542,14 +513,14 @@ begin
           ModuleManager.ModRenderer.InvertFrontFace;
       end
     else if (fTransparentMeshOrder[i].ParticleGroup <> nil) and (ModuleManager.ModRenderer.RenderParticles) and not ((ShadowMode) or (LightShadowMode)) then
-//       begin
+      begin
       ModuleManager.ModRenderer.RParticles.Render(fTransparentMeshOrder[i].ParticleGroup);
-//       fFirstMesh := True;
-//       fLastBoundReflectionMap := nil;
-//       fLastBoundBumpmap := nil;
-//       fLastBoundTexture := nil;
-//       fLastBoundVBO := nil;
-//       end;
+      fFirstMesh := True;
+      fLastBoundReflectionMap := nil;
+      fLastBoundBumpmap := nil;
+      fLastBoundTexture := nil;
+      fLastBoundVBO := nil;
+      end;
     inc(fCurrentMaterialCount);
     end;
   if fLastBoundVBO <> nil then
@@ -577,7 +548,7 @@ begin
     begin
     for j := 0 to high(fMeshClasses[i].Meshes) do
       begin
-      fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MIRROR], fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror);
+      fCurrentShader.UniformF('Mirror', fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror);
       with fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror do
         if X * Y * Z < 0 then
           ModuleManager.ModRenderer.InvertFrontFace;
@@ -650,8 +621,6 @@ begin
 end;
 
 constructor TRObjects.Create;
-var
-  I: Integer;
 begin
   inherited Create(false);
   
@@ -671,29 +640,19 @@ begin
   fLastManagedObject := -1;
 
   fOpaqueShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadow.vs', 'orcf-world-engine/scene/objects/shadow-opaque.fs');
-  fOpaqueShadowShader.Tag := SHADER_OPAQUE_SHADOW;
-  Shaders[SHADER_OPAQUE_SHADOW] := fOpaqueShadowShader;
 
   fTransparentShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadow.vs', 'orcf-world-engine/scene/objects/shadow-transparent.fs');
   fTransparentShadowShader.UniformI('Texture', 0);
-  fTransparentShadowShader.Tag := SHADER_TRANSPARENT_SHADOW;
-  Shaders[SHADER_TRANSPARENT_SHADOW] := fTransparentShadowShader;
 
   fOpaqueLightShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadowLight.vs', 'orcf-world-engine/scene/objects/shadowLight-opaque.fs');
-  fOpaqueLightShadowShader.Tag := SHADER_OPAQUE_SHADOW_LIGHT;
-  Shaders[SHADER_OPAQUE_SHADOW_LIGHT] := fOpaqueLightShadowShader;
 
   fTransparentLightShadowShader := TShader.Create('orcf-world-engine/scene/objects/shadowLight.vs', 'orcf-world-engine/scene/objects/shadowLight-transparent.fs');
   fTransparentLightShadowShader.UniformI('Texture', 0);
-  fTransparentLightShadowShader.Tag := SHADER_TRANSPARENT_SHADOW_LIGHT;
-  Shaders[SHADER_TRANSPARENT_SHADOW_LIGHT] := fTransparentLightShadowShader;
 
   fOpaqueShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-opaque.fs');
   fOpaqueShader.UniformI('Texture', 0);
   fOpaqueShader.UniformI('NormalMap', 1);
   fOpaqueShader.UniformI('ReflectionMap', 3);
-  fOpaqueShader.Tag := SHADER_OPAQUE;
-  Shaders[SHADER_OPAQUE] := fOpaqueShader;
 
   fTransparentShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-transparent.fs');
   fTransparentShader.UniformI('Texture', 0);
@@ -701,8 +660,6 @@ begin
   fTransparentShader.UniformI('ReflectionMap', 3);
   fTransparentShader.UniformI('TransparencyMask', 7);
   fTransparentShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
-  fTransparentShader.Tag := SHADER_TRANSPARENT;
-  Shaders[SHADER_TRANSPARENT] := fTransparentShader;
 
   fTransparentMaterialShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-material.fs');
   fTransparentMaterialShader.UniformI('Texture', 0);
@@ -711,13 +668,9 @@ begin
   fTransparentMaterialShader.UniformI('MaterialMap', 6);
   fTransparentMaterialShader.UniformI('LightTexture', 7);
   fTransparentMaterialShader.UniformI('SpecularTexture', 4);
-  fTransparentMaterialShader.Tag := SHADER_TRANSPARENT_MATERIAL;
-  Shaders[SHADER_TRANSPARENT_MATERIAL] := fTransparentMaterialShader;
 
   fSelectionShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/inferred/selection.fs');
   fSelectionShader.UniformI('Texture', 0);
-  fSelectionShader.Tag := SHADER_SELECTION;
-  Shaders[SHADER_SELECTION] := fSelectionShader;
 
   fReflectionPass := TRenderPass.Create(ModuleManager.ModRenderer.ReflectionSize, ModuleManager.ModRenderer.ReflectionSize);
   fReflectionPass.RenderTerrain := ModuleManager.ModRenderer.ReflectionRenderTerrain;
@@ -728,26 +681,6 @@ begin
   fExcludedMeshObject := nil;
   fExcludedMesh := nil;
   CurrentGBuffer := ModuleManager.ModRenderer.GBuffer;
-
-  for I := 0 to high(Shaders) do
-    begin
-    Uniforms[I, UNIFORM_ANY_HASNORMALMAP] := Shaders[i].GetUniformLocation('HasNormalMap');
-    Uniforms[I, UNIFORM_ANY_HASTEXTURE] := Shaders[i].GetUniformLocation('HasTexture');
-    Uniforms[I, UNIFORM_ANY_MEDIUMS] := Shaders[i].GetUniformLocation('Mediums');
-    Uniforms[I, UNIFORM_ANY_SHADOWSIZE] := Shaders[i].GetUniformLocation('ShadowSize');
-    Uniforms[I, UNIFORM_ANY_SHADOWOFFSET] := Shaders[i].GetUniformLocation('ShadowOffset');
-    Uniforms[I, UNIFORM_ANY_FOGCOLOR] := Shaders[i].GetUniformLocation('FogColor');
-    Uniforms[I, UNIFORM_ANY_FOGSTRENGTH] := Shaders[i].GetUniformLocation('FogStrength');
-    Uniforms[I, UNIFORM_ANY_WATERHEIGHT] := Shaders[i].GetUniformLocation('WaterHeight');
-    Uniforms[I, UNIFORM_ANY_WATERREFRACTIONMODE] := Shaders[i].GetUniformLocation('WaterRefractionMode');
-    Uniforms[I, UNIFORM_ANY_TRANSFORMMATRIX] := Shaders[i].GetUniformLocation('TransformMatrix');
-    Uniforms[I, UNIFORM_ANY_VIEWPOINT] := Shaders[i].GetUniformLocation('ViewPoint');
-    Uniforms[I, UNIFORM_ANY_SELECTIONMESHID] := Shaders[i].GetUniformLocation('SelectionMeshID');
-    Uniforms[I, UNIFORM_ANY_MIRROR] := Shaders[i].GetUniformLocation('Mirror');
-    Uniforms[I, UNIFORM_ANY_ALPHA] := Shaders[i].GetUniformLocation('Alpha');
-    Uniforms[I, UNIFORM_ANY_MASKOFFSET] := Shaders[i].GetUniformLocation('MaskOffset');
-    Uniforms[I, UNIFORM_ANY_MATERIALID] := Shaders[i].GetUniformLocation('MaterialID');
-    end;
 end;
 
 procedure TRObjects.QuickSortTransparentMeshes;

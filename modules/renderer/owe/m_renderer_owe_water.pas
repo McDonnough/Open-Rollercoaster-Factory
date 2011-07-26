@@ -37,6 +37,7 @@ type
     private
       fCurrentHeight: Single;
     public
+      Uniforms: Array[0..12] of GLUInt;
       property CurrentHeight: Single read fCurrentHeight;
       property RenderShader: TShader read fRenderShader;
       property SimpleShader: TShader read fSimpleShader;
@@ -60,6 +61,24 @@ implementation
 uses
   m_varlist, u_events, g_park, main;
 
+const
+  UNIFORM_CHECK_HEIGHT = 0;
+  UNIFORM_CHECK_TERRAINSIZE = 1;
+  
+  UNIFORM_RENDER_BUMPOFFSET = 2;
+  UNIFORM_RENDER_HEIGHT = 3;
+  UNIFORM_RENDER_TERRAINSIZE = 4;
+  UNIFORM_RENDER_OFFSET = 5;
+  UNIFORM_RENDER_UNDERWATERFACTOR = 6;
+  UNIFORM_RENDER_MEDIUMS = 7;
+
+  UNIFORM_SIMPLE_BUMPOFFSET = 8;
+  UNIFORM_SIMPLE_HEIGHT = 9;
+  UNIFORM_SIMPLE_TERRAINSIZE = 10;
+  UNIFORM_SIMPLE_OFFSET = 11;
+  UNIFORM_SIMPLE_VIEWPOINT = 12;
+
+  
 procedure TRWater.Advance;
 begin
   fBumpOffset := fBumpOffset + Vector(0.1, 0.2) / 150 * FPSDisplay.MS;
@@ -179,6 +198,8 @@ begin
 
   fCheckShader := TShader.Create('orcf-world-engine/scene/water/waterSimple.vs', 'orcf-world-engine/scene/water/waterCheck.fs');
   fCheckShader.UniformI('HeightMap', 0);
+  Uniforms[UNIFORM_CHECK_HEIGHT] := fCheckShader.GetUniformLocation('Height');
+  Uniforms[UNIFORM_CHECK_TERRAINSIZE] := fCheckShader.GetUniformLocation('TerrainSize');
 
   fRenderShader := TShader.Create('orcf-world-engine/scene/water/water.vs', 'orcf-world-engine/scene/water/water.fs');
   fRenderShader.UniformI('HeightMap', 0);
@@ -188,13 +209,22 @@ begin
   fRenderShader.UniformI('GeometryMap', 4);
   fRenderShader.UniformF('ScreenSize', ModuleManager.ModRenderer.BufferSizeX, ModuleManager.ModRenderer.BufferSizeY);
   fRenderShader.UniformF('BumpOffset', 0, 0);
-  fRenderShader.Unbind;
+  Uniforms[UNIFORM_RENDER_BUMPOFFSET] := fRenderShader.GetUniformLocation('BumpOffset');
+  Uniforms[UNIFORM_RENDER_HEIGHT] := fRenderShader.GetUniformLocation('Height');
+  Uniforms[UNIFORM_RENDER_TERRAINSIZE] := fRenderShader.GetUniformLocation('TerrainSize');
+  Uniforms[UNIFORM_RENDER_OFFSET] := fRenderShader.GetUniformLocation('Offset');
+  Uniforms[UNIFORM_RENDER_UNDERWATERFACTOR] := fRenderShader.GetUniformLocation('UnderWaterFactor');
+  Uniforms[UNIFORM_RENDER_MEDIUMS] := fRenderShader.GetUniformLocation('Mediums');
 
   fSimpleShader := TShader.Create('orcf-world-engine/scene/water/waterSimple.vs', 'orcf-world-engine/scene/water/waterSimple.fs');
   fSimpleShader.UniformI('HeightMap', 0);
   fSimpleShader.UniformI('BumpMap', 1);
   fSimpleShader.UniformI('EnvironmentMap', 3);
   fSimpleShader.UniformF('BumpOffset', 0, 0);
+  Uniforms[UNIFORM_SIMPLE_BUMPOFFSET] := fSimpleShader.GetUniformLocation('BumpOffset');
+  Uniforms[UNIFORM_SIMPLE_HEIGHT] := fSimpleShader.GetUniformLocation('Height');
+  Uniforms[UNIFORM_SIMPLE_TERRAINSIZE] := fSimpleShader.GetUniformLocation('TerrainSize');
+  Uniforms[UNIFORM_SIMPLE_OFFSET] := fSimpleShader.GetUniformLocation('Offset');
   fSimpleShader.Unbind;
 
   fWaterMap := TTable.Create;
@@ -266,9 +296,12 @@ procedure TWaterLayer.CheckVisibility;
 begin
   glDisable(GL_CULL_FACE);
 
-  ModuleManager.ModRenderer.RWater.CheckShader.Bind;
-  ModuleManager.ModRenderer.RWater.CheckShader.UniformF('Height', Height / 65535 * 256);
-  ModuleManager.ModRenderer.RWater.CheckShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+  with ModuleManager.ModRenderer.RWater do
+    begin
+    CheckShader.Bind;
+    CheckShader.UniformF(Uniforms[UNIFORM_CHECK_HEIGHT], Height / 65535 * 256);
+    CheckShader.UniformF(Uniforms[UNIFORM_CHECK_TERRAINSIZE], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+    end;
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
 
   fQuery.StartCounter;
@@ -289,20 +322,23 @@ end;
 
 procedure TWaterLayer.Render;
 begin
-  ModuleManager.ModRenderer.RWater.RenderShader.Bind;
-  ModuleManager.ModRenderer.RWater.RenderShader.UniformF('BumpOffset', ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
-  ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Height', Height / 65535 * 256);
-  ModuleManager.ModRenderer.RWater.RenderShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-  ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Offset', ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
-  if ModuleManager.ModCamera.ActiveCamera.Position.Y < fHeight / 256 then
+  with ModuleManager.ModRenderer.RWater do
     begin
-    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('UnderWaterFactor', -1);
-    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Mediums', 1.33, 1.0);
-    end
-  else
-    begin
-    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('UnderWaterFactor', 1);
-    ModuleManager.ModRenderer.RWater.RenderShader.UniformF('Mediums', 1.0, 1.33);
+    RenderShader.Bind;
+    RenderShader.UniformF(Uniforms[UNIFORM_RENDER_BUMPOFFSET], ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
+    RenderShader.UniformF(Uniforms[UNIFORM_RENDER_HEIGHT], Height / 65535 * 256);
+    RenderShader.UniformF(Uniforms[UNIFORM_RENDER_TERRAINSIZE], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+    RenderShader.UniformF(Uniforms[UNIFORM_RENDER_OFFSET], ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
+    if ModuleManager.ModCamera.ActiveCamera.Position.Y < fHeight / 256 then
+      begin
+      RenderShader.UniformF(Uniforms[UNIFORM_RENDER_UNDERWATERFACTOR], -1);
+      RenderShader.UniformF(Uniforms[UNIFORM_RENDER_MEDIUMS], 1.33, 1.0);
+      end
+    else
+      begin
+      RenderShader.UniformF(Uniforms[UNIFORM_RENDER_UNDERWATERFACTOR], 1);
+      RenderShader.UniformF(Uniforms[UNIFORM_RENDER_MEDIUMS], 1.0, 1.33);
+      end;
     end;
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);
   fRefractionPass.Textures[0].Bind(2);
@@ -323,12 +359,15 @@ end;
 
 procedure TWaterLayer.RenderSimple;
 begin
-  ModuleManager.ModRenderer.RWater.SimpleShader.Bind;
-  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('BumpOffset', ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
-  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('Height', Height / 65535 * 256);
-  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('Offset', ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
-  ModuleManager.ModRenderer.RWater.SimpleShader.UniformF('ViewPoint', ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
+  with ModuleManager.ModRenderer.RWater do
+    begin
+    SimpleShader.Bind;
+    SimpleShader.UniformF(Uniforms[UNIFORM_SIMPLE_BUMPOFFSET], ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
+    SimpleShader.UniformF(Uniforms[UNIFORM_SIMPLE_HEIGHT], Height / 65535 * 256);
+    SimpleShader.UniformF(Uniforms[UNIFORM_SIMPLE_TERRAINSIZE], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+    SimpleShader.UniformF(Uniforms[UNIFORM_SIMPLE_OFFSET], ModuleManager.ModCamera.ActiveCamera.Position.X, ModuleManager.ModCamera.ActiveCamera.Position.Z);
+    SimpleShader.UniformF(Uniforms[UNIFORM_SIMPLE_VIEWPOINT], ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
+    end;
 
   ModuleManager.ModRenderer.EnvironmentMap.Map.Textures[0].Bind(3);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(0);

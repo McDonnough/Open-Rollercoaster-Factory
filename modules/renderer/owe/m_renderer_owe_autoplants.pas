@@ -35,6 +35,7 @@ type
       fGeometryPassShader, fMaterialPassShader: TShader;
     public
       CurrentShader: TShader;
+      Uniforms: Array[0..9] of GLUInt;
       property MaterialPassShader: TShader read fMaterialPassShader;
       property GeometryPassShader: TShader read fGeometryPassShader;
       procedure UpdateCollection(Event: String; Data, Result: Pointer);
@@ -48,6 +49,20 @@ implementation
 
 uses
   u_events, m_varlist;
+
+const
+  UNIFORM_OFFSET = 3;
+  
+  UNIFORM_GEOMETRYPASS_BUMPOFFSET = 0;
+  UNIFORM_GEOMETRYPASS_TERRAINSIZE = 1;
+  UNIFORM_GEOMETRYPASS_MASKOFFSET = 2;
+  UNIFORM_MATERIALPASS_BUMPOFFSET = 3;
+  UNIFORM_MATERIALPASS_TERRAINSIZE = 4;
+  UNIFORM_MATERIALPASS_MASKOFFSET = 5;
+  UNIFORM_MATERIALPASS_FOGCOLOR = 6;
+  UNIFORM_MATERIALPASS_FOGSTRENGTH = 7;
+  UNIFORM_MATERIALPASS_WATERHEIGHT = 8;
+  UNIFORM_MATERIALPASS_WATERREFRACTIONMODE = 9;
 
 procedure TAutoplantGroup.Execute;
 var
@@ -204,15 +219,15 @@ begin
   ModuleManager.ModRenderer.RTerrain.TerrainMap.Bind(1);
   ModuleManager.ModRenderer.RTerrain.TerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
   CurrentShader.Bind;
-  CurrentShader.UniformF('BumpOffset', ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
-  CurrentShader.UniformF('TerrainSize', Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
-  CurrentShader.UniformF('MaskOffset', Round(16 * Random) / 16, Round(16 * Random) / 16);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag * UNIFORM_OFFSET + UNIFORM_GEOMETRYPASS_BUMPOFFSET], ModuleManager.ModRenderer.RWater.BumpOffset.X, ModuleManager.ModRenderer.RWater.BumpOffset.Y);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag * UNIFORM_OFFSET + UNIFORM_GEOMETRYPASS_TERRAINSIZE], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag * UNIFORM_OFFSET + UNIFORM_GEOMETRYPASS_MASKOFFSET], Round(16 * Random) / 16, Round(16 * Random) / 16);
   if CurrentShader = MaterialPassShader then
     begin
-    CurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
-    CurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
-    CurrentShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
-    CurrentShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
+    CurrentShader.UniformF(Uniforms[UNIFORM_MATERIALPASS_FOGCOLOR], ModuleManager.ModRenderer.FogColor);
+    CurrentShader.UniformF(Uniforms[UNIFORM_MATERIALPASS_FOGSTRENGTH], ModuleManager.ModRenderer.FogStrength);
+    CurrentShader.UniformF(Uniforms[UNIFORM_MATERIALPASS_WATERHEIGHT], ModuleManager.ModRenderer.RWater.CurrentHeight);
+    CurrentShader.UniformF(Uniforms[UNIFORM_MATERIALPASS_WATERREFRACTIONMODE], ModuleManager.ModRenderer.FogRefractMode);
     end;
   for i := 0 to high(fAutoplantGroups) do
     fAutoplantGroups[i].Render;
@@ -243,6 +258,10 @@ begin
   fGeometryPassShader.UniformI('TransparencyMask', 7);
   fGeometryPassShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
   fGeometryPassShader.UniformF('MaxDist', ModuleManager.ModRenderer.AutoplantDistance);
+  fGeometryPassShader.Tag := 0;
+  Uniforms[UNIFORM_GEOMETRYPASS_BUMPOFFSET] := fGeometryPassShader.GetUniformLocation('BumpOffset');
+  Uniforms[UNIFORM_GEOMETRYPASS_TERRAINSIZE] := fGeometryPassShader.GetUniformLocation('TerrainSize');
+  Uniforms[UNIFORM_GEOMETRYPASS_MASKOFFSET] := fGeometryPassShader.GetUniformLocation('MaskOffset');
 
   fMaterialPassShader := TShader.Create('orcf-world-engine/scene/terrain/autoplants.vs', 'orcf-world-engine/scene/terrain/autoplantsMaterial.fs');
   fMaterialPassShader.UniformI('Texture', 0);
@@ -250,6 +269,14 @@ begin
   fMaterialPassShader.UniformI('MaterialMap', 6);
   fMaterialPassShader.UniformI('LightTexture', 7);
   fMaterialPassShader.UniformF('MaxDist', ModuleManager.ModRenderer.AutoplantDistance);
+  fMaterialPassShader.Tag := 1;
+  Uniforms[UNIFORM_MATERIALPASS_BUMPOFFSET] := fMaterialPassShader.GetUniformLocation('BumpOffset');
+  Uniforms[UNIFORM_MATERIALPASS_TERRAINSIZE] := fMaterialPassShader.GetUniformLocation('TerrainSize');
+  Uniforms[UNIFORM_MATERIALPASS_MASKOFFSET] := fMaterialPassShader.GetUniformLocation('MaskOffset');
+  Uniforms[UNIFORM_MATERIALPASS_FOGCOLOR] := fMaterialPassShader.GetUniformLocation('FogColor');
+  Uniforms[UNIFORM_MATERIALPASS_FOGSTRENGTH] := fMaterialPassShader.GetUniformLocation('FogStrength');
+  Uniforms[UNIFORM_MATERIALPASS_WATERHEIGHT] := fMaterialPassShader.GetUniformLocation('WaterHeight');
+  Uniforms[UNIFORM_MATERIALPASS_WATERREFRACTIONMODE] := fMaterialPassShader.GetUniformLocation('WaterRefractionMode');
 
   EventManager.AddCallback('TTerrain.ChangedCollection', @UpdateCollection);
 end;

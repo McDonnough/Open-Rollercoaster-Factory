@@ -10,32 +10,24 @@ uses
 type
   TModuleShaderManagerClass = class(TBasicModule)
     public
-      (**
-        * Load new shader
+      (** Load new shader
         *@param vertex shader file name
         *@param fragment shader file name
-        *@return shader ID
-        *)
+        *@return shader ID *)
       function LoadShader(var ProgramHandle: GLUInt; VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer; virtual abstract;
 
-      (**
-        * Bind shader
-        *@param Shader ID or -1 for no shader
-        *)
+      (** Bind shader
+        *@param Shader ID or -1 for no shader *)
       procedure BindShader(Shader: Integer); virtual abstract;
 
-      (**
-        * Delete shader
-        *@param Shader ID
-        *)
+      (** Delete shader
+        *@param Shader ID *)
       procedure DeleteShader(Shader: Integer); virtual abstract;
 
 
-      (**
-        * Send uniform values to shader
+      (* Send uniform values to shader
         *@param Name of variable
-        *@param The values to send
-        *)
+        *@param The values to send *)
       procedure Uniformf(VName: String; v0: GLfloat); virtual abstract;
       procedure Uniformf(VName: String; v0, v1: GLfloat); virtual abstract;
       procedure Uniformf(VName: String; v0, v1, v2: GLfloat); virtual abstract;
@@ -47,11 +39,9 @@ type
       procedure UniformMatrix3D(VName: String; V: Pointer); virtual abstract;
       procedure UniformMatrix4D(VName: String; V: Pointer); virtual abstract;
 
-      (**
-        * Set custom variable that may affect shaders
+      (** Set custom variable that may affect shaders
         *@param Name of variable
-        *@param Value of variable
-        *)
+        *@param Value of variable *)
       procedure SetVar(Name: String; Value: Integer); virtual abstract;
     end;
 
@@ -60,24 +50,21 @@ type
       fID: Integer;
       fProgramHandle: GLUInt;
     public
-      (**
-        * Bind shader
-        *)
+      // Some number that helps identifying the shader
+      Tag: Integer;
+      
+      (** Bind shader *)
       procedure Bind; inline;
 
-      (**
-        * Unbind shader
-        *)
+      (** Unbind shader *)
       procedure Unbind; inline;
 
       (** Get uniform location **)
       function GetUniformLocation(VName: String): GLUInt;
 
-      (**
-        * Set integer uniform variable
+      (** Set integer uniform variable
         *@param variable name
-        *@param value
-        *)
+        *@param value *)
       procedure UniformI(VName: String; V1: GLInt);
       procedure UniformI(VName: String; V1, V2: GLInt);
       procedure UniformI(VName: String; V1, V2, V3: GLInt);
@@ -87,11 +74,9 @@ type
       procedure UniformI(VName: GLUInt; V1, V2, V3: GLInt); inline;
       procedure UniformI(VName: GLUInt; V1, V2, V3, V4: GLInt); inline;
 
-      (**
-        * Set float uniform variable
+      (** Set float uniform variable
         *@param variable name
-        *@param value
-        *)
+        *@param value *)
       procedure UniformF(VName: String; V1: GLFloat);
       procedure UniformF(VName: String; V1, V2: GLFloat);
       procedure UniformF(VName: String; V1, V2, V3: GLFloat);
@@ -108,24 +93,18 @@ type
       procedure UniformF(VName: GLUInt; V: TVector3D); inline;
       procedure UniformF(VName: GLUInt; V: TVector4D); inline;
 
-      (**
-        * Set a matrix uniform variable
+      (** Set a matrix uniform variable
         *@param variable name
-        *@param Location of the first element of the matrix
-        *)
+        *@param Location of the first element of the matrix *)
       procedure UniformMatrix3D(VName: String; V: Pointer);
       procedure UniformMatrix4D(VName: String; V: Pointer);
       procedure UniformMatrix3D(VName: GLUInt; V: Pointer); inline;
       procedure UniformMatrix4D(VName: GLUInt; V: Pointer); inline;
 
-      (**
-        * Load a shader from files
-        *)
+      (** Load a shader from files *)
       constructor Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP);
 
-      (**
-        * Destroy shader
-        *)
+      (** Destroy shader *)
       destructor Free;
     end;
 
@@ -284,6 +263,7 @@ end;
 
 constructor TShader.Create(VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP);
 begin
+  Tag := 0;
   VSFile := GetFirstExistingFilename(VSFile);
   FSFile := GetFirstExistingFilename(FSFile);
   if GSFile <> '' then

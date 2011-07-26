@@ -30,6 +30,8 @@ type
       fGeometryShader, fMaterialShader: TShader;
     public
       CurrentShader: TShader;
+      Shaders: Array[0..1] of TShader;
+      Uniforms: Array[0..1, 0..8] of GLUInt;
       property GeometryShader: TShader read fGeometryShader;
       property MaterialShader: TShader read fMaterialShader;
       procedure BindMaterial(Material: TMaterial);
@@ -46,6 +48,20 @@ implementation
 
 uses
   g_park, g_particles, m_varlist, u_events;
+
+const
+  SHADER_GEOMETRY = 0;
+  SHADER_MATERIAL = 1;
+
+  UNIFORM_ANY_MASKOFFSET = 0;
+  UNIFORM_ANY_MATERIALID = 1;
+  UNIFORM_ANY_ILLUMINATION = 2;
+  UNIFORM_ANY_FOGCOLOR = 3;
+  UNIFORM_ANY_FOGSTRENGTH = 4;
+  UNIFORM_ANY_WATERHEIGHT = 5;
+  UNIFORM_ANY_WATERREFRACTIONMODE = 6;
+  UNIFORM_ANY_BILLBOARDMATRIX = 7;
+  UNIFORM_ANY_VIEWPOINT = 8;
 
 procedure TParticleGroupVBO.Update;
 var
@@ -169,17 +185,17 @@ begin
   glDepthMask(false);
 
   CurrentShader.Bind;
-  CurrentShader.UniformF('MaskOffset', ModuleManager.ModRenderer.RObjects.CurrentMaterialCount / 16, 0);
-  CurrentShader.UniformI('MaterialID', (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 16) and $FF, (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 8) and $FF, ModuleManager.ModRenderer.RObjects.CurrentMaterialCount and $FF);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_MASKOFFSET], ModuleManager.ModRenderer.RObjects.CurrentMaterialCount / 16, 0);
+  CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_MATERIALID], (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 16) and $FF, (ModuleManager.ModRenderer.RObjects.CurrentMaterialCount shr 8) and $FF, ModuleManager.ModRenderer.RObjects.CurrentMaterialCount and $FF);
 
   for i := 0 to high(fParticleVBOs) do
     if fParticleVBOs[i].Group = Group then
       if (Group.NeedsIllumination) or (CurrentShader = MaterialShader) then
         begin
         if Group.NeedsIllumination then
-          CurrentShader.UniformI('Illumination', 1)
+          CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_ILLUMINATION], 1)
         else
-          CurrentShader.UniformI('Illumination', 0);
+          CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_ILLUMINATION], 0);
         BindMaterial(Group.Material);
         fParticleVBOs[i].VBO.Render;
         end;
@@ -203,12 +219,12 @@ begin
   MakeOGLCompatibleMatrix(BillboardMatrix, @Matrix[0]);
 
   CurrentShader.Bind;
-  CurrentShader.UniformF('FogColor', ModuleManager.ModRenderer.FogColor);
-  CurrentShader.UniformF('FogStrength', ModuleManager.ModRenderer.FogStrength);
-  CurrentShader.UniformF('WaterHeight', ModuleManager.ModRenderer.RWater.CurrentHeight);
-  CurrentShader.UniformF('WaterRefractionMode', ModuleManager.ModRenderer.FogRefractMode);
-  CurrentShader.UniformMatrix4D('BillboardMatrix', @Matrix[0]);
-  CurrentShader.UniformF('ViewPoint', ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_FOGCOLOR], ModuleManager.ModRenderer.FogColor);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_FOGSTRENGTH], ModuleManager.ModRenderer.FogStrength);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_WATERHEIGHT], ModuleManager.ModRenderer.RWater.CurrentHeight);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_WATERREFRACTIONMODE], ModuleManager.ModRenderer.FogRefractMode);
+  CurrentShader.UniformMatrix4D(Uniforms[CurrentShader.Tag, UNIFORM_ANY_BILLBOARDMATRIX], @Matrix[0]);
+  CurrentShader.UniformF(Uniforms[CurrentShader.Tag, UNIFORM_ANY_VIEWPOINT], ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
   CurrentShader.Unbind;
 end;
 
@@ -234,6 +250,8 @@ begin
 end;
 
 constructor TRParticles.Create;
+var
+  I: Integer;
 begin
   writeln('Hint: Initializing particle renderer');
 
@@ -244,6 +262,7 @@ begin
   fGeometryShader.UniformI('Texture', 0);
   fGeometryShader.UniformI('TransparencyMask', 7);
   fGeometryShader.UniformF('MaskSize', ModuleManager.ModRenderer.TransparencyMask.Width, ModuleManager.ModRenderer.TransparencyMask.Height);
+  fGeometryShader.Tag := 0;
 
   fMaterialShader := TShader.Create('orcf-world-engine/scene/particles/particles.vs', 'orcf-world-engine/scene/particles/particles-material.fs');
   fMaterialShader.UniformI('Texture', 0);
@@ -252,6 +271,22 @@ begin
   fMaterialShader.UniformI('MaterialMap', 6);
   fMaterialShader.UniformI('SpecularTexture', 4);
   fMaterialShader.UniformI('LightTexture', 7);
+  fMaterialShader.Tag := 1;
+
+  Shaders[SHADER_GEOMETRY] := fGeometryShader;
+  Shaders[SHADER_MATERIAL] := fMaterialShader;
+  for I := 0 to high(Shaders) do
+    begin
+    Uniforms[I, UNIFORM_ANY_MASKOFFSET] := Shaders[I].GetUniformLocation('MaskOffset');
+    Uniforms[I, UNIFORM_ANY_MATERIALID] := Shaders[I].GetUniformLocation('MaterialID');
+    Uniforms[I, UNIFORM_ANY_ILLUMINATION] := Shaders[I].GetUniformLocation('Illumination');
+    Uniforms[I, UNIFORM_ANY_FOGCOLOR] := Shaders[I].GetUniformLocation('FogColor');
+    Uniforms[I, UNIFORM_ANY_FOGSTRENGTH] := Shaders[I].GetUniformLocation('FogStrength');
+    Uniforms[I, UNIFORM_ANY_WATERHEIGHT] := Shaders[I].GetUniformLocation('WaterHeight');
+    Uniforms[I, UNIFORM_ANY_WATERREFRACTIONMODE] := Shaders[I].GetUniformLocation('WaterRefractionMode');
+    Uniforms[I, UNIFORM_ANY_BILLBOARDMATRIX] := Shaders[I].GetUniformLocation('BillboardMatrix');
+    Uniforms[I, UNIFORM_ANY_VIEWPOINT] := Shaders[I].GetUniformLocation('ViewPoint');
+    end;
 end;
 
 destructor TRParticles.Free;

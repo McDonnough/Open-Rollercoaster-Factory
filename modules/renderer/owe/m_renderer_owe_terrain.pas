@@ -1049,7 +1049,7 @@ begin
 
   fGeometryPassShader := TShader.Create('orcf-world-engine/scene/terrain/terrain.vs', 'orcf-world-engine/scene/terrain/terrain.fs');
   fGeometryPassShader.UniformI('TerrainMap', 0);
-  fGeometryPassShader.UniformI('HeightLine', -1);
+  fGeometryPassShader.UniformF('HeightLine', -1);
   fGeometryPassShader.UniformI('TerrainTexture', 1);
   fGeometryPassShader.Tag := SHADER_GEOMETRY;
 

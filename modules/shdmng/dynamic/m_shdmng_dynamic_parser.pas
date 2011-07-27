@@ -369,7 +369,7 @@ begin
                  or (fCurrentValue = 'return') then
               fCurrentToken := ttControlStatement
             else if (fCurrentValue = 'void') or (fCurrentValue = 'int') or (fCurrentValue = 'float') or (fCurrentValue = 'bool')
-                 or (fCurrentValue = 'sampler1D') or (fCurrentValue = 'sampler2D') or (fCurrentValue = 'sampler3D')
+                 or (fCurrentValue = 'sampler1D') or (fCurrentValue = 'sampler2D') or (fCurrentValue = 'sampler3D') or (fCurrentValue = 'sampler2DArray')
                  or (fCurrentValue = 'vec2') or (fCurrentValue = 'vec3') or (fCurrentValue = 'vec4')
                  or (fCurrentValue = 'ivec2') or (fCurrentValue = 'ivec3') or (fCurrentValue = 'ivec4')
                  or (fCurrentValue = 'bvec2') or (fCurrentValue = 'bvec3') or (fCurrentValue = 'bvec4')

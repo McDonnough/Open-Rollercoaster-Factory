@@ -55,15 +55,16 @@ var
       CCheckBox: TCheckBox(Component).Render;
       end;
     if Component.Rendered then
-      begin
-      glTranslatef(Round(Component.Left), Round(Component.Top), 1);
-      for i := 0 to high(Component.Children) do
+      if (Round(Component.MaxY - Component.MinY) > 0) and (Round(Component.MaxX - Component.MinX) > 0) then
         begin
-        glScissor(Round(Component.MinX), ResY - Round(Component.MaxY), Round(Component.MaxX - Component.MinX), Round(Component.MaxY - Component.MinY));
-        RenderComponent(Component.ChildrenRightOrder[i]);
+        glTranslatef(Round(Component.Left), Round(Component.Top), 1);
+        for i := 0 to high(Component.Children) do
+          begin
+          glScissor(Round(Component.MinX), ResY - Round(Component.MaxY), Round(Component.MaxX - Component.MinX), Round(Component.MaxY - Component.MinY));
+          RenderComponent(Component.ChildrenRightOrder[i]);
+          end;
+        glTranslatef(-Round(Component.Left), -Round(Component.Top), -1);
         end;
-      glTranslatef(-Round(Component.Left), -Round(Component.Top), -1);
-      end;
   end;
 
 begin

@@ -29,16 +29,26 @@ type
     Name: String;
     end;
 
+  TTerrainTextureArray = class
+    protected
+      fID, fTexUnit: GLUInt;
+    public
+      procedure Bind(TexUnit: GLUInt);
+      procedure Unbind;
+      constructor Create(fOCF: TOCFFile);
+      destructor Free;
+    end;
+
   TTerrainCollection = class
     protected
-      fTexture: TTexture;
+      fTexture: TTerrainTextureArray;
       fAutoplantTextures: Array of TTexture;
       fAutoplantResources: Array of Integer;
       fName: String;
     public
       Materials: Array[0..7] of TTerrainMaterial;
       property Name: String read fName;
-      property Texture: TTexture read fTexture;
+      property Texture: TTerrainTextureArray read fTexture;
       constructor Create(fOCF: TOCFFile);
       destructor Free;
     end;
@@ -114,6 +124,84 @@ uses
 type
   EInvalidFormat = class(Exception);
 
+procedure TTerrainTextureArray.Bind(TexUnit: GLUInt);
+begin
+  glActiveTexture(GL_TEXTURE0 + TexUnit);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindTexture(GL_TEXTURE_2D_ARRAY, fID);
+  fTexUnit := TexUnit;
+end;
+
+procedure TTerrainTextureArray.Unbind;
+begin
+  glActiveTexture(GL_TEXTURE0 + fTexUnit);
+  glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+end;
+
+constructor TTerrainTextureArray.Create(fOCF: TOCFFile);
+type
+  TRGBPixel = packed record
+    R, G, B, A: Byte;
+    end;
+  PRGBPixel = ^TRGBPixel;
+var
+  fTextureData: Array of TRGBPixel;
+  fSizes: Array[0..1] of Integer;
+  i, j, k, l: Integer;
+  e: TDOMElement;
+  tempTex: TTexImage;
+  P: PByte;
+  Q: PRGBPixel;
+begin
+  glGenTextures(1, @fID);
+  Bind(0);
+
+  e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('texturecollection'))[0]);
+  with TDOMElement((e.GetElementsByTagName('texture'))[0]) do
+    begin
+    with fOCF.Resources[StrToInt(GetAttribute('resource:id'))] do
+      begin
+      TempTex := TexFromStream(fOCF.Bin[Section].Stream, '.' + Format);
+      if TempTex.BPP = 0 then
+        raise EInvalidFormat.Create('Invalid Format');
+      fSizes[0] := TempTex.Width div 4;
+      fSizes[1] := TempTex.Height div 4;
+      SetLength(fTextureData, 16 * fSizes[0] * fSizes[1]);
+      P := @TempTex.Data[0];
+      for I := 0 to 3 do
+        for J := 0 to fSizes[1] - 1 do
+          for K := 0 to 3 do
+            begin
+            Q := @fTextureData[fSizes[0] * fSizes[1] * (4 * I + K) + J * fSizes[0]];
+            for L := 0 to fSizes[0] - 1 do
+              begin
+              Q^.R := P^; inc(P);
+              Q^.G := P^; inc(P);
+              Q^.B := P^; inc(P);
+              if TempTex.BPP = 32 then
+                begin
+                Q^.A := P^; inc(P);
+                end
+              else
+                Q^.A := 255;
+              inc(Q);
+              end;
+            end;
+      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, fSizes[0], fSizes[1], 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, @fTextureData[0]);
+      glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+      end;
+    end;
+  Unbind;
+end;
+
+destructor TTerrainTextureArray.Free;
+begin
+  glDeleteTextures(1, @fID);
+end;
+
+
 constructor TTerrainCollection.Create(fOCF: TOCFFile);
 var
   i: Integer;
@@ -136,7 +224,7 @@ var
         TexFormat := GL_RGBA;
       Result := TTexture.Create;
       Result.CreateNew(Temptex.Width, Temptex.Height, TexFormat);
-      Result.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+      Result.SetFilter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
       Result.SetClamp(GL_REPEAT, GL_CLAMP);
       Result.Fill(@TempTex.Data[0], TexFormat);
       gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
@@ -150,28 +238,7 @@ begin
   writeln('Hint: Creating TerrainCollection object');
   fName := fOCF.FileName;
   try
-    fTexture := TTexture.Create;
-    e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('texturecollection'))[0]);
-    with TDOMElement((e.GetElementsByTagName('texture'))[0]) do
-      begin
-      with fOCF.Resources[StrToInt(GetAttribute('resource:id'))] do
-        begin
-        TempTex := TexFromStream(fOCF.Bin[Section].Stream, '.' + Format);
-        if TempTex.BPP = 0 then
-          raise EInvalidFormat.Create('Invalid Format');
-        TexFormat := GL_RGB;
-        CompressedTexFormat := GL_COMPRESSED_RGB;
-        if TempTex.BPP = 32 then
-          begin
-          TexFormat := GL_RGBA;
-          CompressedTexFormat := GL_COMPRESSED_RGBA;
-          end;
-        fTexture.CreateNew(Temptex.Width, Temptex.Height, CompressedTexFormat);
-        fTexture.setClamp(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-        gluBuild2DMipmaps(GL_TEXTURE_2D, TempTex.BPP div 8, Temptex.Width, Temptex.Height, TexFormat, GL_UNSIGNED_BYTE, @TempTex.Data[0]);
-        fTexture.SetFilter(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_LINEAR);
-        end;
-      end;
+    fTexture := TTerrainTextureArray.Create(fOCF);
     e := TDOMElement((fOCF.XML.Document.GetElementsByTagName('materials'))[0]);
     l := e.GetElementsByTagName('material');
     for i := 0 to high(l) do

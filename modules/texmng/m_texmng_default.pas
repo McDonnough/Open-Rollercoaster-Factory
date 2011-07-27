@@ -153,9 +153,9 @@ end;
 
 procedure TModuleTextureManagerDefault.ActivateTexUnit(U: Integer);
 begin
-  if (fCurrentTexUnit = U) or (U < 0) or (U > high(fCurrentTextures)) then
-    exit;
-  fCurrentTexUnit := U;
+//   if (fCurrentTexUnit = U) or (U < 0) or (U > high(fCurrentTextures)) then
+//     exit;
+//   fCurrentTexUnit := U;
   glActiveTexture(GL_TEXTURE0 + U);
 end;
 
@@ -254,7 +254,7 @@ end;
 procedure TModuleTextureManagerDefault.CreateMipmaps(Tex: Integer);
 begin
   BindTexture(Tex);
-  SetFilter(Tex, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+  SetFilter(Tex, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
   gluBuild2DMipmaps(GL_TEXTURE_2D, GetBPP(Tex), fTexRefs[Tex].Width, fTexRefs[Tex].Height, fTexRefs[Tex].InputFormat, GL_UNSIGNED_BYTE, @fTexRefs[Tex].Data[0]);
 end;
 

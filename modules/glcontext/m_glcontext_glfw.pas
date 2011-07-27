@@ -184,6 +184,7 @@ begin
   ReadOpenGLCore;
   ReadExtensions;
   ReadImplementationProperties;
+  glGetError();
 end;
 
 procedure TModuleGLContextGLFW.ApplyChanges(Event: String; Data, Result: Pointer);

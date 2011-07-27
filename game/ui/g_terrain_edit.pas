@@ -155,7 +155,7 @@ procedure TGameTerrainEdit.CollectionChanged(Event: String; Data, Result: Pointe
     DX, DY: Integer;
     D: DWord;
   begin
-    X := Round(Park.pTerrain.Collection.Texture.Width * OX);
+{    X := Round(Park.pTerrain.Collection.Texture.Width * OX);
     Y := Round(Park.pTerrain.Collection.Texture.Height * OY);
     H := Park.pTerrain.Collection.Texture.Height div 2;
     DX := 4;
@@ -173,7 +173,7 @@ procedure TGameTerrainEdit.CollectionChanged(Event: String; Data, Result: Pointe
         Result := Result + IntToHex(D and $FF, 2);
         Result := Result + IntToHex(Round((D shr 24) and $FF * Clamp(6 - 0.25 * (VecLength(Vector(i, j) - 24)), 0, 1)), 2);
         end;
-    Park.pTerrain.Collection.Texture.UnBind;
+    Park.pTerrain.Collection.Texture.UnBind;}
   end;
 begin
   TIconifiedButton(fWindow.GetChildByName('terrain_edit.texture_1')).Icon := CreateImage(0, 0);

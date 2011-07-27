@@ -287,8 +287,10 @@ end;
 procedure TModuleGLContextSDL.InitGL;
 begin
   InitOpenGL;
+  ReadOpenGLCore;
   ReadExtensions;
   ReadImplementationProperties;
+  glGetError();
 end;
 
 function TModuleGLContextSDL.SetResolution(ResX, ResY: Integer): Boolean;

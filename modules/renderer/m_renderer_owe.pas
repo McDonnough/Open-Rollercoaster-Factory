@@ -998,8 +998,9 @@ begin
       glDisable(GL_BLEND);
 
       RTerrain.CurrentShader := RTerrain.ShadowPassShader;
-      RTerrain.CurrentShader.UniformF('ShadowSize', ShadowSize);
-      RTerrain.CurrentShader.UniformF('ShadowOffset', ShadowOffset);
+      RTerrain.CurrentShader.Bind;
+      RTerrain.CurrentShader.UniformF(RTerrain.Uniforms[RTerrain.CurrentShader.Tag, UNIFORM_TERRAIN_ANY_SHADOWSIZE], ShadowSize);
+      RTerrain.CurrentShader.UniformF(RTerrain.Uniforms[RTerrain.CurrentShader.Tag, UNIFORM_TERRAIN_ANY_SHADOWOFFSET], ShadowOffset);
       RTerrain.BorderEnabled := false;
       RTerrain.Render;
 

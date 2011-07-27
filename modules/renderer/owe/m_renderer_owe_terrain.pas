@@ -57,7 +57,7 @@ type
       CurrentShader: TShader;
       BorderEnabled: Boolean;
       Shaders: Array[0..4] of TShader;
-      Uniforms: Array[0..4, 0..12] of GLUInt;
+      Uniforms: Array[0..4, 0..14] of GLUInt;
       property TerrainEditorIsOpen: Boolean read fTerrainEditorIsOpen;
       property TerrainMap: TTexture read fTerrainMap;
       property XBlocks: Integer read fXBlocks;
@@ -82,6 +82,10 @@ type
       procedure Clear;
       constructor Create;
     end;
+
+const
+  UNIFORM_TERRAIN_ANY_SHADOWSIZE = 13;
+  UNIFORM_TERRAIN_ANY_SHADOWOFFSET = 14;
 
 implementation
 
@@ -1086,6 +1090,8 @@ begin
     Uniforms[I, UNIFORM_ANY_MIN] := Shaders[I].GetUniformLocation('Min');
     Uniforms[I, UNIFORM_ANY_MAX] := Shaders[I].GetUniformLocation('Max');
     Uniforms[I, UNIFORM_ANY_SELECTIONMESHID] := Shaders[I].GetUniformLocation('SelectionMeshID');
+    Uniforms[I, UNIFORM_TERRAIN_ANY_SHADOWSIZE] := Shaders[I].GetUniformLocation('ShadowSize');
+    Uniforms[I, UNIFORM_TERRAIN_ANY_SHADOWOFFSET] := Shaders[I].GetUniformLocation('ShadowOffset');
     end;
 
   fFineVBO := TIndexedTerrainVBO.Create(34, 0.8, -0.8);

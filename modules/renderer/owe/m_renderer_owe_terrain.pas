@@ -327,7 +327,7 @@ var
   tmpi: Integer;
 begin
   fTerrainMap.Bind(0);
-  fTerrainMap.SetFilter(GL_NEAREST, GL_NEAREST);
+  fTerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
   fSelectionShader.Bind;
   CurrentShader := fSelectionShader;
   CurrentShader.UniformI(Uniforms[CurrentShader.Tag, UNIFORM_ANY_SELECTIONMESHID], ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
@@ -372,7 +372,7 @@ var
 begin
   Park.pTerrain.Collection.Texture.Bind(1);
   fTerrainMap.Bind(0);
-  fTerrainMap.SetFilter(GL_NEAREST, GL_NEAREST);
+  fTerrainMap.SetFilter(GL_LINEAR, GL_LINEAR);
 
   setLength(BlockIDs, length(Blocks));
   setLength(DistanceValues, length(Blocks));

@@ -6,13 +6,11 @@ uniform sampler2D GeometryTexture;
 uniform sampler2D NormalTexture;
 uniform sampler2D ShadowTexture;
 uniform sampler2D MaterialTexture;
-uniform sampler2D HeightMap;
 uniform sampler2D SSAOTexture;
 uniform sampler2D EmissionTexture;
 
 uniform vec2 BumpOffset;
 
-uniform vec2 TerrainSize;
 uniform float ShadowSize;
 uniform vec3 ShadowOffset;
 uniform int UseSSAO;
@@ -35,11 +33,13 @@ void main(void) {
   vec4 AllCoord = texelFetch2D(GeometryTexture, Coords, 0);
   vec4 Emission = texelFetch2D(EmissionTexture, Coords, 0);
   // IF [ EQ owe.ssao 1 ]
-  vec4 ssaoColor = texture2D(SSAOTexture, gl_TexCoord[0].xy);
+  vec4 ssaoColor = vec4(0.0, 0.0, 0.0, 1.0);
+  if (UseSSAO == 1) {
+    ssaoColor = texture2D(SSAOTexture, gl_TexCoord[0].xy);
     // IF [ EQ owe.ssao.indirectlighting 1 ]
-    if (UseSSAO == 1)
       Emission.rgb += ssaoColor.rgb;
     // END
+  }
   // END
 
   vec3 Vertex = AllCoord.rgb;
@@ -91,38 +91,11 @@ void main(void) {
   vec3 Reflected = normalize(reflect(-normalize((gl_ModelViewMatrix * vec4(gl_LightSource[0].position.xyz, 1.0) - v).xyz), normalize(gl_NormalMatrix * Normal.xyz)));
   gl_FragData[0].a = pow(max(dot(Reflected, Eye), 0.0), Normal.a) * length(factor) / sqrt(3.0);
 
-  // Caustic
-
-  if (dotprod != 0.0) {
-    vec2 FakeVertex = Vertex.xz;
-    if (Vertex.x < 0.0) FakeVertex.x = Vertex.x * Vertex.x / 1638.4;
-    if (Vertex.z < 0.0) FakeVertex.y = Vertex.z * Vertex.z / 1638.4;
-    if (Vertex.x > TerrainSize.x) FakeVertex.x = TerrainSize.x - (Vertex.x - TerrainSize.x) * (Vertex.x - TerrainSize.x) / 1638.4;
-    if (Vertex.z > TerrainSize.y) FakeVertex.y = TerrainSize.y - (Vertex.z - TerrainSize.y) * (Vertex.z - TerrainSize.y) / 1638.4;
-
-    vec2 Height = 256.0 * texture2D(HeightMap, FakeVertex / TerrainSize).gb;
-
-    if (Height.r > Vertex.y) {
-      gl_FragData[0].rgb *= pow(0.9, (Height.r - Vertex.y));
-      vec3 ol = gl_FragData[0].rgb;
-      float lf = pow(0.95,  AllCoord.w);
-      vec2 XZPos = Vertex.xz + (Height.r - Vertex.y) * Sun.xz / -Sun.y;
-      XZPos += 0.2 * vec2(sin(XZPos.y + 4.0 * BumpOffset.x + 0.32 * XZPos.x), cos(3.1416 * XZPos.x + 3.67 * BumpOffset.y + 0.68 * XZPos.y));
-      XZPos = vec2(sin(3.0 * XZPos.x), sin(3.0 * XZPos.y));
-      XZPos *= XZPos;
-      XZPos *= XZPos;
-      XZPos *= XZPos;
-      XZPos *= pow(0.6, (Height.r - Vertex.y)) * lf;
-      gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.x);
-      gl_FragData[0].rgb *= (1.0 - 0.2 * lf + XZPos.y);
-      gl_FragData[0].rgb = mix(ol, gl_FragData[0].rgb, min(3.0 * abs(Height.r - Vertex.y) * length(factor) / sqrt(3.0) * dotprod, 1.0));
-    }
-  }
   gl_FragData[1] = vec4(gl_FragData[0].a * gl_FragData[0].rgb, 1.0);
   gl_FragData[0].rgb += Emission.rgb;
 
   // No lighting
 
   if (abs(Normal.x) + abs(Normal.y) + abs(Normal.z) == 0.0)
-    gl_FragData[0].a = -1.0;  
+    gl_FragData[0].a = -1.0;
 }

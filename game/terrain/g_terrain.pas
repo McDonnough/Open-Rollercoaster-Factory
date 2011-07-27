@@ -189,7 +189,7 @@ begin
             end;
       glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
       glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, fSizes[0], fSizes[1], 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, @fTextureData[0]);
+      glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB, fSizes[0], fSizes[1], 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, @fTextureData[0]);
       glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
       end;
     end;

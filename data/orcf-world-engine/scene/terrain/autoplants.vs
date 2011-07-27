@@ -14,11 +14,18 @@ float fetchHeightAtOffset(vec2 O) {
 
 void main(void) {
   float VY = fetchHeightAtOffset(vec2(0.0, 0.0));
+
+  float heightLevels[4];
+  heightLevels[0] = fetchHeightAtOffset(vec2( 0.0, -0.2));
+  heightLevels[1] = fetchHeightAtOffset(vec2(-0.2,  0.0));
+  heightLevels[2] = fetchHeightAtOffset(vec2( 0.2,  0.0));
+  heightLevels[3] = fetchHeightAtOffset(vec2( 0.0,  0.2));
+
   normal = normalize(
-    normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+0.0, -0.2)) - VY, -0.2), vec3(-0.2, fetchHeightAtOffset(vec2(-0.2, +0.0)) - VY, +0.0)))
-  + normalize(cross(vec3(+0.2, fetchHeightAtOffset(vec2(+0.2, +0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+0.0, -0.2)) - VY, -0.2)))
-  + normalize(cross(vec3(+0.0, fetchHeightAtOffset(vec2(+0.0, +0.2)) - VY, +0.2), vec3(+0.2, fetchHeightAtOffset(vec2(+0.2, +0.0)) - VY, -0.0)))
-  + normalize(cross(vec3(-0.2, fetchHeightAtOffset(vec2(-0.2, +0.0)) - VY, +0.0), vec3(+0.0, fetchHeightAtOffset(vec2(+0.0, +0.2)) - VY, +0.2))));
+    normalize(cross(vec3(+0.0, heightLevels[0] - VY, -0.2), vec3(-0.2, heightLevels[1] - VY, +0.0)))
+  + normalize(cross(vec3(+0.2, heightLevels[2] - VY, +0.0), vec3(+0.0, heightLevels[0] - VY, -0.2)))
+  + normalize(cross(vec3(+0.0, heightLevels[3] - VY, +0.2), vec3(+0.2, heightLevels[2] - VY, -0.0)))
+  + normalize(cross(vec3(-0.2, heightLevels[1] - VY, +0.0), vec3(+0.0, heightLevels[3] - VY, +0.2))));
 
   Vertex = vec3(gl_Vertex.x, VY, gl_Vertex.y) + gl_Vertex.z * 0.4 * normal;
   texCoord = gl_MultiTexCoord0.xy;

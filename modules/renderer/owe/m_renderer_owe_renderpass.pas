@@ -14,7 +14,7 @@ type
       fIsUnderWater: Boolean;
     public
       MinY, MaxY: Integer;
-      RenderAutoplants, RenderTerrain, RenderObjects, RenderParticles, RenderSky, RenderWater, EnableFog, EnableRefractionFog: Boolean;
+      RenderAutoplants, RenderTerrain, RenderObjects, RenderParticles, RenderSky, RenderWater, EnableFog, EnableRefractionFog, DrawCaustics, AutoCaustics: Boolean;
       property Width: Integer read fWidth;
       property Height: Integer read fHeight;
       property Scene: TFBO read fSceneBuffer;
@@ -69,6 +69,8 @@ begin
     fIsUnderWater := True;
     ModuleManager.ModRenderer.MaxRenderDistance := 55;
     end;
+  if AutoCaustics then
+    DrawCaustics := fIsUnderWater;
 
   // Opaque parts only
   GBuffer.Bind;
@@ -205,6 +207,18 @@ begin
         ModuleManager.ModRenderer.LightManager.fRegisteredLights[i].UnBind(1);
         end;
     ModuleManager.ModRenderer.LightShader.UnBind;
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    if DrawCaustics then
+      with ModuleManager.ModRenderer do
+        begin
+        CausticShader.Bind;
+        CausticShader.UniformF(Uniforms[UNIFORM_CAUSTIC_TERRAINSIZE], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+        CausticShader.UniformF(Uniforms[UNIFORM_CAUSTIC_BUMPOFFSET], RWater.BumpOffset.X, RWater.BumpOffset.Y);
+        DrawFullscreenQuad;
+        CausticShader.Unbind;
+        end;
 
     GBuffer.Textures[0].UnBind;
     GBuffer.Textures[1].UnBind;
@@ -344,6 +358,8 @@ begin
   RenderWater := True;
   EnableFog := True;
   EnableRefractionFog := False;
+  DrawCaustics := False;
+  AutoCaustics := True;
 end;
 
 destructor TRenderPass.Free;

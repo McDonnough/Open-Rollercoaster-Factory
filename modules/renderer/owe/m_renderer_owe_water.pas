@@ -417,6 +417,8 @@ begin
 
     ModuleManager.ModRenderer.RWater.RenderPass.EnableFog := False;
     ModuleManager.ModRenderer.RWater.RenderPass.EnableRefractionFog := False;
+    ModuleManager.ModRenderer.RWater.RenderPass.DrawCaustics := ClipPlane[1] = 1;
+    ModuleManager.ModRenderer.RWater.RenderPass.AutoCaustics := False;
     ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := ModuleManager.ModRenderer.WaterReflectSky and (ClipPlane[1] = -1);
     ModuleManager.ModRenderer.RWater.RenderPass.RenderTerrain := ModuleManager.ModRenderer.WaterReflectTerrain;
     ModuleManager.ModRenderer.RWater.RenderPass.RenderObjects := ModuleManager.ModRenderer.WaterReflectObjects;
@@ -439,6 +441,8 @@ begin
   ModuleManager.ModRenderer.RTerrain.BorderEnabled := True;
   ModuleManager.ModRenderer.RWater.RenderPass.EnableFog := False;
   ModuleManager.ModRenderer.RWater.RenderPass.EnableRefractionFog := True;
+  ModuleManager.ModRenderer.RWater.RenderPass.DrawCaustics := ClipPlane[1] = -1;
+  ModuleManager.ModRenderer.RWater.RenderPass.AutoCaustics := False;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderSky := ClipPlane[1] = 1;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderTerrain := ModuleManager.ModRenderer.WaterRefractTerrain;
   ModuleManager.ModRenderer.RWater.RenderPass.RenderObjects := ModuleManager.ModRenderer.WaterRefractObjects;

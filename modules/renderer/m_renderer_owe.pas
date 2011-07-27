@@ -44,7 +44,7 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader, fGridShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fCausticShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader, fGridShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
@@ -78,7 +78,7 @@ type
       FogStrength, FogRefractMode: Single;
       FogColor: TVector3D;
       RenderParticles: Boolean;
-      Uniforms: Array[0..22] of GLUInt;
+      Uniforms: Array[0..24] of GLUInt;
       property LightManager: TLightManager read fLightManager;
       property RCamera: TRCamera read fRendererCamera;
       property RSky: TRSky read fRendererSky;
@@ -98,6 +98,7 @@ type
       property HDRAverageShader: TShader read fHDRAverageShader;
       property SimpleShader: TShader read fSimpleShader;
       property SSAOShader: TShader read fSSAOShader;
+      property CausticShader: TShader read fCausticShader;
       property GBuffer: TFBO read fGBuffer;
       property HDRBuffer: TFBO read fHDRBuffer;
       property HDRBuffer2: TFBO read fHDRBuffer2;
@@ -218,6 +219,8 @@ const
   UNIFORM_HDRAVERAGE_SIZE = 20;
   UNIFORM_HDRAVERAGE_DIR = 21;
   UNIFORM_BLOOMBLUR_BLURDIRECTION = 22;
+  UNIFORM_CAUSTIC_TERRAINSIZE = 23;
+  UNIFORM_CAUSTIC_BUMPOFFSET = 24;
 
 implementation
 
@@ -505,6 +508,13 @@ begin
   Uniforms[UNIFORM_UNDERWATER_BUMPOFFSET] := fUnderWaterShader.GetUniformLocation('BumpOffset');
   Uniforms[UNIFORM_UNDERWATER_VIEWPOINT] := fUnderWaterShader.GetUniformLocation('ViewPoint');
 
+  fCausticShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/postprocess/caustics.fs');
+  fCausticShader.UniformI('GeometryTexture', 0);
+  fCausticShader.UniformI('NormalTexture', 1);
+  fCausticShader.UniformI('HeightMap', 4);
+  Uniforms[UNIFORM_CAUSTIC_TERRAINSIZE] := fCausticShader.GetUniformLocation('TerrainSize');
+  Uniforms[UNIFORM_CAUSTIC_BUMPOFFSET] := fCausticShader.GetUniformLocation('BumpOffset');
+
   fSimpleShader := TShader.Create('orcf-world-engine/inferred/simple.vs', 'orcf-world-engine/inferred/simple.fs');
   fSimpleShader.Unbind;
 
@@ -520,6 +530,7 @@ begin
   fFrustum.Free;
 
   fSimpleShader.Free;
+  fCausticShader.Free;
   fUnderWaterShader.Free;
   fBlackShader.Free;
   fShadowDepthShader.Free;
@@ -1097,12 +1108,24 @@ begin
           end;
       fLightShader.UnBind;
 
+      glDisable(GL_CULL_FACE);
+
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+      if fIsUnderWater then
+        begin
+        fCausticShader.Bind;
+        fCausticShader.UniformF(Uniforms[UNIFORM_CAUSTIC_TERRAINSIZE], Park.pTerrain.SizeX / 5, Park.pTerrain.SizeY / 5);
+        fCausticShader.UniformF(Uniforms[UNIFORM_CAUSTIC_BUMPOFFSET], RWater.BumpOffset.X, RWater.BumpOffset.Y);
+        DrawFullscreenQuad;
+        fCausticShader.Unbind;
+        end;
+      
       RTerrain.TerrainMap.UnBind;
       GBuffer.Textures[0].UnBind;
       GBuffer.Textures[1].UnBind;
       GBuffer.Textures[2].UnBind;
 
-      glDisable(GL_CULL_FACE);
       glDisable(GL_BLEND);
 
     LightBuffer.Unbind;

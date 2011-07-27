@@ -21,16 +21,10 @@ varying vec3 NormalFactor;
 varying float YFactor;
 
 ivec2 iVertex;
+ivec2 iTerrainSize;
 
-float fetchHeightAtOffset(ivec2 O) {
-  return mix(
-    mix(texture2D(TerrainMap, (iVertex + O + ivec2(0, 0)) / TerrainSize / 5.0).b,
-        texture2D(TerrainMap, (iVertex + O + ivec2(1, 0)) / TerrainSize / 5.0).b,
-        (5.0 * Vertex.x - floor(5.0 * Vertex.x))),
-    mix(texture2D(TerrainMap, (iVertex + O + ivec2(0, 1)) / TerrainSize / 5.0).b,
-        texture2D(TerrainMap, (iVertex + O + ivec2(1, 1)) / TerrainSize / 5.0).b,
-        (5.0 * Vertex.x - floor(5.0 * Vertex.x))),
-    (5.0 * Vertex.z - floor(5.0 * Vertex.z))) * 256.0;
+float fetchHeightAtOffset(vec2 O) {
+  return 256.0 * texture2D(TerrainMap, (Vertex.xz + O) / TerrainSize).b;
 }
 
 void main(void) {
@@ -48,6 +42,7 @@ void main(void) {
   // END
 
   iVertex = ivec2(floor(5.0 * FakeVertex));
+  iTerrainSize = ivec2(floor(5.0 * TerrainSize)) - 1;
 
   float VY = mix(64.0, fetchHeightAtOffset(ivec2(0, 0)), YFactor);
 
@@ -66,11 +61,17 @@ void main(void) {
   texColors[2] = texture2DArray(TerrainTexture, vec3(Vertex.xz / 48.0, TexIDs[2])).rgb;
   texColors[3] = texture2DArray(TerrainTexture, vec3(Vertex.xz / 48.0, TexIDs[3])).rgb;
 
+  float heightLevels[4];
+  heightLevels[0] = fetchHeightAtOffset(vec2( 0.0, -0.2));
+  heightLevels[1] = fetchHeightAtOffset(vec2(-0.2,  0.0));
+  heightLevels[2] = fetchHeightAtOffset(vec2( 0.2,  0.0));
+  heightLevels[3] = fetchHeightAtOffset(vec2( 0.0,  0.2));
+
   vec3 normal = normalize(
-    normalize(cross(vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, -1)) - VY, YFactor), -0.2), vec3(-0.2, mix(0.0, fetchHeightAtOffset(ivec2(-1, +0)) - VY, YFactor), +0.0)))
-  + normalize(cross(vec3(+0.2, mix(0.0, fetchHeightAtOffset(ivec2(+1, +0)) - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, -1)) - VY, YFactor), -0.2)))
-  + normalize(cross(vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, YFactor), +0.2), vec3(+0.2, mix(0.0, fetchHeightAtOffset(ivec2(+1, +0)) - VY, YFactor), -0.0)))
-  + normalize(cross(vec3(-0.2, mix(0.0, fetchHeightAtOffset(ivec2(-1, +0)) - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, fetchHeightAtOffset(ivec2(+0, +1)) - VY, YFactor), +0.2))));
+    normalize(cross(vec3(+0.0, mix(0.0, heightLevels[0] - VY, YFactor), -0.2), vec3(-0.2, mix(0.0, heightLevels[1] - VY, YFactor), +0.0)))
+  + normalize(cross(vec3(+0.2, mix(0.0, heightLevels[2] - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, heightLevels[0] - VY, YFactor), -0.2)))
+  + normalize(cross(vec3(+0.0, mix(0.0, heightLevels[3] - VY, YFactor), +0.2), vec3(+0.2, mix(0.0, heightLevels[2] - VY, YFactor), -0.0)))
+  + normalize(cross(vec3(-0.2, mix(0.0, heightLevels[1] - VY, YFactor), +0.0), vec3(+0.0, mix(0.0, heightLevels[3] - VY, YFactor), +0.2))));
   normal = normalize(mix(normal * NormalFactor, NormalMod.xyz, NormalMod.a));
 
   // IF [ EQ owe.terrain.bumpmap 1 ]
@@ -92,7 +93,7 @@ void main(void) {
   gl_FragData[0].rgb = mix(mix(texColors[0], texColors[1], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), mix(texColors[2], texColors[3], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), (FakeVertex.y * 5.0 - floor(FakeVertex.y * 5.0)));
   gl_FragData[0].a = 0.0;
   gl_FragData[0].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
-  float lf1 = clamp(pow(abs(VY - HeightLine) * 10.0, 4.0), 0.0, 1.0);
+/*  float lf1 = clamp(pow(abs(VY - HeightLine) * 10.0, 4.0), 0.0, 1.0);
   float lf2 = clamp(1.0 - min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)), 0.0, 1.0);
   gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf1);
   gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf2);
@@ -101,5 +102,5 @@ void main(void) {
   if (clamp(Vertex.xz, Min, Max) != Vertex.xz)
     gl_FragData[0].rgb *= 0.5;
   gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf1);
-  gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf2);
+  gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf2);*/
 }

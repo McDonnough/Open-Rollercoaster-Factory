@@ -16,28 +16,9 @@ type
         *@return shader ID *)
       function LoadShader(var ProgramHandle: GLUInt; VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer; virtual abstract;
 
-      (** Bind shader
-        *@param Shader ID or -1 for no shader *)
-      procedure BindShader(Shader: Integer); virtual abstract;
-
       (** Delete shader
         *@param Shader ID *)
       procedure DeleteShader(Shader: Integer); virtual abstract;
-
-
-      (* Send uniform values to shader
-        *@param Name of variable
-        *@param The values to send *)
-      procedure Uniformf(VName: String; v0: GLfloat); virtual abstract;
-      procedure Uniformf(VName: String; v0, v1: GLfloat); virtual abstract;
-      procedure Uniformf(VName: String; v0, v1, v2: GLfloat); virtual abstract;
-      procedure Uniformf(VName: String; v0, v1, v2, v3: GLfloat); virtual abstract;
-      procedure Uniformi(VName: String; v0: GLint); virtual abstract;
-      procedure Uniformi(VName: String; v0, v1: GLint); virtual abstract;
-      procedure Uniformi(VName: String; v0, v1, v2: GLint); virtual abstract;
-      procedure Uniformi(VName: String; v0, v1, v2, v3: GLint); virtual abstract;
-      procedure UniformMatrix3D(VName: String; V: Pointer); virtual abstract;
-      procedure UniformMatrix4D(VName: String; V: Pointer); virtual abstract;
 
       (** Set custom variable that may affect shaders
         *@param Name of variable

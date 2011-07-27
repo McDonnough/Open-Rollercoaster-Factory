@@ -27,18 +27,7 @@ type
       destructor Free;
       procedure CheckModConf;
       function LoadShader(var ProgramHandle: GLUInt; VSFile, FSFile: String; GSFile: String = ''; VerticesOut: Integer = 0; InputType: GLEnum = GL_TRIANGLES; OutputType: GLEnum = GL_TRIANGLE_STRIP): Integer;
-      procedure BindShader(Shader: Integer);
       procedure DeleteShader(Shader: Integer);
-      procedure Uniformf(VName: String; v0: GLfloat);
-      procedure Uniformf(VName: String; v0, v1: GLfloat);
-      procedure Uniformf(VName: String; v0, v1, v2: GLfloat);
-      procedure Uniformf(VName: String; v0, v1, v2, v3: GLfloat);
-      procedure Uniformi(VName: String; v0: GLint);
-      procedure Uniformi(VName: String; v0, v1: GLint);
-      procedure Uniformi(VName: String; v0, v1, v2: GLint);
-      procedure Uniformi(VName: String; v0, v1, v2, v3: GLint);
-      procedure UniformMatrix3D(VName: String; V: Pointer);
-      procedure UniformMatrix4D(VName: String; V: Pointer);
       procedure SetVar(Name: String; Value: Integer);
     end;
 
@@ -151,97 +140,16 @@ begin
   ProgramHandle := fShdRef[Result].ID;
 end;
 
-procedure TModuleShaderManagerDynamic.BindShader(Shader: Integer);
-begin
-  if fCurrentShader = Shader then
-    exit;
-  if (Shader >= 0) and (Shader <= high(fShdRef)) then
-    glUseProgram(fShdRef[Shader].ID)
-  else
-    glUseProgram(0);
-  fCurrentShader := Shader;
-end;
-
 procedure TModuleShaderManagerDynamic.DeleteShader(Shader: Integer);
 begin
   if (Shader >= 0) and (Shader <= high(fShdRef)) then
     begin
     if fShdRef[Shader].Name = '' then
       exit;
-    BindShader(-1);
+    glUseProgram(0);
     glDeleteProgram(fShdRef[Shader].ID);
     fShdRef[Shader].Name := '';
     end;
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0: GLfloat); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform1f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0);
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0, v1: GLfloat); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform2f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1);
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0, v1, v2: GLfloat); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform3f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2);
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformf(VName: String; v0, v1, v2, v3: GLfloat); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform4f(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2, v3);
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0: GLint); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform1i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0);
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0, v1: GLint); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform2i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1);
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0, v1, v2: GLint); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform3i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2);
-end;
-
-procedure TModuleShaderManagerDynamic.Uniformi(VName: String; v0, v1, v2, v3: GLint); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniform4i(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), V0, v1, v2, v3);
-end;
-
-procedure TModuleShaderManagerDynamic.UniformMatrix4D(VName: String; V: Pointer); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniformMatrix4fv(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
-end;
-
-procedure TModuleShaderManagerDynamic.UniformMatrix3D(VName: String; V: Pointer); inline;
-begin
-  if (fCurrentShader >= 0) and (fCurrentShader <= high(fShdRef)) then
-    if fShdRef[fCurrentShader].Uniforms.ItemID[VName] <> -1 then
-      glUniformMatrix3fv(glGetUniformLocation(fShdRef[fCurrentShader].ID, PChar(VName)), 1, false, V);
 end;
 
 end.

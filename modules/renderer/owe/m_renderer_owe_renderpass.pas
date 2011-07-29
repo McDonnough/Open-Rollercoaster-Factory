@@ -43,6 +43,9 @@ var
   fWaterHeight: Single;
   i: Integer;
 begin
+  if not ((RenderAutoplants) or (RenderTerrain) or (RenderObjects) or (RenderSky) or (RenderWater)) then
+    exit;
+
   if EnableRefractionFog then
     ModuleManager.ModRenderer.FogRefractMode := 1;
 

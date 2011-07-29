@@ -705,13 +705,13 @@ var
 begin
   glGetError();
 
-  RParticles.UpdateVBOs;
+//   RParticles.UpdateVBOs;
 
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   FogStrength := RSky.FogStrength;
   FogRefractMode := 0;
   fMaxFogDistance := Log10(0.003) / (Log10(0.5) * FogStrength);
-  
+
   MaxRenderDistance := MaxFogDistance;
 
   ViewPoint := ModuleManager.ModCamera.ActiveCamera.Position;
@@ -763,7 +763,7 @@ begin
 
   // Create object reflections
   DynamicSettingsSetReflection;
-  
+
     RTerrain.BorderEnabled := True;
     RObjects.RenderReflections;
 
@@ -986,7 +986,7 @@ begin
     GBuffer.Unbind;
 
     // Shadow pass
-    
+
     if (UseSunShadows) and (Pass = 0) then
       begin
       glDisable(GL_CULL_FACE);
@@ -1120,7 +1120,7 @@ begin
         DrawFullscreenQuad;
         fCausticShader.Unbind;
         end;
-      
+
       RTerrain.TerrainMap.UnBind;
       GBuffer.Textures[0].UnBind;
       GBuffer.Textures[1].UnBind;

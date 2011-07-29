@@ -474,6 +474,7 @@ end;
 procedure TRTerrain.ApplyChanges(Event: String; Data, Result: Pointer);
 var
   Pixel: Array[0..2] of Word;
+  Pixels: Array of Word;
   HasBlock: Array of Array of Boolean;
   i, j, k, x, y, h, w: Integer;
   Radius1, Radius2, Random1, Random2: Single;
@@ -495,19 +496,19 @@ var
 
   procedure UpdateQuad(X, Y, W, H: Word);
   var
-    Pixels: Array of Array[0..2] of Word;
     i, j: Integer;
+    P: PWord;
   begin
-    setLength(Pixels, W * H);
-    for i := 0 to W - 1 do
-      for j := 0 to H - 1 do
+    setLength(Pixels, 3 * W * H);
+    P := @Pixels[0];
+    for j := 0 to H - 1 do
+      for i := 0 to W - 1 do
         begin
-        Pixels[j * W + i, 0] := Park.pTerrain.ExactTexMap[X + I, Y + J];
-        Pixels[j * W + i, 1] := Park.pTerrain.ExactWaterMap[X + I, Y + J];
-        Pixels[j * W + i, 2] := Park.pTerrain.ExactHeightMap[X + I, Y + J];
+        P^ := Park.pTerrain.ExactTexMap[X + I, Y + J]; inc(P);
+        P^ := Park.pTerrain.ExactWaterMap[X + I, Y + J]; inc(P);
+        P^ := Park.pTerrain.ExactHeightMap[X + I, Y + J]; inc(P);
         end;
-    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, W, H, GL_RGB, GL_UNSIGNED_SHORT, @Pixels[0, 0]);
-    setLength(Pixels, 0);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, X, Y, W, H, GL_RGB, GL_UNSIGNED_SHORT, @Pixels[0]);
   end;
 
   procedure EndUpdate;
@@ -952,7 +953,7 @@ begin
     k := Integer(Data^);
     if k > 0 then
       begin
-//       x := Park.pTerrain.SizeX + 1; y := Park.pTerrain.SizeY + 1; w := -1; h := -1;
+      x := Park.pTerrain.SizeX + 1; y := Park.pTerrain.SizeY + 1; w := -1; h := -1;
       StartUpdate;
 
       for i := 0 to k - 1 do

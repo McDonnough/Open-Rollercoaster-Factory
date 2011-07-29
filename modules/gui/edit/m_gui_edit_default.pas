@@ -100,7 +100,10 @@ var
 begin
   CursorPosBefore := Edit.CursorPos;
   case Key of
-    32..255:
+    127:
+      if Edit.CursorPos <> Length(Edit.Text) then
+        Edit.Text := SubString(Edit.Text, 1, Edit.CursorPos) + SubString(Edit.Text, Edit.CursorPos + 2, length(Edit.Text) - Edit.CursorPos - 1);
+    32..126, 128..255:
       begin
       if (ModuleManager.ModInputHandler.Key[K_SHIFT]) and (ModuleManager.ModInputHandler.Key[K_ALT]) then
         case Char(Key) of

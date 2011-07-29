@@ -52,7 +52,7 @@ begin
   ModuleManager.ModGLContext.GetResolution(ResX, ResY);
   glfwPollEvents;
   glfwGetMousePos(fMouseX, fMouseY);
-  glfwDisable(GLFW_MOUSE_CURSOR);
+//   glfwDisable(GLFW_MOUSE_CURSOR);
   if (fMouseX < 0) or (fMouseY < 0) or (fMouseX > ResX) or (fMouseY > ResY) then
     glfwEnable(GLFW_MOUSE_CURSOR);
   QuitRequest := false;

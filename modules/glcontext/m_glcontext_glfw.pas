@@ -139,26 +139,26 @@ begin
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity;
 
-  glUseProgram(0);
-  fCursorTextures[MouseCursor].Bind(0);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-  glDisable(GL_CULL_FACE);
-
-  glColor4f(1, 1, 1, 1);
-
-  glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY);
-    glTexCoord2f(1, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY);
-    glTexCoord2f(1, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
-    glTexCoord2f(0, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
-  glEnd;
-
-  glDisable(GL_BLEND);
-
-  fCursorTextures[MouseCursor].Unbind;
+//   glUseProgram(0);
+//   fCursorTextures[MouseCursor].Bind(0);
+// 
+//   glEnable(GL_BLEND);
+//   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// 
+//   glDisable(GL_CULL_FACE);
+// 
+//   glColor4f(1, 1, 1, 1);
+// 
+//   glBegin(GL_QUADS);
+//     glTexCoord2f(0, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY);
+//     glTexCoord2f(1, 0); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY);
+//     glTexCoord2f(1, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX + fCursorTextures[MouseCursor].Width, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
+//     glTexCoord2f(0, 1); glVertex2f(ModuleManager.ModInputHandler.MouseX, ModuleManager.ModInputHandler.MouseY + fCursorTextures[MouseCursor].Height);
+//   glEnd;
+// 
+//   glDisable(GL_BLEND);
+// 
+//   fCursorTextures[MouseCursor].Unbind;
 
   glfwSwapBuffers;
 end;
@@ -166,7 +166,7 @@ end;
 procedure TModuleGLContextGLFW.StartMainLoop;
 begin
   LoadCursors;
-  glfwDisable(GLFW_MOUSE_CURSOR);
+//   glfwDisable(GLFW_MOUSE_CURSOR);
 
   while not ModuleManager.ModInputHandler.QuitRequest do
     MainLoop;
@@ -174,7 +174,7 @@ end;
 
 procedure TModuleGLContextGLFW.EndMainLoop;
 begin
-  glfwEnable(GLFW_MOUSE_CURSOR);
+//   glfwEnable(GLFW_MOUSE_CURSOR);
   glfwTerminate;
 end;
 

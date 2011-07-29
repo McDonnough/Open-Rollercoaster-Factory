@@ -41,21 +41,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ `uname` == "Linux" ]; then
-  if [ ${Modules[9]} == "SDL" ] || [ ${Modules[11]} == "SDL" ]; then
-    echo "Checking for SDL"
-    if [ -z "`ldconfig -p | grep libSDL-`" ]; then echo "libSDL-1.2.0 or later not found"; exit 1; fi
-  fi
-  if [ ${Modules[9]} == "GLFW" ] || [ ${Modules[11]} == "GLFW" ]; then
-    echo "Checking for GLFW"
-    if [ -z "`ldconfig -p | grep libglfw`" ]; then echo "libglfw not found"; exit 1; fi
-  fi
-  if [ ${Modules[9]} == "GLUT" ] || [ ${Modules[11]} == "GLUT" ]; then
-    echo "Checking for GLUT"
-    if [ -z "`ldconfig -p | grep libglut`" ]; then echo "libglut not found"; exit 1; fi
-  fi
-fi
-
 CurrType=""
 mode=0
 

@@ -11,8 +11,8 @@ type
     protected
       fItems: Array of TLabel;
     public
-//       procedure Add(S: String);
-//       procedure Clear;
+      procedure Add(S: String);
+      procedure Clear;
     end;
 
   TObjectCreator = class
@@ -35,6 +35,21 @@ implementation
 
 uses
   m_varlist;
+
+procedure TStaticSelectorList.Add(S: String);
+begin
+  SetLength(fItems, length(fItems) + 1);
+end;
+
+procedure TStaticSelectorList.Clear;
+var
+  I: Integer;
+begin
+  for I := 0 to high(fItems) do
+    fItems[I].Free;
+  SetLength(fItems, 0);
+end;
+
 
 procedure TObjectCreator.OnChangeTab(Sender: TGUIComponent);
 begin

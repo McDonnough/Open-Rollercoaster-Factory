@@ -53,8 +53,8 @@ begin
   glfwPollEvents;
   glfwGetMousePos(fMouseX, fMouseY);
 //   glfwDisable(GLFW_MOUSE_CURSOR);
-  if (fMouseX < 0) or (fMouseY < 0) or (fMouseX > ResX) or (fMouseY > ResY) then
-    glfwEnable(GLFW_MOUSE_CURSOR);
+//   if (fMouseX < 0) or (fMouseY < 0) or (fMouseX > ResX) or (fMouseY > ResY) then
+//     glfwEnable(GLFW_MOUSE_CURSOR);
   QuitRequest := false;
   fMouseButtons[MOUSE_LEFT] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) <> 0;
   fMouseButtons[MOUSE_MIDDLE] := glfwGetMouseButton(GLFW_MOUSE_BUTTON_MIDDLE) <> 0;

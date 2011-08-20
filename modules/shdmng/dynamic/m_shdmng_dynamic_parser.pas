@@ -373,7 +373,10 @@ begin
                  or (fCurrentValue = 'vec2') or (fCurrentValue = 'vec3') or (fCurrentValue = 'vec4')
                  or (fCurrentValue = 'ivec2') or (fCurrentValue = 'ivec3') or (fCurrentValue = 'ivec4')
                  or (fCurrentValue = 'bvec2') or (fCurrentValue = 'bvec3') or (fCurrentValue = 'bvec4')
-                 or (fCurrentValue = 'mat2') or (fCurrentValue = 'mat3') or (fCurrentValue = 'mat4')  then
+                 or (fCurrentValue = 'mat2') or (fCurrentValue = 'mat3') or (fCurrentValue = 'mat4')
+                 or (fCurrentValue = 'mat4x2') or (fCurrentValue = 'mat4x3')
+                 or (fCurrentValue = 'mat3x2') or (fCurrentValue = 'mat3x4')
+                 or (fCurrentValue = 'mat2x3') or (fCurrentValue = 'mat2x4') then
               fCurrentToken := ttDataType
             else if fPrevToken = ttPoint then
               fCurrentToken := ttSwizzle;

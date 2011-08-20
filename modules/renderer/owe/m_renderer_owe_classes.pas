@@ -424,19 +424,22 @@ end;
 
 procedure TObjectVBO.LookForChanges;
 var
-  i: Integer;
+  i, j: Integer;
 begin
   for i := 0 to high(fVertexData) do
     if fMesh.Vertices[fMeshVertexIDList[i]].Changed then
       begin
       Vertices[i] := fMesh.Vertices[fMeshVertexIDList[i]].Position;
-      Colors[i] := fMesh.Vertices[fMeshVertexIDList[i]].Color;
       TexCoords[i] := fMesh.TextureVertices[fMeshTextureVertexIDList[i]].Position;
       if fMesh.Vertices[fMeshVertexIDList[i]].UseFaceNormal then
         Normals[i] := fMesh.Faces[i div 3].FaceNormal // dirty, minor code changes will crash this
       else
         Normals[i] := fMesh.Vertices[fMeshVertexIDList[i]].VertexNormal;
       end;
+  for i := 0 to high(fMesh.Faces) do
+    for j := 0 to 2 do
+      if fMesh.Vertices[fMesh.Faces[i].Vertices[j]].Changed then
+        Colors[3 * i + j] := fMesh.Faces[i].Tangents[j];
   for i := 0 to high(fVertexData) do
     fMesh.Vertices[fMeshVertexIDList[i]].Changed := false;
 end;
@@ -527,7 +530,7 @@ begin
         Normals[3 * i + j] := Mesh.Faces[i].FaceNormal
       else
         Normals[3 * i + j] := Mesh.Vertices[Mesh.Faces[i].Vertices[j]].VertexNormal;
-      Colors[3 * i + j] := Mesh.Vertices[Mesh.Faces[i].Vertices[j]].Color;
+      Colors[3 * i + j] := Mesh.Faces[i].Tangents[j];
       TexCoords[3 * i + j] := Mesh.TextureVertices[Mesh.Faces[i].TexCoords[j]].Position;
       end;
     end;

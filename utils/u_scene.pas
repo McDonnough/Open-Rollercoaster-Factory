@@ -57,6 +57,7 @@ type
     FaceID: Integer;
     Vertices, TexCoords: TTriangleIndexList;
     FaceNormal: TVector3D;
+    Tangents: Array[0..2] of TVector4D;
     ParentMesh: TGeoMesh;
     end;
   PFace = ^TFace;
@@ -176,6 +177,7 @@ type
       Matrix: TMatrix4D;
       FirstRun: Boolean;
       Name: String;
+      VirtualScale: TVector3D;
       property SelectionID: Integer read ObjectID;
       function AddArmature: TArmature;
       function AddMesh: TGeoMesh;
@@ -505,8 +507,12 @@ end;
 procedure TGeoMesh.RecalcVertexNormals;
 var
   i, j: Integer;
+  v1, v2, v3, sdir, tdir, n: TVector3D;
+  w1, w2, w3: TVector2D;
+  r, x1, x2, y1, y2, z1, z2, s1, s2, t1, t2: Single;
 begin
   if Changed then
+    begin
     for i := 0 to high(Vertices) do
       if Vertices[i].Changed then
         begin
@@ -515,6 +521,49 @@ begin
           Vertices[i].VertexNormal := Vertices[i].VertexNormal + Faces[Vertices[i].FaceIDs[j]].FaceNormal;
         Vertices[i].VertexNormal := Normalize(Vertices[i].VertexNormal);
         end;
+
+    for i := 0 to high(Faces) do
+      begin
+      v1 := Vertices[Faces[i].Vertices[0]].Position;
+      v2 := Vertices[Faces[i].Vertices[1]].Position;
+      v3 := Vertices[Faces[i].Vertices[2]].Position;
+
+      w1 := TextureVertices[Faces[i].TexCoords[0]].Position;
+      w2 := TextureVertices[Faces[i].TexCoords[1]].Position;
+      w3 := TextureVertices[Faces[i].TexCoords[2]].Position;
+
+      x1 := v2.x - v1.x;
+      x2 := v3.x - v1.x;
+      y1 := v2.y - v1.y;
+      y2 := v3.y - v1.y;
+      z1 := v2.z - v1.z;
+      z2 := v3.z - v1.z;
+
+      s1 := w2.x - w1.x;
+      s2 := w3.x - w1.x;
+      t1 := w2.y - w1.y;
+      t2 := w3.y - w1.y;
+
+      r := 1.0 / (s1 * t2 - s2 * t1);
+      
+      sdir := Vector((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+      tdir := Vector((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+
+      for j := 0 to 2 do
+        begin
+        if Vertices[Faces[i].Vertices[j]].UseFacenormal then
+          n := Faces[i].FaceNormal
+        else
+          n := Vertices[Faces[i].Vertices[j]].VertexNormal;
+
+        Faces[i].Tangents[j] := Vector(normalize(sdir - n * DotProduct(n, sdir)), 0.0);
+        if DotProduct(Cross(n, sdir), tdir) < 0.0 then
+          Faces[i].Tangents[j].W := -1.0
+        else
+          Faces[i].Tangents[j].W := 1.0;
+        end;
+      end;
+    end;
 end;
 
 function TGeoMesh.Duplicate(TheObject: TGeoObject): TGeoMesh;
@@ -570,6 +619,7 @@ begin
       begin
       Result.Faces[i].Vertices[j] := Faces[i].Vertices[j];
       Result.Faces[i].TexCoords[j] := Faces[i].TexCoords[j];
+      Result.Faces[i].Tangents[j] := Faces[i].Tangents[j];
       end;
     end;
   
@@ -850,6 +900,7 @@ begin
 
   Result.Name := Name;
   Result.Mirror := Mirror;
+  Result.VirtualScale := VirtualScale;
 
   if Script <> nil then
     Result.Script := Script.Code.CreateInstance
@@ -1114,6 +1165,7 @@ constructor TGeoObject.Create;
 begin
   Name := '';
   Mirror := Vector(1, 1, 1);
+  VirtualScale := Vector(Random, Random, Random) + 0.5;
   Matrix := Identity4D;
   Script := nil;
   FirstRun := True;

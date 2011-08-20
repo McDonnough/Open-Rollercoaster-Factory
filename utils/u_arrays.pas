@@ -262,9 +262,7 @@ var
 begin
   OW := Width;
   OH := Height;
-  SetLength(fData, W);
-  for i := 0 to W - 1 do
-    SetLength(fData[i], H);
+  SetLength(fData, W, H);
   for i := 0 to W - 1 do
     for j := 0 to H - 1 do
       if (i >= OW) or (j >= OH) then

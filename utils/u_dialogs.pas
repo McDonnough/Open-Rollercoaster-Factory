@@ -7,7 +7,7 @@ uses
   m_gui_edit_class, m_gui_button_class, m_texmng_class, m_gui_scrollbox_class, u_vectors, m_gui_image_class, DGLOpenGL;
 
 type
-  TDialogFileType = (ftOCF, ftIMG);
+  TDialogFileType = (ftOCF, ftIMG, ftXML, ftOGG);
   TDialogFileTypes = set of TDialogFileType;
 
   TDialogFileUI = record
@@ -351,6 +351,10 @@ begin
       GetFilesInDirectory(fDirectory, '*.tga', fFileList, false, false);
       GetFilesInDirectory(fDirectory, '*.dbcg', fFileList, false, false);
       end;
+    if ftXML in fFileTypes then
+      GetFilesInDirectory(fDirectory, '*.xml', fFileList, false, false);
+    if ftOGG in fFileTypes then
+      GetFilesInDirectory(fDirectory, '*.ogg', fFileList, false, false);
       
     fDirList.Sort;
     fFileList.Sort;
@@ -431,11 +435,13 @@ begin
           Description.Caption := '[Waiting]';
           ModuleManager.ModOCFManager.RequestOCFFile(fFileList.Strings[i], 'TFileOpenDialog.LoadedOCFFile', @Preview.Tag)
           end
-        else
+        else if (SubString(fFileList.Strings[i], length(fFileList.Strings[i]) - 3, 4) = '.tga') or (SubString(fFileList.Strings[i], length(fFileList.Strings[i]) - 4, 5) = '.dbcg') then
           begin
           Preview.Tex := TTexture.Create;
           Preview.Tex.FromFile(fFileList.Strings[i]);
-          end;
+          end
+        else
+          Preview.Tex := nil;
         end;
   except
     ModuleManager.ModLog.AddError('Cannot change directory from ' + fDirectory);

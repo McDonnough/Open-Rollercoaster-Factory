@@ -93,7 +93,7 @@ void main(void) {
   gl_FragData[0].rgb = mix(mix(texColors[0], texColors[1], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), mix(texColors[2], texColors[3], (FakeVertex.x * 5.0 - floor(FakeVertex.x * 5.0))), (FakeVertex.y * 5.0 - floor(FakeVertex.y * 5.0)));
   gl_FragData[0].a = 0.0;
   gl_FragData[0].rgb *= clamp(1.0 + 0.8 * dot(normal, normalize(gl_LightSource[0].position.xyz - Vertex)), 0.0, 1.0);
-/*  float lf1 = clamp(pow(abs(VY - HeightLine) * 10.0, 4.0), 0.0, 1.0);
+  float lf1 = clamp(pow(abs(VY - HeightLine) * 10.0, 4.0), 0.0, 1.0);
   float lf2 = clamp(1.0 - min(1.0, 1.0 - min(20.0 * abs(Vertex.x - PointToHighlight.x), 1.0) + 1.0 - min(20.0 * abs(Vertex.z - PointToHighlight.y), 1.0)), 0.0, 1.0);
   gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf1);
   gl_FragData[0].rgb = mix(vec3(0.0, 1.0, 1.0), gl_FragData[0].rgb, lf2);
@@ -102,5 +102,5 @@ void main(void) {
   if (clamp(Vertex.xz, Min, Max) != Vertex.xz)
     gl_FragData[0].rgb *= 0.5;
   gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf1);
-  gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf2);*/
+  gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf2);
 }

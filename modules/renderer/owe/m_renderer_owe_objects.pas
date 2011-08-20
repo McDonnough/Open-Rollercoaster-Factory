@@ -585,6 +585,7 @@ begin
     for j := 0 to high(fMeshClasses[i].Meshes) do
       begin
       fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MIRROR], fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror);
+//       fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIRTSCALE], fMeshClasses[i].Meshes[j].ParentObject.GeoObject.VirtualScale);
       with fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror do
         if X * Y * Z < 0 then
           ModuleManager.ModRenderer.InvertFrontFace;
@@ -612,7 +613,7 @@ begin
       Pos := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
       fManagedObjects[i].Meshes[j].Visible := false;
       if VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Pos) - fManagedObjects[i].Meshes[j].VBO.Radius * fManagedObjects[i].Meshes[j].VBO.Radius < ModuleManager.ModRenderer.MaxRenderDistance * ModuleManager.ModRenderer.MaxRenderDistance then
-        fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius);
+        fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius * Max(fManagedObjects[i].GeoObject.VirtualScale.X, Max(fManagedObjects[i].GeoObject.VirtualScale.Y, fManagedObjects[i].GeoObject.VirtualScale.Z)));
       if (VecLength(ModuleManager.ModRenderer.ViewPoint - Pos) < CalculateLODDistance(fManagedObjects[i].Meshes[j].GeoMesh.MinDistance)) or (VecLength(ModuleManager.ModRenderer.ViewPoint - Pos) >= CalculateLODDistance(fManagedObjects[i].Meshes[j].GeoMesh.MaxDistance)) then
         fManagedObjects[i].Meshes[j].Visible := false;
       end;
@@ -864,7 +865,7 @@ begin
   Sync;
   for I := 0 to high(fManagedObjects) do
     begin
-    for J := 0 to high(fManagedObjects[J].Meshes) do
+    for J := 0 to high(fManagedObjects[i].Meshes) do
       fManagedObjects[i].Meshes[j].Free;
     fManagedObjects[i].Free;
     end;

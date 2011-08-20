@@ -14,6 +14,10 @@ uniform vec2 Mediums;
 varying vec3 Vertex;
 varying vec3 OrigVertex;
 varying vec3 Normal;
+varying vec3 Tangent;
+varying vec3 Bitangent;
+varying vec3 TransformedVertex;
+varying vec3 TransformedNormal;
 
 float Fresnel(float x) {
   float theSQRT = sqrt(max(0.0, 1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)));
@@ -45,29 +49,43 @@ vec3 GetReflectionColor(vec3 vector) {
 
 void main(void) {
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
-  gl_FragData[2].rgb = Vertex;
-  gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
-  gl_FragData[0] = vec4(gl_FrontMaterial.diffuse.rgb, gl_FrontMaterial.specular.r);
-  if (HasTexture == 1)
-    gl_FragData[0].rgb *= texture2D(Texture, gl_TexCoord[0].xy).rgb;
   vec3 normal = Normal;
-  if (HasNormalMap == 1) {
-    vec3 q0 = dFdx(Vertex.xyz);
-    vec3 q1 = dFdy(Vertex.xyz);
-    vec2 st0 = dFdx(gl_TexCoord[0].st);
-    vec2 st1 = dFdy(gl_TexCoord[0].st);
-
-    vec3 S = normalize( q0 * st1.t - q1 * st0.t);
-    vec3 T = normalize(-q0 * st1.s + q1 * st0.s);
-
-    mat3 M = mat3(-T, -S, normal);
-    normal = normalize(M * (vec3(texture2D(NormalMap, gl_TexCoord[0].xy)) - vec3(0.5, 0.5, 0.5)));
-  }
+  float displacement = 0.0;
+  float displacementHeight = 0.04;
   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Vertex, 1.0)).xyz);
+  vec2 coords = gl_TexCoord[0].xy;
+  if (HasNormalMap == 1) {
+    vec4 BumpColor = vec4(0.5, 0.5, 1.0, 1.0);
+
+    mat3 M = mat3(Tangent, Bitangent, Normal);
+    mat3 _M = transpose(M);
+
+    int SampleCount = int(ceil(mix(60.0, 8.0, pow(abs(dot(normalize(Vertex - ViewPoint), Normal)), 2.0))));
+
+    vec3 tsEye = _M * (Vertex - ViewPoint);
+    tsEye /= abs(tsEye.z);
+    tsEye *= displacementHeight;
+    tsEye /= SampleCount;
+
+    for (int i = 0; i < SampleCount; i++) {
+      BumpColor = texture2D(NormalMap, coords);
+      if ((BumpColor.a - 1.0) * displacementHeight >= displacement)
+        break;
+      coords += tsEye.xy;
+      displacement += tsEye.z;
+    }
+
+    normal = normalize(M * (BumpColor.rgb - vec3(0.5, 0.5, 0.5)));
+  }
   if (gl_FrontMaterial.specular.g > 0.0)
     gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal))))));
   else
     gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
+  gl_FragData[0] = vec4(gl_FrontMaterial.diffuse.rgb, gl_FrontMaterial.specular.r);
+  if (HasTexture == 1)
+    gl_FragData[0].rgb *= texture2D(Texture, coords).rgb;
   gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);
   gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
-}
+  gl_FragData[2].rgb = Vertex + displacementHeight + displacement * Normal;
+  gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(gl_FragData[2].rgb, 1.0)));
+ }

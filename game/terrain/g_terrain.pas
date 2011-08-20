@@ -574,13 +574,11 @@ begin
   fCanAdvance := false;
   while fAdvancing do
     sleep(1);
-  SetLength(fMap, X);
+  SetLength(fMap, X, Y);
   oSizeX := fSizeX;
   oSizeY := fSizeY;
   fSizeX := X;
   fSizeY := Y;
-  for i := 0 to high(fMap) do
-    SetLength(fMap[i], Y);
   for i := 0 to high(fMap) do
     for j := 0 to high(fMap[i]) do
       if (i >= oSizeX) or (j >= oSizeY) then

@@ -72,4 +72,6 @@ void main(void) {
   gl_FragData[2].rgb = Vertex;
   gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(Vertex, 1.0)));
   gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
+  vec2 projected = (gl_ModelViewProjectionMatrix * vec4(Vertex, 1.0)).zw;
+  gl_FragDepth = sqrt(projected.x / projected.y);
 }

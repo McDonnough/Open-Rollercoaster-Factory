@@ -70,6 +70,8 @@ void main(void) {
   gl_FragData[4].rgb = (1.0 - ReflectionCoefficient) * (vec3(0.20, 0.30, 0.27) * 3.0 * gl_LightSource[0].ambient.rgb);
   gl_FragData[4].rgb += ReflectionCoefficient * GetReflectionColor(normal);
   gl_FragData[4].a = WaterColorFactor;
+  vec2 projected = (gl_ModelViewProjectionMatrix * vec4(Vertex, 1.0)).zw;
+  gl_FragDepth = sqrt(projected.x / projected.y);
 
 //   gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
 //   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);

@@ -26,4 +26,6 @@ void main(void) {
   gl_FragData[0].rgb *= 0.64 * Factor;
   gl_FragData[0].rgb += StarFac * texture2D(StarTexture, vec2(pow(abs(Vertex.x / 5000.0), 0.33), pow(abs(Vertex.z / 5000.0), 0.33)) * 3.0 * sign(Vertex.xz)).rgb;
   gl_FragData[0].a = 1.0;
+  vec2 projected = (gl_ModelViewProjectionMatrix * vec4(Vertex, 1.0)).zw;
+  gl_FragDepth = sqrt(projected.x / projected.y);
 }

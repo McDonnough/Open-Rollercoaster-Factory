@@ -18,4 +18,6 @@ void main(void) {
   gl_FragData[1] = vec4(0.0, 1.0, 0.0, 2.0);
   gl_FragData[0].rgb = texture2DArray(TerrainTexture, vec3(clamp((Vertex.xz / 32.0 - floor(Vertex.xz / 32.0)), 1.0 / 512.0, 1.0 - 1.0 / 512.0) / 4.0, 0.0)).rgb;
   gl_FragData[0].a = 0.0;
+  vec2 projected = (gl_ModelViewProjectionMatrix * vec4(Vertex, 1.0)).zw;
+  gl_FragDepth = sqrt(projected.x / projected.y);
 }

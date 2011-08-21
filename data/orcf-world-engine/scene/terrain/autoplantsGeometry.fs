@@ -24,4 +24,6 @@ void main(void) {
   gl_FragData[3] = vec4(1.0, 1.0, 1.0, 1.0);
   gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
   gl_FragData[5] = vec4(0.0, 0.0, 0.0, 0.0);
+  vec2 projected = (gl_ModelViewProjectionMatrix * vec4(Vertex, 1.0)).zw;
+  gl_FragDepth = sqrt(projected.x / projected.y);
 }

@@ -103,4 +103,6 @@ void main(void) {
     gl_FragData[0].rgb *= 0.5;
   gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf1);
   gl_FragData[0].a = mix(0.0, gl_FragData[0].a, lf2);
+  vec2 projected = (gl_ModelViewProjectionMatrix * vec4(Vertex, 1.0)).zw;
+  gl_FragDepth = sqrt(projected.x / projected.y);
 }

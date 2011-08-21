@@ -9,15 +9,12 @@ varying in vec3 _Normal[3];
 varying in vec3 _Vertex[3];
 varying in vec3 _OrigVertex[3];
 varying in vec3 _TransformedVertex[3];
-varying in vec3 _TransformedNormal[3];
 
 varying out vec3 Normal;
 varying out vec3 Vertex;
 varying out vec3 OrigVertex;
 varying out vec3 Tangent;
 varying out vec3 Bitangent;
-varying out vec3 TransformedVertex;
-varying out vec3 TransformedNormal;
 
 void main(void) {
   // Tangent stuff
@@ -40,13 +37,11 @@ void main(void) {
     Vertex = _Vertex[i];
     OrigVertex = _OrigVertex[i];
     Normal = _Normal[i];
-    TransformedNormal = _TransformedNormal[i];
-    TransformedVertex = _TransformedVertex[i];
     Tangent = normalize(sdir - Normal * dot(Normal, sdir));
     Bitangent = cross(Normal, Tangent) * sign(dot(cross(Normal, sdir), tdir));
     gl_TexCoord[0] = gl_TexCoordIn[i][0];
     gl_Position = gl_PositionIn[i];
-    gl_ClipVertex = vec4(TransformedVertex, 1.0);
+    gl_ClipVertex = vec4(_TransformedVertex[i], 1.0);
     EmitVertex();
   }
 }

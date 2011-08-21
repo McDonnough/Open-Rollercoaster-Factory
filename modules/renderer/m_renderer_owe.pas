@@ -67,6 +67,7 @@ type
       fSimpleShader: TShader;
       fMaxFogDistance: Single;
       fEnableS3D: Boolean;
+      fEnablePOM, fEnablePOMSelfShadow: Boolean;
       fS3DMode: Integer;
       fS3DInvert: Boolean;
       fS3DStrength: Single;
@@ -178,6 +179,8 @@ type
       property S3DMode : Integer read fS3DMode;
       property S3DStrength: Single read fS3DStrength;
       property S3DInvert: Boolean read fS3DInvert;
+      property EnablePOM: Boolean read fEnablePOM;
+      property EnablePOMSelfShadow: Boolean read fEnablePOMSelfShadow;
       procedure DynamicSettingsSetNormal;
       procedure DynamicSettingsSetReflection;
       procedure PostInit;
@@ -1593,6 +1596,8 @@ begin
     SetConfVal('s3d.invert', '0');
     SetConfVal('s3d.mode', '0');
     SetConfVal('s3d.strength', '1');
+    SetConfVal('pom', '0');
+    SetConfVal('pom.shadows', '0');
     end;
   fFSAASamples := StrToIntWD(GetConfVal('samples'), 1);
   fReflectionSize := StrToIntWD(GetConfVal('reflections.realtime.size'), 128);
@@ -1650,6 +1655,8 @@ begin
   fWaterRefractParticles := GetConfVal('water.refract.particles') = '1';
   fWaterRefractAutoplants := GetConfVal('water.refract.autoplants') = '1';
   fEnableS3D := GetConfVal('s3d') = '1';
+  fEnablePOM := GetConfVal('pom') = '1';
+  fEnablePOMSelfShadow := GetConfVal('pom.shadows') = '1';
   fS3DMode := -1;
   if fEnableS3D then
     fS3DMode := StrToIntWD(GetConfVal('s3d.mode'), 0);
@@ -1668,6 +1675,8 @@ begin
   ModuleManager.ModShdMng.SetVar('owe.terrain.tesselation', 0);
   ModuleManager.ModShdMng.SetVar('owe.terrain.bumpmap', 0);
   ModuleManager.ModShdMng.SetVar('owe.gamma', 0);
+  ModuleManager.ModShdMng.SetVar('owe.pom', 0);
+  ModuleManager.ModShdMng.SetVar('owe.pom.shadows', 0);
   ModuleManager.ModShdMng.SetVar('owe.s3d', 0);
   ModuleManager.ModShdMng.SetVar('owe.s3d.mode', fS3DMode);
   if fUseSunShadows then
@@ -1688,6 +1697,10 @@ begin
     ModuleManager.ModShdMng.SetVar('owe.gamma', 1);
   if fEnableS3D then
     ModuleManager.ModShdMng.SetVar('owe.s3d', 1);
+  if fEnablePOM then
+    ModuleManager.ModShdMng.SetVar('owe.pom', 1);
+  if fEnablePOMSelfShadow then
+    ModuleManager.ModShdMng.SetVar('owe.pom.shadows', 1);
 end;
 
 procedure TModuleRendererOWE.InvertFrontFace;

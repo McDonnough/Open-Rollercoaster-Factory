@@ -31,11 +31,12 @@ type
 
   TShaderConstellation = class
     protected
-      fVertexShaderFile, fFragmentShaderFile: TShaderFile;
+      fVertexShaderFile, fFragmentShaderFile, fGeometryShaderFile: TShaderFile;
     public
       property VertexShader: TShaderFile read fVertexShaderFile;
       property FragmentShader: TShaderFile read fFragmentShaderFile;
-      constructor Create(VS, FS: String);
+      property GeometryShader: TShaderFile read fGeometryShaderFile;
+      constructor Create(VS, FS, GS: String);
       destructor Free;
     end;
 
@@ -476,7 +477,7 @@ begin
     end;
 end;
 
-constructor TShaderConstellation.Create(VS, FS: String);
+constructor TShaderConstellation.Create(VS, FS, GS: String);
 var
   i: Integer;
   VertexVaryings: AString;
@@ -487,22 +488,38 @@ begin
   fFragmentShaderFile := TShaderFile.Create(FS);
   fFragmentShaderFile.GetVariables;
 
+  if GS <> '' then
+    begin
+    fGeometryShaderFile := TShaderFile.Create(GS);
+    fGeometryShaderFile.GetVariables;
+    end
+  else
+    fGeometryShaderFile := nil;
+
   fVertexShaderFile.Preprocess;
   fFragmentShaderFile.Preprocess;
-
-  VertexVaryings := fVertexShaderFile.Varyings.ItemStrings;
-  for i := 0 to high(VertexVaryings) do
-    if FragmentShader.Varyings.ItemID[VertexVaryings[i]] = -1 then
-      fVertexShaderFile.EliminateVarying(VertexVaryings[i]);
+  if fGeometryShaderFile <> nil then
+    fGeometryShaderFile.Preprocess
+  else
+    begin
+    VertexVaryings := fVertexShaderFile.Varyings.ItemStrings;
+    for i := 0 to high(VertexVaryings) do
+      if FragmentShader.Varyings.ItemID[VertexVaryings[i]] = -1 then
+        fVertexShaderFile.EliminateVarying(VertexVaryings[i]);
+    end;
 
   fVertexShaderFile.CleanUp;
   fFragmentShaderFile.CleanUp;
+  if fGeometryShaderFile <> nil then
+    fGeometryShaderFile.CleanUp;
 end;
 
 destructor TShaderConstellation.Free;
 begin
   fVertexShaderFile.Free;
   fFragmentShaderFile.Free;
+  if fGeometryShaderFile <> nil then
+    fGeometryShaderFile.Free;
 end;
 
 end.

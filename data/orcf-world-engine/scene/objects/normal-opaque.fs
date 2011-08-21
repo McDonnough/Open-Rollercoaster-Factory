@@ -5,6 +5,7 @@ uniform sampler2D NormalMap;
 uniform sampler2D ReflectionMap;
 
 uniform vec3 ViewPoint;
+uniform vec3 Mirror;
 
 uniform int HasTexture;
 uniform int HasNormalMap;

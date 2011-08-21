@@ -83,23 +83,24 @@ function TModuleShaderManagerDynamic.LoadShader(var ProgramHandle: GLUInt; VSFil
       end;
   end;
 var
-  FSObject, VSObject: GLHandle;
+  FSObject, VSObject, GSObject: GLHandle;
   Shaders: TShaderConstellation;
   str: String;
   s: Integer;
   i: integer;
 begin
-  if GSFile <> '' then
-    ModuleManager.ModLog.AddError('Geometry shaders not supported for ' + VSFile + ', ' + FSFile);
-  writeln('Loading Shader ' + VSFile + ', ' + FSFile);
-  if (not FileExists(VSFile)) or (not FileExists(FSFile)) then
+  if VerticesOut > 0 then
+    writeln('Loading Shader ' + VSFile + ', ' + FSFile, ', ', GSFile)
+  else
+    writeln('Loading Shader ' + VSFile + ', ' + FSFile);
+  if (not FileExists(VSFile)) or (not FileExists(FSFile)) or ((not FileExists(GSFile)) and (VerticesOut > 0)) then
     begin
-    ModuleManager.ModLog.AddWarning('Shader files ' + VSFile + ', ' + FSFile + ' do not exist');
+    ModuleManager.ModLog.AddWarning('Shader files ' + VSFile + ', ' + FSFile + ', ' + GSFile + ' do not exist');
     exit(-1);
     end;
 
   for i := 0 to high(fShdRef) do
-    if fShdRef[i].Name = VSFile + ':' + FSFile then
+    if fShdRef[i].Name = VSFile + ':' + FSFile + ':' + GSFile then
       exit(i);
 
   SetLength(fShdRef, length(fShdRef) + 1);
@@ -110,32 +111,50 @@ begin
 
   VSObject := glCreateShader(GL_VERTEX_SHADER);
   FSObject := glCreateShader(GL_FRAGMENT_SHADER);
+  if VerticesOut > 0 then
+    GSObject := glCreateShader(GL_GEOMETRY_SHADER_EXT);
 
-  Shaders := TShaderConstellation.Create(VSFile, FSFile);
+  Shaders := TShaderConstellation.Create(VSFile, FSFile, GSFile);
     fShdRef[Result].Uniforms.Assign(Shaders.VertexShader.Uniforms);
     fShdRef[Result].Uniforms.Assign(Shaders.FragmentShader.Uniforms);
+    if VerticesOut > 0 then
+      fShdRef[Result].Uniforms.Assign(Shaders.GeometryShader.Uniforms);
 
     Str := Shaders.VertexShader.ToString; S := Length(Str);
-//     writeln(Str);
     glShaderSource(VSObject, 1, @Str, @S);
     Str := Shaders.FragmentShader.ToString; S := Length(Str);
     glShaderSource(FSObject, 1, @Str, @S);
-//     writeln(Str);
+    if VerticesOut > 0 then
+      begin
+      Str := Shaders.GeometryShader.ToString; S := Length(Str);
+      glShaderSource(GSObject, 1, @Str, @S);
+      end;
   Shaders.Free;
 
   glCompileShader(VSObject);
   glCompileShader(FSObject);
+  if VerticesOut > 0 then
+    glCompileShader(GSObject);
 
   glAttachShader(fShdRef[Result].ID, VSObject);
   glAttachShader(fShdRef[Result].ID, FSObject);
+  if VerticesOut > 0 then
+    begin
+    glAttachShader(fShdRef[Result].ID, GSObject);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_VERTICES_OUT_EXT, VerticesOut);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_INPUT_TYPE_EXT, InputType);
+    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_OUTPUT_TYPE_EXT, OutputType);
+    end;
   glLinkProgram(fShdRef[Result].ID);
   if glSlang_getInfoLog(fShdRef[Result].ID) <> '' then
-    ModuleManager.ModLog.AddWarning('Shader Info (' + VSFile + ', ' + FSFile + '):' + #10 + glSlang_getInfoLog(fShdRef[Result].ID));
+    ModuleManager.ModLog.AddWarning('Shader Info (' + VSFile + ', ' + FSFile + ', ' + GSFile + '):' + #10 + glSlang_getInfoLog(fShdRef[Result].ID));
 
   fShdRef[Result].Name := VSFile + ':' + FSFile;
 
   glDeleteShader(VSObject);
   glDeleteShader(FSObject);
+  if VerticesOut > 0 then
+    glDeleteShader(GSObject);
 
   ProgramHandle := fShdRef[Result].ID;
 end;

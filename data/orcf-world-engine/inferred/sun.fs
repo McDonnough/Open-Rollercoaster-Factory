@@ -6,6 +6,7 @@ uniform sampler2D GeometryTexture;
 uniform sampler2D NormalTexture;
 uniform sampler2D ShadowTexture;
 uniform sampler2D MaterialTexture;
+uniform sampler2D MaterialMap;
 uniform sampler2D SSAOTexture;
 uniform sampler2D EmissionTexture;
 
@@ -74,7 +75,8 @@ void main(void) {
     // END
   }
   // END
-  factor = min(factor, vec3(1.0, 1.0, 1.0));
+
+  factor = min(factor, vec3(1.0, 1.0, 1.0)) * texelFetch2D(MaterialMap, Coords, 0).a;
   gl_FragData[0].rgb *= factor;
 
   // IF [ EQ owe.ssao 1 ]

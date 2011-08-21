@@ -81,6 +81,8 @@ begin
         fMaterial.Reflectivity := StrToFloatWD(CurrElement.FirstChild.NodeValue, 0);
         fMaterial.OnlyEnvironmentMaphint := CurrElement.GetAttribute('onlyenvironmentmap') = 'true';
         end
+      else if CurrElement.TagName = 'displacement' then
+        fMaterial.DisplacementHeight := StrToFloatWD(CurrElement.GetAttribute('height'), 0.04)
       else if CurrElement.TagName = 'specularity' then
         fMaterial.Specularity := StrToFloatWD(CurrElement.FirstChild.NodeValue, 1)
       else if CurrElement.TagName = 'hardness' then

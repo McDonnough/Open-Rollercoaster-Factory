@@ -343,7 +343,7 @@ begin
     fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MEDIUMS], 1.0, Max(0.001, RefractiveIndex));
     if (RefractiveIndex = 0.0) and (Transparent) then
       fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MEDIUMS], 1.0, 1.00001);
-    Spec := Vector(Specularity, Reflectivity, 0, 0);
+    Spec := Vector(Specularity, Reflectivity, DisplacementHeight, 0);
     MyHardness := Clamp(Hardness, 0, 128);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, @Color.X);
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, @Emission.X);
@@ -703,7 +703,7 @@ begin
   fOpaqueShader.Tag := SHADER_OPAQUE;
   Shaders[SHADER_OPAQUE] := fOpaqueShader;
 
-  fTransparentShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-transparent.fs', 'orcf-world-engine/scene/objects/normal.gs', 3);
+  fTransparentShader := TShader.Create('orcf-world-engine/scene/objects/normalSimple.vs', 'orcf-world-engine/scene/objects/normal-transparent.fs');
   fTransparentShader.UniformI('Texture', 0);
   fTransparentShader.UniformI('NormalMap', 1);
   fTransparentShader.UniformI('ReflectionMap', 3);
@@ -712,7 +712,7 @@ begin
   fTransparentShader.Tag := SHADER_TRANSPARENT;
   Shaders[SHADER_TRANSPARENT] := fTransparentShader;
 
-  fTransparentMaterialShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/scene/objects/normal-material.fs', 'orcf-world-engine/scene/objects/normal.gs', 3);
+  fTransparentMaterialShader := TShader.Create('orcf-world-engine/scene/objects/normalSimple.vs', 'orcf-world-engine/scene/objects/normal-material.fs');
   fTransparentMaterialShader.UniformI('Texture', 0);
   fTransparentMaterialShader.UniformI('NormalMap', 5);
   fTransparentMaterialShader.UniformI('ReflectionMap', 3);
@@ -722,7 +722,7 @@ begin
   fTransparentMaterialShader.Tag := SHADER_TRANSPARENT_MATERIAL;
   Shaders[SHADER_TRANSPARENT_MATERIAL] := fTransparentMaterialShader;
 
-  fSelectionShader := TShader.Create('orcf-world-engine/scene/objects/normal.vs', 'orcf-world-engine/inferred/selection.fs', 'orcf-world-engine/scene/objects/normal.gs', 3);
+  fSelectionShader := TShader.Create('orcf-world-engine/scene/objects/normalSimple.vs', 'orcf-world-engine/inferred/selection.fs');
   fSelectionShader.UniformI('Texture', 0);
   fSelectionShader.Tag := SHADER_SELECTION;
   Shaders[SHADER_SELECTION] := fSelectionShader;

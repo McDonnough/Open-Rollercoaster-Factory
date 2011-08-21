@@ -50,9 +50,10 @@ vec3 GetReflectionColor(vec3 vector) {
 
 void main(void) {
   gl_FragData[3] = vec4(0.0, 0.0, 0.0, 1.0);
+  gl_FragData[0] = vec4(gl_FrontMaterial.diffuse.rgb, gl_FrontMaterial.specular.r);
   vec3 normal = Normal;
   float displacement = 0.0;
-  float displacementHeight = 0.04;
+  float displacementHeight = gl_FrontMaterial.specular.b;
   vec3 Eye = normalize((gl_ModelViewMatrix * vec4(Vertex, 1.0)).xyz);
   vec2 coords = gl_TexCoord[0].xy;
   if (HasNormalMap == 1) {
@@ -61,7 +62,7 @@ void main(void) {
     mat3 M = mat3(Tangent, Bitangent, Normal);
     mat3 _M = transpose(M);
 
-    int SampleCount = int(ceil(mix(60.0, 8.0, pow(abs(dot(normalize(Vertex - ViewPoint), Normal)), 2.0))));
+    int SampleCount = int(ceil(mix(90.0, 16.0, pow(abs(dot(normalize(Vertex - ViewPoint), Normal)), 2.0))));
 
     vec3 tsEye = _M * (Vertex - ViewPoint);
     tsEye /= abs(tsEye.z);
@@ -75,14 +76,33 @@ void main(void) {
       coords += tsEye.xy;
       displacement += tsEye.z;
     }
-
     normal = normalize(M * (BumpColor.rgb - vec3(0.5, 0.5, 0.5)));
+
+    if (dot(gl_LightSource[0].position.xyz - Vertex, normal) > 0.0) {
+      SampleCount = int(ceil(mix(90.0, 32.0, pow(abs(dot(normalize(gl_LightSource[0].position.xyz - Vertex), Normal)), 2.0))));
+
+      vec3 tsSun = _M * (gl_LightSource[0].position.xyz - Vertex);
+      tsSun /= abs(tsSun.z);
+      tsSun *= max(-displacement, 0.1);
+      tsSun /= SampleCount;
+
+      float h = displacement;
+      vec2 shadowCoords = coords;
+
+      float diff = 0.0;
+      for (int i = 0; i < SampleCount; i++) {
+        shadowCoords += tsSun.xy;
+        h += tsSun.z;
+        vec4 tmpBumpColor = texture2D(NormalMap, shadowCoords);
+        diff = max(diff, ((tmpBumpColor.a - 1.0) * displacementHeight) - (h + 0.1 * displacementHeight));
+      }
+      gl_FragData[3].a = 1.0 - 100.0 * diff;
+    }
   }
   if (gl_FrontMaterial.specular.g > 0.0)
     gl_FragData[4] = vec4(GetReflectionColor(normal), gl_FrontMaterial.specular.g * Fresnel(acos(abs(dot(-Eye, normalize(gl_NormalMatrix * normal))))));
   else
     gl_FragData[4] = vec4(0.0, 0.0, 0.0, 0.0);
-  gl_FragData[0] = vec4(gl_FrontMaterial.diffuse.rgb, gl_FrontMaterial.specular.r);
   if (HasTexture == 1)
     gl_FragData[0].rgb *= texture2D(Texture, coords).rgb;
   gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);

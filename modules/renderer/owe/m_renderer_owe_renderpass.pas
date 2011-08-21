@@ -177,6 +177,7 @@ begin
     GBuffer.Textures[0].Bind(3);
     GBuffer.Textures[1].Bind(1);
     GBuffer.Textures[2].Bind(0);
+    GBuffer.Textures[3].Bind(7);
 
     ModuleManager.ModRenderer.SunShader.Bind;
     ModuleManager.ModRenderer.SunShader.UniformI(ModuleManager.ModRenderer.Uniforms[UNIFORM_SUN_USESSAO], 0);
@@ -223,6 +224,7 @@ begin
     GBuffer.Textures[0].UnBind;
     GBuffer.Textures[1].UnBind;
     GBuffer.Textures[2].UnBind;
+    GBuffer.Textures[3].UnBind;
 
     glDisable(GL_BLEND);
   fLightBuffer.Unbind;
@@ -325,7 +327,7 @@ begin
   fGBuffer.Textures[1].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA32F_ARB, GL_NEAREST, GL_NEAREST);  // Vertex and depth
   fGBuffer.Textures[2].SetClamp(GL_CLAMP, GL_CLAMP);
-  fGBuffer.AddTexture(GL_RGB, GL_NEAREST, GL_NEAREST);          // Material IDs
+  fGBuffer.AddTexture(GL_RGBA, GL_NEAREST, GL_NEAREST);         // Material IDs
   fGBuffer.Textures[3].SetClamp(GL_CLAMP, GL_CLAMP);
   fGBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);  // Reflection and reflectivity
   fGBuffer.Textures[4].SetClamp(GL_CLAMP, GL_CLAMP);

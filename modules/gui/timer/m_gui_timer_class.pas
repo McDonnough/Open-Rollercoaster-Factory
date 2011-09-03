@@ -16,7 +16,7 @@ type
       IsOn: Boolean;
       OnExpire: TCallbackProcedure;
       property Interval: UInt64 read fBaseInterval write SetInterval; // Milliseconds!
-      procedure Render;
+      procedure Render; override;
       constructor Create(mParent: TGUIComponent);
     end;
 

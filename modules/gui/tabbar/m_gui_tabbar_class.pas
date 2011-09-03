@@ -24,7 +24,7 @@ type
       property SelectedTab: Integer read fSelectedTab write SelectTab;
       procedure AddTab(Caption: String; MinWidth: Integer = 150);
       procedure RemoveTab(ID: Integer);
-      procedure Render;
+      procedure Render; override;
       constructor Create(mParent: TGUIComponent);
     end;
 

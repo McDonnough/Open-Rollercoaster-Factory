@@ -16,7 +16,7 @@ type
       fHoverFactor, fClickFactor: GLFloat;
       property Caption: String read fCaption write setCaption;
       constructor Create(mParent: TGUIComponent);
-      procedure Render;
+      procedure Render; override;
     end;
 
   TModuleGUIButtonClass = class(TBasicModule)

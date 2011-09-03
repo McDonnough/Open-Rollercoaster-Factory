@@ -4,7 +4,7 @@ interface
 
 uses
   SysUtils, Classes, m_gui_window_class, m_gui_label_class, m_gui_button_class, m_gui_iconifiedbutton_class, m_gui_scrollbox_class,
-  m_gui_image_class, g_loader_ocf, u_dialogs, u_vectors, m_gui_tabbar_class, m_gui_class, u_files;
+  m_gui_image_class, g_loader_ocf, u_dialogs, u_vectors, m_gui_tabbar_class, m_gui_class, u_files, u_dom;
 
 type
   TSelectorList = class;
@@ -33,15 +33,17 @@ type
       fResourceName: String;
       fCaptLabel: TLabel;
       fList: TSelectorList;
+      fFormat: String;
       procedure Select(Sender: TGUIComponent);
       procedure AssignResourceName(S: String);
     public
       property ResourceName: String read fResourceName write AssignResourceName;
+      property Format: String read fFormat write fFormat;
       property Data: TOCFBinarySection read fData;
       procedure EmptySection;
       procedure AssignSection(S: TOCFBinarySection);
       constructor Create(P: TSelectorList);
-      procedure Free;
+      destructor Destroy; override;
     end;
 
   TObjectCreator = class
@@ -52,12 +54,18 @@ type
       fTabBar: TTabBar;
       fResources: TSelectorList;
       fResourceData: Array of TSelectableResource;
-      fClearResources, fAddResources: TIconifiedButton;
-      fOpenResource: TFileDialog;
+      fClearResources, fAddResources, fQuit, fSaveOCF: TIconifiedButton;
+      fOpenResource, fSaveDialog: TFileDialog;
+      fDoQuit: TYesNoDialog;
       procedure ClearResources(Sender: TGUIComponent);
       procedure AddResources(Sender: TGUIComponent);
+      procedure SaveOCF(Sender: TGUIComponent);
+      procedure Quit(Sender: TGUIComponent);
       procedure AddResourcesFromFile(Event: String; Data, Result: Pointer);
       procedure OnChangeTab(Sender: TGUIComponent);
+      procedure QuitEvent(Event: String; Data, Result: Pointer);
+      procedure SaveEvent(Event: String; Data, Result: Pointer);
+      procedure RemoveItem(Event: String; Data, Result: Pointer);
     public
       property CanClose: Boolean read fCanClose;
       constructor Create;
@@ -105,17 +113,19 @@ begin
   fCaptLabel.Height := 16;
   fCaptLabel.Size := 16;
   fCaptLabel.Width := 200;
+  fFormat := '';
   P.Add(Self);
   fData := nil;
   OnClick := @Select;
   fCaptLabel.OnClick := @Select;
 end;
 
-procedure TSelectableResource.Free;
+destructor TSelectableResource.Destroy;
 begin
+  EventManager.CallEvent('TSelectableResource.Free', Self, nil);
   if fData <> nil then
     fData.Free;
-  inherited Free;
+  inherited Destroy;
 end;
 
 procedure TSelectorList.Selected(Item: TLabel);
@@ -229,12 +239,24 @@ procedure TObjectCreator.AddResourcesFromFile(Event: String; Data, Result: Point
 var
   Filename: String;
   A: TByteStream;
+  O: TOCFFile;
+  I: Integer;
 begin
   Filename := String(Data^);
   if Event = 'TFileDialog.Selected' then
     if ExtractFileExt(FileName) = '.ocf' then
       begin
-      
+      O := TOCFFile.Create(FileName);
+      for I := 0 to O.ResourceCount - 1 do
+        begin
+        SetLength(fResourceData, length(fResourceData) + 1);
+        fResourceData[high(fResourceData)] := TSelectableResource.Create(fResources);
+        fResourceData[high(fResourceData)].EmptySection;
+        fResourceData[high(fResourceData)].Data.Append(@O.Bin[i].Stream.Data[0], Length(O.Bin[i].Stream.Data));
+        fResourceData[high(fResourceData)].ResourceName := O.Resources[i].Name;
+        fResourceData[high(fResourceData)].Format := O.Resources[i].Format;
+        end;
+      O.Free;
       end
     else
       begin
@@ -247,6 +269,75 @@ begin
       end;
   EventManager.RemoveCallback(@AddResourcesFromFile);
   fOpenResource.Free;
+end;
+
+procedure TObjectCreator.SaveOCF(Sender: TGUIComponent);
+begin
+  EventManager.AddCallback('TFileDialog.Selected', @SaveEvent);
+  EventManager.AddCallback('TFileDialog.Aborted', @SaveEvent);
+  fSaveDialog := TFileDialog.Create(False, 'scenery', 'Save OCF file', [ftOCF]);
+end;
+
+procedure TObjectCreator.Quit(Sender: TGUIComponent);
+begin
+  EventManager.AddCallback('TYesNoDialog.Yes', @QuitEvent);
+  EventManager.AddCallback('TYesNoDialog.No', @QuitEvent);
+  fDoQuit := TYesNoDialog.Create('Really quit the object creator?', 'dialog-information.tga');
+end;
+
+procedure TObjectCreator.RemoveItem(Event: String; Data, Result: Pointer);
+var
+  I, J: Integer;
+begin
+  for I := 0 to high(fResourceData) do
+    if fResourceData[I] = TSelectableResource(Data) then
+      begin
+      for J := I + 1 to high(fResourceData) do
+        fResourceData[J - 1] := fResourceData[J];
+      SetLength(fResourceData, length(fResourceData) - 1);
+      exit;
+      end;
+end;
+
+procedure TObjectCreator.QuitEvent(Event: String; Data, Result: Pointer);
+begin
+  if Data = Pointer(fDoQuit) then
+    begin
+    fCanClose := Event = 'TYesNoDialog.Yes';
+    EventManager.RemoveCallback(@QuitEvent);
+    fDoQuit.Free;
+    end;
+end;
+
+procedure TObjectCreator.SaveEvent(Event: String; Data, Result: Pointer);
+var
+  O: TOCFFile;
+  S: TOCFBinarySection;
+  I, RC: Integer;
+begin
+  EventManager.RemoveCallback(@SaveEvent);
+  if Event = 'TFileDialog.Selected' then
+    begin
+    O := TOCFFile.Create('');
+    O.XML.Document.FirstChild.AppendChild(O.XML.Document.CreateElement('resources'));
+    RC := 0;
+    for I := 0 to high(fResourceData) do
+      begin
+      O.XML.Document.FirstChild.FirstChild.AppendChild(O.XML.Document.CreateElement('resource'));
+      TDOMElement(O.XML.Document.FirstChild.FirstChild.LastChild).SetAttribute('resource:name', fResourceData[i].ResourceName);
+      TDOMElement(O.XML.Document.FirstChild.FirstChild.LastChild).SetAttribute('resource:id', IntToStr(RC));
+      TDOMElement(O.XML.Document.FirstChild.FirstChild.LastChild).SetAttribute('resource:section', IntToStr(RC));
+      TDOMElement(O.XML.Document.FirstChild.FirstChild.LastChild).SetAttribute('resource:format', fResourceData[i].Format);
+      TDOMElement(O.XML.Document.FirstChild.FirstChild.LastChild).SetAttribute('resource:version', '1.0');
+      S := TOCFBinarySection.Create;
+      S.Append(@fResourceData[0].Data.Stream.Data[0], length(fResourceData[0].Data.Stream.Data));
+      O.AddBinarySection(S);
+      inc(RC);
+      end;
+    O.SaveTo(fSaveDialog.FileName);
+    O.Free;
+    end;
+  fSaveDialog.Free;
 end;
 
 constructor TObjectCreator.Create;
@@ -325,10 +416,29 @@ begin
   fAddResources.Height := 32;
   fAddResources.Icon := 'list-add.tga';
   fAddResources.OnClick := @AddResources;
+
+  fSaveOCF := TIconifiedButton.Create(fResourceTab);
+  fSaveOCF.Top := 520;
+  fSaveOCF.Left := 744;
+  fSaveOCF.Width := 32;
+  fSaveOCF.Height := 32;
+  fSaveOCF.Icon := 'document-save.tga';
+  fSaveOCF.OnClick := @SaveOCF;
+
+  fQuit := TIconifiedButton.Create(fResourceTab);
+  fQuit.Top := 520;
+  fQuit.Left := 704;
+  fQuit.Width := 32;
+  fQuit.Height := 32;
+  fQuit.Icon := 'dialog-cancel.tga';
+  fQuit.OnClick := @Quit;
+
+  EventManager.AddCallback('TSelectableResource.Free', @RemoveItem);
 end;
 
 destructor TObjectCreator.Free;
 begin
+  EventManager.RemoveCallback(@RemoveItem);
   fBGLabel.Free;
 end;
 

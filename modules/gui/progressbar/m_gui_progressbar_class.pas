@@ -11,7 +11,7 @@ type
       fProgress, fDestProgress: Integer;
     public
       property Progress: Integer read fProgress write fDestProgress;
-      procedure Render;
+      procedure Render; override;
       constructor Create(mParent: TGUIComponent);
     end;
 

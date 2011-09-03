@@ -71,8 +71,8 @@ void main(void) {
   }
 // END
 
-
   factor = min(factor, vec3(1.0, 1.0, 1.0));
+
   gl_FragData[0].rgb *= factor * attenuation;
 
   vec4 v = (gl_ModelViewMatrix * vec4(Vertex, 1.0));

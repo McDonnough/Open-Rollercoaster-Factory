@@ -24,7 +24,7 @@ type
       property Surface: TLabel read fSurface;
       property ContentHeight: Single read fCHeight;
       property ContentWidth: Single read fCwidth;
-      procedure Render;
+      procedure Render; override;
       constructor Create(mParent: TGUIComponent);
     end;
 

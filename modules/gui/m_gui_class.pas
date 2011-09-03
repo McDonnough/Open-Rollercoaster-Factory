@@ -68,11 +68,12 @@ type
       property MaxX: GLFloat read GetMaxX;
       property MaxY: GLFloat read GetMaxY;
       procedure BringToFront(Child: TGUIComponent);
-      procedure Render;
+      procedure Render; virtual;
+      procedure Advance;
       procedure ImmediatelyApplyGeometry;
       function GetChildByName(S: String): TGUIComponent;
       constructor Create(mParent: TGUIComponent; TypeName: TComponentType);
-      destructor Free;
+      destructor Destroy; override;
     end;
 
   TModuleGUIClass = class(TBasicModule)
@@ -221,6 +222,10 @@ begin
 end;
 
 procedure TGUIComponent.Render;
+begin
+end;
+
+procedure TGUIComponent.Advance;
 const
   MAX_MOTION_SPEED = 0.1;
   SPEED_ADD = 0.005;
@@ -339,15 +344,11 @@ begin
   OnScroll := nil;
 end;
 
-destructor TGUIComponent.Free;
+destructor TGUIComponent.Destroy;
 begin
   ModuleManager.ModGUI.DeletionNotification(Self);
   while high(fChildren) >= 0 do
-    case fChildren[0].ComponentType of
-      CImage: TImage(fChildren[0]).Free;
-    else
-      fChildren[0].Free;
-    end;
+    fChildren[0].Free;
   if fParent <> nil then
     fParent.RemoveChild(Self);
 end;

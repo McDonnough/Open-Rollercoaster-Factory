@@ -15,7 +15,7 @@ type
       Caption: String;
       property Icon: String read fIcon write SetIcon;
       constructor Create(mParent: TGUIComponent);
-      procedure Render;
+      procedure Render; override;
     end;
 
   TModuleGUIIconifiedButtonClass = class(TBasicModule)

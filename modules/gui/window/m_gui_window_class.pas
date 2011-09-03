@@ -12,7 +12,7 @@ type
     public
       HasBackground: Boolean;
       OfsX1, OfsX2, OfsY1, OfsY2, ResX, ResY: Integer;
-      procedure Render;
+      procedure Render; override;
       constructor Create(mParent: TGUIComponent);
     end;
 

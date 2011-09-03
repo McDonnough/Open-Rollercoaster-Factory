@@ -18,7 +18,7 @@ type
       Color: TVector4D;
       TextColor: TVector4D;
       property Caption: String read fCaption write setCaption;
-      procedure Render;
+      procedure Render; override;
       constructor Create(mParent: TGUIComponent);
     end;
 

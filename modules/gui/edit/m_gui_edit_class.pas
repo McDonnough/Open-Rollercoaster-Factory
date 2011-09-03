@@ -18,7 +18,7 @@ type
       fHoverFactor, fClickFactor: GLFloat;
       property CursorPos: Integer read fCursorPos write SetCursorPos;
       property Text: String read fText write SetText;
-      procedure Render;
+      procedure Render; override;
       constructor Create(mParent: TGUIComponent);
     end;
 

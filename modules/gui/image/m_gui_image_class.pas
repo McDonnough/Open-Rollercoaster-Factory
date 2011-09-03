@@ -12,8 +12,8 @@ type
       Color: TVector3D;
       FreeTextureOnDestroy: Boolean;
       constructor Create(mParent: TGUIComponent);
-      procedure Render;
-      destructor Free;
+      procedure Render; override;
+      destructor Destroy; override;
     end;
 
   TModuleGUIImageClass = class(TBasicModule)
@@ -42,11 +42,11 @@ begin
   ModuleManager.ModGUIImage.Render(Self);
 end;
 
-destructor TImage.Free;
+destructor TImage.Destroy;
 begin
   if (FreeTextureOnDestroy) and (Tex <> nil) then
     Tex.Free;
-  inherited Free;
+  inherited Destroy;
 end;
 
 end.

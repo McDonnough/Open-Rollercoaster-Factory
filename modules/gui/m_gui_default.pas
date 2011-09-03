@@ -36,24 +36,11 @@ var
     if Component = nil then
       exit;
     Component.Rendered := True;
-    Component.Render;
+    Component.Advance;
     if (Component.ComponentType <> CLabel) and (Component.ComponentType <> CTimer) then
       if ((Component.Alpha <= 0.01) or (Component.Width <= 0) or (Component.Height <= 0)) then
         exit;
-    case Component.ComponentType of
-      CWindow: TWindow(Component).Render;
-      CTabBar: TTabBar(Component).Render;
-      CLabel: TLabel(Component).Render;
-      CProgressBar: TProgressBar(Component).Render;
-      CButton: TButton(Component).Render;
-      CIconifiedButton: TIconifiedButton(Component).Render;
-      CEdit: TEdit(Component).Render;
-      CSlider: TSlider(Component).Render;
-      CScrollBox: TScrollBox(Component).Render;
-      CTimer: TTimer(Component).Render;
-      CImage: TImage(Component).Render;
-      CCheckBox: TCheckBox(Component).Render;
-      end;
+    Component.Render;
     if Component.Rendered then
       if (Round(Component.MaxY - Component.MinY) > 0) and (Round(Component.MaxX - Component.MinX) > 0) then
         begin

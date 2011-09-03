@@ -40,6 +40,7 @@ type
       function GetDescription: String;
       function GetName: String;
       function GetOCFType: String;
+      function GetResourceCount: Integer;
       function GetPreview: TTexImage;
     public
       Flags: QWord;
@@ -51,6 +52,7 @@ type
       property Name: String read getName;
       property OCFType: String read getOCFType;
       property Preview: TTexImage read getPreview;
+      property ResourceCount: Integer read getResourceCount;
       procedure AddBinarySection(A: TOCFBinarySection);
       procedure SaveTo(FName: String);
       function ResourceByName(RName: String): TOCFResource;
@@ -115,7 +117,7 @@ end;
 
 function TOCFFile.GetPreview: TTexImage;
 var
-  i, ResourceCount, ResourceID: Integer;
+  i, fResourceCount, ResourceID: Integer;
 begin
   if fPreview.BPP <> 0 then
     exit(fPreview);
@@ -123,8 +125,8 @@ begin
   try
     if GetOCFType = 'terraincollection' then
       begin
-      ResourceCount := high(XML.Document.GetElementsByTagName('resource'));
-      fPreview := TexFromStream(fBinarySections[Resources[ResourceCount].Section].Stream, '.' + Resources[ResourceCount].Format);
+      fResourceCount := high(XML.Document.GetElementsByTagName('resource'));
+      fPreview := TexFromStream(fBinarySections[Resources[fResourceCount].Section].Stream, '.' + Resources[fResourceCount].Format);
       Result := fPreview;
       end
     else if GetOCFType = 'set' then
@@ -252,6 +254,11 @@ begin
     inc(i)
   until
     (Result.Name = RName) or (Result.id = -1);
+end;
+
+function TOCFFile.GetResourceCount: Integer;
+begin
+  Result := Length(fBinarySections);
 end;
 
 constructor TOCFFile.Create(FName: String);

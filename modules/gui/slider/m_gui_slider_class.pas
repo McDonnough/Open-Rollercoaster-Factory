@@ -24,7 +24,7 @@ type
       procedure ValueChanged(Sender: TGUIComponent);
       procedure ConfirmClicked(Sender: TGUIComponent);
       procedure Release(Sender: TGUIComponent);
-      procedure Render;
+      procedure Render; override;
     end;
 
   TModuleGUISliderClass = class(TBasicModule)

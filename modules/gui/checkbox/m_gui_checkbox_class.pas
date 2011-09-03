@@ -13,7 +13,7 @@ type
       OnChange: TCallbackProcedure;
       procedure Clicked(Sender: TGUIComponent);
       constructor Create(mParent: TGUIComponent);
-      procedure Render;
+      procedure Render; override;
     end;
 
   TModuleGUICheckBoxClass = class(TBasicModule)

@@ -115,7 +115,7 @@ void main(void) {
     gl_FragData[0].rgb *= texture2D(Texture, coords).rgb;
   gl_FragData[5] = gl_FrontMaterial.emission * vec4(gl_FragData[0].rgb, 1.0);
   gl_FragData[1] = vec4(normal, gl_FrontMaterial.shininess);
-  gl_FragData[2].rgb = Vertex + displacementHeight + displacement * Normal;
+  gl_FragData[2].rgb = Vertex + (displacementHeight + displacement) * Normal;
   gl_FragData[2].a = length(vec3(gl_ModelViewMatrix * vec4(gl_FragData[2].rgb, 1.0)));
   vec2 projected = (gl_ModelViewProjectionMatrix * vec4(Vertex + displacement * Normal, 1.0)).zw;
   gl_FragDepth = sqrt(projected.x / projected.y);

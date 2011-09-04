@@ -180,7 +180,7 @@ type
     public
       property CanClose: Boolean read fCanClose;
       constructor Create;
-      destructor Free;
+      destructor Destroy; override;
     end;
 
 var
@@ -1434,7 +1434,7 @@ begin
   fPreviewDialogPath := 'scenery';
 end;
 
-destructor TSetCreator.Free;
+destructor TSetCreator.Destroy;
 begin
   fBGLabel.Free;
 end;

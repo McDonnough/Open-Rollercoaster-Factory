@@ -181,10 +181,10 @@ type
 {$DEFINE INITSET    4}
 
 type
-  ov_callbacks_read_func  = function(prt: Pointer; size: size_t; nmenb: size_t; datasource: Pointer): size_t; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
-  ov_callbacks_seek_func  = function(datasource: Pointer; offset: ogg_int64_t; whence: Integer): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
-  ov_callbacks_close_func = function(datasource: Pointer): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
-  ov_callbacks_tell_func  = function(datasource: Pointer): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
+  ov_callbacks_read_func  = function(prt: Pointer; size: size_t; nmenb: size_t; datasource: Pointer): size_t; cdecl;
+  ov_callbacks_seek_func  = function(datasource: Pointer; offset: ogg_int64_t; whence: Integer): Integer; cdecl;
+  ov_callbacks_close_func = function(datasource: Pointer): Integer; cdecl;
+  ov_callbacks_tell_func  = function(datasource: Pointer): long; cdecl;
 
   ov_callbacks = record
     read_func       : ov_callbacks_read_func;
@@ -220,53 +220,53 @@ type
     end;
   pOggVorbis_File = ^OggVorbis_File;
 
-  ov_filter = procedure(pcm: PPSingle; channels: long; samples: long; filter_param: Pointer); {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
+  ov_filter = procedure(pcm: PPSingle; channels: long; samples: long; filter_param: Pointer); cdecl;
 
-function ov_clear(vf: pOggVorbis_File): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_fopen(const Path: PChar; vf: pOggVorbis_File): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_open(f: pFile; vf: pOggVorbis_File; const initial: PChar; ibytes: long): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_open_callbacks(datasource: Pointer; vf: pOggVorbis_File; const initial: PChar; ibytes: long; callbacks: ov_callbacks): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_clear(vf: pOggVorbis_File): Integer; cdecl; external LIBNAME;
+function ov_fopen(const Path: PChar; vf: pOggVorbis_File): Integer; cdecl; external LIBNAME;
+function ov_open(f: pFile; vf: pOggVorbis_File; const initial: PChar; ibytes: long): Integer; cdecl; external LIBNAME;
+function ov_open_callbacks(datasource: Pointer; vf: pOggVorbis_File; const initial: PChar; ibytes: long; callbacks: ov_callbacks): Integer; cdecl; external LIBNAME;
 
-function ov_test(f: pFile; vf: pOggVorbis_File; const initial: PChar; ibytes: long): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_test_callbacks(datasource: Pointer; vf: pOggVorbis_File; const initial: PChar; ibytes: long; callbacks: ov_callbacks): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_test_open(vf: pOggVorbis_File): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_test(f: pFile; vf: pOggVorbis_File; const initial: PChar; ibytes: long): Integer; cdecl; external LIBNAME;
+function ov_test_callbacks(datasource: Pointer; vf: pOggVorbis_File; const initial: PChar; ibytes: long; callbacks: ov_callbacks): Integer; cdecl; external LIBNAME;
+function ov_test_open(vf: pOggVorbis_File): Integer; cdecl; external LIBNAME;
 
-function ov_bitrate(vf: pOggVorbis_File; i: Integer): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_bitrate_instant(vf: pOggVorbis_File): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_streams(vf: pOggVorbis_File): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_seekable(vf: pOggVorbis_File): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_serialnumber(vf: pOggVorbis_File; i: Integer): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_bitrate(vf: pOggVorbis_File; i: Integer): long; cdecl; external LIBNAME;
+function ov_bitrate_instant(vf: pOggVorbis_File): long; cdecl; external LIBNAME;
+function ov_streams(vf: pOggVorbis_File): long; cdecl; external LIBNAME;
+function ov_seekable(vf: pOggVorbis_File): long; cdecl; external LIBNAME;
+function ov_serialnumber(vf: pOggVorbis_File; i: Integer): long; cdecl; external LIBNAME;
 
-function ov_raw_total(vf: pOggVorbis_File; i: Integer): ogg_int64_t; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_pcm_total(vf: pOggVorbis_File; i: Integer): ogg_int64_t; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_time_total(vf: pOggVorbis_File; i: Integer): double; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_raw_total(vf: pOggVorbis_File; i: Integer): ogg_int64_t; cdecl; external LIBNAME;
+function ov_pcm_total(vf: pOggVorbis_File; i: Integer): ogg_int64_t; cdecl; external LIBNAME;
+function ov_time_total(vf: pOggVorbis_File; i: Integer): double; cdecl; external LIBNAME;
 
-function ov_raw_seek(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_pcm_seek(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_pcm_seek_page(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_time_seek(vf: pOggVorbis_File; pos: double): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_time_seek_page(vf: pOggVorbis_File; pos: double): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_raw_seek(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; cdecl; external LIBNAME;
+function ov_pcm_seek(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; cdecl; external LIBNAME;
+function ov_pcm_seek_page(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; cdecl; external LIBNAME;
+function ov_time_seek(vf: pOggVorbis_File; pos: double): Integer; cdecl; external LIBNAME;
+function ov_time_seek_page(vf: pOggVorbis_File; pos: double): Integer; cdecl; external LIBNAME;
 
-function ov_raw_seek_lap(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_pcm_seek_lap(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_pcm_seek_page_lap(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_time_seek_lap(vf: pOggVorbis_File; pos: double): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_time_seek_page_lap(vf: pOggVorbis_File; pos: double): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_raw_seek_lap(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; cdecl; external LIBNAME;
+function ov_pcm_seek_lap(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; cdecl; external LIBNAME;
+function ov_pcm_seek_page_lap(vf: pOggVorbis_File; pos: ogg_int64_t): Integer; cdecl; external LIBNAME;
+function ov_time_seek_lap(vf: pOggVorbis_File; pos: double): Integer; cdecl; external LIBNAME;
+function ov_time_seek_page_lap(vf: pOggVorbis_File; pos: double): Integer; cdecl; external LIBNAME;
 
-function ov_raw_tell(vf: pOggVorbis_File): ogg_int64_t; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_pcm_tell(vf: pOggVorbis_File): ogg_int64_t; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_time_tell(vf: pOggVorbis_File): double; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_raw_tell(vf: pOggVorbis_File): ogg_int64_t; cdecl; external LIBNAME;
+function ov_pcm_tell(vf: pOggVorbis_File): ogg_int64_t; cdecl; external LIBNAME;
+function ov_time_tell(vf: pOggVorbis_File): double; cdecl; external LIBNAME;
 
-function ov_info(vf: pOggVorbis_File; link: Integer): pvorbis_info; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_comment(vf: pOggVorbis_File; link: Integer): pvorbis_comment; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_info(vf: pOggVorbis_File; link: Integer): pvorbis_info; cdecl; external LIBNAME;
+function ov_comment(vf: pOggVorbis_File; link: Integer): pvorbis_comment; cdecl; external LIBNAME;
 
-function ov_read_float(vf: pOggVorbis_File; pcm_channels: PPPSingle; samples: Integer; bitstream: PInteger): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_read_filter(vf: pOggVorbis_File; buffer: PChar; length: Integer; bigendianp: Integer; wordsize: Integer; sgned: Integer; bitstream: PInteger; filter: ov_filter; filter_param: Pointer): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_read(vf: pOggVorbis_File; buffer: PChar; length: Integer; bigendianp: Integer; wordsize: Integer; sgned: Integer; bitstream: PInteger): long; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_crosslap(vf1: pOggVorbis_File; vf2: pOggVorbis_File): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_read_float(vf: pOggVorbis_File; pcm_channels: PPPSingle; samples: Integer; bitstream: PInteger): long; cdecl; external LIBNAME;
+function ov_read_filter(vf: pOggVorbis_File; buffer: PChar; length: Integer; bigendianp: Integer; wordsize: Integer; sgned: Integer; bitstream: PInteger; filter: ov_filter; filter_param: Pointer): long; cdecl; external LIBNAME;
+function ov_read(vf: pOggVorbis_File; buffer: PChar; length: Integer; bigendianp: Integer; wordsize: Integer; sgned: Integer; bitstream: PInteger): long; cdecl; external LIBNAME;
+function ov_crosslap(vf1: pOggVorbis_File; vf2: pOggVorbis_File): Integer; cdecl; external LIBNAME;
 
-function ov_halfrate(vf: pOggVorbis_File; flag: Integer): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
-function ov_halfrate_p(vf: pOggVorbis_File): Integer; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF}; external LIBNAME;
+function ov_halfrate(vf: pOggVorbis_File; flag: Integer): Integer; cdecl; external LIBNAME;
+function ov_halfrate_p(vf: pOggVorbis_File): Integer; cdecl; external LIBNAME;
 
 implementation
 

@@ -43,7 +43,7 @@ type
     FirstByte: PByte;
     end;
 
-function ReadFunc(ptr: Pointer; size, nmemb: size_t; datasource: Pointer): size_t; {$IFDEF WINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
+function ReadFunc(ptr: Pointer; size, nmemb: size_t; datasource: Pointer): size_t; cdecl;
 var
   BytesRead, BytesToRead, I: Integer;
   A: PByte;

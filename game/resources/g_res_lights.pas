@@ -69,6 +69,8 @@ begin
                                   StrToFloatWD(CurrElement.GetAttribute('b'), 0.0))
       else if CurrElement.TagName = 'factor' then
         fLight.DiffuseFactor := StrToFloatWD(CurrElement.FirstChild.NodeValue, 1.0)
+      else if CurrElement.TagName = 'limit' then
+        fLight.OnlyNight := CurrElement.GetAttribute('mode') = 'night'
       else if CurrElement.TagName = 'energy' then
         fLight.Energy := StrToFloatWD(CurrElement.FirstChild.NodeValue, 1.0)
       else if CurrElement.TagName = 'falloff' then

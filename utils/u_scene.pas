@@ -14,6 +14,9 @@ type
       Energy, FalloffDistance: Single;
       DiffuseFactor: Single;
       CastShadows: Boolean;
+      OnlyNight: Boolean;
+      Active: Boolean;
+      OnTime, OffTime: Integer;
       function Duplicate: TLightSource;
       procedure Register;
       procedure SetIO(Script: TScript);
@@ -158,6 +161,7 @@ type
       procedure UpdateVertexPositions;
       procedure Register;
       procedure SetIO(Script: TScript);
+      procedure Advance(Time: Integer);
       class procedure RegisterStruct;
       constructor Create;
       destructor Free;
@@ -197,6 +201,7 @@ type
       function GetMaterialByName(Mat: String): TMaterial;
       procedure ExecuteScript;
       procedure SetIO;
+      procedure Advance(Time: Integer);
       class procedure RegisterStruct;
       constructor Create;
       destructor Free;
@@ -233,6 +238,7 @@ begin
   Result.FalloffDistance := FalloffDistance;
   Result.DiffuseFactor := DiffuseFactor;
   Result.CastShadows := CastShadows;
+  Result.OnlyNight := OnlyNight;
 end;
 
 procedure TLightSource.Register;
@@ -267,6 +273,10 @@ begin
   CastShadows := True;
   Position := Vector(0, 0, 0, 1);
   OriginalPosition := Vector(0, 0, 0, 1);
+  OnlyNight := False;
+  OffTime := 24600 + Round(1000 * Random);
+  OnTime := 61800 - Round(1000 * Random);
+  Active := True;
 end;
 
 destructor TLightSource.Free;
@@ -769,6 +779,14 @@ begin
   Script.SetIO(@Mat, SizeOf(SInt), false);
 end;
 
+procedure TGeoMesh.Advance(Time: Integer);
+var
+  i: Integer;
+begin
+  for i := 0 to high(LightSources) do
+    LightSources[i].Active := ((Time >= LightSources[i].OnTime) or (Time <= LightSources[i].OffTime)) or (not LightSources[i].OnlyNight);
+end;
+
 class procedure TGeoMesh.RegisterStruct;
 begin
   ModuleManager.ModScriptManager.SetDataStructure('Mesh',
@@ -1083,6 +1101,14 @@ begin
         inc(k);
         end;
     end;
+end;
+
+procedure TGeoObject.Advance(Time: Integer);
+var
+  i: Integer;
+begin
+  for i := 0 to high(Meshes) do
+    Meshes[i].Advance(Time);
 end;
 
 function TGeoObject.GetMaterialByName(Mat: String): TMaterial;

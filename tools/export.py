@@ -164,8 +164,8 @@ def lampXML(lamp):
   result += '  <energy>{0:.3f}</energy>\n'.format(lamp.energy)
   result += '  <falloff>{0:.3f}</falloff>\n'.format(lamp.distance)
   result += '  <factor>{0:.3f}</factor>\n'.format(lamp.get('diffuse_factor', 1))
-  if lamp.get('onlyNight', '0') != '0':
-    result += '  <limit mode="night" />'
+  if lamp.get('onlyNight', '') != '':
+    result += '  <limit mode="night" />\n'
   
   if (lamp.shadow_method == 'NOSHADOW'):
     result += '  <castshadows>false</castshadows>\n'

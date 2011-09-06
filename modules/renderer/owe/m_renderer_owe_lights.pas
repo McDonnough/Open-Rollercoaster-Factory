@@ -109,7 +109,7 @@ var
         end;
   end;
 begin
-  if (ShadowMap <> nil) and (LightSource.CastShadows) then
+  if (ShadowMap <> nil) and (LightSource.CastShadows) and (LightSource.Active) then
     begin
     l := MaxLightingEffect;
     
@@ -187,8 +187,9 @@ end;
 
 function TLight.IsVisible(A: TFrustum): Boolean;
 begin
-  Result := (VecLengthNoRoot(Vector3D(fLightSource.Position) - ModuleManager.ModCamera.ActiveCamera.Position) <= MaxLightingEffect * MaxLightingEffect)
-         or (A.IsSphereWithin(fLightSource.Position.X, fLightSource.Position.Y, fLightSource.Position.Z, MaxLightingEffect));
+  Result := ((VecLengthNoRoot(Vector3D(fLightSource.Position) - ModuleManager.ModCamera.ActiveCamera.Position) <= MaxLightingEffect * MaxLightingEffect)
+         or (A.IsSphereWithin(fLightSource.Position.X, fLightSource.Position.Y, fLightSource.Position.Z, MaxLightingEffect)))
+         and (LightSource.Active);
 end;
 
 procedure TLight.Bind(I: Integer);

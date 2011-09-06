@@ -62,6 +62,7 @@ begin
     begin
     with CurrentObject.GeoObject do
       begin
+      Advance(Round(Park.pSky.Time));
       SetUnchanged;
       ExecuteScript;
       UpdateMatrix;

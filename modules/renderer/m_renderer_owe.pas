@@ -1774,6 +1774,8 @@ begin
   SetConfVal('water.refract.objects', fOWEConfigInterface.fWaterRefractObjects.Checked);
   SetConfVal('water.refract.particles', fOWEConfigInterface.fWaterRefractParticles.Checked);
   SetConfVal('water.refract.autoplants', fOWEConfigInterface.fWaterRefractAutoplants.Checked);
+  SetConfVal('pom', fOWEConfigInterface.fPOM.Checked);
+  SetConfVal('pom.shadows', fOWEConfigInterface.fPOMShadows.Checked);
   CheckModConf;
 end;
 

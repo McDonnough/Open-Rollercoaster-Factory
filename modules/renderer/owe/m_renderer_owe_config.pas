@@ -16,6 +16,7 @@ type
       fReflectionRenderDistanceFactor, fReflectionRenderDistanceOffset: TSlider;
       fReflectionRealtimeUpdateInterval, fReflectionEnvMapUpdateInterval: TSlider;
       fSSAOIL, fSSAO: TCheckBox;
+      fPOM, fPOMShadows: TCheckBox;
       fSSAOSamples, fSSAORings, fSSAOSize: TSlider;
       fUseSunShadows, fUseLightShadows: TCheckBox;
       fShadowSamples, fShadowMaxPasses, fShadowBlurSamples: TSlider;
@@ -50,7 +51,7 @@ begin
   with fReflectionPanel do
     begin
     Left := 0;
-    Top := 680;
+    Top := 712;
     Height := 248;
     Width := 700 - 16;
     Size := 24;
@@ -60,7 +61,7 @@ begin
   with fWaterPanel do
     begin
     Left := 0;
-    Top := 496;
+    Top := 528;
     Height := 192;
     Width := 700 - 16;
     Size := 24;
@@ -81,7 +82,7 @@ begin
     begin
     Left := 0;
     Top := 296;
-    Height := 200;
+    Height := 232;
     Width := 700 - 16;
     Size := 24;
     Caption := ' Effects';
@@ -647,6 +648,43 @@ begin
     Min := 0;
     Max := 0.1;
     Value := ModuleManager.ModRenderer.MotionBlurStrength;
+    end;
+
+  with TLabel.Create(fEffectPanel) do
+    begin
+    Top := 200;
+    Left := 48;
+    Width := 200;
+    Height := 32;
+    Size := 16;
+    Caption := 'Parallax Occlusion Mapping (POM)';
+    end;
+  fPOM := TCheckBox.Create(fEffectPanel);
+  with fPOM do
+    begin
+    Top := 192;
+    Left := 8;
+    Width := 32;
+    Height := 32;
+    Checked := ModuleManager.ModRenderer.EnablePOM;
+    end;
+  with TLabel.Create(fEffectPanel) do
+    begin
+    Top := 200;
+    Left := 378;
+    Width := 200;
+    Height := 32;
+    Size := 16;
+    Caption := 'POM shadows';
+    end;
+  fPOMShadows := TCheckBox.Create(fEffectPanel);
+  with fPOMShadows do
+    begin
+    Top := 192;
+    Left := 338;
+    Width := 32;
+    Height := 32;
+    Checked := ModuleManager.ModRenderer.EnablePOMSelfShadow;
     end;
 
   // Normal

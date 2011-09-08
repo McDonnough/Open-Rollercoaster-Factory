@@ -197,7 +197,7 @@ var
         if CurrElement.TagName = 'tvert' then
           begin
           TheVertex := Mesh.AddTextureVertex;
-          TheVertex^.Position := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0), StrToFloatWD(CurrElement.GetAttribute('y'), 0));
+          TheVertex^.Position := Vector(StrToFloatWD(CurrElement.GetAttribute('x'), 0), -StrToFloatWD(CurrElement.GetAttribute('y'), 0));
           end;
         CurrElement := TDOMElement(CurrElement.NextSibling);
         end;

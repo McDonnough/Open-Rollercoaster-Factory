@@ -132,7 +132,7 @@ def materialXML(material):
   
   if (bumpMapSlot != None):
     result += '  <bumpmap resource:name="{0}" />\n'.format(getFullResourceName(bumpMapSlot.texture))
-    result += '  <displacement height="{0:.3f}" />\n'.format(material.get('displacementHeight', '0.04'))
+    result += '  <displacement height="{0:.3f}" />\n'.format(material.get('displacementHeight', 0.04))
 
   result += '</material>\n'
   return result

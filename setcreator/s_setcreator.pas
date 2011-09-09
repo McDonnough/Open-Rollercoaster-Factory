@@ -172,6 +172,7 @@ type
       procedure AddObject(Sender: TGUIComponent);
       procedure DeleteObject(Sender: TGUIComponent);
       procedure AddTag(Sender: TGUIComponent);
+      procedure RestoreDefaultTagList;
 
       // Backend
       procedure LoadFromFile(FileName: String);
@@ -498,7 +499,7 @@ begin
   fSelected := false;
   fBasicColor := Vector(1.0, 1.0, 1.0, 1.0);
 
-  Width := TheParent.Width - 16;
+  Width := TheParent.DestWidth - 16;
   Height := 32;
   Size := 16;
   Left := 0;
@@ -510,12 +511,12 @@ begin
   fRealLabel.Top := 8;
   fRealLabel.Size := 16;
   fRealLabel.Height := 16;
-  fRealLabel.Width := TheParent.Width - 56;
+  fRealLabel.Width := TheParent.DestWidth - 56;
   fRealLabel.Caption := TagName;
   fRealLabel.OnClick := @fOnClick;
 
   fRemoveButton := TIconifiedButton.Create(Self);
-  fRemoveButton.Left := TheParent.Width - 48;
+  fRemoveButton.Left := TheParent.DestWidth - 48;
   fRemoveButton.Top := 0;
   fRemoveButton.Width := 32;
   fRemoveButton.Height := 32;
@@ -1035,6 +1036,7 @@ begin
       fTagList.DeleteItem(fTagList.Items[fTagList.Count - 1]);
       fTagList.FinalDeleteItem(nil);
       end;
+    RestoreDefaultTagList;
 
     // Previews
     while fAllPreviews.Count > 0 do
@@ -1134,6 +1136,20 @@ begin
   except
     ModuleManager.ModLog.AddError('Loading of ' + FileName + ' failed: Corrupt file?');
   end;
+end;
+
+procedure TSetCreator.RestoreDefaultTagList;
+begin
+  TTagSelectItem.Create('Buildings', fTagList);
+  TTagSelectItem.Create('Walls', fTagList);
+  TTagSelectItem.Create('Roofs', fTagList);
+  TTagSelectItem.Create('Plants & Trees', fTagList);
+  TTagSelectItem.Create('Fences', fTagList);
+  TTagSelectItem.Create('Particles', fTagList);
+  TTagSelectItem.Create('Sounds', fTagList);
+  TTagSelectItem.Create('Flatrides', fTagList);
+  TTagSelectItem.Create('Tracked Rides', fTagList);
+  TTagSelectItem.Create('Stalls', fTagList);
 end;
 
 constructor TSetCreator.Create;
@@ -1432,6 +1448,8 @@ begin
 
   fOpenDialogPath := 'scenery';
   fPreviewDialogPath := 'scenery';
+
+  RestoreDefaultTagList;
 end;
 
 destructor TSetCreator.Destroy;

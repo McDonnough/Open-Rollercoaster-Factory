@@ -57,6 +57,10 @@ type
       property Top: GLFloat read fPosY write fDestY;
       property Width: GLFloat read fWidth write fDestWidth;
       property Height: GLFloat read fHeight write fDestHeight;
+      property DestWidth: GLFloat read fDestWidth;
+      property DestHeight: GLFloat read fDestHeight;
+      property DestLeft: GLFloat read fDestX;
+      property DestTop: GLFloat read fDestY;
       property Parent: TGUIComponent read fParent;
       property Children: AGUIComponent read fChildren;
       property ChildrenRightOrder[I: Integer]: TGUIComponent read GetChildInOrder;

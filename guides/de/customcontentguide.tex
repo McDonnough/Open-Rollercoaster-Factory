@@ -99,12 +99,10 @@ Im Unterordner \cfile{tools} befindet sich neben zwei ausf"uhrbaren Programmen d
 m"usst ihr allerdings die Pfade zu einigen ORCF-eigenen Hilfsprogrammen angeben. Wenn ihr die Datei in einem Texteditor "offnet, der Zeilenumbr"uche
 unterst"utzt (z.\, B. Kate, Notepad++, \dots ), findet ihr recht weit oben folgende Zeilen:
 \begin{lstlisting}[language=python]
-ocfgen_exe = '/home/philip/Delphi/orcf/tools/ocfgen'
-orcf_data_path = '/home/philip/Delphi/orcf/data/'
-orcf_personal_data_path = '/home/philip/orcf-data/'
+ocfgen_exe = '...'
+orcf_data_path = '...'
+orcf_personal_data_path = '...'
 \end{lstlisting}
-Lasst euch nicht von den komischen Namen verwirren, ich schleppe den \cfile{Delphi}-Ordner schon seit gut 5 Jahren mit mir rum, ohne "uberhaupt noch
-Delphi zu benutzen -- ihr m"usst einfach die Pfade zu den entsprechenden Zielen angeben.
 
 \subsubsection{Windows}
 Unter Windows sieht das beispielsweise so aus:
@@ -117,14 +115,14 @@ orcf_personal_data_path = 'C:/orcf/data/'
 Beachtet bitte, dass Python auch unter Windows einfache Schr"agstriche bei Pfaden akzeptiert und dass die letzten beiden Pfade identisch sein m"ussen!
 
 \subsubsection{Linux}
-Unter Linux liegt der letzte Pfad immer im Userverzeichnis und hei"st immer \cfile{orcf-data}. Hier ist also nur der Username zu "andern, w"ahrend die
-anderen beiden Pfade dahin zeigen, wo das Programm liegt -- vorzugsweise in \cfile{/opt/orcf}, wenn es f"ur alle Systembenutzer zug"anglich sein soll.
+Unter Linux liegt der letzte Pfad immer im Userverzeichnis und hei"st immer \cfile{orcf-data}. Die
+anderen beiden Pfade zeigen dahin, wo das Programm liegt -- vorzugsweise in \cfile{/opt/orcf}, wenn es f"ur alle Systembenutzer zug"anglich sein soll.
 
 
 \section{Ordnerstruktur eines Sets}
 \label{directories}
 Objekte liegen \emph{immer} im \cfile{scenery}-Ordner in einem der Datenordner -- es ist dabei v"ollig egal, ob es der pers"onliche Datenordner oder der
-Systemordner ist. Unter Windows sind die sowieso gleich. In der ersten Ebene liegen dabei die OCF-Dateien, die auf die einzelnen Objekte im Set
+Systemordner ist. In der ersten Ebene liegen dabei die OCF-Dateien, die auf die einzelnen Objekte im Set
 verweisen, sowie die Ordner, in denen die eigentlichen Daten eurer Sets liegen. Damit es nicht zu "Uberschneidungen kommt, benennt eure Ordner und
 OCF-Dateien m"oglichst nach folgendem Schema:\\
 \cfile{Name\_des\_Erstellers-Name\_des\_Sets} f"ur den Ordner und \\

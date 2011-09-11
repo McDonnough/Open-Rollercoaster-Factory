@@ -112,7 +112,7 @@ begin
   VSObject := glCreateShader(GL_VERTEX_SHADER);
   FSObject := glCreateShader(GL_FRAGMENT_SHADER);
   if VerticesOut > 0 then
-    GSObject := glCreateShader(GL_GEOMETRY_SHADER_EXT);
+    GSObject := glCreateShader(GL_GEOMETRY_SHADER_ARB);
 
   Shaders := TShaderConstellation.Create(VSFile, FSFile, GSFile);
     fShdRef[Result].Uniforms.Assign(Shaders.VertexShader.Uniforms);
@@ -141,9 +141,9 @@ begin
   if VerticesOut > 0 then
     begin
     glAttachShader(fShdRef[Result].ID, GSObject);
-    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_VERTICES_OUT_EXT, VerticesOut);
-    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_INPUT_TYPE_EXT, InputType);
-    glProgramParameteriEXT(fShdRef[Result].ID, GL_GEOMETRY_OUTPUT_TYPE_EXT, OutputType);
+    glProgramParameteriARB(fShdRef[Result].ID, GL_GEOMETRY_VERTICES_OUT_ARB, VerticesOut);
+    glProgramParameteriARB(fShdRef[Result].ID, GL_GEOMETRY_INPUT_TYPE_ARB, InputType);
+    glProgramParameteriARB(fShdRef[Result].ID, GL_GEOMETRY_OUTPUT_TYPE_ARB, OutputType);
     end;
   glLinkProgram(fShdRef[Result].ID);
   if glSlang_getInfoLog(fShdRef[Result].ID) <> '' then

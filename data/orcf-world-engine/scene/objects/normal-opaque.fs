@@ -17,6 +17,7 @@ varying vec3 OrigVertex;
 varying vec3 Normal;
 varying vec3 Tangent;
 varying vec3 Bitangent;
+varying vec3 MirrorVec;
 
 float Fresnel(float x) {
   float theSQRT = sqrt(max(0.0, 1.0 - pow(Mediums.x / Mediums.y * sin(x), 2.0)));

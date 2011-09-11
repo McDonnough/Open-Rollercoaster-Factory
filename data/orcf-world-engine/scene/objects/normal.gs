@@ -4,6 +4,7 @@
 
 uniform mat4 TransformMatrix;
 uniform vec3 Mirror;
+uniform vec3 VirtScale;
 
 varying in vec3 _Normal[3];
 varying in vec3 _Vertex[3];
@@ -30,6 +31,15 @@ void main(void) {
   vec3 sdir = (w2.t * v1 - w1.t * v2) * r;
   vec3 tdir = (w1.s * v2 - w2.s * v1) * r;
 
+  vec3 axes[3];
+  axes[0] = normalize((TransformMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
+  axes[1] = normalize((TransformMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+  axes[2] = normalize((TransformMatrix * vec4(0.0, 0.0, 1.0, 0.0)).xyz);
+
+  vec2 stFactor = vec2(
+    abs(dot(normalize(sdir), axes[0])) * VirtScale.x + abs(dot(normalize(sdir), axes[1])) * VirtScale.y + abs(dot(normalize(sdir), axes[2])) * VirtScale.z,
+    abs(dot(normalize(tdir), axes[0])) * VirtScale.x + abs(dot(normalize(tdir), axes[1])) * VirtScale.y + abs(dot(normalize(tdir), axes[2])) * VirtScale.z);
+
   // Vertices
 
   for (int i = 0; i < 3; i++) {
@@ -40,6 +50,7 @@ void main(void) {
     Tangent = normalize(sdir - Normal * dot(Normal, sdir));
     Bitangent = cross(Normal, Tangent) * sign(dot(cross(Normal, sdir), tdir));
     gl_TexCoord[0] = gl_TexCoordIn[i][0];
+    gl_TexCoord[0].st *= stFactor;
     gl_Position = gl_PositionIn[i];
     gl_ClipVertex = vec4(_TransformedVertex[i], 1.0);
     EmitVertex();

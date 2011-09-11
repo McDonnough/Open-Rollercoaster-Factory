@@ -139,7 +139,7 @@ begin
       end
     else if E.TagName = 'material' then
       begin
-      M := O.GeoObject.GetMaterialByName(E.GetAttribute('name'));
+      M := O.GeoObject.Materials[O.GeoObject.GetMaterialByName(E.GetAttribute('name'))];
       if M <> nil then
         begin
         F := TDOMElement(E.FirstChild);

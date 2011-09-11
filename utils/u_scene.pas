@@ -113,7 +113,6 @@ type
   TMaterial = class
     public
       Name: String;
-      MaterialID: Integer;
       Color, Emission: TVector4D;
       Reflectivity: Single;
       Hardness, Specularity: Single;
@@ -141,9 +140,10 @@ type
       Parent: TGeoMesh;
       Children: Array of TGeoMesh;
       MinDistance, MaxDistance: Single;
-      Matrix, CalculatedMatrix: TMatrix4D;
+      Matrix, CalculatedMatrix, ParentMatrix: TMatrix4D;
       ParentObject: TGeoObject;
       Material: TMaterial;
+      MaterialID: Integer;
       LightSources: Array of TLightSource;
       SoundSources: Array of TSoundSource;
       ParticleGroups: Array of Pointer; // Sorry, circular unit reference. Bad class management, I know
@@ -173,15 +173,14 @@ type
       Offsets: Array[0..6] of PtrUInt;
       ObjectID: Integer;
     public
-      Mirror: TVector3D;
+      Mirror, Virtscale: TVector3D;
       Meshes: Array of TGeoMesh;
       Armatures: Array of TArmature;
       Materials: Array of TMaterial;
       Script: TScript;
-      Matrix: TMatrix4D;
+      Matrix, DeformMatrix: TMatrix4D;
       FirstRun: Boolean;
       Name: String;
-      VirtualScale: TVector3D;
       property SelectionID: Integer read ObjectID;
       function AddArmature: TArmature;
       function AddMesh: TGeoMesh;
@@ -198,7 +197,7 @@ type
       procedure SetUnchanged;
       function GetBoneByName(Armature, Bone: String): TBone;
       function GetMeshByName(Mesh: String): TGeoMesh;
-      function GetMaterialByName(Mat: String): TMaterial;
+      function GetMaterialByName(Mat: String): Integer;
       procedure ExecuteScript;
       procedure SetIO;
       procedure Advance(Time: Integer);
@@ -451,7 +450,6 @@ function TMaterial.Duplicate: TMaterial;
 begin
   Result := TMaterial.Create;
   Result.Name := Name;
-  Result.MaterialID := MaterialID;
   Result.Color := Color;
   Result.Emission := Emission;
   Result.Reflectivity := Reflectivity;
@@ -493,7 +491,6 @@ end;
 
 constructor TMaterial.Create;
 begin
-  MaterialID := -1;
   Name := '';
   Color := Vector(1, 1, 1, 1);
   Emission := Vector(0, 0, 0, 1);
@@ -547,7 +544,10 @@ begin
   Result.MinDistance := MinDistance;
   Result.MaxDistance := MaxDistance;
   Result.ParentObject := TheObject;
-  
+  Result.Matrix := Matrix;
+  Result.ParentMatrix := ParentMatrix;
+  Result.CalculatedMatrix := CalculatedMatrix;
+
   setLength(Result.Vertices, length(Vertices));
   setLength(Result.TextureVertices, length(TextureVertices));
   setLength(Result.Faces, length(Faces));
@@ -598,7 +598,7 @@ begin
   if Material = nil then
     Result.Material := nil
   else
-    Result.Material := TheObject.Materials[Material.MaterialID];
+    Result.Material := TheObject.Materials[MaterialID];
 
   SetLength(Result.LightSources, length(LightSources));
   for i := 0 to high(LightSources) do
@@ -703,11 +703,20 @@ var
   i: Integer;
 begin
   if Parent <> nil then
-    CalculatedMatrix := Parent.CalculatedMatrix * Matrix
+    begin
+    ParentMatrix := Parent.CalculatedMatrix;
+    CalculatedMatrix := ParentMatrix * Matrix
+    end
   else if ParentObject <> nil then
-    CalculatedMatrix := ParentObject.Matrix * Matrix
+    begin
+    ParentMatrix := ParentObject.Matrix;
+    CalculatedMatrix := ParentMatrix * Matrix;
+    end
   else
+    begin
     CalculatedMatrix := Matrix;
+    ParentMatrix := Identity4D;
+    end;
   if Bone <> nil then
     begin
     CalculatedMatrix := CalculatedMatrix * TranslationMatrix(Bone.SourcePosition);
@@ -775,7 +784,7 @@ var
   Mat: SInt;
 begin
   Script.SetIO(@Self.MinDistance, SIZE, true);
-  Mat := Material.MaterialID;
+  Mat := MaterialID;
   Script.SetIO(@Mat, SizeOf(SInt), false);
 end;
 
@@ -808,6 +817,7 @@ begin
   MaxDistance := 10000;
   Matrix := Identity4D;
   CalculatedMatrix := Identity4D;
+  ParentMatrix := Identity4D;
   Bone := nil;
   Material := nil;
 end;
@@ -853,7 +863,6 @@ function TGeoObject.AddMaterial: TMaterial;
 begin
   SetLength(Materials, length(Materials) + 1);
   Materials[high(Materials)] := TMaterial.Create;
-  Materials[high(Materials)].MaterialID := high(Materials);
   Result := Materials[high(Materials)];
 end;
 
@@ -861,7 +870,6 @@ function TGeoObject.AddMaterial(A: TMaterial): TMaterial;
 begin
   SetLength(Materials, length(Materials) + 1);
   Materials[high(Materials)] := A;
-  Materials[high(Materials)].MaterialID := high(Materials);
   Result := Materials[high(Materials)];
 end;
 
@@ -873,7 +881,9 @@ begin
 
   Result.Name := Name;
   Result.Mirror := Mirror;
-  Result.VirtualScale := VirtualScale;
+  Result.Matrix := Matrix;
+  Result.DeformMatrix := DeformMatrix;
+  Result.Virtscale := Virtscale;
 
   if Script <> nil then
     Result.Script := Script.Code.CreateInstance
@@ -1111,14 +1121,14 @@ begin
     Meshes[i].Advance(Time);
 end;
 
-function TGeoObject.GetMaterialByName(Mat: String): TMaterial;
+function TGeoObject.GetMaterialByName(Mat: String): Integer;
 var
   I: Integer;
 begin
-  Result := nil;
+  Result := -1;
   for I := 0 to high(Materials) do
     if Materials[I].Name = Mat then
-      exit(Materials[I]);
+      exit(I);
 end;
 
 class procedure TGeoObject.RegisterStruct;
@@ -1146,8 +1156,9 @@ constructor TGeoObject.Create;
 begin
   Name := '';
   Mirror := Vector(1, 1, 1);
-  VirtualScale := Vector(Random, Random, Random) + 0.5;
   Matrix := Identity4D;
+  DeformMatrix := Identity4D;
+  Virtscale := Vector(1, 1, 1);
   Script := nil;
   FirstRun := True;
   ObjectID := ObjectCount;

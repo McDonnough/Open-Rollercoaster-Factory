@@ -64,7 +64,7 @@ type
       CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
       ShadowMode, MaterialMode, LightShadowMode: Boolean;
-      Uniforms: Array[0..7, 0..15] of GLUInt;
+      Uniforms: Array[0..7, 0..17] of GLUInt;
       Shaders: Array[0..7] of TShader;
       property CurrentMaterialCount: Integer read fCurrentMaterialCount;
       property Working: Boolean read getWorking write fCanWork;
@@ -121,12 +121,14 @@ const
   UNIFORM_ANY_WATERHEIGHT = 7;
   UNIFORM_ANY_WATERREFRACTIONMODE = 8;
   UNIFORM_ANY_TRANSFORMMATRIX = 9;
-  UNIFORM_ANY_VIEWPOINT = 10;
-  UNIFORM_ANY_SELECTIONMESHID = 11;
-  UNIFORM_ANY_MIRROR = 12;
-  UNIFORM_ANY_ALPHA = 13;
-  UNIFORM_ANY_MASKOFFSET = 14;
-  UNIFORM_ANY_MATERIALID = 15;
+  UNIFORM_ANY_MESHTRANSFORMMATRIX = 10;
+  UNIFORM_ANY_VIEWPOINT = 11;
+  UNIFORM_ANY_SELECTIONMESHID = 12;
+  UNIFORM_ANY_MIRROR = 13;
+  UNIFORM_ANY_ALPHA = 14;
+  UNIFORM_ANY_MASKOFFSET = 15;
+  UNIFORM_ANY_MATERIALID = 16;
+  UNIFORM_ANY_VIRTSCALE = 17;
 
 function TRObjects.getWorking: Boolean;
 begin
@@ -354,7 +356,7 @@ end;
 
 procedure TRObjects.Render(Mesh: TManagedMesh);
 var
-  Matrix: Array[0..15] of Single;
+  Matrix, MeshMatrix: Array[0..15] of Single;
   ReflectionMapToBind: TTexture;
 begin
 // fCurrentShader.Bind;
@@ -403,9 +405,11 @@ begin
       end;
     end;
 
-  MakeOGLCompatibleMatrix(Mesh.GeoMesh.CalculatedMatrix, @Matrix[0]);
+  MakeOGLCompatibleMatrix(Mesh.GeoMesh.ParentMatrix, @Matrix[0]);
+  MakeOGLCompatibleMatrix(Mesh.GeoMesh.Matrix, @MeshMatrix[0]);
 
   fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_TRANSFORMMATRIX], @Matrix[0]);
+  fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MESHTRANSFORMMATRIX], @MeshMatrix[0]);
   fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIEWPOINT], ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
 
   if Mesh.VBO <> fLastBoundVBO then
@@ -433,7 +437,7 @@ var
   CurrO: TGeoObject;
   CurrMO: TManagedObject;
   CurrMM: TManagedMesh;
-  Matrix: Array[0..15] of Single;
+  Matrix, MeshMatrix: Array[0..15] of Single;
 begin
 //   exit;
   fSelectionShader.Bind;
@@ -454,6 +458,7 @@ begin
     Color := CurrO.SelectionID;
     fCurrentShader.UniformI(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_SELECTIONMESHID], ((Color and $00FF0000) shr 16), ((Color and $0000FF00) shr 8), ((Color and $000000FF)));
     fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MIRROR], CurrO.Mirror);
+    fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIRTSCALE], CurrO.VirtScale);
     with CurrO.Mirror do
       if X * Y * Z < 0 then
         ModuleManager.ModRenderer.InvertFrontFace;
@@ -475,9 +480,11 @@ begin
 //         ModuleManager.ModTexMng.ActivateTexUnit(0);
 //         ModuleManager.ModTexMng.BindTexture(-1);
 //         end;
-      MakeOGLCompatibleMatrix(CurrO.Meshes[j].CalculatedMatrix, @Matrix[0]);
+      MakeOGLCompatibleMatrix(CurrO.Meshes[j].ParentMatrix, @Matrix[0]);
+      MakeOGLCompatibleMatrix(CurrO.Meshes[j].Matrix, @MeshMatrix[0]);
 
       fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_TRANSFORMMATRIX], @Matrix[0]);
+      fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MESHTRANSFORMMATRIX], @MeshMatrix[0]);
 
       CurrMM.VBO.Bind;
       CurrMM.VBO.Render;
@@ -523,6 +530,7 @@ begin
     if fTransparentMeshOrder[i].Mesh <> nil then
       begin
       fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MIRROR], fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror);
+      fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIRTSCALE], fMeshClasses[i].Meshes[j].ParentObject.GeoObject.VirtScale);
       with fTransparentMeshOrder[i].ManagedObject.GeoObject.Mirror do
         if X * Y * Z < 0 then
           ModuleManager.ModRenderer.InvertFrontFace;
@@ -585,7 +593,7 @@ begin
     for j := 0 to high(fMeshClasses[i].Meshes) do
       begin
       fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MIRROR], fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror);
-//       fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIRTSCALE], fMeshClasses[i].Meshes[j].ParentObject.GeoObject.VirtualScale);
+      fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIRTSCALE], fMeshClasses[i].Meshes[j].ParentObject.GeoObject.VirtScale);
       with fMeshClasses[i].Meshes[j].ParentObject.GeoObject.Mirror do
         if X * Y * Z < 0 then
           ModuleManager.ModRenderer.InvertFrontFace;
@@ -613,7 +621,7 @@ begin
       Pos := Vector3D(Vector(0, 0, 0, 1) * fManagedObjects[i].Meshes[j].GeoMesh.CalculatedMatrix);
       fManagedObjects[i].Meshes[j].Visible := false;
       if VecLengthNoRoot(ModuleManager.ModRenderer.ViewPoint - Pos) - fManagedObjects[i].Meshes[j].VBO.Radius * fManagedObjects[i].Meshes[j].VBO.Radius < ModuleManager.ModRenderer.MaxRenderDistance * ModuleManager.ModRenderer.MaxRenderDistance then
-        fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius * Max(fManagedObjects[i].GeoObject.VirtualScale.X, Max(fManagedObjects[i].GeoObject.VirtualScale.Y, fManagedObjects[i].GeoObject.VirtualScale.Z)));
+        fManagedObjects[i].Meshes[j].Visible := ModuleManager.ModRenderer.Frustum.IsSphereWithin(Pos.X, Pos.Y, Pos.Z, fManagedObjects[i].Meshes[j].VBO.Radius * Max(fManagedObjects[i].GeoObject.VirtScale.X, Max(fManagedObjects[i].GeoObject.VirtScale.Y, fManagedObjects[i].GeoObject.VirtScale.Z)));
       if (VecLength(ModuleManager.ModRenderer.ViewPoint - Pos) < CalculateLODDistance(fManagedObjects[i].Meshes[j].GeoMesh.MinDistance)) or (VecLength(ModuleManager.ModRenderer.ViewPoint - Pos) >= CalculateLODDistance(fManagedObjects[i].Meshes[j].GeoMesh.MaxDistance)) then
         fManagedObjects[i].Meshes[j].Visible := false;
       end;
@@ -749,12 +757,14 @@ begin
     Uniforms[I, UNIFORM_ANY_WATERHEIGHT] := Shaders[i].GetUniformLocation('WaterHeight');
     Uniforms[I, UNIFORM_ANY_WATERREFRACTIONMODE] := Shaders[i].GetUniformLocation('WaterRefractionMode');
     Uniforms[I, UNIFORM_ANY_TRANSFORMMATRIX] := Shaders[i].GetUniformLocation('TransformMatrix');
+    Uniforms[I, UNIFORM_ANY_MESHTRANSFORMMATRIX] := Shaders[i].GetUniformLocation('MeshTransformMatrix');
     Uniforms[I, UNIFORM_ANY_VIEWPOINT] := Shaders[i].GetUniformLocation('ViewPoint');
     Uniforms[I, UNIFORM_ANY_SELECTIONMESHID] := Shaders[i].GetUniformLocation('SelectionMeshID');
     Uniforms[I, UNIFORM_ANY_MIRROR] := Shaders[i].GetUniformLocation('Mirror');
     Uniforms[I, UNIFORM_ANY_ALPHA] := Shaders[i].GetUniformLocation('Alpha');
     Uniforms[I, UNIFORM_ANY_MASKOFFSET] := Shaders[i].GetUniformLocation('MaskOffset');
     Uniforms[I, UNIFORM_ANY_MATERIALID] := Shaders[i].GetUniformLocation('MaterialID');
+    Uniforms[I, UNIFORM_ANY_VIRTSCALE] := Shaders[i].GetUniformLocation('VirtScale');
     end;
 end;
 

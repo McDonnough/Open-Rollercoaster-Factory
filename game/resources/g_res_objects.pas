@@ -83,7 +83,10 @@ begin
     begin
     for j := 0 to high(fFinalMaterialResourceNames) do
       if fFinalMaterialResourceNames[j] = fMaterialResourceNames[i] then
+        begin
         fGeoObject.Meshes[i].Material := fMaterialResources[j].Material;
+        fGeoObject.Meshes[i].MaterialID := j;
+        end;
 
     setLength(fGeoObject.Meshes[i].LightSources, length(fLightSourceResources[i]));
     for j := 0 to high(fLightSourceResources[i]) do

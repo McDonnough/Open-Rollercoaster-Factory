@@ -3,12 +3,14 @@
 uniform vec3 ShadowOffset;
 uniform float ShadowSize;
 uniform mat4 TransformMatrix;
+uniform mat4 MeshTransformMatrix;
 uniform vec3 Mirror;
+uniform vec3 VirtScale;
 
 varying vec3 VData;
 
 void main(void) {
-  vec3 Vertex = vec3(TransformMatrix * vec4(gl_Vertex.xyz * Mirror, 1.0));
+  vec3 Vertex = vec3(TransformMatrix * ((MeshTransformMatrix * vec4(gl_Vertex.xyz, 1.0)) * vec4(VirtScale * Mirror, 1.0)));
   VData = Vertex;
   vec3 dir = Vertex - gl_LightSource[0].position.xyz;
   dir /= abs(dir.y);

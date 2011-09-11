@@ -208,6 +208,7 @@ begin
         end;
       O.GeoObject.Matrix := fBuilding.Matrix;
       O.GeoObject.Mirror := fBuilding.Mirror;
+      O.GeoObject.VirtScale := fBuilding.VirtScale;
       Park.pObjects.Append(O);
       SelectionEngine.Add(O.GeoObject, 'GUIActions.terrain_edit.marks.move');
       Park.NormalSelectionEngine.Add(O.GeoObject, 'TPark.Objects.Selected');

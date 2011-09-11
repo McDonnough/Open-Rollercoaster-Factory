@@ -137,6 +137,12 @@ begin
       O.GeoObject.Mirror.Y := StrToInt(E.GetAttribute('y'));
       O.GeoObject.Mirror.Z := StrToInt(E.GetAttribute('z'));
       end
+    else if E.TagName = 'tile' then
+      begin
+      O.GeoObject.VirtScale.X := StrToInt(E.GetAttribute('x'));
+      O.GeoObject.VirtScale.Y := StrToInt(E.GetAttribute('y'));
+      O.GeoObject.VirtScale.Z := StrToInt(E.GetAttribute('z'));
+      end
     else if E.TagName = 'material' then
       begin
       M := O.GeoObject.Materials[O.GeoObject.GetMaterialByName(E.GetAttribute('name'))];
@@ -196,6 +202,10 @@ begin
       TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('x', IntToStr(Round(Mirror.X)));
       TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', IntToStr(Round(Mirror.Y)));
       TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', IntToStr(Round(Mirror.Z)));
+      TDOMElement(X.LastChild.LastChild).AppendChild(X.CreateElement('tile'));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('x', IntToStr(Round(VirtScale.X)));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', IntToStr(Round(VirtScale.Y)));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', IntToStr(Round(VirtScale.Z)));
       for I := 0 to high(Materials) do
         begin
         TDOMElement(X.LastChild.LastChild).AppendChild(X.CreateElement('material'));

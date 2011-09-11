@@ -100,6 +100,9 @@ begin
     TSlider(fWindow.GetChildByName('object_builder.rotation.x')).Value := RadToDeg(Rotation.X);
     TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value := RadToDeg(Rotation.Y);
     TSlider(fWindow.GetChildByName('object_builder.rotation.z')).Value := RadToDeg(Rotation.Z);
+    TSlider(fWindow.GetChildByName('object_builder.tile.x')).Value := fBuilding.VirtScale.X;
+    TSlider(fWindow.GetChildByName('object_builder.tile.y')).Value := fBuilding.VirtScale.Y;
+    TSlider(fWindow.GetChildByName('object_builder.tile.z')).Value := fBuilding.VirtScale.Z;
     SelectionEngine.Delete(fBuilding);
     Show(fWindow);
     end;
@@ -168,6 +171,9 @@ begin
     fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.y')).Value, Vector(0, 1, 0));
     fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.x')).Value, Vector(1, 0, 0));
     fBuilding.Matrix := fBuilding.Matrix * RotationMatrix(TSlider(fWindow.GetChildByName('object_builder.rotation.z')).Value, Vector(0, 0, 1));
+    fBuilding.VirtScale.X := TSlider(fWindow.GetChildByName('object_builder.tile.x')).Value;
+    fBuilding.VirtScale.Y := TSlider(fWindow.GetChildByName('object_builder.tile.y')).Value;
+    fBuilding.VirtScale.Z := TSlider(fWindow.GetChildByName('object_builder.tile.z')).Value;
     if fBuildingNew then
       begin
       fBuilding.SetUnchanged;

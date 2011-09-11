@@ -1,26 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<window width="616" height="240" left="8" top="332" btnleft="848" btntop="284" icon="object-builder.tga" name="object_builder" halign="left" valign="bottom">
+<window width="616" height="304" left="8" top="300" btnleft="848" btntop="284" icon="object-builder.tga" name="object_builder" halign="left" valign="bottom">
   <panel leftspace="0" rightspace="0" bottomspace="0" topspace="32" />
   <tabbar left="40" top="8" width="352" height="32" onchangetab="object_builder.changeTab" name="object_builder.tabbar">
     <tab>Placement</tab>
     <tab>Materials</tab>
     <tab>Music</tab>
+    <tab>Lights</tab>
   </tabbar>
-  <label width="584" top="40" height="192" left="16">
-    <label width="1752" left="0" top="0" height="192" name="object_builder.tab.container">
-      <label width="584" left="0" top="0" height="192">
+  <label width="584" top="40" height="256" left="16">
+    <label width="2336" left="0" top="0" height="256" name="object_builder.tab.container">
+      <label width="584" left="0" top="0" height="256">
         <label left="0" top="0" size="16" width="128" height="16">Position:</label>
         <label left="0" top="32" size="16" width="128" height="16">Height:</label>
         <label left="0" top="64" size="16" width="128" height="16">Rotation:</label>
         <label left="152" top="96" size="16" width="128" height="32">Mirror X</label>
         <label left="304" top="96" size="16" width="128" height="32">Mirror Y</label>
         <label left="456" top="96" size="16" width="128" height="32">Mirror Z</label>
-        <label left="24" top="112" size="16" width="220" height="32">Snap to grid</label>
-        <label left="304" top="112" size="16" width="220" height="32">Snap to objects</label>
-        <label left="0" top="128" size="16" width="96" height="16">Grid offset X:</label>
-        <label left="280" top="128" size="16" width="96" height="16">Grid offset Z:</label>
-        <label left="0" top="160" size="16" width="96" height="16">Grid rotation:</label>
-        <label left="280" top="160" size="16" width="96" height="16">Grid size:</label>
+        <label left="0" top="112" size="16" width="128" height="16">Tiling:</label>
+        <label left="0" top="144" size="16" width="128" height="16">Stretch:</label>
+        <label left="24" top="176" size="16" width="220" height="32">Snap to grid</label>
+        <label left="304" top="176" size="16" width="220" height="32">Snap to objects</label>
+        <label left="0" top="192" size="16" width="96" height="16">Grid offset X:</label>
+        <label left="280" top="192" size="16" width="96" height="16">Grid offset Z:</label>
+        <label left="0" top="224" size="16" width="96" height="16">Grid rotation:</label>
+        <label left="280" top="224" size="16" width="96" height="16">Grid size:</label>
 
         <slider left="144" top="0" width="212" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.offset.x" />
         <slider left="372" top="0" width="212" height="32" min="0" max="204.8" digits="2" value="0" name="object_builder.offset.z" />
@@ -38,15 +41,22 @@
         <checkbox left="280" top="96" width="16" height="16" checked="false" name="object_builder.mirror.y" onedit="object_builder.mirror" />
         <checkbox left="432" top="96" width="16" height="16" checked="false" name="object_builder.mirror.z" onedit="object_builder.mirror" />
 
-        <checkbox left="0" top="112" width="16" height="16" checked="false" name="object_builder.snap.to_grid" onedit="object_builder.snap.grid" />
-        <checkbox left="280" top="112" width="16" height="16" checked="true" name="object_builder.snap.to_objects" onedit="object_builder.snap.objects" />
+        <slider left="128" top="112" width="152" height="32" min="0.05" max="3" digits="2" value="1" name="object_builder.tile.x" />
+        <slider left="280" top="112" width="152" height="32" min="0.05" max="3" digits="2" value="1" name="object_builder.tile.y" />
+        <slider left="432" top="112" width="152" height="32" min="0.05" max="3" digits="2" value="1" name="object_builder.tile.z" />
 
-        <slider left="128" top="128" width="152" height="32" min="-1" max="1" digits="2" value="0" name="object_builder.grid.offset.x" />
-        <slider left="432" top="128" width="152" height="32" min="-1" max="1" digits="2" value="0" name="object_builder.grid.offset.z" />
-        <slider left="128" top="160" width="152" height="32" min="-90" max="90" digits="0" value="0" name="object_builder.grid.rotation" />
-        <slider left="432" top="160" width="152" height="32" min="0.1" max="2" digits="1" value="1" name="object_builder.grid.size" />
+        <slider left="128" top="144" width="152" height="32" min="-2" max="2" digits="2" value="0" name="object_builder.stretch.x" />
+        <slider left="432" top="144" width="152" height="32" min="-2" max="2" digits="2" value="0" name="object_builder.stretch.z" />
+
+        <checkbox left="0" top="176" width="16" height="16" checked="false" name="object_builder.snap.to_grid" onedit="object_builder.snap.grid" />
+        <checkbox left="280" top="176" width="16" height="16" checked="true" name="object_builder.snap.to_objects" onedit="object_builder.snap.objects" />
+
+        <slider left="128" top="192" width="152" height="32" min="-1" max="1" digits="2" value="0" name="object_builder.grid.offset.x" />
+        <slider left="432" top="192" width="152" height="32" min="-1" max="1" digits="2" value="0" name="object_builder.grid.offset.z" />
+        <slider left="128" top="224" width="152" height="32" min="-90" max="90" digits="0" value="0" name="object_builder.grid.rotation" />
+        <slider left="432" top="224" width="152" height="32" min="0.1" max="2" digits="1" value="1" name="object_builder.grid.size" />
       </label>
-      <label width="584" left="584" top="0" height="192" name="object_builder.tab.material">
+      <label width="584" left="584" top="0" height="256" name="object_builder.tab.material">
         <label left="200" top="8" size="16" width="160" height="16">Material color:</label>
         <label left="200" top="40" size="16" width="160" height="16">Emission color:</label>
         <label left="200" top="64" size="16" width="160" height="16">Reflectivity:</label>
@@ -54,14 +64,16 @@
         <color left="360" top="0" width="224" height="32" name="object_builder.material.color" onchange="object_builder.material.update" />
         <color left="360" top="32" width="224" height="32" name="object_builder.material.emission" onchange="object_builder.material.update" />
 
-        <slider left="360" top="64" width="192" height="32" min="0" max="1" digits="2" value="0" name="object_builder.material.reflectivity" onedit="object_builder.material.update" />
+        <slider left="360" top="64" width="256" height="32" min="0" max="1" digits="2" value="0" name="object_builder.material.reflectivity" onedit="object_builder.material.update" />
         <iconbutton left="552" top="64" width="32" height="32" icon="edit-undo.tga" name="object_builder.material.reflectivity.reset" onclick="object_builder.material.reflectivity.reset" />
       </label>
-      <label width="584" left="1168" top="0" height="192" name="object_builder.tab.music">
+      <label width="584" left="1168" top="0" height="256" name="object_builder.tab.music">
         <label left="200" top="80" size="16" width="166" height="16">Volume:</label>
 
         <music left="200" top="0" height="72" width="384" name="object_builder.music.selector" />
         <slider left="360" top="80" height="32" width="224" min="0" max="2" digits="2" value="1" name="object_builder.music.volume" />
+      </label>
+      <label width="584" left="1752" top="0" height="256" name="object_builder.tab.lights">
       </label>
     </label>
   </label>

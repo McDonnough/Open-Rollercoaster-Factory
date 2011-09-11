@@ -103,6 +103,8 @@ begin
     TSlider(fWindow.GetChildByName('object_builder.tile.x')).Value := fBuilding.VirtScale.X;
     TSlider(fWindow.GetChildByName('object_builder.tile.y')).Value := fBuilding.VirtScale.Y;
     TSlider(fWindow.GetChildByName('object_builder.tile.z')).Value := fBuilding.VirtScale.Z;
+    TSlider(fWindow.GetChildByName('object_builder.stretch.x')).Value := fBuilding.DeformMatrix[1].X;
+    TSlider(fWindow.GetChildByName('object_builder.stretch.z')).Value := fBuilding.DeformMatrix[1].Z;
     SelectionEngine.Delete(fBuilding);
     Show(fWindow);
     end;
@@ -174,6 +176,8 @@ begin
     fBuilding.VirtScale.X := TSlider(fWindow.GetChildByName('object_builder.tile.x')).Value;
     fBuilding.VirtScale.Y := TSlider(fWindow.GetChildByName('object_builder.tile.y')).Value;
     fBuilding.VirtScale.Z := TSlider(fWindow.GetChildByName('object_builder.tile.z')).Value;
+    fBuilding.DeformMatrix[1].X := TSlider(fWindow.GetChildByName('object_builder.stretch.x')).Value;
+    fBuilding.DeformMatrix[1].Z := TSlider(fWindow.GetChildByName('object_builder.stretch.z')).Value;
     if fBuildingNew then
       begin
       fBuilding.SetUnchanged;
@@ -209,6 +213,7 @@ begin
       O.GeoObject.Matrix := fBuilding.Matrix;
       O.GeoObject.Mirror := fBuilding.Mirror;
       O.GeoObject.VirtScale := fBuilding.VirtScale;
+      O.GeoObject.DeformMatrix := fBuilding.DeformMatrix;
       Park.pObjects.Append(O);
       SelectionEngine.Add(O.GeoObject, 'GUIActions.terrain_edit.marks.move');
       Park.NormalSelectionEngine.Add(O.GeoObject, 'TPark.Objects.Selected');

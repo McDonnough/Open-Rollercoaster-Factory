@@ -2,7 +2,9 @@
 
 #extension GL_EXT_geometry_shader4 : require
 
+uniform mat4 MeshTransformMatrix;
 uniform mat4 TransformMatrix;
+uniform mat4 DeformMatrix;
 uniform vec3 Mirror;
 uniform vec3 VirtScale;
 
@@ -31,14 +33,15 @@ void main(void) {
   vec3 sdir = (w2.t * v1 - w1.t * v2) * r;
   vec3 tdir = (w1.s * v2 - w2.s * v1) * r;
 
+  mat4 allMats = TransformMatrix * DeformMatrix * MeshTransformMatrix;
   vec3 axes[3];
-  axes[0] = normalize((TransformMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
-  axes[1] = normalize((TransformMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
-  axes[2] = normalize((TransformMatrix * vec4(0.0, 0.0, 1.0, 0.0)).xyz);
+  axes[0] = normalize(allMats[0].xyz);
+  axes[1] = normalize(allMats[1].xyz);
+  axes[2] = normalize(allMats[2].xyz);
 
   vec2 stFactor = vec2(
-    abs(dot(normalize(sdir), axes[0])) * VirtScale.x + abs(dot(normalize(sdir), axes[1])) * VirtScale.y + abs(dot(normalize(sdir), axes[2])) * VirtScale.z,
-    abs(dot(normalize(tdir), axes[0])) * VirtScale.x + abs(dot(normalize(tdir), axes[1])) * VirtScale.y + abs(dot(normalize(tdir), axes[2])) * VirtScale.z);
+    length(vec3(dot(normalize(sdir), axes[0]) * VirtScale.x, dot(normalize(sdir), axes[1]) * VirtScale.y, dot(normalize(sdir), axes[2]) * VirtScale.z)),
+    length(vec3(dot(normalize(tdir), axes[0]) * VirtScale.x, dot(normalize(tdir), axes[1]) * VirtScale.y, dot(normalize(tdir), axes[2]) * VirtScale.z)));
 
   // Vertices
 

@@ -64,7 +64,7 @@ type
       CurrentGBuffer: TFBO;
       MinY, MaxY: Single;
       ShadowMode, MaterialMode, LightShadowMode: Boolean;
-      Uniforms: Array[0..7, 0..17] of GLUInt;
+      Uniforms: Array[0..7, 0..18] of GLUInt;
       Shaders: Array[0..7] of TShader;
       property CurrentMaterialCount: Integer read fCurrentMaterialCount;
       property Working: Boolean read getWorking write fCanWork;
@@ -122,13 +122,14 @@ const
   UNIFORM_ANY_WATERREFRACTIONMODE = 8;
   UNIFORM_ANY_TRANSFORMMATRIX = 9;
   UNIFORM_ANY_MESHTRANSFORMMATRIX = 10;
-  UNIFORM_ANY_VIEWPOINT = 11;
-  UNIFORM_ANY_SELECTIONMESHID = 12;
-  UNIFORM_ANY_MIRROR = 13;
-  UNIFORM_ANY_ALPHA = 14;
-  UNIFORM_ANY_MASKOFFSET = 15;
-  UNIFORM_ANY_MATERIALID = 16;
-  UNIFORM_ANY_VIRTSCALE = 17;
+  UNIFORM_ANY_DEFORMMATRIX = 11;
+  UNIFORM_ANY_VIEWPOINT = 12;
+  UNIFORM_ANY_SELECTIONMESHID = 13;
+  UNIFORM_ANY_MIRROR = 14;
+  UNIFORM_ANY_ALPHA = 15;
+  UNIFORM_ANY_MASKOFFSET = 16;
+  UNIFORM_ANY_MATERIALID = 17;
+  UNIFORM_ANY_VIRTSCALE = 18;
 
 function TRObjects.getWorking: Boolean;
 begin
@@ -356,7 +357,7 @@ end;
 
 procedure TRObjects.Render(Mesh: TManagedMesh);
 var
-  Matrix, MeshMatrix: Array[0..15] of Single;
+  Matrix, MeshMatrix, DeformMatrix: Array[0..15] of Single;
   ReflectionMapToBind: TTexture;
 begin
 // fCurrentShader.Bind;
@@ -407,9 +408,11 @@ begin
 
   MakeOGLCompatibleMatrix(Mesh.GeoMesh.ParentMatrix, @Matrix[0]);
   MakeOGLCompatibleMatrix(Mesh.GeoMesh.Matrix, @MeshMatrix[0]);
+  MakeOGLCompatibleMatrix(Mesh.ParentObject.GeoObject.DeformMatrix, @DeformMatrix[0]);
 
   fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_TRANSFORMMATRIX], @Matrix[0]);
   fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MESHTRANSFORMMATRIX], @MeshMatrix[0]);
+  fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_DEFORMMATRIX], @DeformMatrix[0]);
   fCurrentShader.UniformF(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_VIEWPOINT], ModuleManager.ModRenderer.ViewPoint.X, ModuleManager.ModRenderer.ViewPoint.Y, ModuleManager.ModRenderer.ViewPoint.Z);
 
   if Mesh.VBO <> fLastBoundVBO then
@@ -437,7 +440,7 @@ var
   CurrO: TGeoObject;
   CurrMO: TManagedObject;
   CurrMM: TManagedMesh;
-  Matrix, MeshMatrix: Array[0..15] of Single;
+  Matrix, MeshMatrix, DeformMatrix: Array[0..15] of Single;
 begin
 //   exit;
   fSelectionShader.Bind;
@@ -482,9 +485,11 @@ begin
 //         end;
       MakeOGLCompatibleMatrix(CurrO.Meshes[j].ParentMatrix, @Matrix[0]);
       MakeOGLCompatibleMatrix(CurrO.Meshes[j].Matrix, @MeshMatrix[0]);
+      MakeOGLCompatibleMatrix(CurrO.DeformMatrix, @DeformMatrix[0]);
 
       fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_TRANSFORMMATRIX], @Matrix[0]);
       fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_MESHTRANSFORMMATRIX], @MeshMatrix[0]);
+      fCurrentShader.UniformMatrix4D(Uniforms[fCurrentShader.Tag, UNIFORM_ANY_DEFORMMATRIX], @DeformMatrix[0]);
 
       CurrMM.VBO.Bind;
       CurrMM.VBO.Render;
@@ -757,6 +762,7 @@ begin
     Uniforms[I, UNIFORM_ANY_WATERHEIGHT] := Shaders[i].GetUniformLocation('WaterHeight');
     Uniforms[I, UNIFORM_ANY_WATERREFRACTIONMODE] := Shaders[i].GetUniformLocation('WaterRefractionMode');
     Uniforms[I, UNIFORM_ANY_TRANSFORMMATRIX] := Shaders[i].GetUniformLocation('TransformMatrix');
+    Uniforms[I, UNIFORM_ANY_DEFORMMATRIX] := Shaders[i].GetUniformLocation('DeformMatrix');
     Uniforms[I, UNIFORM_ANY_MESHTRANSFORMMATRIX] := Shaders[i].GetUniformLocation('MeshTransformMatrix');
     Uniforms[I, UNIFORM_ANY_VIEWPOINT] := Shaders[i].GetUniformLocation('ViewPoint');
     Uniforms[I, UNIFORM_ANY_SELECTIONMESHID] := Shaders[i].GetUniformLocation('SelectionMeshID');

@@ -421,7 +421,7 @@ begin
   fSunRayShader := TShader.Create('orcf-world-engine/postprocess/sunrays.vs', 'orcf-world-engine/postprocess/sunrays.fs');
   fSunRayShader.UniformI('MaterialTexture', 0);
   fSunRayShader.UniformI('NormalTexture', 1);
-  fSunRayShader.UniformF('exposure', 0.0014);
+  fSunRayShader.UniformF('exposure', 0.002);
   fSunRayShader.UniformF('decay', 1.0);
   fSunRayShader.UniformF('density', 0.5);
   fSunRayShader.UniformF('weight', 5.2);

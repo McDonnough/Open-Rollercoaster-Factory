@@ -3,17 +3,31 @@ unit u_xml;
 interface
 
 uses
-  SysUtils, Classes, u_dom;
+  SysUtils, Classes, u_dom, math;
 
 function LoadXMLFile(FName: String): TDOMDocument;
 procedure WriteXMLFile(fDocument: TDOMDocument; FName: String);
 function DOMFromXML(Source: String): TDOMDocument;
 function XMLFromDOM(fDocument: TDOMDocument): String;
+function DecompressXML(S: String): String;
+function CompressedXMLFromDOM(Document: TDOMDocument): String;
 
 implementation
 
 uses
   u_functions;
+
+type
+  TAttribute = record
+    ID: Word;
+    Name: String;
+    end;
+
+  TTag = record
+    ID: Word;
+    Name: String;
+    Attribs: Array of TAttribute;
+    end;
 
 function LoadXMLFile(FName: String): TDOMDocument;
 var
@@ -34,7 +48,7 @@ function DOMFromXML(Source: String): TDOMDocument;
 var
   i, j: Integer;
   mode: Integer;
-  tmpString: StrinG;
+  tmpString: String;
   SelfClose, HadCharacter: Boolean;
   ElementStack: array of TDOMNode;
   LastAttribute: String;
@@ -79,6 +93,8 @@ const
   M_ATTRIB_VALUE = 3;
   M_DOC_INFO = 4;
 begin
+  if Source[1] = #1 then
+    Source := DecompressXML(Source);
   Document := TDOMDocument.Create;
   Result := Document;
   setLength(ElementStack, 1);
@@ -250,6 +266,181 @@ begin
   Result := '<?xml version="1.0" encoding="UTF-8"?>' + #10;
   if fDocument.FirstChild <> nil then
     AddChildrenRecursively(fDocument.FirstChild);
+end;
+
+function DecompressXML(S: String): String;
+var
+  TagList: Array of TTag;
+  TagCount, AttribCount, TagSize: Word;
+  P, L: Pointer;
+  I, J: Integer;
+  Operation: Byte;
+  TagStack: Array of Word;
+  StackPos, TagID: Word;
+
+  function ReadString: String;
+  var
+    StrLen: Word;
+    I: Integer;
+    D: PChar;
+  begin
+    StrLen := Word(P^); inc(P, 2);
+    SetLength(Result, StrLen);
+    D := @Result[1];
+    for I := 1 to StrLen do
+      begin
+      D^ := Char(P^);
+      inc(P);
+      inc(D);
+      end;
+  end;
+
+  function ReadWord: Word; inline;
+  begin
+    Result := Word(P^);
+    inc(P, 2);
+  end;
+
+  function ReadByte: Byte; inline;
+  begin
+    Result := Byte(P^);
+    inc(P);
+  end;
+
+begin
+  P := @S[2];
+  TagCount := ReadWord;
+  SetLength(TagList, TagCount);
+  for I := 0 to TagCount - 1 do
+    begin
+    TagList[I].ID := I;
+    TagList[I].Name := ReadString;
+    AttribCount := ReadByte;
+    SetLength(TagList[I].Attribs, AttribCount);
+    for J := 0 to AttribCount - 1 do
+      begin
+      TagList[I].Attribs[J].ID := J;
+      TagList[I].Attribs[J].Name := ReadString;
+      end;
+    end;
+  StackPos := 0;
+  L := @S[length(S)];
+  Result := '<?xml version="1.0" encoding="UTF-8"?>';
+  while P <= L do
+    begin
+    Operation := ReadByte;
+    SetLength(TagStack, Length(TagStack) + 128);
+    case Operation of
+      1: // Open a tag
+        begin
+        TagID := ReadWord;
+        Result := '<' + TagList[TagID].Name;
+        AttribCount := ReadByte;
+        for I := 1 to AttribCount do
+          begin
+          Result := Result + ' ' + TagList[TagID].Attribs[ReadByte].Name + '="';
+          Result := Result + ReadString + '"';
+          end;
+        Result := Result + '>';
+        if StackPos > high(TagStack) then
+          SetLength(TagStack, length(TagStack) + 16);
+        TagStack[StackPos] := TagID;
+        inc(StackPos);
+        end;
+      2: // Close tag
+        begin
+        dec(StackPos);
+        Result := Result + '</' + TagList[TagStack[StackPos]].Name + '>';
+        end;
+      3: // Self-closing tag
+        begin
+        TagID := ReadWord;
+        Result := '<' + TagList[TagID].Name;
+        AttribCount := ReadByte;
+        for I := 1 to AttribCount do
+          begin
+          Result := Result + ' ' + TagList[TagID].Attribs[ReadByte].Name + '="';
+          Result := Result + ReadString + '"';
+          end;
+        Result := Result + '/>';
+        end;
+      4: // Text node
+        Result := Result + ReadString;
+      end;
+    end;
+end;
+
+function CompressedXMLFromDOM(Document: TDOMDocument): String;
+// var
+//   Tags: Array of String;
+//   Attribs: Array of Array of String;
+// 
+//   function GetAttribute(Tag: Word; Name: String): Integer;
+//   begin
+//     for Result := 0 to high(Attribs[Tag]) do
+//       if Attribs[Tag, Result] = Name then
+//         exit;
+//     SetLength(Attribs[Tag], length(Attribs[Tag]) + 1);
+//     Result := High(Attribs[Tag]);
+//     Attribs[Tag, Result] := Name;
+//   end;
+// 
+//   function GetTag(Name: String): Integer;
+//   begin
+//     for Result := 0 to high(Tags) do
+//       if Tags[Result] = Name then
+//         exit;
+//     SetLength(Tags, length(Tags) + 1);
+//     SetLength(Attribs, length(Attribs) + 1);
+//     Result := high(Tags);
+//     Tags[Result] := 0;
+//   end;
+// 
+//   function getAttributes(f: TDOMNode; Tag: Word): String;
+//   var
+//     i: Integer;
+//   begin
+//     for i := 0 to f.Attributes.GetLength - 1 do
+//       begin
+//       writeByte(GetAttribute(Tag, f.Attributes.Item(i).NodeName));
+//       writeString(f.Attributes.Item(i).NodeValue);
+//       end;
+//   end;
+// 
+//   procedure AddChildrenRecursively(f: TDOMNode);
+//   var
+//     r: TDOMNode;
+//     Tag: Word;
+//   begin
+//     case f.NodeType of
+//       DOM_ELEMENT_NODE:
+//         begin
+//         Tag := GetTag(f.NodeName);
+//         r := f.FirstChild;
+//         if r = nil then
+//           writeByte(3)
+//         else
+//           writeByte(1);
+//         writeWord(Tag);
+//         getAttributes(f, Tag);
+//         while r <> nil do
+//           begin
+//           AddChildrenRecursively(r);
+//           r := r.NextSibling;
+//           end;
+//         if r <> nil then
+//           writeByte(2);
+//         end;
+//       DOM_TEXT_NODE:
+//         begin
+//         WriteByte(4);
+//         WriteString(f.NodeValue);
+//         end;
+//       end;
+//   end;
+// 
+begin
+
 end;
 
 end.

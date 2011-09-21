@@ -37,7 +37,7 @@ type
 implementation
 
 uses
-  u_events, main, g_park, g_parkui, g_object_builder;
+  u_events, main, g_park, g_parkui, g_object_builder, u_functions;
 
 constructor TRealObject.Create(TheResource: TObjectResource);
 begin
@@ -133,15 +133,15 @@ begin
       end
     else if E.TagName = 'mirror' then
       begin
-      O.GeoObject.Mirror.X := StrToInt(E.GetAttribute('x'));
-      O.GeoObject.Mirror.Y := StrToInt(E.GetAttribute('y'));
-      O.GeoObject.Mirror.Z := StrToInt(E.GetAttribute('z'));
+      O.GeoObject.Mirror.X := StrToIntWD(E.GetAttribute('x'), 1);
+      O.GeoObject.Mirror.Y := StrToIntWD(E.GetAttribute('y'), 1);
+      O.GeoObject.Mirror.Z := StrToIntWD(E.GetAttribute('z'), 1);
       end
     else if E.TagName = 'tile' then
       begin
-      O.GeoObject.VirtScale.X := StrToInt(E.GetAttribute('x'));
-      O.GeoObject.VirtScale.Y := StrToInt(E.GetAttribute('y'));
-      O.GeoObject.VirtScale.Z := StrToInt(E.GetAttribute('z'));
+      O.GeoObject.VirtScale.X := StrToFloatWD(E.GetAttribute('x'), 1.0);
+      O.GeoObject.VirtScale.Y := StrToFloatWD(E.GetAttribute('y'), 1.0);
+      O.GeoObject.VirtScale.Z := StrToFloatWD(E.GetAttribute('z'), 1.0);
       end
     else if E.TagName = 'material' then
       begin
@@ -203,9 +203,9 @@ begin
       TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', IntToStr(Round(Mirror.Y)));
       TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', IntToStr(Round(Mirror.Z)));
       TDOMElement(X.LastChild.LastChild).AppendChild(X.CreateElement('tile'));
-      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('x', IntToStr(Round(VirtScale.X)));
-      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', IntToStr(Round(VirtScale.Y)));
-      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', IntToStr(Round(VirtScale.Z)));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('x', FloatToStr(Round(VirtScale.X)));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', FloatToStr(Round(VirtScale.Y)));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', FloatToStr(Round(VirtScale.Z)));
       for I := 0 to high(Materials) do
         begin
         TDOMElement(X.LastChild.LastChild).AppendChild(X.CreateElement('material'));

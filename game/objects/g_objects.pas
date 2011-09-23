@@ -203,9 +203,9 @@ begin
       TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', IntToStr(Round(Mirror.Y)));
       TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', IntToStr(Round(Mirror.Z)));
       TDOMElement(X.LastChild.LastChild).AppendChild(X.CreateElement('tile'));
-      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('x', FloatToStr(Round(VirtScale.X)));
-      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', FloatToStr(Round(VirtScale.Y)));
-      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', FloatToStr(Round(VirtScale.Z)));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('x', FloatToStr(VirtScale.X));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('y', FloatToStr(VirtScale.Y));
+      TDOMElement(X.LastChild.LastChild.LastChild).SetAttribute('z', FloatToStr(VirtScale.Z));
       for I := 0 to high(Materials) do
         begin
         TDOMElement(X.LastChild.LastChild).AppendChild(X.CreateElement('material'));

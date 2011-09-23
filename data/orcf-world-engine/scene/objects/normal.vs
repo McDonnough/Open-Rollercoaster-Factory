@@ -13,7 +13,7 @@ varying vec3 _TransformedVertex;
 
 void main(void) {
   _OrigVertex = (TransformMatrix * (DeformMatrix * ((MeshTransformMatrix * vec4(gl_Vertex.xyz, 0.0)) * vec4(VirtScale * Mirror, 1.0)))).xyz;
-  _Vertex = _OrigVertex + TransformMatrix[3].xyz + MeshTransformMatrix[3].xyz;
+  _Vertex = (TransformMatrix * (DeformMatrix * ((MeshTransformMatrix * vec4(gl_Vertex.xyz, 1.0)) * vec4(VirtScale * Mirror, 1.0)))).xyz;
   mat4 transposedInverseDeformMatrix = transpose(DeformMatrix);
   transposedInverseDeformMatrix[1].x = -transposedInverseDeformMatrix[1].x;
   transposedInverseDeformMatrix[1].z = -transposedInverseDeformMatrix[1].z;

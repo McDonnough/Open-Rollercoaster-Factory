@@ -37,5 +37,5 @@ void main() {
     illuminationDecay *= decay;
   }
 
-  gl_FragColor *= exposure * angleFactor;
+  gl_FragColor *= exposure * angleFactor * (1.0 - length(gl_TexCoord[0].xy - lightPositionOnScreen));
 }

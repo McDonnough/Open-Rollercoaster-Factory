@@ -1363,6 +1363,7 @@ begin
     fHDRAverageShader.Bind;
 
     glDisable(GL_ALPHA_TEST);
+    glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 

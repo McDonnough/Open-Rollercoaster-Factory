@@ -64,7 +64,7 @@
         <color left="360" top="0" width="224" height="32" name="object_builder.material.color" onchange="object_builder.material.update" />
         <color left="360" top="32" width="224" height="32" name="object_builder.material.emission" onchange="object_builder.material.update" />
 
-        <slider left="360" top="64" width="256" height="32" min="0" max="1" digits="2" value="0" name="object_builder.material.reflectivity" onedit="object_builder.material.update" />
+        <slider left="360" top="64" width="224" height="32" min="0" max="1" digits="2" value="0" name="object_builder.material.reflectivity" onedit="object_builder.material.update" />
         <iconbutton left="552" top="64" width="32" height="32" icon="edit-undo.tga" name="object_builder.material.reflectivity.reset" onclick="object_builder.material.reflectivity.reset" />
       </label>
       <label width="584" left="1168" top="0" height="256" name="object_builder.tab.music">

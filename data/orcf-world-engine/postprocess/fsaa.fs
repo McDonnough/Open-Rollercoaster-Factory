@@ -11,8 +11,8 @@ const int Samples = {{{owe.samples}}};
 
 void main(void) {
   vec3 HDRAverage = texelFetch2D(HDRColor, ivec2(0, 0), 0).rgb;
-  float HDRLighting = length(HDRAverage) / 1.73;
-  float HDRLightingFactor = 1.0 / (HDRLighting * HDRLighting + 0.5) / 1.5;
+  float HDRLighting = length(HDRAverage);
+  float HDRLightingFactor = 0.7 / mix(HDRLighting, 0.7, 0.25);
 
   // IF [ NEQ owe.samples 1 ]
   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);

@@ -32,20 +32,41 @@ implementation
 procedure TPathAlignedMesh.AdjustToPath(P: TPath);
 var
   PrevS, S: Integer;
-  OD: TPathPointData;
+  D, OD: TPathPointData;
   FaceCount: Integer;
+  OldBinormal, Binormal: TVector3D;
+  M, N: TMatrix3D;
   procedure NextPathPoint(Distance: Single);
   var
-    D: TPathPointData;
-    
+    I: Integer;
+    F: PFace;
+    V, V1: PVertex;
   begin
-    OD := D;
     D := P.DataAtDistance(Distance);
+    Binormal := Normalize(CrossProduct(D.Normal, D.Tangent));
+    M := Transpose(Matrix(Binormal, D.Normal, Vector(0, 0, 0)));
+
+    V1 := @fBaseMesh.Vertices[I];
+    
+    for I := 0 to high(fBaseMesh.Vertices) do
+      begin
+      V := fMesh.AddVertex;
+      V^.Position := Mix(V1^.Position * N + OD.Position, V1^.Position * M + D.Position, V1^.Position.Z);
+      inc(V1);
+      end;
+
+    OldBinormal := Binormal;
+    D := OD;
+    N := M;
   end;
 begin
+  SetLength(fMesh.Vertices, 0);
+  SetLength(fMesh.Faces, 0);
+
   PrevS := 0;
   S := 1;
   OD := P.DataAtDistance(0);
+  OldBinormal := Normalize(CrossProduct(OD.Normal, OD.Tangent));
   repeat
     NextPathPoint(Min(S + 1, P.Length));
     inc(S);

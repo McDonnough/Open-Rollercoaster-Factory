@@ -9,22 +9,31 @@ uniform vec2 Screen;
 uniform float FocusDistance;
 uniform float Strength;
 
-const int SAMPLES = 5;
-const float PIXELS_PER_SAMPLE = 1.0;
+const int SAMPLES = 6;
+const int RINGS = 2;
+const float PIXELS_PER_RING = 3.5;
 
 void main(void) {
-  gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
   float Distance = texture2D(GeometryTexture, gl_TexCoord[0].xy).a;
-  float Factor = min(2.0 / PIXELS_PER_SAMPLE, Distance / FocusDistance - 1.0) * 0.25;
-  if (Distance < 5000.0) {
-    for (int i = -SAMPLES; i < SAMPLES; i++) {
-      for (int j = -SAMPLES; j < SAMPLES; j++) {
-        gl_FragColor.rgb += texture2D(SceneTexture, gl_TexCoord[0].xy + (PIXELS_PER_SAMPLE * vec2(float(i) + 0.5, float(j) + 0.5) / Screen * Factor * Strength)).rgb;
-        gl_FragColor.a += 1.0;
-      }
+  float fDiff = abs(FocusDistance - Distance) / FocusDistance;
+  gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+  float Factor = 1.0;
+  float SampleCount = 1.0;
+  for (int i = 1; i <= RINGS; i++) {
+    float Radius = PIXELS_PER_RING * i;
+    float Coeff = 6.28319 / (SAMPLES * i);
+    for (int j = 0; j < SAMPLES * i; j++) {
+      vec2 tc = gl_TexCoord[0].xy + Radius * vec2(sin(Coeff * j), cos(Coeff * j)) / Screen;
+      float d = texture2D(GeometryTexture, tc).a;
+      vec3 c = texture2D(SceneTexture, tc).rgb;
+      float diff = max(abs(FocusDistance - d) / FocusDistance, fDiff) * mix(FocusDistance / d, 1.0, 0.25);
+      float RightBorder = float(RINGS + 1) * diff;
+      float AddFac = clamp((RightBorder - float(i)), 0.0, 1.0);
+      SampleCount += 1.0;
+      Factor += AddFac;
+      gl_FragColor.rgb += AddFac * c;
     }
-    gl_FragColor.rgb /= gl_FragColor.a;
-  } else {
-    gl_FragColor = texelFetch2D(SceneTexture, ivec2(floor(gl_FragCoord.xy)), 0);
   }
+  gl_FragColor.rgb += (SampleCount - Factor) * texture2D(SceneTexture, gl_TexCoord[0].xy).rgb;
+  gl_FragColor.rgb /= SampleCount;
 }

@@ -24,7 +24,7 @@ void main(void) {
   int Samples = 0;
 
   for (int i = 1; i <= Rings; i++) {
-    float Radius = 200.0 * i / Vertex.a / Rings;
+    float Radius = 100.0 * i / Vertex.a / Rings;
     float Coeff = 6.28319 / (SamplesFirstRing * i);
     for (int j = 0; j < SamplesFirstRing * i; j++) {
       Samples++;

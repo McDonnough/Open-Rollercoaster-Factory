@@ -44,7 +44,7 @@ type
       fAutoplantCount: Integer;
       fAutoplantDistance: Single;
       fTerrainDetailDistance, fTerrainTesselationDistance, fTerrainBumpmapDistance: Single;
-      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fCausticShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader, fGridShader: TShader;
+      fFullscreenShader, fBlackShader, fAAShader, fSunRayShader, fCausticShader, fSunShader, fLightShader, fLightShaderWithShadow, fCompositionShader, fBloomShader, fBloomBlurShader, fFocalBlurShader, fShadowDepthShader, fLensFlareShader, fHDRAverageShader, fSSAOShader, fGridShader, fSSAODitherShader: TShader;
       fVecToFront: TVector3D;
       fFocusDistance: Single;
       fFrustum: TFrustum;
@@ -99,6 +99,7 @@ type
       property HDRAverageShader: TShader read fHDRAverageShader;
       property SimpleShader: TShader read fSimpleShader;
       property SSAOShader: TShader read fSSAOShader;
+      property SSAODitherShader: TShader read fSSAODitherShader;
       property CausticShader: TShader read fCausticShader;
       property GBuffer: TFBO read fGBuffer;
       property HDRBuffer: TFBO read fHDRBuffer;
@@ -294,7 +295,7 @@ begin
   fGBuffer.Unbind;
 
   fSpareBuffer := TFBO.Create(BufferSizeX, BufferSizeY, false);
-  fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_NEAREST, GL_NEAREST);     // Materials (opaque only) and specularity
+  fSpareBuffer.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);     // Materials (opaque only) and specularity
   fSpareBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fSpareBuffer.Unbind;
 
@@ -320,7 +321,7 @@ begin
 
   if UseScreenSpaceAmbientOcclusion then
     begin
-    fSSAOBuffer := TFBO.Create(Round(ResX * SSAOSize), Round(ResY * SSAOSize), false);
+    fSSAOBuffer := TFBO.Create(ResX, ResY, false);
     fSSAOBuffer.AddTexture(GL_RGBA16F_ARB, GL_LINEAR, GL_LINEAR);     // Screen Space Ambient Occlusion
     fSSAOBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
     fSSAOBuffer.Unbind;
@@ -449,6 +450,11 @@ begin
   fSSAOShader.UniformI('ScreenSize', ResX, ResY);
   Uniforms[UNIFORM_SSAO_RANDOMOFFSET] := fSSAOShader.GetUniformLocation('RandomOffset');
 
+  fSSAODitherShader := TShader.Create('orcf-world-engine/postprocess/fullscreen.vs', 'orcf-world-engine/inferred/ssaodither.fs');
+  fSSAODitherShader.UniformI('GeometryTexture', 0);
+  fSSAODitherShader.UniformI('SSAOTexture', 1);
+  fSSAODitherShader.UniformF('Screen', ResX, ResY);
+
   fLightShader := TShader.Create('orcf-world-engine/inferred/lightcube.vs', 'orcf-world-engine/inferred/light.fs');
   fLightShader.UniformI('GeometryTexture', 0);
   fLightShader.UniformI('NormalTexture', 1);
@@ -546,6 +552,7 @@ begin
   fCompositionShader.Free;
   fLightShaderWithShadow.Free;
   fLightShader.Free;
+  fSSAODitherShader.Free;
   fSSAOShader.Free;
   fSunShader.Free;
   fSunRayShader.Free;
@@ -923,22 +930,13 @@ begin
 
     GBuffer.Unbind;
 
-    // Save material buffer
-    SpareBuffer.Bind;
-      GBuffer.Textures[0].Bind(0);
-      fFullscreenShader.Bind;
-      DrawFullscreenQuad;
-      fFullscreenShader.Unbind;
-      GBuffer.Textures[0].UnBind;
-    SpareBuffer.Unbind;
-
     // SSAO pass
 
     if UseScreenSpaceAmbientOcclusion then
       begin
       glDisable(GL_CULL_FACE);
 
-      SSAOBuffer.Bind;
+      SpareBuffer.Bind;
 
       glDisable(GL_BLEND);
       glDisable(GL_ALPHA_TEST);
@@ -952,15 +950,32 @@ begin
 
       DrawFullscreenQuad;
 
-      GBuffer.Textures[5].Unbind;
-      GBuffer.Textures[1].Unbind;
-      GBuffer.Textures[2].Unbind;
+//       GBuffer.Textures[5].Unbind;
+//       GBuffer.Textures[1].Unbind;
       fSSAOShader.Unbind;
 
-      SSAOBuffer.Unbind;
+//       SpareBuffer.Unbind;
+
+      SSAOBuffer.Bind;
+      SpareBuffer.Textures[0].Bind(1);
+      fSSAODitherShader.Bind;
+      DrawFullscreenQuad;
+      fSSAODitherShader.Unbind;
+      GBuffer.Textures[2].Unbind;
+      SpareBuffer.Textures[0].Unbind;
+//       SSAOBuffer.Unbind;
 
       glEnable(GL_CULL_FACE);
       end;
+
+    // Save material buffer
+    SpareBuffer.Bind;
+      GBuffer.Textures[0].Bind(0);
+      fFullscreenShader.Bind;
+      DrawFullscreenQuad;
+      fFullscreenShader.Unbind;
+      GBuffer.Textures[0].UnBind;
+//     SpareBuffer.Unbind;
 
     // Transparent parts, fuck up the material buffer
     GBuffer.Bind;
@@ -987,7 +1002,7 @@ begin
       glDepthMask(false);
       glDisable(GL_ALPHA_TEST);
 
-    GBuffer.Unbind;
+//     GBuffer.Unbind;
 
     // Shadow pass
     
@@ -1024,7 +1039,7 @@ begin
       RObjects.RenderTransparent;
       RObjects.ShadowMode := False;
 
-      fSunShadowBuffer.Unbind;
+//       fSunShadowBuffer.Unbind;
       glEnable(GL_CULL_FACE);
       end;
 
@@ -1134,7 +1149,7 @@ begin
 
       glDisable(GL_BLEND);
 
-    LightBuffer.Unbind;
+//     LightBuffer.Unbind;
 
     // Sun ray pass
 
@@ -1152,7 +1167,7 @@ begin
       DrawFullscreenQuad;
       fSunRayShader.Unbind;
 
-      SunRayBuffer.Unbind;
+//       SunRayBuffer.Unbind;
       end;
 
     // Composition
@@ -1241,7 +1256,7 @@ begin
         glDisable(GL_BLEND);
         GBuffer.Textures[2].Unbind;
         end;
-    fSceneBuffer.Unbind;
+//     fSceneBuffer.Unbind;
 
     if Pass = 0 then
       begin
@@ -1258,7 +1273,7 @@ begin
           fSelectionRay := Vector3D(Coord) - fSelectionStart;
         fFullscreenShader.Unbind;
 
-      SpareBuffer.Unbind;
+//       SpareBuffer.Unbind;
       end;
 
     // Under-water view
@@ -1293,7 +1308,7 @@ begin
       fSpareBuffer.Textures[0].UnBind;
 
       fFullscreenShader.UnBind;
-      fSceneBuffer.Bind;
+//       fSceneBuffer.Bind;
       end;
 
     // Set up focal blur
@@ -1321,7 +1336,7 @@ begin
       DrawFullscreenQuad;
       fFullscreenShader.Unbind;
 
-      FocalBlurBuffer.Unbind;
+//       FocalBlurBuffer.Unbind;
 
       // Apply effect
 
@@ -1337,7 +1352,7 @@ begin
       DrawFullscreenQuad;
       fFocalBlurShader.Unbind;
 
-      SceneBuffer.Unbind;
+//       SceneBuffer.Unbind;
       end;
 
     // Apply sun ray effect to the image
@@ -1356,7 +1371,7 @@ begin
 
       fFullscreenShader.Unbind;
 
-      SceneBuffer.Unbind;
+//       SceneBuffer.Unbind;
       end;
 
     // Get average scene color
@@ -1372,7 +1387,7 @@ begin
       fHDRAverageShader.UniformI(Uniforms[UNIFORM_HDRAVERAGE_SIZE], BufferSizeY);
       fHDRAverageShader.UniformI(Uniforms[UNIFORM_HDRAVERAGE_DIR], 0, 1);
       DrawFullscreenQuad;
-    fHDRBuffer.Unbind;
+//     fHDRBuffer.Unbind;
 
     fHDRBuffer2.Bind;
       fHDRBuffer.Textures[0].Bind(0);

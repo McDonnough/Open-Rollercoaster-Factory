@@ -68,7 +68,7 @@ void main(void) {
 
     mat3 _M = transpose(M);
 
-    int SampleCount = int(ceil(mix(60.0, 16.0, pow(abs(dot(normalize(Vertex - ViewPoint), Normal)), 2.0))));
+    int SampleCount = int(ceil(mix(45.0, 5.0, pow(abs(dot(normalize(Vertex - ViewPoint), Normal)), 2.0))));
 
     vec3 tsEye = _M * (Vertex - ViewPoint);
     tsEye /= abs(tsEye.z);
@@ -81,6 +81,13 @@ void main(void) {
         break;
       coords += tsEye.xy;
       displacement += tsEye.z;
+    }
+    float factor = -0.5;
+    for (int i = 0; i < 5; i++) {
+      coords += factor * tsEye.xy;
+      displacement += factor * tsEye.z;
+      BumpColor = texture2D(NormalMap, coords);
+      factor = 0.5 * abs(factor) * sign(displacement - (BumpColor.a - 1.0) * displacementHeight);
     }
     normal = normalize(M * (BumpColor.rgb - vec3(0.5, 0.5, 0.5)));
 

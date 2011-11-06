@@ -59,14 +59,17 @@ void main(void) {
   if (dotprod > 0.0 && ShadowColor.a > Vertex.y + 0.02 && clamp(ShadowCoord.x, 0.0, 1.0) == ShadowCoord.x && clamp(ShadowCoord.y, 0.0, 1.0) == ShadowCoord.y) {
 
     // IF [ NEQ owe.shadows.blur 0 ]
-    float CoordFactor = (ShadowColor.a - Vertex.y) * 100.0 / ShadowSize * 2 / max(1.0, 1.0 * BlurSamples);
-    int Samples = (2 * BlurSamples + 1) * (2 * BlurSamples + 1);
-    for (int i = -BlurSamples; i <= BlurSamples; i++)
-      for (int j = -BlurSamples; j <= BlurSamples; j++) {
-        ShadowColor = texture2D(ShadowTexture, ShadowCoord + 0.0004 * CoordFactor * vec2(i, j));
+    float CoordFactor = (ShadowColor.a - Vertex.y + 4.0) * 25.0 / ShadowSize / 4.0;
+    int Samples = 7 * BlurSamples;
+    for (int i = 1; i <= 4; i++) {
+      float Radius = 1.0 * i;
+      float Coeff = 6.28319 / BlurSamples * (0.5 * i + 0.5);
+      for (int j = 0; j <= int(BlurSamples * (0.5 * i + 0.5)); j++) {
+        ShadowColor = texture2D(ShadowTexture, ShadowCoord + 0.0004 * CoordFactor * Radius * vec2(sin(Coeff * j), cos(Coeff * j)));
         if (ShadowColor.a > Vertex.y + 0.02)
           factor -= 2.0 * ShadowColor.rgb / Samples * min(1.0, 15.0 * abs(ShadowColor.a - Vertex.y - 0.02));
       }
+    }
     // END
 
     // IF [ EQ owe.shadows.blur 0 ]

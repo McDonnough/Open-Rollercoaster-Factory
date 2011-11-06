@@ -36,7 +36,7 @@ void main(void) {
       // IF [ EQ owe.ssao.indirectlighting 1 ]
       vec4 Emission = texture2D(EmissionTexture, coord);
       if (abs(Emission.r) + abs(Emission.g) + abs(Emission.b) > 0.0) {
-        coord = gl_TexCoord[0].xy + (4.0 * Radius * vec2(sin(Coeff * j + RandomOffset), cos(Coeff * j + RandomOffset))) / ScreenSize;
+        coord = gl_TexCoord[0].xy + (4.0 * Radius * vec2(sin(Coeff * j + RandomOffset + gl_FragCoord.x), cos(Coeff * j + RandomOffset + gl_FragCoord.y))) / ScreenSize;
         Dest = texture2D(GeometryTexture, coord).xyz;
         dir = Dest - Vertex.xyz;
         finalEmission += 2.0 * Emission.rgb * Emission.a * Emission.a / (Emission.a * Emission.a + dot(dir, dir)) * max(0.0, dot(normalize(dir), Normal));

@@ -307,7 +307,7 @@ begin
   fLightBuffer.Unbind;
 
   fSceneBuffer := TFBO.Create(BufferSizeX, BufferSizeY, true);
-  fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_NEAREST, GL_NEAREST);      // Composed image
+  fSceneBuffer.AddTexture(GL_RGB16F_ARB, GL_LINEAR, GL_LINEAR);      // Composed image
   fSceneBuffer.Textures[0].SetClamp(GL_CLAMP, GL_CLAMP);
   fSceneBuffer.Unbind;
 

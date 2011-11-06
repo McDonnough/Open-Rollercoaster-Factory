@@ -18,7 +18,7 @@ void main(void) {
   gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
   float Factor = 1.0;
   float SampleCount = 1.0;
-  float PixelsPerRing = min(2.3, mix(6.9 / FocusDistance, 2.3, 0.5));
+  float PixelsPerRing = min(2.3, mix(4.6 / FocusDistance, 2.3, 0.5));
   for (int i = 1; i <= RINGS; i++) {
     float Radius = PixelsPerRing * i;
     float Coeff = 6.28319 / (SAMPLES * (0.5 * i + 0.5));
